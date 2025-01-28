@@ -25,4 +25,12 @@ export class StaffController {
   remove(@Param('id') id: string): Promise<void> {
     return this.usersService.remove(id);
   }
+
+  @Post(':id') // 處理 PUT 請求，更新用戶
+  update(
+    @Param('id') id: string,
+    @Body() data: Partial<Staff>,
+  ): Promise<Staff | null> {
+    return this.usersService.update(id, data);
+  }
 }

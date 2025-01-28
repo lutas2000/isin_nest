@@ -26,4 +26,13 @@ export class StaffService {
   async remove(id: string): Promise<void> {
     await this.staffRepository.delete(id);
   }
+
+  async update(id: string, staff: Partial<Staff>): Promise<Staff | null> {
+    const updatedStaff = await this.staffRepository.findOneBy({ id });
+    if (updatedStaff) {
+      Object.assign(updatedStaff, staff); // 更新實體的屬性
+      return this.staffRepository.save(updatedStaff);
+    }
+    return null;
+  }
 }
