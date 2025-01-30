@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StaffModule } from './staff/staff.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { StaffModule } from './staff/staff.module';
     }),
     // 業務模組
     StaffModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
