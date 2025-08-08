@@ -1,4 +1,6 @@
 export class UserInput {
-  userName: string;
-  password: string;
+  userName!: string;
+  password!: string;
+  isAdmin?: boolean;
+  features?: string[];
 }
