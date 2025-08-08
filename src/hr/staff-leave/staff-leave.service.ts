@@ -88,10 +88,7 @@ export class StaffLeaveService {
   }
 
   // 根據日期範圍獲取請假記錄
-  async findByDateRange(
-    startDate: Date,
-    endDate: Date,
-  ): Promise<StaffLeave[]> {
+  async findByDateRange(startDate: Date, endDate: Date): Promise<StaffLeave[]> {
     return await this.staffLeaveRepository
       .createQueryBuilder('staffLeave')
       .leftJoinAndSelect('staffLeave.staff', 'staff')

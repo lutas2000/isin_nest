@@ -7,6 +7,7 @@ import { StaffModule } from './hr/staff/staff.module';
 import { StaffLeaveModule } from './hr/staff-leave/staff-leave.module';
 import { StaffManhourModule } from './hr/staff-manhour/staff-manhour.module';
 import { StaffManhour2Module } from './hr/staff-manhour/staff-manhour2.module';
+import { StaffSegmentModule } from './hr/staff-segment/staff-segment.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -44,6 +45,7 @@ import { AuthModule } from './auth/auth.module';
     StaffLeaveModule,
     StaffManhourModule,
     StaffManhour2Module,
+    StaffSegmentModule,
     AuthModule,
   ],
   controllers: [AppController],

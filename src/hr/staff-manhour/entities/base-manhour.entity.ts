@@ -11,11 +11,19 @@ export abstract class BaseManhour {
   @Column({ type: 'varchar', length: 10 })
   staffId: string; // 員工編號
 
-  @ApiProperty({ description: '開始時間', required: false, example: '2024-01-01 09:00:00' })
+  @ApiProperty({
+    description: '開始時間',
+    required: false,
+    example: '2024-01-01 09:00:00',
+  })
   @Column({ type: 'datetime', nullable: true })
   start_time?: Date; // 開始時間
 
-  @ApiProperty({ description: '結束時間', required: false, example: '2024-01-01 18:00:00' })
+  @ApiProperty({
+    description: '結束時間',
+    required: false,
+    example: '2024-01-01 18:00:00',
+  })
   @Column({ type: 'datetime', nullable: true })
   end_time?: Date; // 結束時間
 
