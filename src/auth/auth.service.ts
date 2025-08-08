@@ -14,9 +14,9 @@ export class AuthService {
   ) {}
 
   // 驗證使用者是否存在，並檢查密碼（從資料庫）
-  async validateUser(username: string, password: string): Promise<User | null> {
+  async validateUser(userName: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
-      where: { username },
+      where: { userName },
     });
 
     if (!user) {
@@ -33,10 +33,10 @@ export class AuthService {
   }
 
   // 建立新使用者，密碼以雜湊形式儲存
-  async createUser(username: string, password: string): Promise<User> {
+  async createUser(userName: string, password: string): Promise<User> {
     // 檢查使用者是否已存在
     const existingUser = await this.userRepository.findOne({
-      where: { username },
+      where: { userName },
     });
 
     if (existingUser) {
@@ -49,7 +49,7 @@ export class AuthService {
 
     // 建立新使用者物件
     const newUser = this.userRepository.create({
-      username,
+      userName,
       password: hashedPassword,
     });
 
@@ -59,7 +59,7 @@ export class AuthService {
 
   // 簽發 JWT Token
   login(user: User) {
-    const payload = { username: user.username, sub: user.id };
+    const payload = { userName: user.userName, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload), // 簽發 JWT
     };

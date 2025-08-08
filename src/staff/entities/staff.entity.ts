@@ -1,4 +1,5 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { Entity, PrimaryColumn, Column, OneToOne } from 'typeorm';
+import { User } from '../../auth/entities/user.entity';
 
 @Entity('staff') // 表名為 staff
 export class Staff {
@@ -52,4 +53,7 @@ export class Staff {
 
   @Column({ type: 'tinyint', width: 1, default: 0 })
   have_fake: boolean; // 是否需要外帳（tinyint 1）
+
+  @OneToOne(() => User, user => user.staff)
+  user?: User;
 }

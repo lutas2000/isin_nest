@@ -1,4 +1,4 @@
 export class UserInput {
-  username: string;
+  userName: string;
   password: string;
 }

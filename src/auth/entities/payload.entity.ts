@@ -1,4 +1,4 @@
 export class Payload {
-  username: string;
+  userName: string;
   sub: string;
 }

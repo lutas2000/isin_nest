@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Staff } from '../../staff/entities/staff.entity';
 
 @Entity('users')
 export class User {
@@ -6,10 +15,23 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-  username: string;
+  userName: string;
 
   @Column()
   password: string;
+
+  @Column({ default: false })
+  isAdmin: boolean;
+
+  @Column('simple-array', { default: '' })
+  features: string[];
+
+  @OneToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'staffId' })
+  staff?: Staff;
+
+  @Column({ nullable: true })
+  staffId?: string;
 
   @CreateDateColumn()
   createdAt: Date;

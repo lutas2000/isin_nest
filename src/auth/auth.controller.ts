@@ -1,6 +1,14 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserInput } from './entities/user_input.entity';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { AdminGuard } from './admin.guard';
 
 @Controller()
 export class AuthController {
@@ -9,7 +17,7 @@ export class AuthController {
   @Post('/login')
   async login(@Body() input: UserInput) {
     const user = await this.authService.validateUser(
-      input.username,
+      input.userName,
       input.password,
     );
 
@@ -21,10 +29,11 @@ export class AuthController {
   }
 
   @Post('/register')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async register(@Body() input: UserInput) {
     try {
       const user = await this.authService.createUser(
-        input.username,
+        input.userName,
         input.password,
       );
 
