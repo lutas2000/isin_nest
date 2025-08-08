@@ -17,7 +17,7 @@ export class AuthService {
   ];
 
   // 驗證使用者是否存在，並檢查密碼
-  async validateUser(username: string, password: string): Promise<any> {
+  async validateUser(username: string, password: string): Promise<User | null> {
     const user = this.users.find((user) => user.username === username);
     if (!user) {
       return null;
