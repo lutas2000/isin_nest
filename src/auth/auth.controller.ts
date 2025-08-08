@@ -8,17 +8,36 @@ export class AuthController {
 
   @Post('/login')
   async login(@Body() input: UserInput) {
-    // 验证用户身份
     const user = await this.authService.validateUser(
       input.username,
       input.password,
     );
 
     if (!user) {
-      throw new UnauthorizedException('用户名或密码错误');
+      throw new UnauthorizedException('Username or password is incorrect');
     }
 
-    // 验证成功，返回JWT token
     return this.authService.login(user);
+  }
+
+  @Post('/register')
+  async register(@Body() input: UserInput) {
+    try {
+      const user = await this.authService.createUser(
+        input.username,
+        input.password,
+      );
+
+      // 不回傳密碼
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userWithoutPassword } = user;
+      return {
+        message: '使用者註冊成功',
+        user: userWithoutPassword,
+      };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '註冊失敗';
+      throw new UnauthorizedException(message);
+    }
   }
 }

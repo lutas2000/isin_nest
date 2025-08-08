@@ -25,7 +25,7 @@ import { AuthModule } from './auth/auth.module';
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
-        synchronize: false, // 啟用自動同步，**請勿在生產環境啟用**
+        synchronize: true, // 啟用自動同步，**請勿在生產環境啟用**
       }),
     }),
     // 業務模組
