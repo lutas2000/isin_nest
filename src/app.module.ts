@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StaffModule } from './hr/staff/staff.module';
 import { StaffLeaveModule } from './hr/staff-leave/staff-leave.module';
+import { StaffManhourModule } from './hr/staff-manhour/staff-manhour.module';
+import { StaffManhour2Module } from './hr/staff-manhour/staff-manhour2.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -40,6 +42,8 @@ import { AuthModule } from './auth/auth.module';
     // 業務模組
     StaffModule,
     StaffLeaveModule,
+    StaffManhourModule,
+    StaffManhour2Module,
     AuthModule,
   ],
   controllers: [AppController],
