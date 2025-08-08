@@ -7,7 +7,7 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { Staff } from '../../staff/entities/staff.entity';
+import { Staff } from '../../hr/staff/entities/staff.entity';
 
 @Entity('users')
 export class User {

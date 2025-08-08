@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, Column, OneToOne } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from '../../auth/entities/user.entity';
+import { User } from '../../../auth/entities/user.entity';
 
 @Entity('staff') // 表名為 staff
 export class Staff {

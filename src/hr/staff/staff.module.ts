@@ -8,5 +8,6 @@ import { Staff } from './entities/staff.entity';
   imports: [TypeOrmModule.forFeature([Staff])], // 匯入對應的實體
   providers: [StaffService],
   controllers: [StaffController],
+  exports: [StaffService], // 導出服務供其他模組使用
 })
 export class StaffModule {}

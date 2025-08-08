@@ -3,7 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { StaffModule } from './staff/staff.module';
+import { StaffModule } from './hr/staff/staff.module';
+import { StaffLeaveModule } from './hr/staff-leave/staff-leave.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -25,7 +26,7 @@ import { AuthModule } from './auth/auth.module';
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
-        synchronize: true, // 啟用自動同步，**請勿在生產環境啟用**
+        synchronize: true,
         charset: 'utf8mb4',
         extra: {
           charset: 'utf8mb4',
@@ -38,6 +39,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     // 業務模組
     StaffModule,
+    StaffLeaveModule,
     AuthModule,
   ],
   controllers: [AppController],
