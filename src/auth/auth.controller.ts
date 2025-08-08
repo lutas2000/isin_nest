@@ -6,6 +6,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { UserInput } from './entities/user_input.entity';
 import { ResetPasswordInput } from './entities/reset_password.entity';
@@ -13,10 +19,14 @@ import { UpdateUserInput } from './entities/update_user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
 
+@ApiTags('认证')
 @Controller()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: '用户登录' })
+  @ApiResponse({ status: 200, description: '登录成功，返回JWT token' })
+  @ApiResponse({ status: 401, description: '用户名或密码错误' })
   @Post('/login')
   async login(@Body() input: UserInput) {
     const user = await this.authService.validateUser(
@@ -31,6 +41,10 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  @ApiOperation({ summary: '注册新用户（需要管理员权限）' })
+  @ApiResponse({ status: 200, description: '用户注册成功' })
+  @ApiResponse({ status: 401, description: '权限不足或注册失败' })
+  @ApiBearerAuth('JWT-auth')
   @Post('/register')
   @UseGuards(JwtAuthGuard, AdminGuard)
   async register(@Body() input: UserInput) {
@@ -55,6 +69,10 @@ export class AuthController {
     }
   }
 
+  @ApiOperation({ summary: '重设密码' })
+  @ApiResponse({ status: 200, description: '密码重设成功' })
+  @ApiResponse({ status: 401, description: '权限不足或重设失败' })
+  @ApiBearerAuth('JWT-auth')
   @Post('/reset-password')
   @UseGuards(JwtAuthGuard)
   async resetPassword(@Body() input: ResetPasswordInput, @Request() req: any) {
@@ -84,6 +102,10 @@ export class AuthController {
     }
   }
 
+  @ApiOperation({ summary: '更新用户信息（需要管理员权限）' })
+  @ApiResponse({ status: 200, description: '用户信息更新成功' })
+  @ApiResponse({ status: 401, description: '权限不足或更新失败' })
+  @ApiBearerAuth('JWT-auth')
   @Post('/update-user')
   @UseGuards(JwtAuthGuard, AdminGuard)
   async updateUser(@Body() input: UpdateUserInput, @Request() req: any) {
