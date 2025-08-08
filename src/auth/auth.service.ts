@@ -113,4 +113,69 @@ export class AuthService {
     // 儲存到資料庫
     return await this.userRepository.save(targetUser);
   }
+
+  // 更新用戶資料功能（僅限管理員）
+  async updateUser(
+    targetUserName: string,
+    updateData: {
+      newUserName?: string;
+      password?: string;
+      isAdmin?: boolean;
+      features?: string[];
+      staffId?: string;
+    },
+    currentUser: User,
+  ): Promise<User> {
+    // 檢查權限：只有管理員可以使用此功能
+    if (!currentUser.isAdmin) {
+      throw new Error('權限不足：只有管理員可以更新用戶資料');
+    }
+
+    // 尋找目標使用者
+    const targetUser = await this.userRepository.findOne({
+      where: { userName: targetUserName },
+    });
+
+    if (!targetUser) {
+      throw new Error('使用者不存在');
+    }
+
+    // 如果要更新用戶名稱，檢查新用戶名稱是否已存在
+    if (updateData.newUserName && updateData.newUserName !== targetUserName) {
+      const existingUser = await this.userRepository.findOne({
+        where: { userName: updateData.newUserName },
+      });
+
+      if (existingUser) {
+        throw new Error('新用戶名稱已存在');
+      }
+
+      targetUser.userName = updateData.newUserName;
+    }
+
+    // 更新密碼（如果提供）
+    if (updateData.password) {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(updateData.password, saltRounds);
+      targetUser.password = hashedPassword;
+    }
+
+    // 更新管理員狀態（如果提供）
+    if (updateData.isAdmin !== undefined) {
+      targetUser.isAdmin = updateData.isAdmin;
+    }
+
+    // 更新功能權限（如果提供）
+    if (updateData.features !== undefined) {
+      targetUser.features = updateData.features;
+    }
+
+    // 更新員工關聯（如果提供）
+    if (updateData.staffId !== undefined) {
+      targetUser.staffId = updateData.staffId;
+    }
+
+    // 儲存到資料庫
+    return await this.userRepository.save(targetUser);
+  }
 }
