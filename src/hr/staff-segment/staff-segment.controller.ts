@@ -24,7 +24,7 @@ import {
 import { StaffSegment } from './entities/staff-segment.entity';
 
 @ApiTags('員工段別管理')
-@Controller('hr/staff-segment')
+@Controller('staff-segment')
 export class StaffSegmentController {
   constructor(private readonly staffSegmentService: StaffSegmentService) {}
 
