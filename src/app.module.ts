@@ -26,6 +26,14 @@ import { AuthModule } from './auth/auth.module';
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
         synchronize: true, // 啟用自動同步，**請勿在生產環境啟用**
+        charset: 'utf8mb4',
+        extra: {
+          charset: 'utf8mb4',
+          collation: 'utf8mb4_unicode_ci',
+          connectionLimit: 10,
+          acquireTimeout: 60000,
+          timeout: 60000,
+        },
       }),
     }),
     // 業務模組

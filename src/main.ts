@@ -8,7 +8,7 @@ async function bootstrap() {
   // Swagger 配置
   const config = new DocumentBuilder()
     .setTitle('ISIN Nest API')
-    .setDescription('ISIN Nest API 文档')
+    .setDescription('ISIN Nest API 文件')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -16,7 +16,7 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         name: 'JWT',
-        description: '请输入 JWT token',
+        description: '請輸入 JWT token',
         in: 'header',
       },
       'JWT-auth', // 这里是 security scheme name
