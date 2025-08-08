@@ -9,15 +9,12 @@ import { StaffSegmentModule } from './staff-segment/staff-segment.module';
   imports: [
     // 員工基本資料管理
     StaffModule,
-    
     // 員工請假管理
     StaffLeaveModule,
-    
     // 員工工時管理
     StaffManhourModule,
     StaffManhour2Module,
-    
-    // 員工段別管理
+    // 員工上班時段管理
     StaffSegmentModule,
   ],
   exports: [
