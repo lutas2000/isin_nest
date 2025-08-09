@@ -1,0 +1,287 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import { CronJob } from 'cron';
+
+export interface ScheduledTask {
+  id: string;
+  name: string;
+  cronExpression: string;
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  headers?: Record<string, string>;
+  body?: any;
+  enabled: boolean;
+  lastRun?: Date;
+  nextRun?: Date;
+  description?: string;
+}
+
+@Injectable()
+export class SchedulerService {
+  private readonly logger = new Logger(SchedulerService.name);
+  private tasks: Map<string, ScheduledTask> = new Map();
+
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+    private readonly schedulerRegistry: SchedulerRegistry,
+  ) {
+    this.initializeDefaultTasks();
+  }
+
+  /**
+   * 初始化預設任務
+   */
+  private initializeDefaultTasks(): void {
+    // 範例：每天午夜 12:00 執行健康檢查
+    this.addTask({
+      id: 'health-check',
+      name: '系統健康檢查',
+      cronExpression: CronExpression.EVERY_DAY_AT_MIDNIGHT,
+      url: `http://localhost:${this.configService.get('PORT', 3000)}/health`,
+      method: 'GET',
+      enabled: true,
+      description: '每天午夜執行系統健康檢查',
+    });
+
+    // 範例：每小時執行資料同步
+    this.addTask({
+      id: 'data-sync',
+      name: '資料同步任務',
+      cronExpression: CronExpression.EVERY_HOUR,
+      url: `http://localhost:${this.configService.get('PORT', 3000)}/api/sync`,
+      method: 'POST',
+      enabled: false, // 預設停用，需要手動啟用
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: {
+        source: 'scheduler',
+        timestamp: new Date().toISOString(),
+      },
+      description: '每小時執行資料同步任務',
+    });
+  }
+
+  /**
+   * 新增定期任務
+   */
+  addTask(task: ScheduledTask): void {
+    this.tasks.set(task.id, task);
+
+    if (task.enabled) {
+      this.createCronJob(task);
+    }
+
+    this.logger.log(`任務已新增: ${task.name} (${task.id})`);
+  }
+
+  /**
+   * 建立 Cron 工作
+   */
+  private createCronJob(task: ScheduledTask): void {
+    const job = new CronJob(task.cronExpression, async () => {
+      await this.executeTask(task);
+    });
+
+    this.schedulerRegistry.addCronJob(task.id, job);
+    job.start();
+
+    // 計算下次執行時間
+    task.nextRun = job.nextDate().toJSDate();
+
+    this.logger.log(
+      `Cron 工作已建立: ${task.name} - 下次執行: ${task.nextRun?.toISOString() || 'N/A'}`,
+    );
+  }
+
+  /**
+   * 執行任務
+   */
+  private async executeTask(task: ScheduledTask): Promise<void> {
+    try {
+      this.logger.log(`開始執行任務: ${task.name}`);
+
+      const config: any = {
+        method: task.method,
+        url: task.url,
+        headers: task.headers || {},
+        ...(task.body && { data: task.body }),
+      };
+
+      const response = await firstValueFrom(this.httpService.request(config));
+
+      // 更新最後執行時間
+      task.lastRun = new Date();
+
+      // 計算下次執行時間
+      const job = this.schedulerRegistry.getCronJob(task.id);
+      if (job) {
+        task.nextRun = job.nextDate().toJSDate();
+      }
+
+      this.logger.log(
+        `任務執行成功: ${task.name} - 狀態碼: ${response.status.toString()}`,
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `任務執行失敗: ${task.name} - 錯誤: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * 啟用任務
+   */
+  enableTask(taskId: string): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      this.logger.warn(`找不到任務: ${taskId}`);
+      return false;
+    }
+
+    if (!task.enabled) {
+      task.enabled = true;
+      this.createCronJob(task);
+      this.logger.log(`任務已啟用: ${task.name}`);
+    }
+
+    return true;
+  }
+
+  /**
+   * 停用任務
+   */
+  disableTask(taskId: string): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      this.logger.warn(`找不到任務: ${taskId}`);
+      return false;
+    }
+
+    if (task.enabled) {
+      task.enabled = false;
+
+      try {
+        const job = this.schedulerRegistry.getCronJob(taskId);
+        job.stop();
+        this.schedulerRegistry.deleteCronJob(taskId);
+        this.logger.log(`任務已停用: ${task.name}`);
+      } catch (error: any) {
+        this.logger.warn(`停用任務時發生錯誤: ${taskId}`, error.message);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 刪除任務
+   */
+  removeTask(taskId: string): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      this.logger.warn(`找不到任務: ${taskId}`);
+      return false;
+    }
+
+    // 先停用任務
+    this.disableTask(taskId);
+
+    // 從任務列表中移除
+    this.tasks.delete(taskId);
+    this.logger.log(`任務已刪除: ${task.name}`);
+
+    return true;
+  }
+
+  /**
+   * 手動執行任務
+   */
+  async runTask(taskId: string): Promise<boolean> {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      this.logger.warn(`找不到任務: ${taskId}`);
+      return false;
+    }
+
+    try {
+      await this.executeTask(task);
+      return true;
+    } catch (error: any) {
+      this.logger.error(`手動執行任務失敗: ${taskId}`, error.stack);
+      return false;
+    }
+  }
+
+  /**
+   * 取得所有任務
+   */
+  getAllTasks(): ScheduledTask[] {
+    return Array.from(this.tasks.values());
+  }
+
+  /**
+   * 取得特定任務
+   */
+  getTask(taskId: string): ScheduledTask | undefined {
+    return this.tasks.get(taskId);
+  }
+
+  /**
+   * 更新任務
+   */
+  updateTask(taskId: string, updates: Partial<ScheduledTask>): boolean {
+    const task = this.tasks.get(taskId);
+    if (!task) {
+      this.logger.warn(`找不到任務: ${taskId}`);
+      return false;
+    }
+
+    // 如果任務正在運行，先停用
+    const wasEnabled = task.enabled;
+    if (wasEnabled) {
+      this.disableTask(taskId);
+    }
+
+    // 更新任務屬性
+    Object.assign(task, updates);
+
+    // 如果任務原本是啟用的，重新啟用
+    if (wasEnabled && task.enabled) {
+      this.enableTask(taskId);
+    }
+
+    this.logger.log(`任務已更新: ${task.name}`);
+    return true;
+  }
+
+  /**
+   * 預設的 Cron 任務範例 - 每分鐘執行一次（僅用於測試）
+   */
+  @Cron('0 */5 * * * *', {
+    name: 'heartbeat',
+    timeZone: 'Asia/Taipei',
+  })
+  handleHeartbeat(): void {
+    this.logger.debug('心跳檢查 - 系統運行中...');
+  }
+
+  /**
+   * 預設的 Cron 任務範例 - 每天凌晨 2:00 執行
+   */
+  @Cron('0 0 2 * * *', {
+    name: 'daily-cleanup',
+    timeZone: 'Asia/Taipei',
+  })
+  async handleDailyCleanup(): Promise<void> {
+    this.logger.log('開始執行每日清理任務...');
+    // 這裡可以加入您的清理邏輯
+    // 例如：清理暫存檔案、更新統計資料等
+    await Promise.resolve(); // 避免 require-await 錯誤
+  }
+}

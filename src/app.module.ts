@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HrModule } from './hr/hr.module';
 import { AuthModule } from './auth/auth.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AuthModule } from './auth/auth.module';
     // 業務模組
     HrModule,
     AuthModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
