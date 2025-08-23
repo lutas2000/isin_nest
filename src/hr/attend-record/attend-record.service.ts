@@ -2,11 +2,16 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendRecord } from './entities/attend-record.entity';
 import { Staff } from '../staff/entities/staff.entity';
+import {
+  AttendRecordCsvReader,
+  AttendRecordUsbReader,
+} from './attend-record-csv-reader';
 
 export interface CreateAttendRecordDto {
   staffId: string;
@@ -24,11 +29,15 @@ export interface UpdateAttendRecordDto {
 
 @Injectable()
 export class AttendRecordService {
+  private readonly logger = new Logger(AttendRecordService.name);
+
   constructor(
     @InjectRepository(AttendRecord)
     private readonly attendRecordRepository: Repository<AttendRecord>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    private readonly attendRecordCsvReader: AttendRecordCsvReader,
+    private readonly attendRecordUsbReader: AttendRecordUsbReader,
   ) {}
 
   /**
@@ -259,6 +268,73 @@ export class AttendRecordService {
           `今日已有 ${typeText} 打卡記錄，請勿重複打卡`,
         );
       }
+    }
+  }
+
+  /**
+   * 處理出勤記錄 CSV 檔案
+   * 對應原始 Python 中的 AttendRecordCsvReader.search_attend_logs
+   */
+  async processCsvFiles(): Promise<void> {
+    try {
+      this.logger.log('開始處理出勤記錄 CSV 檔案');
+      await this.attendRecordCsvReader.searchAttendLogs();
+      this.logger.log('完成處理出勤記錄 CSV 檔案');
+    } catch (error) {
+      this.logger.error('處理出勤記錄 CSV 檔案失敗', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 處理 USB 出勤記錄檔案
+   * 對應原始 Python 中的 AttendRecordUsbReader.read
+   */
+  async processUsbFile(): Promise<void> {
+    try {
+      this.logger.log('開始處理 USB 出勤記錄檔案');
+      await this.attendRecordUsbReader.read();
+      this.logger.log('完成處理 USB 出勤記錄檔案');
+    } catch (error) {
+      this.logger.error('處理 USB 出勤記錄檔案失敗', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 批次處理所有出勤記錄檔案
+   * 包含 CSV 檔案和 USB 檔案
+   */
+  async processAllAttendanceFiles(): Promise<void> {
+    try {
+      this.logger.log('開始批次處理所有出勤記錄檔案');
+
+      // 並行處理 CSV 和 USB 檔案
+      await Promise.all([this.processCsvFiles(), this.processUsbFile()]);
+
+      this.logger.log('完成批次處理所有出勤記錄檔案');
+    } catch (error) {
+      this.logger.error('批次處理出勤記錄檔案失敗', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 手動觸發處理出勤記錄檔案
+   * 可以用於排程或手動執行
+   */
+  async manualProcessFiles(fileType?: 'csv' | 'usb' | 'all'): Promise<void> {
+    switch (fileType) {
+      case 'csv':
+        await this.processCsvFiles();
+        break;
+      case 'usb':
+        await this.processUsbFile();
+        break;
+      case 'all':
+      default:
+        await this.processAllAttendanceFiles();
+        break;
     }
   }
 }

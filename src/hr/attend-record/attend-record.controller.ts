@@ -197,4 +197,42 @@ export class AttendRecordController {
     await this.attendRecordService.remove(id);
     return { message: '出勤記錄已成功刪除' };
   }
+
+  @Post('process-files')
+  @ApiOperation({ summary: '手動處理出勤記錄檔案' })
+  @ApiQuery({
+    name: 'fileType',
+    required: false,
+    enum: ['csv', 'usb', 'all'],
+    description: '檔案類型 (csv: CSV檔案, usb: USB檔案, all: 全部檔案)',
+    example: 'all',
+  })
+  @ApiResponse({ status: 200, description: '成功處理出勤記錄檔案' })
+  @ApiResponse({ status: 500, description: '處理檔案時發生錯誤' })
+  async processFiles(
+    @Query('fileType') fileType?: 'csv' | 'usb' | 'all',
+  ): Promise<{ message: string }> {
+    await this.attendRecordService.manualProcessFiles(fileType);
+    return {
+      message: `成功處理${fileType === 'csv' ? 'CSV' : fileType === 'usb' ? 'USB' : '所有'}出勤記錄檔案`,
+    };
+  }
+
+  @Post('process-csv')
+  @ApiOperation({ summary: '處理 CSV 出勤記錄檔案' })
+  @ApiResponse({ status: 200, description: '成功處理 CSV 檔案' })
+  @ApiResponse({ status: 500, description: '處理檔案時發生錯誤' })
+  async processCsvFiles(): Promise<{ message: string }> {
+    await this.attendRecordService.processCsvFiles();
+    return { message: '成功處理 CSV 出勤記錄檔案' };
+  }
+
+  @Post('process-usb')
+  @ApiOperation({ summary: '處理 USB 出勤記錄檔案' })
+  @ApiResponse({ status: 200, description: '成功處理 USB 檔案' })
+  @ApiResponse({ status: 500, description: '處理檔案時發生錯誤' })
+  async processUsbFiles(): Promise<{ message: string }> {
+    await this.attendRecordService.processUsbFile();
+    return { message: '成功處理 USB 出勤記錄檔案' };
+  }
 }
