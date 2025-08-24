@@ -145,9 +145,9 @@ export class WorkingHours {
       order: { createTime: 'ASC' } as any,
     });
 
-          this.logger.debug(
-        `查詢員工打卡記錄: ${staffName}, 時間範圍: ${String(defaultWorkTimeStart)} - ${String(defaultWorkTimeEnd)}, 記錄數: ${workRecords.length}`,
-      );
+    this.logger.debug(
+      `查詢員工打卡記錄: ${staffName}, 時間範圍: ${String(defaultWorkTimeStart)} - ${String(defaultWorkTimeEnd)}, 記錄數: ${workRecords.length}`,
+    );
 
     return workRecords;
   }
@@ -187,9 +187,9 @@ export class WorkingHours {
       order: { createTime: 'ASC' } as any,
     });
 
-          this.logger.debug(
-        `查詢員工特定類型打卡記錄: ${staffName}, 類型: ${attendType}, 時間範圍: ${String(defaultWorkTimeStart)} - ${String(defaultWorkTimeEnd)}, 記錄數: ${workRecords.length}`,
-      );
+    this.logger.debug(
+      `查詢員工特定類型打卡記錄: ${staffName}, 類型: ${attendType}, 時間範圍: ${String(defaultWorkTimeStart)} - ${String(defaultWorkTimeEnd)}, 記錄數: ${workRecords.length}`,
+    );
 
     return workRecords;
   }

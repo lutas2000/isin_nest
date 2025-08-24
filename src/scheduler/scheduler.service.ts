@@ -12,7 +12,7 @@ export interface ScheduledTask {
   url: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
   enabled: boolean;
   lastRun?: Date;
   nextRun?: Date;
@@ -105,11 +105,13 @@ export class SchedulerService {
     try {
       this.logger.log(`開始執行任務: ${task.name}`);
 
-      const config: any = {
+      const config = {
         method: task.method,
         url: task.url,
         headers: task.headers || {},
-        ...(task.body && { data: task.body }),
+        ...(task.body && typeof task.body === 'object'
+          ? { data: task.body }
+          : {}),
       };
 
       const response = await firstValueFrom(this.httpService.request(config));
@@ -126,10 +128,14 @@ export class SchedulerService {
       this.logger.log(
         `任務執行成功: ${task.name} - 狀態碼: ${response.status.toString()}`,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `任務執行失敗: ${task.name} - 錯誤: ${error.message}`,
-        error.stack,
+        `任務執行失敗: ${task.name} - 錯誤: ${errorMessage}`,
+        errorStack,
       );
     }
   }
@@ -171,8 +177,11 @@ export class SchedulerService {
         job.stop();
         this.schedulerRegistry.deleteCronJob(taskId);
         this.logger.log(`任務已停用: ${task.name}`);
-      } catch (error: any) {
-        this.logger.warn(`停用任務時發生錯誤: ${taskId}`, error.message);
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        this.logger.warn(`停用任務時發生錯誤: ${taskId}`, errorMessage);
       }
     }
 
@@ -212,8 +221,9 @@ export class SchedulerService {
     try {
       await this.executeTask(task);
       return true;
-    } catch (error: any) {
-      this.logger.error(`手動執行任務失敗: ${taskId}`, error.stack);
+    } catch (error: unknown) {
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`手動執行任務失敗: ${taskId}`, errorStack);
       return false;
     }
   }

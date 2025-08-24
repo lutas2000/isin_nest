@@ -32,9 +32,7 @@ export class SchedulePicker {
         .getOne();
 
       if (!this.segment) {
-        this.logger.warn(
-          `找不到員工 ${name} 在 ${String(date)} 的段別設定`,
-        );
+        this.logger.warn(`找不到員工 ${name} 在 ${String(date)} 的段別設定`);
       }
     } catch (error) {
       this.logger.error(`初始化排程選擇器失敗: ${name}, ${date}`, error);

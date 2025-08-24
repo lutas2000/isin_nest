@@ -216,9 +216,9 @@ export class WorkingHoursService {
     endDate: Date,
   ): Promise<void> {
     try {
-              this.logger.log(
-          `開始重新計算日期範圍工時: ${String(startDate).split('T')[0]} - ${String(endDate).split('T')[0]}`,
-        );
+      this.logger.log(
+        `開始重新計算日期範圍工時: ${String(startDate).split('T')[0]} - ${String(endDate).split('T')[0]}`,
+      );
 
       const currentDate = new Date(startDate);
 
@@ -227,9 +227,9 @@ export class WorkingHoursService {
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-              this.logger.log(
-          `完成重新計算日期範圍工時: ${String(startDate).split('T')[0]} - ${String(endDate).split('T')[0]}`,
-        );
+      this.logger.log(
+        `完成重新計算日期範圍工時: ${String(startDate).split('T')[0]} - ${String(endDate).split('T')[0]}`,
+      );
     } catch (error) {
       this.logger.error(
         `重新計算日期範圍工時失敗: ${startDate.toISOString()} - ${endDate.toISOString()}`,
