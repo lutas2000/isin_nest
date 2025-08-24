@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import Sales from '../views/Sales.vue'
 import Production from '../views/Production.vue'
 import HR from '../views/HR.vue'
 import HRStaff from '../views/HR/Staff.vue'
@@ -33,12 +32,6 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { title: '儀表板', icon: '🏠', requiresAuth: true }
-  },
-  {
-    path: '/sales',
-    name: 'Sales',
-    component: Sales,
-    meta: { title: '銷售管理', icon: '📊', requiresAuth: true }
   },
   {
     path: '/production',
