@@ -1,33 +1,14 @@
 <template>
   <div id="app" class="app">
-    <!-- 調試信息 -->
+    <!-- 未登入時或重設密碼頁面時顯示滿版 -->
     <div
-      style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        background: red;
-        color: white;
-        padding: 5px;
-        z-index: 9999;
-        font-size: 12px;
-        max-width: 400px;
-      "
+      v-if="!authStore.isLoggedIn || isResetPasswordPage"
+      class="full-page-container"
     >
-      <div>登入狀態: {{ authStore.isLoggedIn }}</div>
-      <div>用戶: {{ authStore.userName }}</div>
-      <div>路徑: {{ $route.path }}</div>
-      <div>Token: {{ authStore.token ? '有' : '無' }}</div>
-      <div>isAuthenticated: {{ authStore.isAuthenticated }}</div>
-      <div>用戶ID: {{ authStore.user?.id }}</div>
-    </div>
-
-    <!-- 未登入時顯示登入頁面（滿版） -->
-    <div v-if="!authStore.isLoggedIn" class="full-page-container">
       <router-view />
     </div>
 
-    <!-- 登入後顯示主應用 -->
+    <!-- 登入後且非重設密碼頁面時顯示主應用 -->
     <template v-else>
       <!-- 側邊欄 -->
       <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
@@ -150,14 +131,6 @@
               </div>
             </div>
           </div>
-          <button
-            v-if="!sidebarCollapsed"
-            @click="handleLogout"
-            class="logout-btn"
-            title="登出"
-          >
-            登出
-          </button>
         </div>
       </aside>
 
@@ -170,19 +143,33 @@
           </div>
           <div class="header-right">
             <div class="header-actions">
-              <button class="header-btn" title="通知">
-                <span class="header-icon">🔔</span>
-                <span class="notification-badge">3</span>
-              </button>
-              <button class="header-btn" title="快速操作">
-                <span class="header-icon">⚡</span>
-              </button>
               <div class="user-menu">
-                <button class="user-menu-btn" @click="handleLogout">
+                <button class="user-menu-btn" @click="toggleUserMenu">
                   <span class="user-avatar-sm">👤</span>
                   <span class="user-name-sm">{{ authStore.userName }}</span>
-                  <span class="dropdown-arrow">▼</span>
+                  <span
+                    class="dropdown-arrow"
+                    :class="{ rotated: showUserMenu }"
+                    >▼</span
+                  >
                 </button>
+
+                <!-- 用戶下拉選單 -->
+                <div
+                  v-show="showUserMenu"
+                  class="user-dropdown-menu"
+                  :class="{ show: showUserMenu }"
+                >
+                  <div class="dropdown-item" @click="handleResetPassword">
+                    <span class="dropdown-icon">🔑</span>
+                    <span>重設密碼</span>
+                  </div>
+                  <div class="dropdown-divider"></div>
+                  <div class="dropdown-item" @click="handleLogout">
+                    <span class="dropdown-icon">🚪</span>
+                    <span>登出</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -215,6 +202,7 @@ const authStore = useAuthStore();
 
 const sidebarCollapsed = ref(false);
 const showMobileOverlay = ref(false);
+const showUserMenu = ref(false); // 新增：控制用戶下拉選單的顯示
 
 // 頁面標題映射
 const pageTitles: Record<string, string> = {
@@ -236,6 +224,11 @@ const pageTitles: Record<string, string> = {
 
 const currentPageTitle = computed(() => {
   return pageTitles[route.path] || 'ISIN CNC 管理系統';
+});
+
+// 檢查是否為重設密碼頁面
+const isResetPasswordPage = computed(() => {
+  return route.path === '/reset-password';
 });
 
 const toggleSidebar = () => {
@@ -263,7 +256,27 @@ const handleResize = () => {
 // 登出功能
 const handleLogout = () => {
   authStore.logout();
+  showUserMenu.value = false; // 關閉下拉選單
   router.push('/login');
+};
+
+// 重設密碼功能
+const handleResetPassword = () => {
+  showUserMenu.value = false; // 關閉下拉選單
+  router.push('/reset-password');
+};
+
+// 切換用戶下拉選單顯示
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value;
+};
+
+// 點擊外部關閉下拉選單
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.user-menu')) {
+    showUserMenu.value = false;
+  }
 };
 
 // 組件掛載時初始化認證狀態
@@ -271,14 +284,20 @@ onMounted(() => {
   authStore.initializeAuth();
   handleResize();
   window.addEventListener('resize', handleResize);
+
+  // 添加點擊外部關閉下拉選單的監聽器
+  document.addEventListener('click', handleClickOutside);
 });
 
 // 監聽認證狀態變化，簡單重定向
 watch(
   () => authStore.isLoggedIn,
   (isLoggedIn) => {
-    if (isLoggedIn && route.path === '/login') {
-      // 如果已登入且在登入頁面，重定向到首頁
+    if (
+      isLoggedIn &&
+      (route.path === '/login' || route.path === '/reset-password')
+    ) {
+      // 如果已登入且在登入頁面或重設密碼頁面，重定向到首頁
       router.push('/');
     }
   },
@@ -289,6 +308,7 @@ import { onUnmounted } from 'vue';
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -461,25 +481,6 @@ onUnmounted(() => {
   color: var(--secondary-400);
 }
 
-.logout-btn {
-  width: 100%;
-  margin-top: 1rem;
-  background: var(--danger-600);
-  color: white;
-  border: none;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-}
-
-.logout-btn:hover {
-  background: var(--danger-700);
-  transform: translateY(-1px);
-}
-
 /* 主要內容區域 */
 .main-content {
   flex: 1;
@@ -552,6 +553,10 @@ onUnmounted(() => {
   text-align: center;
 }
 
+.user-menu {
+  position: relative;
+}
+
 .user-menu-btn {
   display: flex;
   align-items: center;
@@ -581,6 +586,65 @@ onUnmounted(() => {
 .dropdown-arrow {
   font-size: var(--font-size-xs);
   color: var(--secondary-500);
+  transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+/* 用戶下拉選單 */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%; /* 下拉選單在按鈕下方 */
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--secondary-200);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  z-index: 1001; /* 確保在其他元素上方 */
+  min-width: 200px;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  opacity: 0;
+  transition:
+    transform 0.2s ease-in-out,
+    opacity 0.2s ease-in-out;
+}
+
+.user-dropdown-menu.show {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--secondary-900);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: var(--secondary-100);
+  color: var(--primary-600);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: var(--secondary-200);
+  margin: 0.5rem 0;
+}
+
+.dropdown-icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
 }
 
 /* 頁面內容 */
@@ -651,6 +715,12 @@ onUnmounted(() => {
 
   .user-name-sm {
     display: none;
+  }
+
+  /* 移動端下拉選單調整 */
+  .user-dropdown-menu {
+    right: -1rem; /* 調整右側位置 */
+    min-width: 180px; /* 減少最小寬度 */
   }
 }
 

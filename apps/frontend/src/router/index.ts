@@ -14,6 +14,7 @@ import CRMQuotes from '../views/CRM/Quotes.vue'
 import Auth from '../views/Auth.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
+import ResetPassword from '../views/ResetPassword.vue'
 
 const routes = [
   {
@@ -21,6 +22,12 @@ const routes = [
     name: 'Login',
     component: Login,
     meta: { title: '登入', requiresAuth: false }
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: ResetPassword,
+    meta: { title: '重設密碼', requiresAuth: true }
   },
   {
     path: '/',
