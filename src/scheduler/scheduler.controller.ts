@@ -174,4 +174,13 @@ export class SchedulerController {
       周末早上10點: '0 0 10 * * 6,0',
     };
   }
+
+  @Post('calculate-man-hour')
+  @ApiOperation({ summary: '手動觸發工時計算任務' })
+  @ApiResponse({ status: 200, description: '工時計算任務開始執行' })
+  @ApiResponse({ status: 500, description: '工時計算任務執行失敗' })
+  async manualCalculateManHour(): Promise<{ message: string }> {
+    await this.schedulerService.manualCalculateManHour();
+    return { message: '工時計算任務已開始執行' };
+  }
 }

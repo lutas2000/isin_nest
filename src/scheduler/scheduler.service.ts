@@ -4,6 +4,8 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { CronJob } from 'cron';
+import { WorkingHoursService } from '../hr/working-hours/working-hours.service';
+import { AttendRecordCsvReader } from '../hr/attend-record/attend-record-csv-reader';
 
 export interface ScheduledTask {
   id: string;
@@ -28,6 +30,8 @@ export class SchedulerService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly workingHoursService: WorkingHoursService,
+    private readonly attendRecordCsvReader: AttendRecordCsvReader,
   ) {
     this.initializeDefaultTasks();
   }
@@ -293,5 +297,83 @@ export class SchedulerService {
     // 這裡可以加入您的清理邏輯
     // 例如：清理暫存檔案、更新統計資料等
     await Promise.resolve(); // 避免 require-await 錯誤
+  }
+
+  /**
+   * 工時計算任務 - 每30分鐘執行一次
+   * 對應原始 Python 中的 calculate_man_hour_morning 函數
+   */
+  @Cron('0 */30 * * * *', {
+    name: 'calculate-man-hour',
+    timeZone: 'Asia/Taipei',
+  })
+  async handleCalculateManHour(): Promise<void> {
+    try {
+      this.logger.log('開始執行工時計算任務...');
+
+      // 步驟1: 處理出勤記錄 CSV 檔案
+      this.logger.log('步驟1: 處理出勤記錄 CSV 檔案');
+      await this.attendRecordCsvReader.searchAttendLogs();
+      this.logger.log('出勤記錄處理完成');
+
+      // 步驟2: 決定打卡記錄類型
+      this.logger.log('步驟2: 決定打卡記錄類型');
+      const lastTime =
+        await this.workingHoursService['workingHours'][
+          'appointAttendRecordsType'
+        ]();
+      this.logger.log('打卡記錄類型決定完成');
+
+      if (!lastTime) {
+        this.logger.log('沒有需要處理的打卡記錄，任務結束');
+        return;
+      }
+
+      // 步驟3: 計算工時
+      this.logger.log('步驟3: 開始計算工時');
+      const now = new Date();
+      const endTime = new Date(now);
+      endTime.setHours(6, 0, 0, 0); // 設定為當天早上6點
+
+      const startTime = new Date(lastTime);
+      startTime.setHours(6, 0, 0, 0); // 設定為最後處理時間的早上6點
+
+      // 如果開始時間超過結束時間，調整為前一天
+      if (startTime > endTime) {
+        startTime.setDate(startTime.getDate() - 1);
+      }
+
+      // 逐日計算工時
+      while (startTime <= endTime) {
+        try {
+          await this.workingHoursService.calculateCompleteWorkingHours(
+            startTime,
+          );
+          this.logger.log(
+            `工時計算完成: ${startTime.toISOString().split('T')[0]}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `計算工時失敗: ${startTime.toISOString().split('T')[0]}`,
+            error,
+          );
+        }
+
+        // 移到下一天
+        startTime.setDate(startTime.getDate() + 1);
+      }
+
+      this.logger.log('工時計算任務完成');
+    } catch (error) {
+      this.logger.error('工時計算任務執行失敗', error);
+    }
+  }
+
+  /**
+   * 手動觸發工時計算任務
+   */
+  async manualCalculateManHour(): Promise<void> {
+    this.logger.log('手動觸發工時計算任務');
+    await this.handleCalculateManHour();
   }
 }
