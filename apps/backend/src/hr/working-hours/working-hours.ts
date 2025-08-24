@@ -134,16 +134,13 @@ export class WorkingHours {
     const defaultWorkTimeEnd = new Date(defaultWorkTimeStart);
     defaultWorkTimeEnd.setDate(defaultWorkTimeEnd.getDate() + 1);
 
-    const workRecords = await this.attendRecordRepository.find({
-      where: {
-        createTime: {
-          $gte: defaultWorkTimeStart,
-          $lt: defaultWorkTimeEnd,
-        } as any,
-        staffName: staffName,
-      } as any,
-      order: { createTime: 'ASC' } as any,
-    });
+    const workRecords = await this.attendRecordRepository
+      .createQueryBuilder('ar')
+      .where('ar.createTime >= :startTime', { startTime: defaultWorkTimeStart })
+      .andWhere('ar.createTime < :endTime', { endTime: defaultWorkTimeEnd })
+      .andWhere('ar.staffName = :staffName', { staffName })
+      .orderBy('ar.createTime', 'ASC')
+      .getMany();
 
     this.logger.debug(
       `查詢員工打卡記錄: ${staffName}, 時間範圍: ${String(defaultWorkTimeStart)} - ${String(defaultWorkTimeEnd)}, 記錄數: ${workRecords.length}`,
@@ -175,17 +172,14 @@ export class WorkingHours {
     const defaultWorkTimeEnd = new Date(defaultWorkTimeStart);
     defaultWorkTimeEnd.setDate(defaultWorkTimeEnd.getDate() + 1);
 
-    const workRecords = await this.attendRecordRepository.find({
-      where: {
-        createTime: {
-          $gte: defaultWorkTimeStart,
-          $lt: defaultWorkTimeEnd,
-        } as any,
-        staffName: staffName,
-        attendType: attendType,
-      } as any,
-      order: { createTime: 'ASC' } as any,
-    });
+    const workRecords = await this.attendRecordRepository
+      .createQueryBuilder('ar')
+      .where('ar.createTime >= :startTime', { startTime: defaultWorkTimeStart })
+      .andWhere('ar.createTime < :endTime', { endTime: defaultWorkTimeEnd })
+      .andWhere('ar.staffName = :staffName', { staffName })
+      .andWhere('ar.attendType = :attendType', { attendType })
+      .orderBy('ar.createTime', 'ASC')
+      .getMany();
 
     this.logger.debug(
       `查詢員工特定類型打卡記錄: ${staffName}, 類型: ${attendType}, 時間範圍: ${String(defaultWorkTimeStart)} - ${String(defaultWorkTimeEnd)}, 記錄數: ${workRecords.length}`,

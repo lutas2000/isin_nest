@@ -1,7 +1,12 @@
 <template>
   <div id="app" class="app">
-    <!-- 側邊欄 -->
-    <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+    <!-- 如果未登入，顯示登入頁面 -->
+    <router-view v-if="!authStore.isLoggedIn" />
+    
+    <!-- 如果已登入，顯示主應用 -->
+    <template v-else>
+      <!-- 側邊欄 -->
+      <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <div class="sidebar-header">
         <div class="logo">
           <div class="logo-icon">🏭</div>
@@ -99,10 +104,18 @@
         <div class="user-info">
           <div class="user-avatar">👤</div>
           <div v-if="!sidebarCollapsed" class="user-details">
-            <div class="user-name">管理員</div>
-            <div class="user-role">系統管理員</div>
+            <div class="user-name">{{ authStore.userName }}</div>
+            <div class="user-role">{{ authStore.userRole === 'admin' ? '系統管理員' : '一般用戶' }}</div>
           </div>
         </div>
+        <button 
+          v-if="!sidebarCollapsed" 
+          @click="handleLogout" 
+          class="logout-btn"
+          title="登出"
+        >
+          登出
+        </button>
       </div>
     </aside>
 
@@ -123,9 +136,9 @@
               <span class="header-icon">⚡</span>
             </button>
             <div class="user-menu">
-              <button class="user-menu-btn">
+              <button class="user-menu-btn" @click="handleLogout">
                 <span class="user-avatar-sm">👤</span>
-                <span class="user-name-sm">管理員</span>
+                <span class="user-name-sm">{{ authStore.userName }}</span>
                 <span class="dropdown-arrow">▼</span>
               </button>
             </div>
@@ -145,14 +158,19 @@
       class="mobile-overlay"
       @click="closeMobileSidebar"
     ></div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from './stores/auth';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+
 const sidebarCollapsed = ref(false);
 const showMobileOverlay = ref(false);
 
@@ -200,13 +218,21 @@ const handleResize = () => {
   }
 };
 
-// 組件掛載時添加事件監聽
-import { onMounted, onUnmounted } from 'vue';
+// 登出功能
+const handleLogout = () => {
+  authStore.logout();
+  router.push('/login');
+};
 
+// 組件掛載時初始化認證狀態
 onMounted(() => {
+  authStore.initializeAuth();
   handleResize();
   window.addEventListener('resize', handleResize);
 });
+
+// 組件卸載時移除事件監聽
+import { onUnmounted } from 'vue';
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
@@ -371,6 +397,25 @@ onUnmounted(() => {
 .user-role {
   font-size: var(--font-size-xs);
   color: var(--secondary-400);
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 1rem;
+  background: var(--danger-600);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.logout-btn:hover {
+  background: var(--danger-700);
+  transform: translateY(-1px);
 }
 
 /* 主要內容區域 */

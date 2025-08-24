@@ -247,15 +247,12 @@ export class ManHourManager {
     incompleteRecords: number;
   }> {
     try {
-      const manHours = await this.staffManhourRepository.find({
-        where: {
-          day: {
-            $gte: startDate,
-            $lte: endDate,
-          } as any,
-        } as any,
-        relations: ['staff'],
-      });
+      const manHours = await this.staffManhourRepository
+        .createQueryBuilder('mh')
+        .leftJoinAndSelect('mh.staff', 'staff')
+        .where('mh.day >= :startDate', { startDate })
+        .andWhere('mh.day <= :endDate', { endDate })
+        .getMany();
 
       const totalStaff = new Set(manHours.map((mh) => mh.staffId)).size;
       const totalWorkHours = manHours.reduce(

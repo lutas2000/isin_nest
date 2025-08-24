@@ -5,6 +5,19 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // 啟用 CORS
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',  // 前端默認端口
+      'http://localhost:3001',  // 前端開發端口
+      'http://localhost:5173',  // Vite 默認端口
+      'http://localhost:8080',  // 其他可能的端口
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  });
+
   // Swagger 配置
   const config = new DocumentBuilder()
     .setTitle('ISIN Nest API')

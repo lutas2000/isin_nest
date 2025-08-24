@@ -5,6 +5,7 @@
 - [x] 自動執行 (con)
 - [x] 實現 ui 框架
 - [x] Nx support
+- [ ] 強制登入
 - [ ] 轉換 python api
 - [ ] Cutting
 - [ ] Slack 通知功能

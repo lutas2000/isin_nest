@@ -13,91 +13,98 @@ import CRMOrders from '../views/CRM/Orders.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import Auth from '../views/Auth.vue'
 import Settings from '../views/Settings.vue'
+import Login from '../views/Login.vue'
 
 const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { title: '登入', requiresAuth: false }
+  },
   {
     path: '/',
     name: 'Home',
     component: Home,
-    meta: { title: '儀表板', icon: '🏠' }
+    meta: { title: '儀表板', icon: '🏠', requiresAuth: true }
   },
   {
     path: '/sales',
     name: 'Sales',
     component: Sales,
-    meta: { title: '銷售管理', icon: '📊' }
+    meta: { title: '銷售管理', icon: '📊', requiresAuth: true }
   },
   {
     path: '/production',
     name: 'Production',
     component: Production,
-    meta: { title: '生產管理', icon: '⚙️' }
+    meta: { title: '生產管理', icon: '⚙️', requiresAuth: true }
   },
   {
     path: '/inventory',
     name: 'Inventory',
     component: Inventory,
-    meta: { title: '庫存管理', icon: '📦' }
+    meta: { title: '庫存管理', icon: '📦', requiresAuth: true }
   },
   {
     path: '/hr',
     name: 'HR',
     component: HR,
-    meta: { title: '人力資源管理', icon: '👥' }
+    meta: { title: '人力資源管理', icon: '👥', requiresAuth: true }
   },
   {
     path: '/hr/staff',
     name: 'HRStaff',
     component: HRStaff,
-    meta: { title: '員工管理', icon: '👨‍💼' }
+    meta: { title: '員工管理', icon: '👨‍💼', requiresAuth: true }
   },
   {
     path: '/hr/attendance',
     name: 'HRAttendance',
     component: HRAttendance,
-    meta: { title: '出勤管理', icon: '📅' }
+    meta: { title: '出勤管理', icon: '📅', requiresAuth: true }
   },
   {
     path: '/hr/manhour',
     name: 'HRManhour',
     component: HRManhour,
-    meta: { title: '工時管理', icon: '⏰' }
+    meta: { title: '工時管理', icon: '⏰', requiresAuth: true }
   },
   {
     path: '/hr/leave',
     name: 'HRLeave',
     component: HRLeave,
-    meta: { title: '請假管理', icon: '🏖️' }
+    meta: { title: '請假管理', icon: '🏖️', requiresAuth: true }
   },
   {
     path: '/crm',
     name: 'CRM',
     component: CRM,
-    meta: { title: '客戶關係管理', icon: '🤝' }
+    meta: { title: '客戶關係管理', icon: '🤝', requiresAuth: true }
   },
   {
     path: '/crm/orders',
     name: 'CRMOrders',
     component: CRMOrders,
-    meta: { title: '訂單管理', icon: '📋' }
+    meta: { title: '訂單管理', icon: '📋', requiresAuth: true }
   },
   {
     path: '/crm/quotes',
     name: 'CRMQuotes',
     component: CRMQuotes,
-    meta: { title: '報價管理', icon: '💰' }
+    meta: { title: '報價管理', icon: '💰', requiresAuth: true }
   },
   {
     path: '/auth',
     name: 'Auth',
     component: Auth,
-    meta: { title: '認證管理', icon: '🔐' }
+    meta: { title: '認證管理', icon: '🔐', requiresAuth: true }
   },
   {
     path: '/settings',
     name: 'Settings',
     component: Settings,
-    meta: { title: '系統設定', icon: '⚙️' }
+    meta: { title: '系統設定', icon: '⚙️', requiresAuth: true }
   }
 ]
 
@@ -106,9 +113,50 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, from, next) => {
+  // 設置頁面標題
   document.title = to.meta.title ? `${to.meta.title} - ISIN CNC 管理系統` : 'ISIN CNC 管理系統'
-  next()
+  
+  // 檢查是否需要認證
+  if (to.meta.requiresAuth) {
+    // 從 localStorage 檢查是否有 token
+    const token = localStorage.getItem('auth_token')
+    const user = localStorage.getItem('auth_user')
+    
+    if (!token || !user) {
+      // 未登入，跳轉到登入頁面
+      next('/login')
+      return
+    }
+    
+    // 有 token，檢查是否有效（這裡可以調用後端 API 驗證）
+    try {
+      // 暫時簡單檢查，實際應該調用後端 API
+      const userData = JSON.parse(user)
+      if (!userData.id || !userData.username) {
+        throw new Error('Invalid user data')
+      }
+      next()
+    } catch (error) {
+      // 用戶數據無效，清除並跳轉到登入頁面
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      next('/login')
+      return
+    }
+  } else {
+    // 不需要認證的頁面（如登入頁面）
+    if (to.path === '/login') {
+      // 如果已經登入，跳轉到首頁
+      const token = localStorage.getItem('auth_token')
+      const user = localStorage.getItem('auth_user')
+      if (token && user) {
+        next('/')
+        return
+      }
+    }
+    next()
+  }
 })
 
 export default router
