@@ -95,20 +95,6 @@
                 </label>
               </div>
             </div>
-
-            <div class="form-group">
-              <label class="form-label">庫存警報</label>
-              <div class="checkbox-group">
-                <label class="checkbox-item">
-                  <input
-                    type="checkbox"
-                    v-model="notificationSettings.inventoryAlerts"
-                  />
-                  <span class="checkmark"></span>
-                  庫存不足時通知
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -230,7 +216,6 @@ const generalSettings = ref({
 const notificationSettings = ref({
   emailNotifications: true,
   systemNotifications: true,
-  inventoryAlerts: true,
 });
 
 // 安全設定

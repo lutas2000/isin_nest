@@ -15,7 +15,7 @@
         <div class="sidebar-header">
           <div class="logo">
             <div class="logo-icon">🏭</div>
-            <h2 v-if="!sidebarCollapsed" class="logo-text">ISIN CNC</h2>
+            <h2 v-if="!sidebarCollapsed" class="logo-text">奕新雷射</h2>
           </div>
           <button
             class="sidebar-toggle"
@@ -45,10 +45,6 @@
             >
               <div class="nav-icon">⚙️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">生產管理</span>
-            </router-link>
-            <router-link to="/inventory" class="nav-item" active-class="active">
-              <div class="nav-icon">📦</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">庫存管理</span>
             </router-link>
           </div>
 
@@ -209,7 +205,6 @@ const pageTitles: Record<string, string> = {
   '/': '儀表板',
   '/sales': '銷售管理',
   '/production': '生產管理',
-  '/inventory': '庫存管理',
   '/hr': '人力資源管理',
   '/hr/staff': '員工管理',
   '/hr/attendance': '出勤管理',

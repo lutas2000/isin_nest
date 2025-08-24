@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Sales from '../views/Sales.vue'
 import Production from '../views/Production.vue'
-import Inventory from '../views/Inventory.vue'
 import HR from '../views/HR.vue'
 import HRStaff from '../views/HR/Staff.vue'
 import HRAttendance from '../views/HR/Attendance.vue'
@@ -46,12 +45,6 @@ const routes = [
     name: 'Production',
     component: Production,
     meta: { title: '生產管理', icon: '⚙️', requiresAuth: true }
-  },
-  {
-    path: '/inventory',
-    name: 'Inventory',
-    component: Inventory,
-    meta: { title: '庫存管理', icon: '📦', requiresAuth: true }
   },
   {
     path: '/hr',
@@ -120,7 +113,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _, next) => {
   // 設置頁面標題
   document.title = to.meta.title ? `${to.meta.title} - ISIN CNC 管理系統` : 'ISIN CNC 管理系統'
   

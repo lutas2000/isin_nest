@@ -150,32 +150,6 @@
           </div>
         </div>
 
-        <!-- 庫存警報 -->
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h3>庫存警報</h3>
-            <button class="btn btn-sm btn-outline">管理庫存</button>
-          </div>
-          <div class="card-body">
-            <div class="inventory-alerts">
-              <div
-                class="alert-item alert-warning"
-                v-for="alert in inventoryAlerts"
-                :key="alert.id"
-              >
-                <div class="alert-icon">⚠️</div>
-                <div class="alert-content">
-                  <div class="alert-title">{{ alert.title }}</div>
-                  <div class="alert-detail">{{ alert.detail }}</div>
-                </div>
-                <div class="alert-action">
-                  <button class="btn btn-sm btn-warning">補貨</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- 員工出勤 -->
         <div class="dashboard-card">
           <div class="card-header">
@@ -213,37 +187,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 快速操作區 -->
-    <div class="quick-actions">
-      <h3>快速操作</h3>
-      <div class="action-grid">
-        <button class="action-btn" @click="quickAction('newOrder')">
-          <div class="action-icon">📋</div>
-          <div class="action-text">新增訂單</div>
-        </button>
-        <button class="action-btn" @click="quickAction('newQuote')">
-          <div class="action-icon">💰</div>
-          <div class="action-text">建立報價</div>
-        </button>
-        <button class="action-btn" @click="quickAction('addStaff')">
-          <div class="action-icon">👤</div>
-          <div class="action-text">新增員工</div>
-        </button>
-        <button class="action-btn" @click="quickAction('inventory')">
-          <div class="action-icon">📦</div>
-          <div class="action-text">庫存盤點</div>
-        </button>
-        <button class="action-btn" @click="quickAction('reports')">
-          <div class="action-icon">📊</div>
-          <div class="action-text">生成報表</div>
-        </button>
-        <button class="action-btn" @click="quickAction('maintenance')">
-          <div class="action-icon">🔧</div>
-          <div class="action-text">設備維護</div>
-        </button>
       </div>
     </div>
   </div>
@@ -300,13 +243,6 @@ const recentOrders = ref([
     status: 'completed',
     statusText: '已完成',
   },
-]);
-
-// 庫存警報
-const inventoryAlerts = ref([
-  { id: 1, title: '鋁合金板材', detail: '庫存不足，剩餘 50 片' },
-  { id: 2, title: '不鏽鋼棒材', detail: '庫存不足，剩餘 20 根' },
-  { id: 3, title: '切削刀具', detail: '庫存不足，剩餘 5 組' },
 ]);
 
 // 出勤統計
@@ -628,13 +564,6 @@ onMounted(() => {
 .order-customer {
   font-size: var(--font-size-sm);
   color: var(--secondary-600);
-}
-
-/* 庫存警報 */
-.inventory-alerts {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
 .alert-item {
