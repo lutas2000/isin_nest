@@ -106,7 +106,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - ISIN CNC 管理系統` : 'ISIN CNC 管理系統'
   next()
 })
