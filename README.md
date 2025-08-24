@@ -17,34 +17,69 @@
 <a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
   <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
     <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/badge/Follow%20us-Twitter-1DA1F2.svg" alt="Follow us on Twitter"></a>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 # ISIN 管理系統
 
-一個整合 NestJS 後端與 Vue.js 前端的現代化企業管理平台。
+一個整合 NestJS 後端與 Vue.js 前端的現代化企業管理平台，使用 **Nx Monorepo** 架構進行管理。
 
 ## 🏗️ 專案架構
 
-### 後端 (NestJS)
-- **框架**: NestJS 11 + TypeScript
+### 技術棧
+
+- **Monorepo 管理**: Nx 21.4.1
+- **後端框架**: NestJS 11 + TypeScript
+- **前端框架**: Vue.js 3 + TypeScript
 - **資料庫**: MySQL + TypeORM
 - **認證**: JWT + Passport
 - **API 文件**: Swagger/OpenAPI
 - **排程**: @nestjs/schedule
 
-### 前端 (Vue.js)
-- **框架**: Vue.js 3 + TypeScript
-- **建置工具**: Vite
-- **路由**: Vue Router 4
-- **狀態管理**: Pinia
-- **樣式**: CSS3 + 響應式設計
+### 應用結構
+
+- **backend**: NestJS 後端 API 服務
+- **frontend**: Vue.js 前端應用
+
+## 📁 專案結構
+
+```
+isin_nest/
+├── apps/                    # 應用目錄
+│   ├── backend/            # NestJS 後端應用
+│   │   ├── src/           # 後端源碼
+│   │   │   ├── auth/      # 認證模組
+│   │   │   ├── hr/        # 人力資源模組
+│   │   │   │   ├── staff/         # 員工管理
+│   │   │   │   ├── attend-record/ # 出勤記錄
+│   │   │   │   ├── staff-leave/   # 請假管理
+│   │   │   │   ├── staff-manhour/ # 工時管理
+│   │   │   │   ├── staff-segment/ # 部門管理
+│   │   │   │   └── working-hours/ # 工時統計
+│   │   │   ├── scheduler/ # 排程任務
+│   │   │   └── app.module.ts
+│   │   ├── test/          # 後端測試
+│   │   ├── project.json   # Nx 專案配置
+│   │   └── webpack.config.js
+│   └── frontend/          # Vue.js 前端應用
+│       ├── src/
+│       │   ├── views/     # 頁面組件
+│       │   ├── router/    # 路由配置
+│       │   └── App.vue    # 主要組件
+│       ├── index.html     # HTML 模板
+│       ├── project.json   # Nx 專案配置
+│       └── webpack.config.js
+├── nx.json                 # Nx 工作區配置
+├── package.json            # 根依賴管理
+├── jest.preset.js          # Jest 測試配置
+├── .eslintrc.json          # ESLint 配置
+└── dev-scripts.js          # 開發腳本
+```
 
 ## 🚀 快速開始
 
 ### 前置需求
+
 - Node.js >= 18
 - MySQL 8.0+
 - npm 或 yarn
@@ -52,11 +87,11 @@
 ### 1. 安裝依賴
 
 ```bash
-# 安裝後端依賴
+# 安裝所有依賴（包括 Nx 相關）
 npm install
 
-# 安裝前端依賴
-cd frontend && npm install
+# 安裝 Nx CLI (可選)
+npm install -g nx
 ```
 
 ### 2. 環境配置
@@ -76,104 +111,171 @@ JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=24h
 
 # 應用配置
-PORT=3001
+PORT=3000
 ```
 
 ### 3. 啟動應用
 
 #### 開發模式（同時運行前後端）
+
 ```bash
 npm run dev:full
 ```
 
 #### 分別啟動
+
 ```bash
 # 後端開發模式
 npm run start:dev
+# 或
+npx nx serve backend
 
 # 前端開發模式
 npm run frontend:dev
+# 或
+npx nx serve frontend
 ```
 
 #### 生產模式
+
 ```bash
-# 建置後端
+# 建置所有專案
 npm run build
 
-# 建置前端
-npm run frontend:build
+# 建置特定專案
+npm run build:backend
+npm run build:frontend
 
 # 啟動後端
 npm run start:prod
 ```
 
-## 📁 專案結構
-
-```
-isin_nest/
-├── src/                    # 後端 NestJS 原始碼
-│   ├── auth/              # 認證模組
-│   ├── hr/                # 人力資源模組
-│   │   ├── staff/         # 員工管理
-│   │   ├── attend-record/ # 出勤記錄
-│   │   ├── staff-leave/   # 請假管理
-│   │   ├── staff-manhour/ # 工時管理
-│   │   ├── staff-segment/ # 部門管理
-│   │   └── working-hours/ # 工時統計
-│   ├── scheduler/         # 排程任務
-│   └── app.module.ts      # 主要模組
-├── frontend/              # 前端 Vue.js 應用
-│   ├── src/
-│   │   ├── views/         # 頁面組件
-│   │   ├── router/        # 路由配置
-│   │   └── App.vue        # 主要組件
-│   ├── index.html         # HTML 模板
-│   └── vite.config.ts     # Vite 配置
-├── test/                  # 測試檔案
-└── package.json           # 專案配置
-```
-
 ## 🔧 開發指南
 
-### 後端開發
+### 構建專案
 
 ```bash
-# 程式碼格式化
-npm run format
+# 構建所有專案
+npm run build
 
-# 程式碼檢查
-npm run lint
+# 構建特定專案
+npm run build:backend
+npm run build:frontend
 
-# 執行測試
+# 使用 Nx 命令
+npx nx build backend
+npx nx build frontend
+```
+
+### 測試
+
+```bash
+# 測試所有專案
 npm run test
 
-# 執行 E2E 測試
+# 測試特定專案
+npm run test:backend
+npm run test:frontend
+
+# 使用 Nx 命令
+npx nx test backend
+npx nx test frontend
+
+# 測試覆蓋率
+npm run test:cov
+
+# E2E 測試
 npm run test:e2e
 ```
 
-### 前端開發
+### 程式碼品質
 
 ```bash
-cd frontend
+# 檢查所有專案
+npm run lint
 
-# 開發模式
-npm run dev
+# 檢查特定專案
+npm run lint:backend
+npm run lint:frontend
 
-# 建置
-npm run build
+# 格式化程式碼
+npm run format
+```
 
-# 類型檢查
-npm run type-check
+### Nx 專用命令
+
+```bash
+# 顯示專案圖
+npx nx graph
+
+# 顯示受影響的專案
+npx nx affected:graph
+
+# 顯示專案資訊
+npx nx show project backend
+npx nx show project frontend
+```
+
+## ⚙️ 專案配置
+
+### Backend 配置
+
+- **構建工具**: Webpack (Node.js 目標)
+- **測試框架**: Jest
+- **TypeScript**: 嚴格模式已關閉以相容現有程式碼
+- **開發服務**: 使用 NestJS CLI watch 模式
+
+### Frontend 配置
+
+- **構建工具**: Webpack (Vue.js 支援)
+- **測試框架**: Vite Test
+- **TypeScript**: 支援 Vue 單檔案組件
+- **開發服務**: 使用 Vite 開發服務器
+
+## 🚀 開發工作流程
+
+### 1. 新增功能
+
+```bash
+# 在後端新增模組
+npx nx generate @nx/js:library --name=my-module --directory=apps/backend/src
+
+# 在前端新增組件
+npx nx generate @nx/vue:component --name=MyComponent --project=frontend
+```
+
+### 2. 執行影響分析
+
+```bash
+# 查看受影響的專案
+npx nx affected:graph
+
+# 只構建受影響的專案
+npx nx affected:build
+```
+
+### 3. 快取管理
+
+Nx 會自動快取構建結果，提升開發效率：
+
+```bash
+# 清除快取
+npx nx reset
+
+# 查看快取狀態
+npx nx show project backend --verbose
 ```
 
 ## 🌐 API 端點
 
 ### 認證
+
 - `POST /auth/login` - 用戶登入
 - `POST /auth/register` - 用戶註冊
 - `POST /auth/refresh` - 重新整理 Token
 
 ### 人力資源
+
 - `GET /hr/staff` - 取得員工列表
 - `POST /hr/staff` - 新增員工
 - `GET /hr/attendance` - 取得出勤記錄
@@ -192,6 +294,7 @@ npm run type-check
 ## 📊 資料庫設計
 
 ### 主要實體
+
 - **User**: 用戶帳號資訊
 - **Staff**: 員工基本資料
 - **AttendRecord**: 出勤記錄
@@ -201,6 +304,22 @@ npm run type-check
 
 ## 🚀 部署
 
+### 生產構建
+
+```bash
+# 構建所有專案用於生產
+npm run build
+
+# 構建特定專案
+npm run build:backend
+npm run build:frontend
+```
+
+構建輸出位於：
+
+- 後端: `dist/apps/backend/`
+- 前端: `dist/apps/frontend/`
+
 ### Docker 部署
 
 ```bash
@@ -208,14 +327,14 @@ npm run type-check
 docker build -t isin-nest .
 
 # 運行容器
-docker run -p 3001:3001 isin-nest
+docker run -p 3000:3000 isin-nest
 ```
 
 ### 傳統部署
 
-1. 建置後端：`npm run build`
-2. 建置前端：`npm run frontend:build`
-3. 部署 `dist/` 和 `frontend/dist/` 目錄
+1. 建置後端：`npm run build:backend`
+2. 建置前端：`npm run build:frontend`
+3. 部署 `dist/apps/backend/` 和 `dist/apps/frontend/` 目錄
 4. 配置反向代理（Nginx/Apache）
 
 ## 🧪 測試
@@ -231,25 +350,43 @@ npm run test:cov
 npm run test:e2e
 ```
 
-## 📝 貢獻指南
+## 🔧 故障排除
 
-1. Fork 專案
-2. 創建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 發起 Pull Request
+### 常見問題
 
-## 📄 授權
+1. **TypeScript 編譯錯誤**
 
-本專案採用 ISC 授權條款。
+   - 檢查 `tsconfig.json` 配置
+   - 確保所有依賴已安裝
 
-## 🤝 支援
+2. **Webpack 構建失敗**
 
-如有問題或建議，請：
-1. 查看 [Issues](../../issues)
-2. 創建新的 Issue
-3. 聯繫開發團隊
+   - 檢查 loader 配置
+   - 確保所有必要的 loader 已安裝
 
----
+3. **Nx 命令無法執行**
 
-**ISIN 管理系統** - 讓企業管理更簡單、更高效！
+   - 確保 Nx 已正確安裝
+   - 檢查 `nx.json` 配置
+
+4. **資料庫連接錯誤**
+   - 確保 MySQL 服務正在運行
+   - 檢查 `.env` 檔案中的資料庫配置
+   - TypeORM 會自動重試連接，這是正常行為
+
+### 重置專案
+
+```bash
+# 清除所有構建輸出和快取
+npx nx reset
+rm -rf dist/
+npm install
+```
+
+
+## 📚 更多資訊
+
+- [Nx 官方文檔](https://nx.dev/)
+- [NestJS 文檔](https://nestjs.com/)
+- [Vue.js 文檔](https://vuejs.org/)
+- [Webpack 文檔](https://webpack.js.org/)
