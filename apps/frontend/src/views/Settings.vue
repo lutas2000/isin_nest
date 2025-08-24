@@ -236,7 +236,7 @@ const notificationSettings = ref({
 // 安全設定
 const securitySettings = ref({
   minPasswordLength: 8,
-  maxLoginAttempts: 5,
+  maxLoginAttempts: 10,
   sessionTimeout: 120,
 });
 

@@ -1,163 +1,205 @@
 <template>
   <div id="app" class="app">
-    <!-- 如果未登入，顯示登入頁面 -->
-    <router-view v-if="!authStore.isLoggedIn" />
-    
-    <!-- 如果已登入，顯示主應用 -->
+    <!-- 調試信息 -->
+    <div
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: red;
+        color: white;
+        padding: 5px;
+        z-index: 9999;
+        font-size: 12px;
+        max-width: 400px;
+      "
+    >
+      <div>登入狀態: {{ authStore.isLoggedIn }}</div>
+      <div>用戶: {{ authStore.userName }}</div>
+      <div>路徑: {{ $route.path }}</div>
+      <div>Token: {{ authStore.token ? '有' : '無' }}</div>
+      <div>isAuthenticated: {{ authStore.isAuthenticated }}</div>
+      <div>用戶ID: {{ authStore.user?.id }}</div>
+    </div>
+
+    <!-- 未登入時顯示登入頁面（滿版） -->
+    <div v-if="!authStore.isLoggedIn" class="full-page-container">
+      <router-view />
+    </div>
+
+    <!-- 登入後顯示主應用 -->
     <template v-else>
       <!-- 側邊欄 -->
       <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-      <div class="sidebar-header">
-        <div class="logo">
-          <div class="logo-icon">🏭</div>
-          <h2 v-if="!sidebarCollapsed" class="logo-text">ISIN CNC</h2>
-        </div>
-        <button
-          class="sidebar-toggle"
-          @click="toggleSidebar"
-          :title="sidebarCollapsed ? '展開側邊欄' : '收起側邊欄'"
-        >
-          <span v-if="!sidebarCollapsed">◀</span>
-          <span v-else>▶</span>
-        </button>
-      </div>
-
-      <nav class="sidebar-nav">
-        <div class="nav-section">
-          <h3 v-if="!sidebarCollapsed" class="nav-section-title">主要功能</h3>
-          <router-link to="/" class="nav-item" active-class="active">
-            <div class="nav-icon">🏠</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">儀表板</span>
-          </router-link>
-          <router-link to="/sales" class="nav-item" active-class="active">
-            <div class="nav-icon">📊</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">銷售管理</span>
-          </router-link>
-          <router-link to="/production" class="nav-item" active-class="active">
-            <div class="nav-icon">⚙️</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">生產管理</span>
-          </router-link>
-          <router-link to="/inventory" class="nav-item" active-class="active">
-            <div class="nav-icon">📦</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">庫存管理</span>
-          </router-link>
-        </div>
-
-        <div class="nav-section">
-          <h3 v-if="!sidebarCollapsed" class="nav-section-title">人力資源</h3>
-          <router-link to="/hr" class="nav-item" active-class="active">
-            <div class="nav-icon">👥</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">HR 總覽</span>
-          </router-link>
-          <router-link to="/hr/staff" class="nav-item" active-class="active">
-            <div class="nav-icon">👨‍💼</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">員工管理</span>
-          </router-link>
-          <router-link
-            to="/hr/attendance"
-            class="nav-item"
-            active-class="active"
-          >
-            <div class="nav-icon">📅</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">出勤管理</span>
-          </router-link>
-          <router-link to="/hr/manhour" class="nav-item" active-class="active">
-            <div class="nav-icon">⏰</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">工時管理</span>
-          </router-link>
-          <router-link to="/hr/leave" class="nav-item" active-class="active">
-            <div class="nav-icon">🏖️</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">請假管理</span>
-          </router-link>
-        </div>
-
-        <div class="nav-section">
-          <h3 v-if="!sidebarCollapsed" class="nav-section-title">客戶關係</h3>
-          <router-link to="/crm" class="nav-item" active-class="active">
-            <div class="nav-icon">🤝</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">客戶管理</span>
-          </router-link>
-          <router-link to="/crm/orders" class="nav-item" active-class="active">
-            <div class="nav-icon">📋</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">訂單管理</span>
-          </router-link>
-          <router-link to="/crm/quotes" class="nav-item" active-class="active">
-            <div class="nav-icon">💰</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">報價管理</span>
-          </router-link>
-        </div>
-
-        <div class="nav-section">
-          <h3 v-if="!sidebarCollapsed" class="nav-section-title">系統管理</h3>
-          <router-link to="/auth" class="nav-item" active-class="active">
-            <div class="nav-icon">🔐</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">認證管理</span>
-          </router-link>
-          <router-link to="/settings" class="nav-item" active-class="active">
-            <div class="nav-icon">⚙️</div>
-            <span v-if="!sidebarCollapsed" class="nav-text">系統設定</span>
-          </router-link>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="user-info">
-          <div class="user-avatar">👤</div>
-          <div v-if="!sidebarCollapsed" class="user-details">
-            <div class="user-name">{{ authStore.userName }}</div>
-            <div class="user-role">{{ authStore.userRole === 'admin' ? '系統管理員' : '一般用戶' }}</div>
+        <div class="sidebar-header">
+          <div class="logo">
+            <div class="logo-icon">🏭</div>
+            <h2 v-if="!sidebarCollapsed" class="logo-text">ISIN CNC</h2>
           </div>
+          <button
+            class="sidebar-toggle"
+            @click="toggleSidebar"
+            :title="sidebarCollapsed ? '展開側邊欄' : '收起側邊欄'"
+          >
+            <span v-if="!sidebarCollapsed">◀</span>
+            <span v-else>▶</span>
+          </button>
         </div>
-        <button 
-          v-if="!sidebarCollapsed" 
-          @click="handleLogout" 
-          class="logout-btn"
-          title="登出"
-        >
-          登出
-        </button>
-      </div>
-    </aside>
 
-    <!-- 主要內容區域 -->
-    <main class="main-content" :class="{ 'main-expanded': sidebarCollapsed }">
-      <!-- 頂部導航欄 -->
-      <header class="top-header">
-        <div class="header-left">
-          <h1 class="page-title">{{ currentPageTitle }}</h1>
-        </div>
-        <div class="header-right">
-          <div class="header-actions">
-            <button class="header-btn" title="通知">
-              <span class="header-icon">🔔</span>
-              <span class="notification-badge">3</span>
-            </button>
-            <button class="header-btn" title="快速操作">
-              <span class="header-icon">⚡</span>
-            </button>
-            <div class="user-menu">
-              <button class="user-menu-btn" @click="handleLogout">
-                <span class="user-avatar-sm">👤</span>
-                <span class="user-name-sm">{{ authStore.userName }}</span>
-                <span class="dropdown-arrow">▼</span>
-              </button>
+        <nav class="sidebar-nav">
+          <div class="nav-section">
+            <h3 v-if="!sidebarCollapsed" class="nav-section-title">主要功能</h3>
+            <router-link to="/" class="nav-item" active-class="active">
+              <div class="nav-icon">🏠</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">儀表板</span>
+            </router-link>
+            <router-link to="/sales" class="nav-item" active-class="active">
+              <div class="nav-icon">📊</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">銷售管理</span>
+            </router-link>
+            <router-link
+              to="/production"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">⚙️</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">生產管理</span>
+            </router-link>
+            <router-link to="/inventory" class="nav-item" active-class="active">
+              <div class="nav-icon">📦</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">庫存管理</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <h3 v-if="!sidebarCollapsed" class="nav-section-title">人力資源</h3>
+            <router-link to="/hr" class="nav-item" active-class="active">
+              <div class="nav-icon">👥</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">HR 總覽</span>
+            </router-link>
+            <router-link to="/hr/staff" class="nav-item" active-class="active">
+              <div class="nav-icon">👨‍💼</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">員工管理</span>
+            </router-link>
+            <router-link
+              to="/hr/attendance"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">📅</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">出勤管理</span>
+            </router-link>
+            <router-link
+              to="/hr/manhour"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">⏰</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">工時管理</span>
+            </router-link>
+            <router-link to="/hr/leave" class="nav-item" active-class="active">
+              <div class="nav-icon">🏖️</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">請假管理</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <h3 v-if="!sidebarCollapsed" class="nav-section-title">客戶關係</h3>
+            <router-link to="/crm" class="nav-item" active-class="active">
+              <div class="nav-icon">🤝</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">客戶管理</span>
+            </router-link>
+            <router-link
+              to="/crm/orders"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">📋</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">訂單管理</span>
+            </router-link>
+            <router-link
+              to="/crm/quotes"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">💰</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">報價管理</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <h3 v-if="!sidebarCollapsed" class="nav-section-title">系統管理</h3>
+            <router-link to="/auth" class="nav-item" active-class="active">
+              <div class="nav-icon">🔐</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">認證管理</span>
+            </router-link>
+            <router-link to="/settings" class="nav-item" active-class="active">
+              <div class="nav-icon">⚙️</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">系統設定</span>
+            </router-link>
+          </div>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="user-avatar">👤</div>
+            <div v-if="!sidebarCollapsed" class="user-details">
+              <div class="user-name">{{ authStore.userName }}</div>
+              <div class="user-role">
+                {{ authStore.userRole === 'admin' ? '系統管理員' : '一般用戶' }}
+              </div>
             </div>
           </div>
+          <button
+            v-if="!sidebarCollapsed"
+            @click="handleLogout"
+            class="logout-btn"
+            title="登出"
+          >
+            登出
+          </button>
         </div>
-      </header>
+      </aside>
 
-      <!-- 頁面內容 -->
-      <div class="page-content">
-        <router-view />
-      </div>
-    </main>
+      <!-- 主要內容區域 -->
+      <main class="main-content" :class="{ 'main-expanded': sidebarCollapsed }">
+        <!-- 頂部導航欄 -->
+        <header class="top-header">
+          <div class="header-left">
+            <h1 class="page-title">{{ currentPageTitle }}</h1>
+          </div>
+          <div class="header-right">
+            <div class="header-actions">
+              <button class="header-btn" title="通知">
+                <span class="header-icon">🔔</span>
+                <span class="notification-badge">3</span>
+              </button>
+              <button class="header-btn" title="快速操作">
+                <span class="header-icon">⚡</span>
+              </button>
+              <div class="user-menu">
+                <button class="user-menu-btn" @click="handleLogout">
+                  <span class="user-avatar-sm">👤</span>
+                  <span class="user-name-sm">{{ authStore.userName }}</span>
+                  <span class="dropdown-arrow">▼</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
 
-    <!-- 移動端遮罩 -->
-    <div
-      v-if="showMobileOverlay"
-      class="mobile-overlay"
-      @click="closeMobileSidebar"
-    ></div>
+        <!-- 頁面內容 -->
+        <div class="page-content">
+          <router-view />
+        </div>
+      </main>
+
+      <!-- 移動端遮罩 -->
+      <div
+        v-if="showMobileOverlay"
+        class="mobile-overlay"
+        @click="closeMobileSidebar"
+      ></div>
     </template>
   </div>
 </template>
@@ -231,6 +273,17 @@ onMounted(() => {
   window.addEventListener('resize', handleResize);
 });
 
+// 監聽認證狀態變化，簡單重定向
+watch(
+  () => authStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn && route.path === '/login') {
+      // 如果已登入且在登入頁面，重定向到首頁
+      router.push('/');
+    }
+  },
+);
+
 // 組件卸載時移除事件監聽
 import { onUnmounted } from 'vue';
 
@@ -244,6 +297,15 @@ onUnmounted(() => {
   display: flex;
   min-height: 100vh;
   background-color: var(--secondary-50);
+}
+
+.full-page-container {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
 }
 
 /* 側邊欄樣式 */

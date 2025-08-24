@@ -69,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
       // 獲取用戶信息（這裡需要調用另一個 API 或從 JWT 解析）
       // 暫時使用 username 作為基本信息
       const userInfo: User = {
-        id: 0, // 暫時設為 0，實際應該從 JWT 或用戶 API 獲取
+        id: 1, // 暫時設為 1，實際應該從 JWT 或用戶 API 獲取
         userName: username,
         isAdmin: false, // 暫時設為 false，實際應該從 JWT 或用戶 API 獲取
         features: [],

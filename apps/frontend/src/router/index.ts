@@ -129,15 +129,14 @@ router.beforeEach(async (to, from, next) => {
       return
     }
     
-    // 有 token，檢查是否有效（這裡可以調用後端 API 驗證）
-    try {
-      // 暫時簡單檢查，實際應該調用後端 API
-      const userData = JSON.parse(user)
-      if (!userData.id || !userData.username) {
-        throw new Error('Invalid user data')
-      }
-      next()
-    } catch (error) {
+          // 有 token，檢查是否有效
+      try {
+        const userData = JSON.parse(user)
+        if (!userData.userName) {
+          throw new Error('Invalid user data')
+        }
+        next()
+      } catch (error) {
       // 用戶數據無效，清除並跳轉到登入頁面
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
