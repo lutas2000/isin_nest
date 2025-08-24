@@ -22,20 +22,14 @@
       }
     },
     "serve": {
-      "executor": "@nx/webpack:dev-server",
+      "executor": "nx:run-commands",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "frontend:build",
-        "port": 3001,
-        "host": "localhost"
+        "command": "cd apps/frontend && npx vite --port 3001"
       },
       "configurations": {
-        "development": {
-          "buildTarget": "frontend:build:development"
-        },
-        "production": {
-          "buildTarget": "frontend:build:production"
-        }
+        "development": {},
+        "production": {}
       }
     },
     "preview": {

@@ -36,5 +36,12 @@ module.exports = composePlugins(withNx(), (config) => {
 
   config.resolve.extensions = ['.ts', '.js', '.vue', '.json'];
 
+  // Dev server 配置
+  if (config.devServer) {
+    config.devServer.historyApiFallback = true;
+    config.devServer.hot = true;
+    config.devServer.open = false;
+  }
+
   return config;
 });
