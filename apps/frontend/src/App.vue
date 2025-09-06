@@ -70,6 +70,10 @@
               <div class="nav-icon">🏖️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">請假管理</span>
             </router-link>
+            <router-link to="/hr/staff-segment" class="nav-item" active-class="active">
+              <div class="nav-icon">⏰</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">員工段別管理</span>
+            </router-link>
           </div>
 
           <div class="nav-section">
@@ -200,6 +204,7 @@ const pageTitles: Record<string, string> = {
   '/hr/attendance': '出勤管理',
   '/hr/manhour': '工時管理',
   '/hr/leave': '請假管理',
+  '/hr/staff-segment': '員工段別管理',
   '/crm': '客戶關係管理',
   '/crm/orders': '訂單管理',
   '/crm/quotes': '報價管理',

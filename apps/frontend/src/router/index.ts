@@ -5,6 +5,7 @@ import HRStaff from '../views/HR/Staff.vue'
 import HRAttendance from '../views/HR/Attendance.vue'
 import HRManhour from '../views/HR/Manhour.vue'
 import HRLeave from '../views/HR/Leave.vue'
+import HRStaffSegment from '../views/HR/StaffSegment.vue'
 import CRM from '../views/CRM.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
@@ -61,6 +62,12 @@ const routes = [
     name: 'HRLeave',
     component: HRLeave,
     meta: { title: '請假管理', icon: '🏖️', requiresAuth: true }
+  },
+  {
+    path: '/hr/staff-segment',
+    name: 'HRStaffSegment',
+    component: HRStaffSegment,
+    meta: { title: '員工段別管理', icon: '⏰', requiresAuth: true }
   },
   {
     path: '/crm',
