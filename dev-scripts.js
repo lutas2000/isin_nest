@@ -4,7 +4,7 @@ const path = require('path');
 console.log('🚀 啟動 ISIN Nest 開發環境...\n');
 
 // 啟動後端服務
-const backend = spawn('npx', ['nest', 'start', '--watch'], {
+const backend = spawn('npx', ['nest', 'start', '--watch', '--preserveWatchOutput'], {
   cwd: path.join(__dirname, 'apps/backend'),
   stdio: 'inherit',
   shell: true

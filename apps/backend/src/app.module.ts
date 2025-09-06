@@ -26,7 +26,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
-        synchronize: true,
+        synchronize: process.env.NODE_ENV === 'development', // 只在開發環境啟用同步
         charset: 'utf8mb4',
         extra: {
           charset: 'utf8mb4',
@@ -34,6 +34,9 @@ import { SchedulerModule } from './scheduler/scheduler.module';
           connectionLimit: 10,
           acquireTimeout: 60000,
           timeout: 60000,
+          reconnect: true,
+          reconnectTries: 3,
+          reconnectInterval: 1000,
         },
       }),
     }),

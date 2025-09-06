@@ -40,34 +40,23 @@ export class SchedulerService {
    * 初始化預設任務
    */
   private initializeDefaultTasks(): void {
-    // 範例：每天午夜 12:00 執行健康檢查
-    this.addTask({
-      id: 'health-check',
-      name: '系統健康檢查',
-      cronExpression: CronExpression.EVERY_DAY_AT_MIDNIGHT,
-      url: `http://localhost:${this.configService.get('PORT', 3000)}/health`,
-      method: 'GET',
-      enabled: true,
-      description: '每天午夜執行系統健康檢查',
-    });
-
     // 範例：每小時執行資料同步
-    this.addTask({
-      id: 'data-sync',
-      name: '資料同步任務',
-      cronExpression: CronExpression.EVERY_HOUR,
-      url: `http://localhost:${this.configService.get('PORT', 3000)}/api/sync`,
-      method: 'POST',
-      enabled: false, // 預設停用，需要手動啟用
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: {
-        source: 'scheduler',
-        timestamp: new Date().toISOString(),
-      },
-      description: '每小時執行資料同步任務',
-    });
+    // this.addTask({
+    //   id: 'data-sync',
+    //   name: '資料同步任務',
+    //   cronExpression: CronExpression.EVERY_HOUR,
+    //   url: `http://localhost:${this.configService.get('PORT', 3000)}/api/sync`,
+    //   method: 'POST',
+    //   enabled: false, // 預設停用，需要手動啟用
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: {
+    //     source: 'scheduler',
+    //     timestamp: new Date().toISOString(),
+    //   },
+    //   description: '每小時執行資料同步任務',
+    // });
   }
 
   /**
@@ -275,105 +264,80 @@ export class SchedulerService {
   }
 
   /**
-   * 預設的 Cron 任務範例 - 每分鐘執行一次（僅用於測試）
-   */
-  @Cron('0 */5 * * * *', {
-    name: 'heartbeat',
-    timeZone: 'Asia/Taipei',
-  })
-  handleHeartbeat(): void {
-    this.logger.debug('心跳檢查 - 系統運行中...');
-  }
-
-  /**
-   * 預設的 Cron 任務範例 - 每天凌晨 2:00 執行
-   */
-  @Cron('0 0 2 * * *', {
-    name: 'daily-cleanup',
-    timeZone: 'Asia/Taipei',
-  })
-  async handleDailyCleanup(): Promise<void> {
-    this.logger.log('開始執行每日清理任務...');
-    // 這裡可以加入您的清理邏輯
-    // 例如：清理暫存檔案、更新統計資料等
-    await Promise.resolve(); // 避免 require-await 錯誤
-  }
-
-  /**
    * 工時計算任務 - 每30分鐘執行一次
    * 對應原始 Python 中的 calculate_man_hour_morning 函數
    */
-  @Cron('0 */30 * * * *', {
-    name: 'calculate-man-hour',
-    timeZone: 'Asia/Taipei',
-  })
-  async handleCalculateManHour(): Promise<void> {
-    try {
-      this.logger.log('開始執行工時計算任務...');
+  // @Cron('0 */30 * * * *', {
+  //   name: 'calculate-man-hour',
+  //   timeZone: 'Asia/Taipei',
+  // })
+  // async handleCalculateManHour(): Promise<void> {
+  //   try {
+  //     this.logger.log('開始執行工時計算任務...');
 
-      // 步驟1: 處理出勤記錄 CSV 檔案
-      this.logger.log('步驟1: 處理出勤記錄 CSV 檔案');
-      await this.attendRecordCsvReader.searchAttendLogs();
-      this.logger.log('出勤記錄處理完成');
+  //     // 步驟1: 處理出勤記錄 CSV 檔案
+  //     this.logger.log('步驟1: 處理出勤記錄 CSV 檔案');
+  //     await this.attendRecordCsvReader.searchAttendLogs();
+  //     this.logger.log('出勤記錄處理完成');
 
-      // 步驟2: 決定打卡記錄類型
-      this.logger.log('步驟2: 決定打卡記錄類型');
-      const lastTime =
-        await this.workingHoursService['workingHours'][
-          'appointAttendRecordsType'
-        ]();
-      this.logger.log('打卡記錄類型決定完成');
+  //     // 步驟2: 決定打卡記錄類型
+  //     this.logger.log('步驟2: 決定打卡記錄類型');
+  //     const lastTime =
+  //       await this.workingHoursService['workingHours'][
+  //         'appointAttendRecordsType'
+  //       ]();
+  //     this.logger.log('打卡記錄類型決定完成');
 
-      if (!lastTime) {
-        this.logger.log('沒有需要處理的打卡記錄，任務結束');
-        return;
-      }
+  //     if (!lastTime) {
+  //       this.logger.log('沒有需要處理的打卡記錄，任務結束');
+  //       return;
+  //     }
 
-      // 步驟3: 計算工時
-      this.logger.log('步驟3: 開始計算工時');
-      const now = new Date();
-      const endTime = new Date(now);
-      endTime.setHours(6, 0, 0, 0); // 設定為當天早上6點
+  //     // 步驟3: 計算工時
+  //     this.logger.log('步驟3: 開始計算工時');
+  //     const now = new Date();
+  //     const endTime = new Date(now);
+  //     endTime.setHours(6, 0, 0, 0); // 設定為當天早上6點
 
-      const startTime = new Date(lastTime);
-      startTime.setHours(6, 0, 0, 0); // 設定為最後處理時間的早上6點
+  //     const startTime = new Date(lastTime);
+  //     startTime.setHours(6, 0, 0, 0); // 設定為最後處理時間的早上6點
 
-      // 如果開始時間超過結束時間，調整為前一天
-      if (startTime > endTime) {
-        startTime.setDate(startTime.getDate() - 1);
-      }
+  //     // 如果開始時間超過結束時間，調整為前一天
+  //     if (startTime > endTime) {
+  //       startTime.setDate(startTime.getDate() - 1);
+  //     }
 
-      // 逐日計算工時
-      while (startTime <= endTime) {
-        try {
-          await this.workingHoursService.calculateCompleteWorkingHours(
-            startTime,
-          );
-          this.logger.log(
-            `工時計算完成: ${startTime.toISOString().split('T')[0]}`,
-          );
-        } catch (error) {
-          this.logger.error(
-            `計算工時失敗: ${startTime.toISOString().split('T')[0]}`,
-            error,
-          );
-        }
+  //     // 逐日計算工時
+  //     while (startTime <= endTime) {
+  //       try {
+  //         await this.workingHoursService.calculateCompleteWorkingHours(
+  //           startTime,
+  //         );
+  //         this.logger.log(
+  //           `工時計算完成: ${startTime.toISOString().split('T')[0]}`,
+  //         );
+  //       } catch (error) {
+  //         this.logger.error(
+  //           `計算工時失敗: ${startTime.toISOString().split('T')[0]}`,
+  //           error,
+  //         );
+  //       }
 
-        // 移到下一天
-        startTime.setDate(startTime.getDate() + 1);
-      }
+  //       // 移到下一天
+  //       startTime.setDate(startTime.getDate() + 1);
+  //     }
 
-      this.logger.log('工時計算任務完成');
-    } catch (error) {
-      this.logger.error('工時計算任務執行失敗', error);
-    }
-  }
+  //     this.logger.log('工時計算任務完成');
+  //   } catch (error) {
+  //     this.logger.error('工時計算任務執行失敗', error);
+  //   }
+  // }
 
   /**
    * 手動觸發工時計算任務
    */
-  async manualCalculateManHour(): Promise<void> {
-    this.logger.log('手動觸發工時計算任務');
-    await this.handleCalculateManHour();
-  }
+  // async manualCalculateManHour(): Promise<void> {
+  //   this.logger.log('手動觸發工時計算任務');
+  //   await this.handleCalculateManHour();
+  // }
 }

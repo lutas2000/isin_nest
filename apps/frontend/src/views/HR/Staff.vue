@@ -727,6 +727,27 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 
+// 員工類型定義
+interface Staff {
+  id: string;
+  name: string;
+  post: string;
+  work_group: string;
+  department: string;
+  wage: number;
+  allowance: number;
+  organizer: number;
+  labor_insurance: number;
+  health_insurance: number;
+  pension: number;
+  is_foreign: boolean;
+  benifit: boolean;
+  need_check: boolean;
+  begain_work: string | null;
+  stop_work: string | null;
+  have_fake: boolean;
+}
+
 // 員工統計
 const staffStats = ref({
   activeStaff: 0,
@@ -748,7 +769,7 @@ const addError = ref('');
 const editError = ref('');
 
 // 新增員工表單
-const newStaff = ref({
+const newStaff = ref<Staff>({
   id: '',
   name: '',
   post: '',
@@ -764,18 +785,18 @@ const newStaff = ref({
   benifit: false,
   need_check: true,
   begain_work: new Date().toISOString().split('T')[0], // 預設為今天
-  stop_work: '',
+  stop_work: null,
   have_fake: false,
 });
 
 // 編輯員工表單
-const editingStaff = ref<any>({});
+const editingStaff = ref<Staff>({} as Staff);
 
 // 查看員工詳情
-const viewingStaff = ref<any>({});
+const viewingStaff = ref<Staff>({} as Staff);
 
 // 員工資料
-const staffList = ref<any[]>([]);
+const staffList = ref<Staff[]>([]);
 
 // 載入員工資料
 const loadStaffData = async () => {
@@ -936,27 +957,27 @@ const filteredStaff = computed(() => {
 });
 
 // 查看員工詳情
-const viewStaff = (staff: any) => {
+const viewStaff = (staff: Staff) => {
   viewingStaff.value = { ...staff };
   showViewModal.value = true;
 };
 
 // 處理日期欄位變更
-const handleDateChange = (field: string) => {
+const handleDateChange = (field: 'begain_work' | 'stop_work') => {
   if (newStaff.value[field] === '') {
     newStaff.value[field] = null;
   }
 };
 
 // 處理編輯表單日期欄位變更
-const handleEditDateChange = (field: string) => {
+const handleEditDateChange = (field: 'begain_work' | 'stop_work') => {
   if (editingStaff.value[field] === '') {
     editingStaff.value[field] = null;
   }
 };
 
 // 編輯員工
-const editStaff = (staff: any) => {
+const editStaff = (staff: Staff) => {
   editingStaff.value = { ...staff };
   editError.value = '';
   showEditModal.value = true;
@@ -968,7 +989,7 @@ const addStaff = async () => {
   addError.value = '';
 
   // 處理日期欄位，將空字串轉換為 null
-  const staffData = { ...newStaff.value };
+  const staffData: Staff = { ...newStaff.value };
   if (staffData.begain_work === '') staffData.begain_work = null;
   if (staffData.stop_work === '') staffData.stop_work = null;
 
@@ -1003,7 +1024,7 @@ const addStaff = async () => {
         benifit: false,
         need_check: true,
         begain_work: new Date().toISOString().split('T')[0], // 預設為今天
-        stop_work: '',
+        stop_work: null,
         have_fake: false,
       };
 
@@ -1024,7 +1045,7 @@ const updateStaff = async () => {
   editError.value = '';
 
   // 處理日期欄位，將空字串轉換為 null
-  const staffData = { ...editingStaff.value };
+  const staffData: Staff = { ...editingStaff.value };
   if (staffData.begain_work === '') staffData.begain_work = null;
   if (staffData.stop_work === '') staffData.stop_work = null;
 
@@ -1058,7 +1079,7 @@ const updateStaff = async () => {
 };
 
 // 取得狀態顯示文字
-const getStatusText = (staff: any) => {
+const getStatusText = (staff: Staff) => {
   if (staff.stop_work) {
     return '離職';
   }
@@ -1066,7 +1087,7 @@ const getStatusText = (staff: any) => {
 };
 
 // 取得狀態徽章樣式
-const getStatusBadgeClass = (staff: any) => {
+const getStatusBadgeClass = (staff: Staff) => {
   if (staff.stop_work) {
     return 'badge-danger';
   }
