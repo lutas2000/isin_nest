@@ -1,12 +1,11 @@
 <template>
   <div class="dashboard">
     <!-- 歡迎區塊 -->
-    <div class="welcome-section">
-      <div class="welcome-content">
-        <h1>歡迎回來，管理員！</h1>
-        <p>今天是 {{ currentDate }}，讓我們來看看工廠的運營狀況</p>
-      </div>
-      <div class="welcome-actions">
+    <PageHeader 
+      :title="`歡迎回來，管理員！`"
+      :description="`今天是 ${currentDate}，讓我們來看看工廠的運營狀況`"
+    >
+      <template #actions>
         <button class="btn btn-primary">
           <span class="btn-icon">📊</span>
           生成報表
@@ -15,46 +14,35 @@
           <span class="btn-icon">⚡</span>
           快速操作
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- KPI 指標卡片 -->
     <div class="kpi-grid">
-      <div class="kpi-card kpi-primary">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-content">
-          <div class="kpi-value">{{ kpiData.revenue }}</div>
-          <div class="kpi-label">本月營收</div>
-          <div class="kpi-change positive">+12.5%</div>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-success">
-        <div class="kpi-icon">📦</div>
-        <div class="kpi-content">
-          <div class="kpi-value">{{ kpiData.orders }}</div>
-          <div class="kpi-label">待處理訂單</div>
-          <div class="kpi-change negative">+5</div>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-warning">
-        <div class="kpi-icon">⚙️</div>
-        <div class="kpi-content">
-          <div class="kpi-value">{{ kpiData.production }}</div>
-          <div class="kpi-label">生產效率</div>
-          <div class="kpi-change positive">+8.3%</div>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-info">
-        <div class="kpi-icon">👥</div>
-        <div class="kpi-content">
-          <div class="kpi-value">{{ kpiData.staff }}</div>
-          <div class="kpi-label">在職員工</div>
-          <div class="kpi-change neutral">0</div>
-        </div>
-      </div>
+      <OverviewCard
+        icon="💰"
+        :value="kpiData.revenue"
+        label="本月營收"
+        variant="primary"
+      />
+      <OverviewCard
+        icon="📦"
+        :value="kpiData.orders"
+        label="待處理訂單"
+        variant="success"
+      />
+      <OverviewCard
+        icon="⚙️"
+        :value="kpiData.production"
+        label="生產效率"
+        variant="warning"
+      />
+      <OverviewCard
+        icon="👥"
+        :value="kpiData.staff"
+        label="在職員工"
+        variant="info"
+      />
     </div>
 
     <!-- 主要內容區域 -->
@@ -140,9 +128,10 @@
                     <div class="order-customer">{{ order.customer }}</div>
                   </div>
                   <div class="order-status">
-                    <span class="badge" :class="`badge-${order.status}`">
-                      {{ order.statusText }}
-                    </span>
+                    <StatusBadge 
+                      :text="order.statusText" 
+                      :variant="getOrderStatusVariant(order.status)"
+                    />
                   </div>
                 </div>
               </div>
@@ -194,6 +183,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { PageHeader, OverviewCard, StatusBadge } from '@/components';
 
 // 當前日期
 const currentDate = ref('');
@@ -261,6 +251,16 @@ const attendanceChart = ref({
   週五: 94,
 });
 
+// 訂單狀態變體函數
+const getOrderStatusVariant = (status: string) => {
+  const variants: Record<string, string> = {
+    processing: 'warning',
+    pending: 'info',
+    completed: 'success'
+  };
+  return variants[status] || 'default';
+};
+
 // 快速操作
 const quickAction = (action: string) => {
   console.log(`執行快速操作: ${action}`);
@@ -280,113 +280,8 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* 歡迎區塊 */
-.welcome-section {
-  background: linear-gradient(
-    135deg,
-    var(--primary-600) 0%,
-    var(--primary-800) 100%
-  );
-  color: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-xl);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.welcome-content h1 {
-  color: white;
-  margin-bottom: 0.5rem;
-  font-size: var(--font-size-3xl);
-}
-
-.welcome-content p {
-  color: var(--primary-100);
-  margin: 0;
-  font-size: var(--font-size-lg);
-}
-
-.welcome-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn-icon {
-  margin-right: 0.5rem;
-}
-
-/* KPI 指標卡片 */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.kpi-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.kpi-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.kpi-content {
-  flex: 1;
-}
-
-.kpi-value {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.kpi-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-  margin-bottom: 0.5rem;
-}
-
-.kpi-change {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  display: inline-block;
-}
-
-.kpi-change.positive {
-  background-color: var(--success-100);
-  color: var(--success-700);
-}
-
-.kpi-change.negative {
-  background-color: var(--danger-100);
-  color: var(--danger-700);
-}
-
-.kpi-change.neutral {
-  background-color: var(--secondary-100);
-  color: var(--secondary-700);
-}
+/* 移除歡迎區塊樣式，由 PageHeader 組件處理 */
+/* 移除 KPI 卡片樣式，由 OverviewCard 組件處理 */
 
 /* 主要內容區域 */
 .dashboard-content {
@@ -707,17 +602,6 @@ onMounted(() => {
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-  .welcome-section {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-
-  .welcome-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-
   .kpi-grid {
     grid-template-columns: 1fr;
   }
@@ -733,19 +617,11 @@ onMounted(() => {
   .attendance-summary {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .action-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 480px) {
   .order-summary,
   .attendance-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .action-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,11 +1,10 @@
 <template>
   <div class="quotes-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>報價管理</h1>
-        <p>管理客戶報價、追蹤報價狀態和處理報價流程</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader 
+      title="報價管理" 
+      description="管理客戶報價、追蹤報價狀態和處理報價流程"
+    >
+      <template #actions>
         <button class="btn btn-primary">
           <span class="btn-icon">💰</span>
           新增報價
@@ -14,117 +13,91 @@
           <span class="btn-icon">📊</span>
           報價報表
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 報價統計 -->
     <div class="quotes-overview">
-      <div class="overview-card">
-        <div class="overview-icon">📋</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ quotesStats.totalQuotes }}</div>
-          <div class="overview-label">總報價數</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">💰</div>
-        <div class="overview-content">
-          <div class="overview-value">NT$ {{ quotesStats.totalValue }}</div>
-          <div class="overview-label">總報價金額</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">⏳</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ quotesStats.pendingQuotes }}</div>
-          <div class="overview-label">待回覆</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">✅</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ quotesStats.acceptedQuotes }}</div>
-          <div class="overview-label">已接受</div>
-        </div>
-      </div>
+      <OverviewCard
+        icon="📋"
+        :value="quotesStats.totalQuotes"
+        label="總報價數"
+        variant="primary"
+      />
+      <OverviewCard
+        icon="💰"
+        :value="`NT$ ${quotesStats.totalValue}`"
+        label="總報價金額"
+        variant="success"
+      />
+      <OverviewCard
+        icon="⏳"
+        :value="quotesStats.pendingQuotes"
+        label="待回覆"
+        variant="warning"
+      />
+      <OverviewCard
+        icon="✅"
+        :value="quotesStats.acceptedQuotes"
+        label="已接受"
+        variant="info"
+      />
     </div>
 
     <!-- 報價列表 -->
     <div class="quotes-content">
-      <div class="content-header">
-        <h3>報價列表</h3>
-        <div class="header-controls">
-          <div class="search-box">
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="搜尋報價編號或客戶..."
-              v-model="quoteSearch"
-            />
-          </div>
-          <select class="form-control" v-model="quoteStatus">
-            <option value="">全部狀態</option>
-            <option value="draft">草稿</option>
-            <option value="sent">已發送</option>
-            <option value="pending">待回覆</option>
-            <option value="accepted">已接受</option>
-            <option value="rejected">已拒絕</option>
-            <option value="expired">已過期</option>
-          </select>
-          <input 
-            type="date" 
-            class="form-control" 
-            v-model="quoteDate"
-          />
-        </div>
-      </div>
+      <SearchFilters
+        title="報價列表"
+        :show-search="true"
+        search-placeholder="搜尋報價編號或客戶..."
+        :filters="[
+          {
+            key: 'status',
+            placeholder: '全部狀態',
+            options: [
+              { value: 'draft', label: '草稿' },
+              { value: 'sent', label: '已發送' },
+              { value: 'pending', label: '待回覆' },
+              { value: 'accepted', label: '已接受' },
+              { value: 'rejected', label: '已拒絕' },
+              { value: 'expired', label: '已過期' }
+            ]
+          }
+        ]"
+        :show-date-filter="true"
+        @update:search="quoteSearch = $event"
+        @update:filter="handleFilterUpdate"
+        @update:date="quoteDate = $event"
+      />
 
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>報價編號</th>
-              <th>客戶名稱</th>
-              <th>報價日期</th>
-              <th>報價金額</th>
-              <th>報價狀態</th>
-              <th>有效期限</th>
-              <th>負責人</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="quote in filteredQuotes" :key="quote.id">
-              <td>{{ quote.quoteNumber }}</td>
-              <td>{{ quote.customerName }}</td>
-              <td>{{ quote.quoteDate }}</td>
-              <td>NT$ {{ quote.amount }}</td>
-              <td>
-                <span class="badge" :class="`badge-${quote.status}`">
-                  {{ quote.statusText }}
-                </span>
-              </td>
-              <td>{{ quote.validUntil }}</td>
-              <td>{{ quote.owner }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-sm btn-outline">查看詳情</button>
-                  <button class="btn btn-sm btn-primary">編輯</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        :columns="tableColumns"
+        :data="filteredQuotes"
+        :show-actions="true"
+      >
+        <template #cell-status="{ row }">
+          <StatusBadge 
+            :text="row.statusText" 
+            :variant="getStatusVariant(row.status)"
+          />
+        </template>
+        
+        <template #cell-amount="{ value }">
+          NT$ {{ value }}
+        </template>
+        
+        <template #actions>
+          <button class="btn btn-sm btn-outline">查看詳情</button>
+          <button class="btn btn-sm btn-primary">編輯</button>
+        </template>
+      </DataTable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge } from '@/components';
 
 // 報價統計
 const quotesStats = ref({
@@ -138,6 +111,37 @@ const quotesStats = ref({
 const quoteSearch = ref('');
 const quoteStatus = ref('');
 const quoteDate = ref('');
+
+// 表格列定義
+const tableColumns = [
+  { key: 'quoteNumber', label: '報價編號' },
+  { key: 'customerName', label: '客戶名稱' },
+  { key: 'quoteDate', label: '報價日期' },
+  { key: 'amount', label: '報價金額' },
+  { key: 'status', label: '報價狀態' },
+  { key: 'validUntil', label: '有效期限' },
+  { key: 'owner', label: '負責人' }
+];
+
+// 狀態變體函數
+const getStatusVariant = (status: string) => {
+  const variants: Record<string, string> = {
+    draft: 'secondary',
+    sent: 'info',
+    pending: 'warning',
+    accepted: 'success',
+    rejected: 'danger',
+    expired: 'secondary'
+  };
+  return variants[status] || 'default';
+};
+
+// 篩選更新處理
+const handleFilterUpdate = (key: string, value: string) => {
+  if (key === 'status') {
+    quoteStatus.value = value;
+  }
+};
 
 // 報價資料
 const quotes = ref([
@@ -206,196 +210,20 @@ const filteredQuotes = computed(() => {
   margin: 0 auto;
 }
 
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn-icon {
-  margin-right: 0.5rem;
-}
-
-/* 報價統計 */
-.quotes-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.overview-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.overview-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.overview-content {
-  flex: 1;
-}
-
-.overview-value {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.overview-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-/* 報價內容 */
-.quotes-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.content-header {
-  padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
-
-.search-box {
-  min-width: 300px;
-}
-
-/* 表格容器 */
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.table th {
-  background-color: var(--secondary-50);
-  font-weight: 600;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table tbody tr:hover {
-  background-color: var(--secondary-50);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
+/* 移除頁面標題樣式，由 PageHeader 組件處理 */
+/* 移除概覽卡片樣式，由 OverviewCard 組件處理 */
+/* 移除搜尋和表格樣式，由 SearchFilters 和 DataTable 組件處理 */
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: center;
-  }
-  
   .quotes-overview {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .content-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .header-controls {
-    width: 100%;
-    flex-direction: column;
-  }
-  
-  .search-box {
-    min-width: auto;
   }
 }
 
 @media (max-width: 480px) {
   .quotes-overview {
     grid-template-columns: 1fr;
-  }
-  
-  .content-header {
-    padding: 1rem;
-  }
-  
-  .table-container {
-    font-size: var(--font-size-sm);
-  }
-  
-  .table th,
-  .table td {
-    padding: 0.5rem;
   }
 }
 </style>
