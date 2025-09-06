@@ -139,10 +139,7 @@
 
         <form class="modal-form" @submit.prevent="addStaff">
           <!-- 錯誤提示 -->
-          <div v-if="addError" class="error-message">
-            <span class="error-icon">⚠️</span>
-            {{ addError }}
-          </div>
+          <ErrorMessage :message="addError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -337,10 +334,7 @@
 
         <form class="modal-form" @submit.prevent="updateStaff">
           <!-- 錯誤提示 -->
-          <div v-if="editError" class="error-message">
-            <span class="error-icon">⚠️</span>
-            {{ editError }}
-          </div>
+          <ErrorMessage :message="editError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -726,6 +720,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import ErrorMessage from '../../components/ErrorMessage.vue';
 
 // 員工類型定義
 interface Staff {
@@ -1399,23 +1394,6 @@ onMounted(() => {
   color: var(--secondary-700);
 }
 
-/* 錯誤訊息樣式 */
-.error-message {
-  background-color: var(--danger-50);
-  border: 1px solid var(--danger-200);
-  color: var(--danger-700);
-  padding: 1rem;
-  border-radius: var(--border-radius);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.error-icon {
-  font-size: 1.25rem;
-  flex-shrink: 0;
-}
 
 /* 可點擊欄位樣式 */
 .clickable-cell {

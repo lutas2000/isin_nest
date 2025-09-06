@@ -63,13 +63,9 @@
             />
           </div>
 
-          <div v-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </div>
+          <ErrorMessage :message="errorMessage" type="error" />
 
-          <div v-if="successMessage" class="success-message">
-            {{ successMessage }}
-          </div>
+          <ErrorMessage :message="successMessage" type="success" />
 
           <button
             type="submit"
@@ -101,6 +97,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { buildApiUrl, API_CONFIG } from '../config/api';
+import ErrorMessage from '../components/ErrorMessage.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -308,25 +305,6 @@ const goToLogin = () => {
   cursor: not-allowed;
 }
 
-.error-message {
-  background-color: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  border: 1px solid #fecaca;
-}
-
-.success-message {
-  background-color: #f0fdf4;
-  color: #16a34a;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  border: 1px solid #bbf7d0;
-}
 
 .reset-password-btn {
   width: 100%;

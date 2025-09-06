@@ -35,9 +35,7 @@
             />
           </div>
 
-          <div v-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </div>
+          <ErrorMessage :message="errorMessage" type="error" />
 
           <button
             type="submit"
@@ -58,6 +56,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import ErrorMessage from '../components/ErrorMessage.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -198,15 +197,6 @@ const handleLogin = async () => {
   cursor: not-allowed;
 }
 
-.error-message {
-  background-color: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  border: 1px solid #fecaca;
-}
 
 .login-btn {
   width: 100%;
