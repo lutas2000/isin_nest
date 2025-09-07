@@ -2,7 +2,7 @@
   <div class="manhour-page">
     <div class="page-header">
       <div class="header-content">
-        <h1>工時管理</h1>
+        <h1>上班時段</h1>
         <p>管理員工工時記錄、加班統計和工時分析</p>
       </div>
       <div class="header-actions">
