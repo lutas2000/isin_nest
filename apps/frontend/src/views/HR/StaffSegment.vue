@@ -13,33 +13,6 @@
       </div>
     </div>
 
-    <!-- 段別統計 -->
-    <div class="segment-overview">
-      <div class="overview-card">
-        <div class="overview-icon">👥</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ segmentStats.totalSegments }}</div>
-          <div class="overview-label">總段別數</div>
-        </div>
-      </div>
-
-      <div class="overview-card">
-        <div class="overview-icon">🌙</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ segmentStats.nightShifts }}</div>
-          <div class="overview-label">夜班段別</div>
-        </div>
-      </div>
-
-      <div class="overview-card">
-        <div class="overview-icon">⚖️</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ segmentStats.dutyShifts }}</div>
-          <div class="overview-label">責任制段別</div>
-        </div>
-      </div>
-    </div>
-
     <!-- 搜尋和篩選 -->
     <div class="search-filters">
       <div class="search-box">
