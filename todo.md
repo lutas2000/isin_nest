@@ -6,6 +6,7 @@
 - [x] 實現 ui 框架
 - [x] Nx support
 - [x] 強制登入
+- [ ] 調整工時管理頁面
 - [ ] 轉換 python api
 - [ ] Cutting
 - [ ] Slack 通知功能

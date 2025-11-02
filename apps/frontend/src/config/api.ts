@@ -11,7 +11,11 @@ export const API_CONFIG = {
     UPDATE_USER: '/auth/update-user',
   },
   
-  // 其他 API 端點可以在這裡添加
+  // HR 相關端點
+  HR: {
+    STAFF: '/staffs',
+    STAFF_MANHOUR: '/staff-manhours',
+  },
 }
 
 // 構建完整的 API URL
