@@ -218,9 +218,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, Modal } from '@/components';
 import { contactService, type Contact } from '@/services/crm/contact.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
+
+const route = useRoute();
 
 // 聯絡人資料
 const contacts = ref<Contact[]>([]);
@@ -413,6 +416,12 @@ const closeModal = () => {
 onMounted(() => {
   loadCustomers();
   loadContacts();
+
+  // 若從客戶頁帶 query 過來，預設套用該客戶篩選
+  const initialCustomerId = route.query.customerId as string | undefined;
+  if (initialCustomerId) {
+    selectedCustomerFilter.value = initialCustomerId;
+  }
 });
 </script>
 

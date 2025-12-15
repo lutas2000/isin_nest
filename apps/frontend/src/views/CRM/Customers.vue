@@ -29,6 +29,16 @@
         :data="filteredCustomers"
         :show-actions="true"
       >
+        <template #cell-id="{ row, value }">
+          <button
+            type="button"
+            class="link-button"
+            @click="viewDetails(row)"
+          >
+            {{ value }}
+          </button>
+        </template>
+
         <template #cell-phones="{ value }">
           {{ value && value.length > 0 ? value[0] : '無' }}
         </template>
@@ -42,7 +52,9 @@
         </template>
 
         <template #actions="{ row }">
-          <button class="btn btn-sm btn-outline" @click="viewDetails(row)">查看</button>
+          <button class="btn btn-sm btn-outline" @click="goToCustomerContacts(row)">
+            聯絡人
+          </button>
           <button class="btn btn-sm btn-primary" @click="editCustomer(row)">編輯</button>
           <button class="btn btn-sm btn-danger" @click="deleteCustomer(row.id)">刪除</button>
         </template>
@@ -50,12 +62,14 @@
     </div>
 
     <!-- 創建/編輯客戶 Modal -->
-    <Modal v-if="showCreateModal" @close="closeModal">
-      <template #title>{{ editingCustomer ? '編輯客戶' : '新增客戶' }}</template>
-      <template #body>
-        <div class="modal-form">
-          <div class="form-row">
-            <div class="form-group">
+    <Modal
+      :show="showCreateModal"
+      :title="editingCustomer ? '編輯客戶' : '新增客戶'"
+      @close="closeModal"
+    >
+      <div class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
               <label>客戶ID *</label>
               <input 
                 type="text" 
@@ -65,7 +79,7 @@
                 placeholder="例如：CUST001"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>公司名稱 *</label>
               <input 
                 type="text" 
@@ -76,9 +90,9 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>公司簡稱</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>公司簡稱</label>
               <input 
                 type="text" 
                 class="form-control" 
@@ -86,7 +100,7 @@
                 placeholder="請輸入公司簡稱"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>發票抬頭</label>
               <input 
                 type="text" 
@@ -97,9 +111,9 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>電話（多筆以逗號分隔）</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>電話（多筆以逗號分隔）</label>
               <input 
                 type="text" 
                 class="form-control" 
@@ -107,7 +121,7 @@
                 placeholder="例如：02-1234-5678, 0912-345-678"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>統一編號（多筆以逗號分隔）</label>
               <input 
                 type="text" 
@@ -118,9 +132,9 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Email</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email</label>
               <input 
                 type="email" 
                 class="form-control" 
@@ -128,7 +142,7 @@
                 placeholder="請輸入 Email"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>傳真</label>
               <input 
                 type="text" 
@@ -139,8 +153,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+        <div class="form-row">
+          <div class="form-group">
               <label>郵遞區號</label>
               <input 
                 type="text" 
@@ -149,7 +163,7 @@
                 placeholder="例如：100"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>通訊地址</label>
               <input 
                 type="text" 
@@ -160,8 +174,8 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label>送貨地址</label>
+        <div class="form-group">
+          <label>送貨地址</label>
             <input 
               type="text" 
               class="form-control" 
@@ -170,9 +184,9 @@
             />
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>往來銀行</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>往來銀行</label>
               <input 
                 type="text" 
                 class="form-control" 
@@ -180,7 +194,7 @@
                 placeholder="請輸入往來銀行"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>帳戶號碼</label>
               <input 
                 type="text" 
@@ -191,9 +205,9 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>信用額度</label>
+        <div class="form-row">
+          <div class="form-group">
+            <label>信用額度</label>
               <input 
                 type="number" 
                 class="form-control" 
@@ -201,7 +215,7 @@
                 placeholder="0"
               />
             </div>
-            <div class="form-group">
+          <div class="form-group">
               <label>帳款</label>
               <input 
                 type="number" 
@@ -212,8 +226,8 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label>主要產品</label>
+        <div class="form-group">
+          <label>主要產品</label>
             <input 
               type="text" 
               class="form-control" 
@@ -222,8 +236,8 @@
             />
           </div>
 
-          <div class="form-group">
-            <label>備註</label>
+        <div class="form-group">
+          <label>備註</label>
             <textarea 
               class="form-control" 
               v-model="customerForm.notes"
@@ -231,8 +245,7 @@
               placeholder="請輸入備註"
             ></textarea>
           </div>
-        </div>
-      </template>
+      </div>
       <template #footer>
         <button class="btn btn-outline" @click="closeModal">取消</button>
         <button class="btn btn-primary" @click="saveCustomer" :disabled="!isFormValid">
@@ -242,35 +255,49 @@
     </Modal>
 
     <!-- 查看詳情 Modal（含聯絡人列表） -->
-    <Modal v-if="showDetailsModal && selectedCustomer" @close="showDetailsModal = false">
-      <template #title>客戶詳情 - {{ selectedCustomer.companyName }}</template>
-      <template #body>
-        <div class="details-content">
-          <div class="details-section">
-            <h4>基本資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">客戶ID：</span>
-                <span class="details-value">{{ selectedCustomer.id }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">公司名稱：</span>
-                <span class="details-value">{{ selectedCustomer.companyName }}</span>
-              </div>
-              <div class="details-item" v-if="selectedCustomer.companyShortName">
-                <span class="details-label">公司簡稱：</span>
-                <span class="details-value">{{ selectedCustomer.companyShortName }}</span>
-              </div>
-              <div class="details-item" v-if="selectedCustomer.invoiceTitle">
-                <span class="details-label">發票抬頭：</span>
-                <span class="details-value">{{ selectedCustomer.invoiceTitle }}</span>
-              </div>
+    <Modal
+      :show="showDetailsModal && !!selectedCustomer"
+      :title="selectedCustomer ? `客戶詳情 - ${selectedCustomer.companyName}` : '客戶詳情'"
+      @close="showDetailsModal = false"
+    >
+      <div class="details-content">
+        <div class="details-section">
+          <h4>基本資訊</h4>
+          <div class="details-grid">
+            <div class="details-item">
+              <span class="details-label">客戶ID：</span>
+              <span class="details-value">{{ selectedCustomer.id }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">公司名稱：</span>
+              <span class="details-value">{{ selectedCustomer.companyName }}</span>
+            </div>
+            <div class="details-item" v-if="selectedCustomer.companyShortName">
+              <span class="details-label">公司簡稱：</span>
+              <span class="details-value">{{ selectedCustomer.companyShortName }}</span>
+            </div>
+            <div class="details-item" v-if="selectedCustomer.invoiceTitle">
+              <span class="details-label">發票抬頭：</span>
+              <span class="details-value">{{ selectedCustomer.invoiceTitle }}</span>
+            </div>
+            <div class="details-item" v-if="selectedCustomer.taxIds && selectedCustomer.taxIds.length > 0">
+              <span class="details-label">統一編號：</span>
+              <span class="details-value">{{ selectedCustomer.taxIds.join(', ') }}</span>
+            </div>
+            <div class="details-item" v-if="selectedCustomer.postalCode">
+              <span class="details-label">郵遞區號：</span>
+              <span class="details-value">{{ selectedCustomer.postalCode }}</span>
+            </div>
+            <div class="details-item" v-if="selectedCustomer.mainProducts">
+              <span class="details-label">主要產品：</span>
+              <span class="details-value">{{ selectedCustomer.mainProducts }}</span>
             </div>
           </div>
+        </div>
 
-          <div class="details-section">
-            <h4>聯絡資訊</h4>
-            <div class="details-grid">
+        <div class="details-section">
+          <h4>聯絡資訊</h4>
+          <div class="details-grid">
               <div class="details-item" v-if="selectedCustomer.phones && selectedCustomer.phones.length > 0">
                 <span class="details-label">電話：</span>
                 <span class="details-value">{{ selectedCustomer.phones.join(', ') }}</span>
@@ -294,9 +321,9 @@
             </div>
           </div>
 
-          <div class="details-section">
-            <h4>財務資訊</h4>
-            <div class="details-grid">
+        <div class="details-section">
+          <h4>財務資訊</h4>
+          <div class="details-grid">
               <div class="details-item">
                 <span class="details-label">信用額度：</span>
                 <span class="details-value">NT$ {{ Number(selectedCustomer.creditLimit).toLocaleString('zh-TW') }}</span>
@@ -316,50 +343,24 @@
             </div>
           </div>
 
-          <div class="details-section" v-if="selectedCustomer.notes">
-            <h4>備註</h4>
-            <p>{{ selectedCustomer.notes }}</p>
-          </div>
-
-          <div class="details-section">
-            <h4>聯絡人列表</h4>
-            <div v-if="contactsLoading" class="details-loading">聯絡人載入中...</div>
-            <div v-else-if="contactsError" class="details-error">{{ contactsError }}</div>
-            <div v-else>
-              <div v-if="customerContacts.length === 0" class="details-empty">
-                尚無聯絡人資料
-              </div>
-              <div v-else class="contacts-table">
-                <div class="contacts-table-header">
-                  <span>姓名</span>
-                  <span>電話</span>
-                  <span>Email</span>
-                </div>
-                <div 
-                  class="contacts-table-row" 
-                  v-for="contact in customerContacts" 
-                  :key="contact.id"
-                >
-                  <span>{{ contact.name }}</span>
-                  <span>
-                    {{ contact.phones && contact.phones.length > 0 ? contact.phones[0] : '—' }}
-                  </span>
-                  <span>{{ contact.email || '—' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="details-section" v-if="selectedCustomer.notes">
+          <h4>備註</h4>
+          <p>{{ selectedCustomer.notes }}</p>
         </div>
-      </template>
+
+      </div>
     </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { PageHeader, DataTable, SearchFilters, Modal } from '@/components';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { contactService, type Contact } from '@/services/crm/contact.service';
+
+const router = useRouter();
 
 // 客戶資料
 const customers = ref<Customer[]>([]);
@@ -468,6 +469,17 @@ const viewDetails = (customer: Customer) => {
   contactsLoading.value = true;
   showDetailsModal.value = true;
   loadCustomerContacts(customer.id);
+};
+
+// 前往該客戶的聯絡人列表頁
+const goToCustomerContacts = (customer: Customer) => {
+  router.push({
+    name: 'CRMContacts',
+    query: {
+      customerId: customer.id,
+      customerName: customer.companyName,
+    },
+  });
 };
 
 // 編輯客戶
@@ -616,6 +628,20 @@ onMounted(() => {
 
 .btn-icon {
   margin-right: 0.5rem;
+}
+
+.link-button {
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  color: var(--primary-600);
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-button:hover {
+  text-decoration: underline;
 }
 
 /* Modal 表單樣式 */

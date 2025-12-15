@@ -8,6 +8,7 @@ import HRLeave from '../views/HR/Leave.vue'
 import HRStaffSegment from '../views/HR/StaffSegment.vue'
 import HRStaffVacation from '../views/HR/StaffVacation.vue'
 import CRMCustomers from '../views/CRM/Customers.vue'
+import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import Auth from '../views/Auth.vue'
@@ -81,6 +82,12 @@ const routes = [
     name: 'CRMCustomers',
     component: CRMCustomers,
     meta: { title: '客戶', icon: '🤝', requiresAuth: true }
+  },
+  {
+    path: '/crm/contacts',
+    name: 'CRMContacts',
+    component: CRMContacts,
+    meta: { title: '聯絡人管理', icon: '👤', requiresAuth: true }
   },
   {
     path: '/crm/orders',
