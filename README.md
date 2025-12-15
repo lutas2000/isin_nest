@@ -41,6 +41,15 @@
 - **backend**: NestJS 後端 API 服務
 - **frontend**: Vue.js 前端應用
 
+### CRM 模組
+
+- **功能範圍**：客戶、聯絡人、報價單、工單與工件管理，並提供設定項目給前端使用。
+- **設定中心**：`crm_config` 表集中保存原 enum 值（運送方式、付款方式、來源類型等），後端啟動時自動 upsert 預設資料。
+- **API**：
+  - `GET /crm/configs`：取得全部 CRM 設定。
+  - `GET /crm/configs/:category`：依分類取得設定（如 `shipping_method`、`payment_method`、`source_type`）。
+- **資料庫欄位**：所有原本 enum 欄位已改為 `varchar`，避免 MySQL enum 侷限並提升擴充彈性。
+
 ## 📁 專案結構
 
 ```
