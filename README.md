@@ -101,7 +101,7 @@ npm install -g nx
 ```env
 # 資料庫配置
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=5004
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 DB_DATABASE=isin_db
