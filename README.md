@@ -112,6 +112,9 @@ JWT_EXPIRES_IN=24h
 
 # 應用配置
 PORT=3000
+
+# Node 配置
+NODE_ENV=development/production
 ```
 
 ### 3. 啟動應用
