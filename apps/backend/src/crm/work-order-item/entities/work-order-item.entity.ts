@@ -110,11 +110,12 @@ export class WorkOrderItem {
   @Column({
     type: 'varchar',
     length: 50,
-    nullable: true,
+    default: 'TODO',
+    nullable: false,
     charset: 'utf8mb4',
     collation: 'utf8mb4_unicode_ci',
   })
-  status?: string;
+  status: string;
 
   @CreateDateColumn({
     type: 'datetime',
