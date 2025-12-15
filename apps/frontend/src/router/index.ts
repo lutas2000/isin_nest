@@ -7,7 +7,7 @@ import HRManhour from '../views/HR/Manhour.vue'
 import HRLeave from '../views/HR/Leave.vue'
 import HRStaffSegment from '../views/HR/StaffSegment.vue'
 import HRStaffVacation from '../views/HR/StaffVacation.vue'
-import CRM from '../views/CRM.vue'
+import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import Auth from '../views/Auth.vue'
@@ -78,9 +78,9 @@ const routes = [
   },
   {
     path: '/crm',
-    name: 'CRM',
-    component: CRM,
-    meta: { title: '客戶關係管理', icon: '🤝', requiresAuth: true }
+    name: 'CRMCustomers',
+    component: CRMCustomers,
+    meta: { title: '客戶', icon: '🤝', requiresAuth: true }
   },
   {
     path: '/crm/orders',

@@ -77,10 +77,10 @@
           </div>
 
           <div class="nav-section">
-            <h3 v-if="!sidebarCollapsed" class="nav-section-title">客戶關係</h3>
+            <h3 v-if="!sidebarCollapsed" class="nav-section-title">銷售管理</h3>
             <router-link to="/crm" class="nav-item" active-class="active">
               <div class="nav-icon">🤝</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">客戶管理</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">客戶</span>
             </router-link>
             <router-link
               to="/crm/orders"
@@ -88,7 +88,7 @@
               active-class="active"
             >
               <div class="nav-icon">📋</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">訂單管理</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">工作單</span>
             </router-link>
             <router-link
               to="/crm/quotes"
@@ -96,7 +96,7 @@
               active-class="active"
             >
               <div class="nav-icon">💰</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">報價管理</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">報價單</span>
             </router-link>
           </div>
 
@@ -205,9 +205,9 @@ const pageTitles: Record<string, string> = {
   '/hr/manhour': '工時管理',
   '/hr/leave': '請假管理',
   '/hr/staff-segment': '員工段別管理',
-  '/crm': '客戶關係管理',
-  '/crm/orders': '訂單管理',
-  '/crm/quotes': '報價管理',
+  '/crm': '客戶',
+  '/crm/orders': '工作單',
+  '/crm/quotes': '報價單',
   '/auth': '認證管理',
   '/settings': '系統設定',
 };
