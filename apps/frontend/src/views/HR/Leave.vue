@@ -1,11 +1,10 @@
 <template>
   <div class="leave-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>請假管理</h1>
-        <p>管理員工請假申請、審核流程和請假統計</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="請假管理"
+      description="管理員工請假申請、審核流程和請假統計"
+    >
+      <template #actions>
         <button class="btn btn-primary">
           <span class="btn-icon">📝</span>
           新增請假
@@ -14,8 +13,8 @@
           <span class="btn-icon">📊</span>
           請假報表
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 請假概覽 -->
     <div class="leave-overview">
@@ -95,50 +94,57 @@
           </div>
         </div>
 
-        <div class="table-container">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>申請日期</th>
-                <th>員工姓名</th>
-                <th>請假類型</th>
-                <th>開始日期</th>
-                <th>結束日期</th>
-                <th>請假天數</th>
-                <th>請假原因</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="application in filteredApplications" :key="application.id">
-                <td>{{ application.applyDate }}</td>
-                <td>{{ application.employeeName }}</td>
-                <td>
-                  <span class="badge" :class="`badge-${application.leaveType}`">
-                    {{ application.leaveTypeText }}
-                  </span>
-                </td>
-                <td>{{ application.startDate }}</td>
-                <td>{{ application.endDate }}</td>
-                <td>{{ application.days }} 天</td>
-                <td>{{ application.reason }}</td>
-                <td>
-                  <span class="badge" :class="`badge-${application.status}`">
-                    {{ application.statusText }}
-                  </span>
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn btn-sm btn-outline">查看詳情</button>
-                    <button v-if="application.status === 'pending'" class="btn btn-sm btn-success">核准</button>
-                    <button v-if="application.status === 'pending'" class="btn btn-sm btn-danger">拒絕</button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          :columns="applicationColumns"
+          :data="filteredApplications"
+          :show-actions="true"
+        >
+          <template #cell-applyDate="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-employeeName="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-leaveTypeText="{ row }">
+            <span class="badge" :class="`badge-${row.leaveType}`">
+              {{ row.leaveTypeText }}
+            </span>
+          </template>
+          <template #cell-startDate="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-endDate="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-days="{ value }">
+            {{ value }} 天
+          </template>
+          <template #cell-reason="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-statusText="{ row }">
+            <span class="badge" :class="`badge-${row.status}`">
+              {{ row.statusText }}
+            </span>
+          </template>
+          <template #actions="{ row }">
+            <div class="action-buttons">
+              <button class="btn btn-sm btn-outline">查看詳情</button>
+              <button
+                v-if="row.status === 'pending'"
+                class="btn btn-sm btn-success"
+              >
+                核准
+              </button>
+              <button
+                v-if="row.status === 'pending'"
+                class="btn btn-sm btn-danger"
+              >
+                拒絕
+              </button>
+            </div>
+          </template>
+        </DataTable>
       </div>
 
       <!-- 請假統計 -->
@@ -244,6 +250,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { PageHeader, DataTable } from '@/components';
 
 // 頁面標籤
 const tabs = [
@@ -333,6 +340,18 @@ const filteredApplications = computed(() => {
   return filtered;
 });
 
+// 申請列表表格欄位
+const applicationColumns = [
+  { key: 'applyDate', label: '申請日期' },
+  { key: 'employeeName', label: '員工姓名' },
+  { key: 'leaveTypeText', label: '請假類型' },
+  { key: 'startDate', label: '開始日期' },
+  { key: 'endDate', label: '結束日期' },
+  { key: 'days', label: '請假天數' },
+  { key: 'reason', label: '請假原因' },
+  { key: 'statusText', label: '狀態' },
+];
+
 // 請假類型統計
 const leaveTypeStats = ref([
   { name: '年假', count: 15, totalDays: 45, avgDays: 3.0 },
@@ -398,33 +417,6 @@ const leavePolicies = ref([
 .leave-page {
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
 }
 
 .btn-icon {

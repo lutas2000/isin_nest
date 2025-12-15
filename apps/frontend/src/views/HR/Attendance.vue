@@ -1,11 +1,10 @@
 <template>
   <div class="attendance-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>出勤管理</h1>
-        <p>管理員工出勤記錄、打卡時間和考勤統計</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="出勤管理"
+      description="管理員工出勤記錄、打卡時間和考勤統計"
+    >
+      <template #actions>
         <button class="btn btn-primary">
           <span class="btn-icon">📅</span>
           今日出勤
@@ -14,8 +13,8 @@
           <span class="btn-icon">📊</span>
           出勤報表
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 出勤概覽 -->
     <div class="attendance-overview">
@@ -77,42 +76,40 @@
           </div>
         </div>
 
-        <div class="table-container">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>員工編號</th>
-                <th>姓名</th>
-                <th>部門</th>
-                <th>上班時間</th>
-                <th>下班時間</th>
-                <th>工作時數</th>
-                <th>狀態</th>
-                <th>備註</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="record in todayAttendance" :key="record.id">
-                <td>{{ record.employeeId }}</td>
-                <td>{{ record.employeeName }}</td>
-                <td>{{ record.department }}</td>
-                <td>
-                  <span :class="{ 'text-danger': record.checkInTime > '09:00' }">
-                    {{ record.checkInTime }}
-                  </span>
-                </td>
-                <td>{{ record.checkOutTime || '-' }}</td>
-                <td>{{ record.workHours || '-' }}</td>
-                <td>
-                  <span class="badge" :class="`badge-${record.status}`">
-                    {{ record.statusText }}
-                  </span>
-                </td>
-                <td>{{ record.notes || '-' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          :columns="todayColumns"
+          :data="todayAttendance"
+          :show-actions="false"
+        >
+          <template #cell-employeeId="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-employeeName="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-department="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-checkInTime="{ row }">
+            <span :class="{ 'text-danger': row.checkInTime > '09:00' }">
+              {{ row.checkInTime }}
+            </span>
+          </template>
+          <template #cell-checkOutTime="{ value }">
+            {{ value || '-' }}
+          </template>
+          <template #cell-workHours="{ value }">
+            {{ value || '-' }}
+          </template>
+          <template #cell-status="{ row }">
+            <span class="badge" :class="`badge-${row.status}`">
+              {{ row.statusText }}
+            </span>
+          </template>
+          <template #cell-notes="{ value }">
+            {{ value || '-' }}
+          </template>
+        </DataTable>
       </div>
 
       <!-- 出勤記錄 -->
@@ -143,40 +140,41 @@
           </div>
         </div>
 
-        <div class="table-container">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>員工編號</th>
-                <th>姓名</th>
-                <th>部門</th>
-                <th>上班時間</th>
-                <th>下班時間</th>
-                <th>工作時數</th>
-                <th>加班時數</th>
-                <th>狀態</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="record in filteredRecords" :key="record.id">
-                <td>{{ record.date }}</td>
-                <td>{{ record.employeeId }}</td>
-                <td>{{ record.employeeName }}</td>
-                <td>{{ record.department }}</td>
-                <td>{{ record.checkInTime }}</td>
-                <td>{{ record.checkOutTime }}</td>
-                <td>{{ record.workHours }}</td>
-                <td>{{ record.overtimeHours || '-' }}</td>
-                <td>
-                  <span class="badge" :class="`badge-${record.status}`">
-                    {{ record.statusText }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          :columns="recordColumns"
+          :data="filteredRecords"
+          :show-actions="false"
+        >
+          <template #cell-date="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-employeeId="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-employeeName="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-department="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-checkInTime="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-checkOutTime="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-workHours="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-overtimeHours="{ value }">
+            {{ value || '-' }}
+          </template>
+          <template #cell-status="{ row }">
+            <span class="badge" :class="`badge-${row.status}`">
+              {{ row.statusText }}
+            </span>
+          </template>
+        </DataTable>
       </div>
 
       <!-- 統計報表 -->
@@ -240,6 +238,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { PageHeader, DataTable } from '@/components';
 
 // 頁面標籤
 const tabs = [
@@ -385,6 +384,31 @@ const filteredRecords = computed(() => {
   return filtered;
 });
 
+// 今日出勤表格欄位
+const todayColumns = [
+  { key: 'employeeId', label: '員工編號' },
+  { key: 'employeeName', label: '姓名' },
+  { key: 'department', label: '部門' },
+  { key: 'checkInTime', label: '上班時間' },
+  { key: 'checkOutTime', label: '下班時間' },
+  { key: 'workHours', label: '工作時數' },
+  { key: 'status', label: '狀態' },
+  { key: 'notes', label: '備註' },
+];
+
+// 出勤記錄表格欄位
+const recordColumns = [
+  { key: 'date', label: '日期' },
+  { key: 'employeeId', label: '員工編號' },
+  { key: 'employeeName', label: '姓名' },
+  { key: 'department', label: '部門' },
+  { key: 'checkInTime', label: '上班時間' },
+  { key: 'checkOutTime', label: '下班時間' },
+  { key: 'workHours', label: '工作時數' },
+  { key: 'overtimeHours', label: '加班時數' },
+  { key: 'status', label: '狀態' },
+];
+
 // 部門統計
 const departmentStats = ref([
   { name: '生產部', attendanceRate: 96.4 },
@@ -424,33 +448,6 @@ onMounted(() => {
 .attendance-page {
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
 }
 
 .btn-icon {

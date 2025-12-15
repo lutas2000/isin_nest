@@ -1,11 +1,10 @@
 <template>
   <div class="manhour-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>上班時段</h1>
-        <p>管理員工工時記錄、加班統計和工時分析</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="上班時段"
+      description="管理員工工時記錄、加班統計和工時分析"
+    >
+      <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
           <span class="btn-icon">⏱️</span>
           新增工時
@@ -14,8 +13,8 @@
           <span class="btn-icon">📊</span>
           工時報表
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 工時概覽 -->
     <div class="manhour-overview">
@@ -96,47 +95,61 @@
         </div>
 
         <div class="table-container">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>員工編號</th>
-                <th>員工姓名</th>
-                <th>部門</th>
-                <th>開始時間</th>
-                <th>結束時間</th>
-                <th>工時（小時）</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="loading">
-                <td colspan="8" style="text-align: center; padding: 2rem;">
-                  載入中...
-                </td>
-              </tr>
-              <tr v-else-if="filteredRecords.length === 0">
-                <td colspan="8" style="text-align: center; padding: 2rem; color: var(--secondary-600);">
-                  沒有找到工時記錄
-                </td>
-              </tr>
-              <tr v-else v-for="record in filteredRecords" :key="record.id">
-                <td>{{ formatDate(record.day) }}</td>
-                <td>{{ record.staffId }}</td>
-                <td>{{ record.staff?.name || '-' }}</td>
-                <td>{{ record.staff?.department || '-' }}</td>
-                <td>{{ formatDateTime(record.start_time) }}</td>
-                <td>{{ formatDateTime(record.end_time) }}</td>
-                <td>{{ record.work_time }}</td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn btn-sm btn-outline" @click="editRecord(record)">編輯</button>
-                    <button class="btn btn-sm btn-danger" @click="deleteRecord(record.id)">刪除</button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <template v-if="loading">
+            <div style="text-align: center; padding: 2rem;">
+              載入中...
+            </div>
+          </template>
+          <template v-else-if="filteredRecords.length === 0">
+            <div style="text-align: center; padding: 2rem; color: var(--secondary-600);">
+              沒有找到工時記錄
+            </div>
+          </template>
+          <template v-else>
+            <DataTable
+              :columns="recordColumns"
+              :data="filteredRecords"
+              :show-actions="true"
+            >
+              <template #cell-day="{ value }">
+                {{ formatDate(value) }}
+              </template>
+              <template #cell-staffId="{ value }">
+                {{ value }}
+              </template>
+              <template #cell-staffName="{ row }">
+                {{ row.staff?.name || '-' }}
+              </template>
+              <template #cell-department="{ row }">
+                {{ row.staff?.department || '-' }}
+              </template>
+              <template #cell-start_time="{ value }">
+                {{ formatDateTime(value) }}
+              </template>
+              <template #cell-end_time="{ value }">
+                {{ formatDateTime(value) }}
+              </template>
+              <template #cell-work_time="{ value }">
+                {{ value }}
+              </template>
+              <template #actions="{ row }">
+                <div class="action-buttons">
+                  <button
+                    class="btn btn-sm btn-outline"
+                    @click="editRecord(row)"
+                  >
+                    編輯
+                  </button>
+                  <button
+                    class="btn btn-sm btn-danger"
+                    @click="deleteRecord(row.id)"
+                  >
+                    刪除
+                  </button>
+                </div>
+              </template>
+            </DataTable>
+          </template>
         </div>
       </div>
 
@@ -307,6 +320,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { PageHeader, DataTable } from '@/components';
 import { buildApiUrl, API_CONFIG } from '../../config/api';
 import { useAuthStore } from '../../stores/auth';
 
@@ -475,6 +489,17 @@ const filteredRecords = computed(() => {
 
   return filtered;
 });
+
+// 工時記錄表格欄位
+const recordColumns = [
+  { key: 'day', label: '日期' },
+  { key: 'staffId', label: '員工編號' },
+  { key: 'staffName', label: '員工姓名' },
+  { key: 'department', label: '部門' },
+  { key: 'start_time', label: '開始時間' },
+  { key: 'end_time', label: '結束時間' },
+  { key: 'work_time', label: '工時（小時）' },
+];
 
 // 部門統計
 const deptStats = ref<DeptStat[]>([]);
@@ -766,33 +791,6 @@ onMounted(() => {
 .manhour-page {
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
 }
 
 .btn-icon {

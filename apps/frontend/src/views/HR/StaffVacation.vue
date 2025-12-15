@@ -1,17 +1,16 @@
 <template>
   <div class="staff-vacation-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>員工假期管理</h1>
-        <p>管理國定假日、公司假期等假期設定</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="員工假期管理"
+      description="管理國定假日、公司假期等假期設定"
+    >
+      <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
           <span class="btn-icon">📅</span>
           新增假期記錄
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 搜尋和篩選 -->
     <div class="search-filters">
@@ -69,48 +68,50 @@
       </div>
 
       <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>假別</th>
-              <th>是否支薪</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="vacation in filteredVacations" :key="vacation.date">
-              <td class="clickable-cell" @click="viewVacation(vacation)">
-                {{ formatDate(vacation.date) }}
-              </td>
-              <td>{{ vacation.type }}</td>
-              <td>
-                <span class="badge" :class="vacation.pay ? 'badge-success' : 'badge-secondary'">
-                  {{ vacation.pay ? '支薪' : '不支薪' }}
-                </span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button
-                    class="btn btn-sm btn-primary"
-                    @click="editVacation(vacation)"
-                  >
-                    編輯
-                  </button>
-                  <button
-                    class="btn btn-sm btn-danger"
-                    @click="deleteVacation(vacation)"
-                  >
-                    刪除
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="filteredVacations.length === 0">
-              <td colspan="4" class="empty-state">尚無假期記錄</td>
-            </tr>
-          </tbody>
-        </table>
+        <DataTable
+          :columns="vacationColumns"
+          :data="filteredVacations"
+          :show-actions="true"
+        >
+          <template #cell-date="{ row }">
+            <span class="clickable-cell" @click="viewVacation(row)">
+              {{ formatDate(row.date) }}
+            </span>
+          </template>
+          <template #cell-type="{ value }">
+            {{ value }}
+          </template>
+          <template #cell-pay="{ row }">
+            <span
+              class="badge"
+              :class="row.pay ? 'badge-success' : 'badge-secondary'"
+            >
+              {{ row.pay ? '支薪' : '不支薪' }}
+            </span>
+          </template>
+          <template #actions="{ row }">
+            <div class="action-buttons">
+              <button
+                class="btn btn-sm btn-primary"
+                @click="editVacation(row)"
+              >
+                編輯
+              </button>
+              <button
+                class="btn btn-sm btn-danger"
+                @click="deleteVacation(row)"
+              >
+                刪除
+              </button>
+            </div>
+          </template>
+        </DataTable>
+        <div
+          v-if="filteredVacations.length === 0"
+          class="empty-state"
+        >
+          尚無假期記錄
+        </div>
       </div>
     </div>
 
@@ -289,6 +290,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { PageHeader, DataTable } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
 
 // 假期類型定義
@@ -405,6 +407,13 @@ const filteredVacations = computed(() => {
     return dateB.getTime() - dateA.getTime(); // 降序排列（最新的在前）
   });
 });
+
+// 假期列表表格欄位
+const vacationColumns = [
+  { key: 'date', label: '日期' },
+  { key: 'type', label: '假別' },
+  { key: 'pay', label: '是否支薪' },
+];
 
 // 查看假期詳情
 const viewVacation = (vacation: StaffVacation) => {
@@ -576,33 +585,6 @@ onMounted(() => {
 .staff-vacation-page {
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
 }
 
 .btn-icon {

@@ -1,17 +1,16 @@
 <template>
   <div class="staff-segment-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>員工段別管理</h1>
-        <p>管理員工工作時段設定、休息時間和特殊班別</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="員工段別管理"
+      description="管理員工工作時段設定、休息時間和特殊班別"
+    >
+      <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
           <span class="btn-icon">⏰</span>
           新增段別設定
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 搜尋和篩選 -->
     <div class="search-filters">
@@ -69,69 +68,75 @@
         </div>
       </div>
 
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>員工編號</th>
-              <th>員工姓名</th>
-              <th>開始時間</th>
-              <th>結束時間</th>
-              <th>跨日</th>
-              <th>責任制</th>
-              <th>夜班</th>
-              <th>休息時間</th>
-              <th>加班休息</th>
-              <th>建立日期</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="segment in filteredSegments" :key="segment.id">
-              <td class="clickable-cell" @click="viewSegment(segment)">
-                {{ segment.staffId }}
-              </td>
-              <td>{{ getStaffName(segment.staffId) }}</td>
-              <td>{{ segment.begain_time }}</td>
-              <td>{{ segment.end_time }}</td>
-              <td>
-                <span class="badge" :class="segment.cross_day ? 'badge-warning' : 'badge-secondary'">
-                  {{ segment.cross_day ? '是' : '否' }}
-                </span>
-              </td>
-              <td>
-                <span class="badge" :class="segment.duty ? 'badge-info' : 'badge-secondary'">
-                  {{ segment.duty ? '是' : '否' }}
-                </span>
-              </td>
-              <td>
-                <span class="badge" :class="segment.night_work ? 'badge-danger' : 'badge-secondary'">
-                  {{ segment.night_work ? '是' : '否' }}
-                </span>
-              </td>
-              <td>{{ segment.rest_time }} 分鐘</td>
-              <td>{{ segment.rest_time2 }} 分鐘</td>
-              <td>{{ formatDate(segment.create_date) }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button
-                    class="btn btn-sm btn-primary"
-                    @click="editSegment(segment)"
-                  >
-                    編輯
-                  </button>
-                  <button
-                    class="btn btn-sm btn-danger"
-                    @click="deleteSegment(segment)"
-                  >
-                    刪除
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        :columns="segmentColumns"
+        :data="filteredSegments"
+        :show-actions="true"
+      >
+        <template #cell-staffId="{ row }">
+          <span class="clickable-cell" @click="viewSegment(row)">
+            {{ row.staffId }}
+          </span>
+        </template>
+        <template #cell-staffName="{ row }">
+          {{ getStaffName(row.staffId) }}
+        </template>
+        <template #cell-begain_time="{ value }">
+          {{ value }}
+        </template>
+        <template #cell-end_time="{ value }">
+          {{ value }}
+        </template>
+        <template #cell-cross_day="{ row }">
+          <span
+            class="badge"
+            :class="row.cross_day ? 'badge-warning' : 'badge-secondary'"
+          >
+            {{ row.cross_day ? '是' : '否' }}
+          </span>
+        </template>
+        <template #cell-duty="{ row }">
+          <span
+            class="badge"
+            :class="row.duty ? 'badge-info' : 'badge-secondary'"
+          >
+            {{ row.duty ? '是' : '否' }}
+          </span>
+        </template>
+        <template #cell-night_work="{ row }">
+          <span
+            class="badge"
+            :class="row.night_work ? 'badge-danger' : 'badge-secondary'"
+          >
+            {{ row.night_work ? '是' : '否' }}
+          </span>
+        </template>
+        <template #cell-rest_time="{ value }">
+          {{ value }} 分鐘
+        </template>
+        <template #cell-rest_time2="{ value }">
+          {{ value }} 分鐘
+        </template>
+        <template #cell-create_date="{ value }">
+          {{ formatDate(value) }}
+        </template>
+        <template #actions="{ row }">
+          <div class="action-buttons">
+            <button
+              class="btn btn-sm btn-primary"
+              @click="editSegment(row)"
+            >
+              編輯
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              @click="deleteSegment(row)"
+            >
+              刪除
+            </button>
+          </div>
+        </template>
+      </DataTable>
     </div>
 
     <!-- 新增段別模態框 -->
@@ -485,6 +490,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { PageHeader, DataTable } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
 
 // 段別類型定義
@@ -677,6 +683,20 @@ const filteredSegments = computed(() => {
   return filtered;
 });
 
+// 段別列表表格欄位
+const segmentColumns = [
+  { key: 'staffId', label: '員工編號' },
+  { key: 'staffName', label: '員工姓名' },
+  { key: 'begain_time', label: '開始時間' },
+  { key: 'end_time', label: '結束時間' },
+  { key: 'cross_day', label: '跨日' },
+  { key: 'duty', label: '責任制' },
+  { key: 'night_work', label: '夜班' },
+  { key: 'rest_time', label: '休息時間' },
+  { key: 'rest_time2', label: '加班休息' },
+  { key: 'create_date', label: '建立日期' },
+];
+
 // 取得員工姓名
 const getStaffName = (staffId: string) => {
   const staff = staffList.value.find((s) => s.id === staffId);
@@ -836,33 +856,6 @@ onMounted(() => {
 .staff-segment-page {
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
 }
 
 .btn-icon {

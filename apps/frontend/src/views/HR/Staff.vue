@@ -1,17 +1,16 @@
 <template>
   <div class="staff-page">
-    <div class="page-header">
-      <div class="header-content">
-        <h1>員工管理</h1>
-        <p>管理公司員工資訊、職位和權限</p>
-      </div>
-      <div class="header-actions">
+    <PageHeader
+      title="員工管理"
+      description="管理公司員工資訊、職位和權限"
+    >
+      <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
           <span class="btn-icon">👤</span>
           新增員工
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 員工統計 -->
     <div class="staff-overview">
@@ -61,68 +60,73 @@
         </div>
       </div>
 
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>員工編號</th>
-              <th>姓名</th>
-              <th>職稱</th>
-              <th>部門</th>
-              <th>工作組別</th>
-              <th>本薪</th>
-              <th>到職日期</th>
-              <th>狀態</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="staff in filteredStaff" :key="staff.id">
-              <td class="clickable-cell" @click="viewStaff(staff)">
-                {{ staff.id }}
-              </td>
-              <td>
-                <div class="staff-info">
-                  <div class="staff-avatar">{{ staff.name.charAt(0) }}</div>
-                  <div class="staff-details">
-                    <div
-                      class="staff-name clickable-cell"
-                      @click="viewStaff(staff)"
-                    >
-                      {{ staff.name }}
-                    </div>
-                    <div class="staff-status">
-                      <span v-if="staff.is_foreign" class="badge badge-warning"
-                        >外勞</span
-                      >
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td>{{ staff.post || '-' }}</td>
-              <td>{{ staff.department || '-' }}</td>
-              <td>{{ staff.work_group || '-' }}</td>
-              <td>{{ staff.wage?.toLocaleString() || '-' }}</td>
-              <td>{{ formatDate(staff.begain_work) }}</td>
-              <td>
-                <span class="badge" :class="getStatusBadgeClass(staff)">
-                  {{ getStatusText(staff) }}
+      <DataTable
+        :columns="tableColumns"
+        :data="filteredStaff"
+        :show-actions="true"
+      >
+        <template #cell-id="{ row }">
+          <span class="clickable-cell" @click="viewStaff(row)">
+            {{ row.id }}
+          </span>
+        </template>
+
+        <template #cell-name="{ row }">
+          <div class="staff-info">
+            <div class="staff-avatar">{{ row.name.charAt(0) }}</div>
+            <div class="staff-details">
+              <div
+                class="staff-name clickable-cell"
+                @click="viewStaff(row)"
+              >
+                {{ row.name }}
+              </div>
+              <div class="staff-status">
+                <span v-if="row.is_foreign" class="badge badge-warning">
+                  外勞
                 </span>
-              </td>
-              <td>
-                <div class="action-buttons">
-                  <button
-                    class="btn btn-sm btn-primary"
-                    @click="editStaff(staff)"
-                  >
-                    編輯
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template #cell-post="{ value }">
+          {{ value || '-' }}
+        </template>
+
+        <template #cell-department="{ value }">
+          {{ value || '-' }}
+        </template>
+
+        <template #cell-work_group="{ value }">
+          {{ value || '-' }}
+        </template>
+
+        <template #cell-wage="{ value }">
+          {{ value?.toLocaleString() || '-' }}
+        </template>
+
+        <template #cell-begain_work="{ value }">
+          {{ formatDate(value) }}
+        </template>
+
+        <template #cell-status="{ row }">
+          <span class="badge" :class="getStatusBadgeClass(row)">
+            {{ getStatusText(row) }}
+          </span>
+        </template>
+
+        <template #actions="{ row }">
+          <div class="action-buttons">
+            <button
+              class="btn btn-sm btn-primary"
+              @click="editStaff(row)"
+            >
+              編輯
+            </button>
+          </div>
+        </template>
+      </DataTable>
     </div>
 
     <!-- 新增員工模態框 -->
@@ -720,6 +724,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { PageHeader, DataTable } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
 
 // 員工類型定義
@@ -951,6 +956,18 @@ const filteredStaff = computed(() => {
   return filtered;
 });
 
+// 表格欄位定義
+const tableColumns = [
+  { key: 'id', label: '員工編號' },
+  { key: 'name', label: '姓名' },
+  { key: 'post', label: '職稱' },
+  { key: 'department', label: '部門' },
+  { key: 'work_group', label: '工作組別' },
+  { key: 'wage', label: '本薪' },
+  { key: 'begain_work', label: '到職日期' },
+  { key: 'status', label: '狀態' },
+];
+
 // 查看員工詳情
 const viewStaff = (staff: Staff) => {
   viewingStaff.value = { ...staff };
@@ -1105,33 +1122,6 @@ onMounted(() => {
 .staff-page {
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 頁面標題 */
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
 }
 
 .btn-icon {
