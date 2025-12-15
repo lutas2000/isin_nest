@@ -16,6 +16,16 @@ export const API_CONFIG = {
     STAFF: '/staffs',
     STAFF_MANHOUR: '/staff-manhours',
   },
+  
+  // CRM 相關端點
+  CRM: {
+    CUSTOMERS: '/crm/customers',
+    CONTACTS: '/crm/contacts',
+    QUOTES: '/crm/quotes',
+    QUOTE_ITEMS: '/crm/quote-items',
+    WORK_ORDERS: '/crm/work-orders',
+    WORK_ORDER_ITEMS: '/crm/work-order-items',
+  },
 }
 
 // 構建完整的 API URL

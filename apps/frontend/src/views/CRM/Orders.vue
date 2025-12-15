@@ -58,11 +58,8 @@
             key: 'status',
             placeholder: '全部狀態',
             options: [
-              { value: 'pending', label: '待處理' },
               { value: 'processing', label: '處理中' },
-              { value: 'shipped', label: '已出貨' },
-              { value: 'completed', label: '已完成' },
-              { value: 'cancelled', label: '已取消' }
+              { value: 'completed', label: '已完成' }
             ]
           }
         ]"
@@ -72,20 +69,23 @@
         v-model:date="orderDate"
       />
 
+      <div v-if="loading" class="loading-message">載入中...</div>
+      <div v-else-if="error" class="error-message">{{ error }}</div>
       <DataTable
+        v-else
         :columns="tableColumns"
         :data="filteredOrders"
         :show-actions="true"
       >
         <template #cell-status="{ row }">
           <StatusBadge 
-            :text="row.statusText" 
-            :variant="getStatusVariant(row.status)"
+            :text="getStatusText(row.isCompleted)" 
+            :variant="getStatusVariant(row.isCompleted)"
           />
         </template>
         
         <template #cell-amount="{ value }">
-          NT$ {{ value }}
+          NT$ {{ Number(value).toLocaleString('zh-TW') }}
         </template>
         
         <template #actions>
@@ -98,15 +98,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge } from '@/components';
+import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 
-// 訂單統計
-const ordersStats = ref({
-  totalOrders: 89,
-  totalAmount: '12,450,000',
-  pendingOrders: 15,
-  completedOrders: 67,
+// 工單資料
+const orders = ref<WorkOrder[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
+
+// 工單統計
+const ordersStats = computed(() => {
+  const total = orders.value.length;
+  const totalAmount = orders.value.reduce((sum, o) => sum + Number(o.amount), 0);
+  const pendingOrders = orders.value.filter(o => !o.isCompleted).length;
+  const completedOrders = orders.value.filter(o => o.isCompleted).length;
+  
+  return {
+    totalOrders: total,
+    totalAmount: totalAmount.toLocaleString('zh-TW'),
+    pendingOrders,
+    completedOrders,
+  };
 });
 
 // 搜尋和篩選
@@ -114,68 +127,59 @@ const orderSearch = ref('');
 const orderStatus = ref('');
 const orderDate = ref('');
 
-// 訂單資料
-const orders = ref([
-  {
-    id: 1,
-    orderNumber: 'ORD-2024-001',
-    customerName: '台灣精密工業',
-    orderDate: '2024-01-15',
-    amount: '2,500,000',
-    status: 'processing',
-    statusText: '處理中',
-    expectedDelivery: '2024-02-15',
-    owner: '張小明',
-  },
-  {
-    id: 2,
-    orderNumber: 'ORD-2024-002',
-    customerName: '華碩汽車零件',
-    orderDate: '2024-01-14',
-    amount: '1,800,000',
-    status: 'pending',
-    statusText: '待處理',
-    expectedDelivery: '2024-02-10',
-    owner: '李小華',
-  },
-  {
-    id: 3,
-    orderNumber: 'ORD-2024-003',
-    customerName: '電子科技企業',
-    orderDate: '2024-01-13',
-    amount: '3,200,000',
-    status: 'shipped',
-    statusText: '已出貨',
-    expectedDelivery: '2024-01-25',
-    owner: '王美玲',
-  },
-]);
-
 // 表格列定義
 const tableColumns = [
-  { key: 'orderNumber', label: '訂單編號' },
+  { key: 'id', label: '工單編號' },
   { key: 'customerName', label: '客戶名稱' },
-  { key: 'orderDate', label: '訂單日期' },
-  { key: 'amount', label: '訂單金額' },
-  { key: 'status', label: '訂單狀態' },
-  { key: 'expectedDelivery', label: '預計交期' },
-  { key: 'owner', label: '負責人' }
+  { key: 'orderDate', label: '建立日期' },
+  { key: 'amount', label: '工單金額' },
+  { key: 'status', label: '工單狀態' },
+  { key: 'staffName', label: '業務員' }
 ];
 
-// 篩選後的訂單
+// 載入工單資料
+const loadOrders = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const data = await workOrderService.getAll();
+    orders.value = data.map(order => ({
+      ...order,
+      orderNumber: order.id,
+      customerName: order.customer?.companyName || order.customer?.companyShortName || '未知客戶',
+      orderDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString('zh-TW') : '',
+      amount: order.amount,
+      status: order.isCompleted ? 'completed' : 'processing',
+      statusText: order.isCompleted ? '已完成' : '處理中',
+      staffName: order.staff?.name || '未知',
+    }));
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '載入工單失敗';
+    console.error('Failed to load work orders:', err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 篩選後的工單
 const filteredOrders = computed(() => {
   let filtered = orders.value;
 
   if (orderSearch.value) {
+    const search = orderSearch.value.toLowerCase();
     filtered = filtered.filter(
       (order) =>
-        order.orderNumber.toLowerCase().includes(orderSearch.value.toLowerCase()) ||
-        order.customerName.toLowerCase().includes(orderSearch.value.toLowerCase()),
+        order.id.toLowerCase().includes(search) ||
+        order.customerName?.toLowerCase().includes(search),
     );
   }
 
   if (orderStatus.value) {
-    filtered = filtered.filter((order) => order.status === orderStatus.value);
+    if (orderStatus.value === 'completed') {
+      filtered = filtered.filter((order) => order.isCompleted);
+    } else if (orderStatus.value === 'processing') {
+      filtered = filtered.filter((order) => !order.isCompleted);
+    }
   }
 
   if (orderDate.value) {
@@ -186,16 +190,18 @@ const filteredOrders = computed(() => {
 });
 
 // 取得狀態徽章變體
-const getStatusVariant = (status: string) => {
-  const variants: Record<string, string> = {
-    pending: 'warning',
-    processing: 'info',
-    shipped: 'primary',
-    completed: 'success',
-    cancelled: 'danger'
-  };
-  return variants[status] || 'default';
+const getStatusVariant = (isCompleted: boolean) => {
+  return isCompleted ? 'success' : 'info';
 };
+
+const getStatusText = (isCompleted: boolean) => {
+  return isCompleted ? '已完成' : '處理中';
+};
+
+// 初始化
+onMounted(() => {
+  loadOrders();
+});
 </script>
 
 <style scoped>
@@ -218,6 +224,21 @@ const getStatusVariant = (status: string) => {
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.loading-message,
+.error-message {
+  padding: 2rem;
+  text-align: center;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.error-message {
+  color: var(--danger-600);
+  background: var(--danger-50);
 }
 
 /* 響應式設計 */

@@ -55,12 +55,8 @@
             key: 'status',
             placeholder: '全部狀態',
             options: [
-              { value: 'draft', label: '草稿' },
-              { value: 'sent', label: '已發送' },
-              { value: 'pending', label: '待回覆' },
-              { value: 'accepted', label: '已接受' },
-              { value: 'rejected', label: '已拒絕' },
-              { value: 'expired', label: '已過期' }
+              { value: 'pending', label: '待簽名' },
+              { value: 'signed', label: '已簽名' }
             ]
           }
         ]"
@@ -70,20 +66,23 @@
         @update:date="quoteDate = $event"
       />
 
+      <div v-if="loading" class="loading-message">載入中...</div>
+      <div v-else-if="error" class="error-message">{{ error }}</div>
       <DataTable
+        v-else
         :columns="tableColumns"
         :data="filteredQuotes"
         :show-actions="true"
       >
         <template #cell-status="{ row }">
           <StatusBadge 
-            :text="row.statusText" 
-            :variant="getStatusVariant(row.status)"
+            :text="getStatusText(row.isSigned)" 
+            :variant="getStatusVariant(row.isSigned)"
           />
         </template>
         
-        <template #cell-amount="{ value }">
-          NT$ {{ value }}
+        <template #cell-totalAmount="{ value }">
+          NT$ {{ Number(value).toLocaleString('zh-TW') }}
         </template>
         
         <template #actions>
@@ -96,15 +95,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge } from '@/components';
+import { quoteService, type Quote } from '@/services/crm/quote.service';
+
+// 報價資料
+const quotes = ref<Quote[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
 // 報價統計
-const quotesStats = ref({
-  totalQuotes: 45,
-  totalValue: '28,750,000',
-  pendingQuotes: 12,
-  acceptedQuotes: 18,
+const quotesStats = computed(() => {
+  const total = quotes.value.length;
+  const totalValue = quotes.value.reduce((sum, q) => sum + Number(q.totalAmount), 0);
+  const pendingQuotes = quotes.value.filter(q => !q.isSigned).length;
+  const acceptedQuotes = quotes.value.filter(q => q.isSigned).length;
+  
+  return {
+    totalQuotes: total,
+    totalValue: totalValue.toLocaleString('zh-TW'),
+    pendingQuotes,
+    acceptedQuotes,
+  };
 });
 
 // 搜尋和篩選
@@ -114,26 +126,21 @@ const quoteDate = ref('');
 
 // 表格列定義
 const tableColumns = [
-  { key: 'quoteNumber', label: '報價編號' },
+  { key: 'id', label: '報價編號' },
   { key: 'customerName', label: '客戶名稱' },
   { key: 'quoteDate', label: '報價日期' },
-  { key: 'amount', label: '報價金額' },
+  { key: 'totalAmount', label: '報價金額' },
   { key: 'status', label: '報價狀態' },
-  { key: 'validUntil', label: '有效期限' },
-  { key: 'owner', label: '負責人' }
+  { key: 'staffName', label: '負責人' }
 ];
 
 // 狀態變體函數
-const getStatusVariant = (status: string) => {
-  const variants: Record<string, string> = {
-    draft: 'secondary',
-    sent: 'info',
-    pending: 'warning',
-    accepted: 'success',
-    rejected: 'danger',
-    expired: 'secondary'
-  };
-  return variants[status] || 'default';
+const getStatusVariant = (isSigned: boolean) => {
+  return isSigned ? 'success' : 'warning';
+};
+
+const getStatusText = (isSigned: boolean) => {
+  return isSigned ? '已簽名' : '待簽名';
 };
 
 // 篩選更新處理
@@ -143,57 +150,49 @@ const handleFilterUpdate = (key: string, value: string) => {
   }
 };
 
-// 報價資料
-const quotes = ref([
-  {
-    id: 1,
-    quoteNumber: 'QT-2024-001',
-    customerName: '台灣精密工業',
-    quoteDate: '2024-01-15',
-    amount: '2,500,000',
-    status: 'pending',
-    statusText: '待回覆',
-    validUntil: '2024-02-15',
-    owner: '張小明',
-  },
-  {
-    id: 2,
-    quoteNumber: 'QT-2024-002',
-    customerName: '華碩汽車零件',
-    quoteDate: '2024-01-14',
-    amount: '1,800,000',
-    status: 'sent',
-    statusText: '已發送',
-    validUntil: '2024-02-10',
-    owner: '李小華',
-  },
-  {
-    id: 3,
-    quoteNumber: 'QT-2024-003',
-    customerName: '電子科技企業',
-    quoteDate: '2024-01-13',
-    amount: '3,200,000',
-    status: 'accepted',
-    statusText: '已接受',
-    validUntil: '2024-01-25',
-    owner: '王美玲',
-  },
-]);
+// 載入報價資料
+const loadQuotes = async () => {
+  loading.value = true;
+  error.value = null;
+  try {
+    const data = await quoteService.getAll();
+    quotes.value = data.map(quote => ({
+      ...quote,
+      quoteNumber: `QT-${quote.id}`,
+      customerName: quote.customer?.companyName || quote.customer?.companyShortName || '未知客戶',
+      quoteDate: quote.createdAt ? new Date(quote.createdAt).toLocaleDateString('zh-TW') : '',
+      amount: quote.totalAmount.toLocaleString('zh-TW'),
+      status: quote.isSigned ? 'signed' : 'pending',
+      statusText: getStatusText(quote.isSigned),
+      staffName: quote.staff?.name || '未知',
+    }));
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '載入報價單失敗';
+    console.error('Failed to load quotes:', err);
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 篩選後的報價
 const filteredQuotes = computed(() => {
   let filtered = quotes.value;
 
   if (quoteSearch.value) {
+    const search = quoteSearch.value.toLowerCase();
     filtered = filtered.filter(
       (quote) =>
-        quote.quoteNumber.toLowerCase().includes(quoteSearch.value.toLowerCase()) ||
-        quote.customerName.toLowerCase().includes(quoteSearch.value.toLowerCase()),
+        quote.quoteNumber?.toLowerCase().includes(search) ||
+        quote.customerName?.toLowerCase().includes(search),
     );
   }
 
   if (quoteStatus.value) {
-    filtered = filtered.filter((quote) => quote.status === quoteStatus.value);
+    if (quoteStatus.value === 'signed') {
+      filtered = filtered.filter((quote) => quote.isSigned);
+    } else if (quoteStatus.value === 'pending') {
+      filtered = filtered.filter((quote) => !quote.isSigned);
+    }
   }
 
   if (quoteDate.value) {
@@ -201,6 +200,11 @@ const filteredQuotes = computed(() => {
   }
 
   return filtered;
+});
+
+// 初始化
+onMounted(() => {
+  loadQuotes();
 });
 </script>
 
@@ -213,6 +217,21 @@ const filteredQuotes = computed(() => {
 /* 移除頁面標題樣式，由 PageHeader 組件處理 */
 /* 移除概覽卡片樣式，由 OverviewCard 組件處理 */
 /* 移除搜尋和表格樣式，由 SearchFilters 和 DataTable 組件處理 */
+
+.loading-message,
+.error-message {
+  padding: 2rem;
+  text-align: center;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.error-message {
+  color: var(--danger-600);
+  background: var(--danger-50);
+}
 
 /* 響應式設計 */
 @media (max-width: 768px) {

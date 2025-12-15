@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HrModule } from './hr/hr.module';
 import { AuthModule } from './auth/auth.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { CrmModule } from './crm/crm.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     HrModule,
     AuthModule,
     SchedulerModule,
+    CrmModule,
   ],
   controllers: [AppController],
   providers: [AppService],
