@@ -5,6 +5,7 @@ import { QuoteModule } from './quote/quote.module';
 import { QuoteItemModule } from './quote-item/quote-item.module';
 import { WorkOrderModule } from './work-order/work-order.module';
 import { WorkOrderItemModule } from './work-order-item/work-order-item.module';
+import { CrmConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { WorkOrderItemModule } from './work-order-item/work-order-item.module';
     QuoteItemModule,
     WorkOrderModule,
     WorkOrderItemModule,
+    CrmConfigModule,
   ],
   exports: [
     CustomerModule,
@@ -22,6 +24,7 @@ import { WorkOrderItemModule } from './work-order-item/work-order-item.module';
     QuoteItemModule,
     WorkOrderModule,
     WorkOrderItemModule,
+    CrmConfigModule,
   ],
 })
 export class CrmModule {}

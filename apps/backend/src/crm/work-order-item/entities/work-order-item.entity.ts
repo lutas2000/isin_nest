@@ -10,8 +10,6 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { WorkOrder } from '../../work-order/entities/work-order.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
-import { SourceType } from '../../enums/source-type.enum';
-import { WorkOrderItemStatus } from '../../enums/work-order-item-status.enum';
 
 @Entity('work_order_item')
 export class WorkOrderItem {
@@ -77,12 +75,14 @@ export class WorkOrderItem {
   })
   unit?: string;
 
-  @ApiProperty({ description: '來源', enum: SourceType, example: SourceType.NEW })
+  @ApiProperty({ description: '來源', example: 'NEW' })
   @Column({
-    type: 'enum',
-    enum: SourceType,
+    type: 'varchar',
+    length: 50,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
   })
-  source: SourceType;
+  source: string;
 
   @ApiProperty({ description: '加工', example: '雷射切割、折彎' })
   @Column({
@@ -106,13 +106,15 @@ export class WorkOrderItem {
   @Column({ type: 'varchar', length: 10, nullable: true, name: 'drawing_staff_id' })
   drawingStaffId?: string;
 
-  @ApiProperty({ description: '狀態', enum: WorkOrderItemStatus, example: WorkOrderItemStatus.TODO })
+  @ApiProperty({ description: '狀態', example: 'TODO', required: false })
   @Column({
-    type: 'enum',
-    enum: WorkOrderItemStatus,
-    default: WorkOrderItemStatus.TODO,
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
   })
-  status: WorkOrderItemStatus;
+  status?: string;
 
   @CreateDateColumn({
     type: 'datetime',

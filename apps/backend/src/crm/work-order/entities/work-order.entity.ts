@@ -12,8 +12,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Customer } from '../../customer/entities/customer.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { WorkOrderItem } from '../../work-order-item/entities/work-order-item.entity';
-import { ShippingMethod } from '../../enums/shipping-method.enum';
-import { PaymentMethod } from '../../enums/payment-method.enum';
 
 @Entity('work_order')
 export class WorkOrder {
@@ -29,21 +27,25 @@ export class WorkOrder {
   @Column({ type: 'varchar', length: 50, name: 'customer_id' })
   customerId: string;
 
-  @ApiProperty({ description: '運送方式', enum: ShippingMethod, example: ShippingMethod.EXPRESS })
+  @ApiProperty({ description: '運送方式', example: 'EXPRESS' })
   @Column({
-    type: 'enum',
-    enum: ShippingMethod,
+    type: 'varchar',
+    length: 50,
     name: 'shipping_method',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
   })
-  shippingMethod: ShippingMethod;
+  shippingMethod: string;
 
-  @ApiProperty({ description: '付款方式', enum: PaymentMethod, example: PaymentMethod.TRANSFER })
+  @ApiProperty({ description: '付款方式', example: 'TRANSFER' })
   @Column({
-    type: 'enum',
-    enum: PaymentMethod,
+    type: 'varchar',
+    length: 50,
     name: 'payment_method',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
   })
-  paymentMethod: PaymentMethod;
+  paymentMethod: string;
 
   @ApiProperty({ description: '備註', example: '請優先處理' })
   @Column({
