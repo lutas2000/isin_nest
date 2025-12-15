@@ -53,22 +53,37 @@ export class CrmConfigService implements OnModuleInit {
   }
 
   async syncDefaults(): Promise<void> {
-    const rows: CrmConfig[] = [];
+    // 先把資料表中已有的設定全部查出來，避免使用 upsert 時因為沒有 id 而觸發 TypeORM 的錯誤
+    const existing = await this.crmConfigRepository.find();
+    const existingMap = new Map<string, CrmConfig>();
+
+    existing.forEach((item) => {
+      const key = `${item.category}:${item.code}`;
+      existingMap.set(key, item);
+    });
+
+    const rowsToSave: CrmConfig[] = [];
+
     Object.entries(DEFAULT_CONFIGS).forEach(([category, values]) => {
       values.forEach((value, index) => {
-        rows.push(
+        const key = `${category}:${value.code}`;
+        const entity =
+          existingMap.get(key) ??
           this.crmConfigRepository.create({
             category,
             code: value.code,
-            label: value.label,
-            displayOrder: index,
-          }),
-        );
+          });
+
+        entity.label = value.label;
+        entity.displayOrder = index;
+
+        rowsToSave.push(entity);
       });
     });
 
-    if (rows.length > 0) {
-      await this.crmConfigRepository.upsert(rows, ['category', 'code']);
+    if (rowsToSave.length > 0) {
+      // TypeORM 的 save 會自動根據是否有主鍵來決定是 INSERT 還是 UPDATE
+      await this.crmConfigRepository.save(rowsToSave);
     }
   }
 }
