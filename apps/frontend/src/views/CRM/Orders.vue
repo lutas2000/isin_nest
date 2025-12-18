@@ -31,7 +31,7 @@
     <!-- 工單列表 -->
     <div class="orders-content">
       <SearchFilters
-        title="工單列表"
+        title="工作單列表"
         :show-search="true"
         search-placeholder="搜尋工單編號或客戶..."
         :filters="[
@@ -96,9 +96,11 @@
     </div>
 
     <!-- 創建/編輯工單 Modal -->
-    <Modal v-if="showCreateModal" @close="closeModal" :large="true">
-      <template #title>{{ editingOrder ? '編輯工單' : '新增工單' }}</template>
-      <template #body>
+    <Modal 
+      :show="showCreateModal" 
+      :title="editingOrder ? '編輯工單' : '新增工單'"
+      @close="closeModal"
+    >
         <div class="modal-form">
           <div class="form-row">
             <div class="form-group">
@@ -194,7 +196,6 @@
             ></textarea>
           </div>
         </div>
-      </template>
       <template #footer>
         <button class="btn btn-outline" @click="closeModal">取消</button>
         <button 
@@ -208,10 +209,12 @@
     </Modal>
 
     <!-- 查看詳情 Modal -->
-    <Modal v-if="showDetailsModal && selectedOrder" @close="showDetailsModal = false" :large="true">
-      <template #title>工單詳情 {{ selectedOrder.id }}</template>
-      <template #body>
-        <div class="details-content">
+    <Modal 
+      :show="showDetailsModal && !!selectedOrder" 
+      :title="`工單詳情 ${selectedOrder?.id || ''}`"
+      @close="showDetailsModal = false"
+    >
+        <div class="details-content" v-if="selectedOrder">
           <div class="details-section">
             <h4>基本資訊</h4>
             <div class="details-grid">
@@ -317,7 +320,6 @@
             </div>
           </div>
         </div>
-      </template>
     </Modal>
   </div>
 </template>

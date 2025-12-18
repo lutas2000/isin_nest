@@ -23,18 +23,6 @@
         />
       </div>
       <div class="filter-controls">
-        <select class="form-control" v-model="staffFilter">
-          <option value="">全部員工</option>
-          <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
-            {{ staff.id }} - {{ staff.name }}
-          </option>
-        </select>
-        <select class="form-control" v-model="shiftTypeFilter">
-          <option value="">全部班別</option>
-          <option value="night">夜班</option>
-          <option value="duty">責任制</option>
-          <option value="normal">一般班別</option>
-        </select>
         <div class="date-range">
           <input
             type="date"

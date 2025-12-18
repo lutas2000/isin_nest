@@ -72,7 +72,7 @@
             </router-link>
             <router-link to="/hr/staff-segment" class="nav-item" active-class="active">
               <div class="nav-icon">⏰</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">員工段別管理</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">上班時段管理</span>
             </router-link>
           </div>
 
