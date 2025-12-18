@@ -1,13 +1,12 @@
 <template>
   <div class="orders-page">
     <PageHeader 
-      title="工單管理" 
-      description="管理客戶工單、追蹤工單狀態和處理工單流程"
+      title="工作單管理"
     >
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
           <span class="btn-icon">📋</span>
-          新增工單
+          新增工作單
         </button>
       </template>
     </PageHeader>
@@ -17,15 +16,8 @@
       <OverviewCard 
         icon="📋"
         :value="ordersStats.totalOrders"
-        label="總工單數"
+        label="總工作單數"
         variant="primary"
-      />
-      
-      <OverviewCard 
-        icon="💰"
-        :value="`NT$ ${ordersStats.totalAmount}`"
-        label="總工單金額"
-        variant="success"
       />
       
       <OverviewCard 
@@ -33,13 +25,6 @@
         :value="ordersStats.pendingOrders"
         label="進行中"
         variant="warning"
-      />
-      
-      <OverviewCard 
-        icon="✅"
-        :value="ordersStats.completedOrders"
-        label="已完成"
-        variant="success"
       />
     </div>
 

@@ -91,20 +91,20 @@
               <span v-if="!sidebarCollapsed" class="nav-text">聯絡人</span>
             </router-link>
             <router-link
-              to="/crm/orders"
-              class="nav-item"
-              active-class="active"
-            >
-              <div class="nav-icon">📋</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">工作單</span>
-            </router-link>
-            <router-link
               to="/crm/quotes"
               class="nav-item"
               active-class="active"
             >
               <div class="nav-icon">💰</div>
               <span v-if="!sidebarCollapsed" class="nav-text">報價單</span>
+            </router-link>
+            <router-link
+              to="/crm/orders"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">📋</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">工作單</span>
             </router-link>
           </div>
 
