@@ -212,7 +212,7 @@ const pageTitles: Record<string, string> = {
   '/hr/attendance': '出勤管理',
   '/hr/manhour': '工時管理',
   '/hr/leave': '請假管理',
-  '/hr/staff-segment': '員工段別管理',
+  '/hr/staff-segment': '上班時段管理',
   '/crm': '客戶',
   '/crm/contacts': '聯絡人',
   '/crm/orders': '工作單',
