@@ -13,9 +13,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { UserInput } from './entities/user_input.entity';
-import { ResetPasswordInput } from './entities/reset_password.entity';
-import { UpdateUserInput } from './entities/update_user.entity';
+import { UserInput, ResetPasswordInput, UpdateUserInput } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
 
@@ -120,7 +118,6 @@ export class AuthController {
           password: input.password,
           isAdmin: input.isAdmin,
           features: input.features,
-          staffId: input.staffId,
         },
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         currentUser,

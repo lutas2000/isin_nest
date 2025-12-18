@@ -122,7 +122,6 @@ export class AuthService {
       password?: string;
       isAdmin?: boolean;
       features?: string[];
-      staffId?: string;
     },
     currentUser: User,
   ): Promise<User> {
@@ -168,11 +167,6 @@ export class AuthService {
     // 更新功能權限（如果提供）
     if (updateData.features !== undefined) {
       targetUser.features = updateData.features;
-    }
-
-    // 更新員工關聯（如果提供）
-    if (updateData.staffId !== undefined) {
-      targetUser.staffId = updateData.staffId;
     }
 
     // 儲存到資料庫

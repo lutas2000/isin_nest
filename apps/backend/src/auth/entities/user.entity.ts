@@ -5,7 +5,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
-  JoinColumn,
 } from 'typeorm';
 import { Staff } from '../../hr/staff/entities/staff.entity';
 
@@ -26,12 +25,8 @@ export class User {
   @Column('simple-array', { default: '' })
   features: string[];
 
-  @OneToOne(() => Staff, { nullable: true })
-  @JoinColumn({ name: 'staffId' })
+  @OneToOne(() => Staff, (staff) => staff.user)
   staff?: Staff;
-
-  @Column({ nullable: true })
-  staffId?: string;
 
   @CreateDateColumn()
   createdAt: Date;

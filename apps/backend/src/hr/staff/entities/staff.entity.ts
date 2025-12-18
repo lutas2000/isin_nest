@@ -1,4 +1,10 @@
-import { Entity, PrimaryColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../../auth/entities/user.entity';
 
@@ -7,6 +13,10 @@ export class Staff {
   @ApiProperty({ description: '員工編號', example: 'STAFF001' })
   @PrimaryColumn({ type: 'varchar', length: 10 })
   id: string; // 員工編號
+
+  @ApiProperty({ description: '關聯的用戶ID', required: false, example: 1 })
+  @Column({ nullable: true })
+  userId?: number; // 關聯的用戶 ID
 
   @ApiProperty({ description: '姓名', example: '張三' })
   @Column({
@@ -103,6 +113,7 @@ export class Staff {
   @Column({ type: 'tinyint', width: 1, default: 0 })
   have_fake: boolean; // 是否需要外帳（tinyint 1）
 
-  @OneToOne(() => User, (user) => user.staff)
+  @OneToOne(() => User, (user) => user.staff, { nullable: true })
+  @JoinColumn({ name: 'userId' })
   user?: User;
 }
