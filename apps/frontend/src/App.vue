@@ -83,6 +83,14 @@
               <span v-if="!sidebarCollapsed" class="nav-text">客戶</span>
             </router-link>
             <router-link
+              to="/crm/contacts"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">👤</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">聯絡人</span>
+            </router-link>
+            <router-link
               to="/crm/orders"
               class="nav-item"
               active-class="active"
@@ -206,6 +214,7 @@ const pageTitles: Record<string, string> = {
   '/hr/leave': '請假管理',
   '/hr/staff-segment': '員工段別管理',
   '/crm': '客戶',
+  '/crm/contacts': '聯絡人',
   '/crm/orders': '工作單',
   '/crm/quotes': '報價單',
   '/auth': '認證管理',
