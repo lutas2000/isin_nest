@@ -1,8 +1,8 @@
 <template>
   <div class="contacts-page">
     <PageHeader 
-      title="聯絡人管理" 
-      description="管理所有客戶的聯絡人資訊"
+      :title="pageTitle" 
+      :description="pageDescription"
     >
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
@@ -12,47 +12,12 @@
       </template>
     </PageHeader>
 
-    <!-- 聯絡人統計 -->
-    <div class="contacts-overview">
-      <OverviewCard
-        icon="👤"
-        :value="contactsStats.totalContacts"
-        label="總聯絡人數"
-        variant="primary"
-      />
-      <OverviewCard
-        icon="👥"
-        :value="contactsStats.totalCustomers"
-        label="關聯客戶數"
-        variant="info"
-      />
-      <OverviewCard
-        icon="📧"
-        :value="contactsStats.withEmail"
-        label="有Email"
-        variant="success"
-      />
-      <OverviewCard
-        icon="📞"
-        :value="contactsStats.withPhone"
-        label="有電話"
-        variant="warning"
-      />
-    </div>
-
     <!-- 聯絡人列表 -->
     <div class="contacts-content">
       <SearchFilters
         title="聯絡人列表"
         :show-search="true"
-        search-placeholder="搜尋聯絡人姓名或客戶..."
-        :filters="[
-          {
-            key: 'customer',
-            placeholder: '全部客戶',
-            options: customerOptions
-          }
-        ]"
+        :search-placeholder="isCustomerMode ? '搜尋聯絡人姓名...' : '搜尋聯絡人姓名或客戶...'"
         v-model:search="contactSearch"
         @update:filter="handleFilterUpdate"
       />
@@ -107,6 +72,7 @@
             <select 
               class="form-control" 
               v-model="contactForm.customerId"
+              :disabled="isCustomerMode && !editingContact"
             >
               <option value="">請選擇客戶</option>
               <option 
@@ -117,6 +83,7 @@
                 {{ customer.companyName }}
               </option>
             </select>
+            <span v-if="isCustomerMode && !editingContact" class="form-hint">此聯絡人將歸屬於 {{ currentCustomer?.companyName }}</span>
           </div>
 
           <div class="form-group">
@@ -217,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, Modal } from '@/components';
 import { contactService, type Contact } from '@/services/crm/contact.service';
@@ -231,6 +198,28 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const contactSearch = ref('');
 const selectedCustomerFilter = ref('');
+
+// 當前客戶（用於客戶模式）
+const currentCustomer = ref<Customer | null>(null);
+
+// 是否為客戶模式（帶有 customerId 參數）
+const isCustomerMode = computed(() => !!route.params.customerId);
+
+// 頁面標題
+const pageTitle = computed(() => {
+  if (isCustomerMode.value && currentCustomer.value) {
+    return `${currentCustomer.value.companyName} - 聯絡人`;
+  }
+  return '聯絡人管理';
+});
+
+// 頁面描述
+const pageDescription = computed(() => {
+  if (isCustomerMode.value && currentCustomer.value) {
+    return `管理 ${currentCustomer.value.companyName} 的聯絡人資訊`;
+  }
+  return '管理所有客戶的聯絡人資訊';
+});
 
 // 客戶資料（用於下拉選單）
 const customers = ref<Customer[]>([]);
@@ -285,18 +274,33 @@ const tableColumns = [
 const filteredContacts = computed(() => {
   let filtered = contacts.value;
 
-  // 文字搜尋
-  if (contactSearch.value) {
-    const search = contactSearch.value.toLowerCase();
+  // 客戶模式：先篩選出該客戶的聯絡人
+  if (isCustomerMode.value && route.params.customerId) {
     filtered = filtered.filter(
-      (contact) =>
-        contact.name.toLowerCase().includes(search) ||
-        contact.customer?.companyName.toLowerCase().includes(search),
+      (contact) => contact.customerId === route.params.customerId
     );
   }
 
-  // 客戶篩選
-  if (selectedCustomerFilter.value) {
+  // 文字搜尋
+  if (contactSearch.value) {
+    const search = contactSearch.value.toLowerCase();
+    if (isCustomerMode.value) {
+      // 客戶模式：只搜尋聯絡人姓名
+      filtered = filtered.filter(
+        (contact) => contact.name.toLowerCase().includes(search)
+      );
+    } else {
+      // 一般模式：搜尋聯絡人姓名或客戶名稱
+      filtered = filtered.filter(
+        (contact) =>
+          contact.name.toLowerCase().includes(search) ||
+          contact.customer?.companyName.toLowerCase().includes(search),
+      );
+    }
+  }
+
+  // 客戶篩選（僅在非客戶模式下生效）
+  if (!isCustomerMode.value && selectedCustomerFilter.value) {
     filtered = filtered.filter(
       (contact) => contact.customerId === selectedCustomerFilter.value
     );
@@ -404,24 +408,66 @@ const deleteContact = async (id: number) => {
 const closeModal = () => {
   showCreateModal.value = false;
   editingContact.value = null;
+  resetForm();
+};
+
+// 重置表單
+const resetForm = () => {
   contactForm.value = {
     name: '',
-    customerId: '',
+    // 客戶模式下預設選擇當前客戶
+    customerId: isCustomerMode.value && route.params.customerId 
+      ? route.params.customerId as string 
+      : '',
     phonesStr: '',
     email: '',
   };
 };
 
+// 載入當前客戶資訊（客戶模式）
+const loadCurrentCustomer = async () => {
+  if (!isCustomerMode.value || !route.params.customerId) {
+    currentCustomer.value = null;
+    return;
+  }
+
+  try {
+    currentCustomer.value = await customerService.getById(route.params.customerId as string);
+  } catch (err) {
+    console.error('Failed to load current customer:', err);
+    currentCustomer.value = null;
+  }
+};
+
+// 初始化頁面
+const initPage = async () => {
+  await loadCustomers();
+  await loadContacts();
+  
+  if (isCustomerMode.value) {
+    await loadCurrentCustomer();
+  }
+  
+  // 重置表單以套用正確的預設客戶
+  resetForm();
+};
+
+// 監聽路由參數變化
+watch(
+  () => route.params.customerId,
+  async (newCustomerId) => {
+    if (newCustomerId) {
+      await loadCurrentCustomer();
+    } else {
+      currentCustomer.value = null;
+    }
+    resetForm();
+  }
+);
+
 // 初始化
 onMounted(() => {
-  loadCustomers();
-  loadContacts();
-
-  // 若從客戶頁帶 query 過來，預設套用該客戶篩選
-  const initialCustomerId = route.query.customerId as string | undefined;
-  if (initialCustomerId) {
-    selectedCustomerFilter.value = initialCustomerId;
-  }
+  initPage();
 });
 </script>
 
@@ -498,6 +544,20 @@ onMounted(() => {
 
 select.form-control {
   cursor: pointer;
+}
+
+select.form-control:disabled {
+  background-color: var(--secondary-100);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--font-size-sm);
+  color: var(--secondary-500);
+  font-style: italic;
 }
 
 /* 詳情 Modal 樣式 */

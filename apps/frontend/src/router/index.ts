@@ -90,6 +90,12 @@ const routes = [
     meta: { title: '聯絡人管理', icon: '👤', requiresAuth: true }
   },
   {
+    path: '/crm/contacts/:customerId',
+    name: 'CRMContactsByCustomer',
+    component: CRMContacts,
+    meta: { title: '聯絡人管理', icon: '👤', requiresAuth: true }
+  },
+  {
     path: '/crm/orders',
     name: 'CRMOrders',
     component: CRMOrders,

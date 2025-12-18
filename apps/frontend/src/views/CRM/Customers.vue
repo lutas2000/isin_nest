@@ -1,8 +1,7 @@
 <template>
   <div class="customers-page">
     <PageHeader 
-      title="客戶列表" 
-      description="管理所有客戶的基本資料與聯絡資訊"
+      title="客戶管理"
     >
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
@@ -474,10 +473,9 @@ const viewDetails = (customer: Customer) => {
 // 前往該客戶的聯絡人列表頁
 const goToCustomerContacts = (customer: Customer) => {
   router.push({
-    name: 'CRMContacts',
-    query: {
+    name: 'CRMContactsByCustomer',
+    params: {
       customerId: customer.id,
-      customerName: customer.companyName,
     },
   });
 };
