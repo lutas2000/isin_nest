@@ -70,7 +70,8 @@ export class AuthService {
     const payload = { userName: user.userName, sub: user.id };
 
     // 處理 staff 資料，排除薪資相關欄位
-    let staffData = null;
+    // 明確標註型別，避免被推斷為僅能是 null
+    let staffData: any = null;
     if (user.staff) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const {
