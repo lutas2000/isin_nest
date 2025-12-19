@@ -7,13 +7,14 @@
 - [x] Nx support
 - [x] 強制登入
 - [x] 調整工時管理頁面
+- [ ] 搬移sql資料庫
+- [ ] 連接 access
+- [ ] 詳細權限設定(require feature in controllers)
 - [ ] 轉換 python api
 - [ ] Cutting
-- [ ] Slack 通知功能
 - [ ] 計算薪資
 - [ ] 影印
 - [ ] AutoCAD 預覽(dfx to image)
-- [ ] 連接 access
-- [ ] 搬移資料庫
 - [ ] docker file
+- [ ] Slack 通知功能
 
