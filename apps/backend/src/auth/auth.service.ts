@@ -17,6 +17,7 @@ export class AuthService {
   async validateUser(userName: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { userName },
+      relations: ['staff'], // 載入關聯的 staff 資料
     });
 
     if (!user) {
@@ -64,11 +65,36 @@ export class AuthService {
     return await this.userRepository.save(newUser);
   }
 
-  // 簽發 JWT Token
+  // 簽發 JWT Token 並返回用戶資訊
   login(user: User) {
     const payload = { userName: user.userName, sub: user.id };
+
+    // 處理 staff 資料，排除薪資相關欄位
+    let staffData = null;
+    if (user.staff) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const {
+        wage,
+        allowance,
+        organizer,
+        labor_insurance,
+        health_insurance,
+        pension,
+        user: _user,
+        ...staffWithoutSalary
+      } = user.staff;
+      staffData = staffWithoutSalary;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, staff: __, ...userWithoutPassword } = user;
+
     return {
       access_token: this.jwtService.sign(payload), // 簽發 JWT
+      user: {
+        ...userWithoutPassword,
+        staff: staffData,
+      },
     };
   }
 

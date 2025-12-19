@@ -122,15 +122,17 @@
         </nav>
 
         <div class="sidebar-footer">
-          <div class="user-info">
-            <div class="user-avatar">👤</div>
-            <div v-if="!sidebarCollapsed" class="user-details">
-              <div class="user-name">{{ authStore.userName }}</div>
-              <div class="user-role">
-                {{ authStore.userRole === 'admin' ? '系統管理員' : '一般用戶' }}
+          <router-link to="/profile" class="user-info-link">
+            <div class="user-info">
+              <div class="user-avatar">👤</div>
+              <div v-if="!sidebarCollapsed" class="user-details">
+                <div class="user-name">{{ authStore.userName }}</div>
+                <div class="user-role">
+                  {{ authStore.userRole === 'admin' ? '系統管理員' : '一般用戶' }}
+                </div>
               </div>
             </div>
-          </div>
+          </router-link>
         </div>
       </aside>
 
@@ -219,6 +221,7 @@ const pageTitles: Record<string, string> = {
   '/crm/quotes': '報價單',
   '/auth': '認證管理',
   '/settings': '系統設定',
+  '/profile': '個人資料',
 };
 
 const currentPageTitle = computed(() => {
@@ -452,6 +455,19 @@ onUnmounted(() => {
 .sidebar-footer {
   padding: 1rem;
   border-top: 1px solid var(--secondary-700);
+}
+
+.user-info-link {
+  text-decoration: none;
+  display: block;
+  padding: 0.5rem;
+  margin: -0.5rem;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s ease;
+}
+
+.user-info-link:hover {
+  background-color: var(--secondary-700);
 }
 
 .user-info {

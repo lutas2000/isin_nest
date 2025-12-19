@@ -2,18 +2,34 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { buildApiUrl, API_CONFIG } from '../config/api'
 
+// Staff 資料（不含薪資相關欄位）
+export interface Staff {
+  id: string // 員工編號
+  name: string // 姓名
+  post?: string // 職稱
+  work_group?: string // 工作組別
+  department?: string // 部門
+  is_foreign: boolean // 是否為外勞
+  benifit: boolean // 是否參加福委會
+  need_check: boolean // 是否需要打卡
+  begain_work?: string // 到職日期
+  stop_work?: string // 離職日期
+  have_fake: boolean // 是否需要外帳
+}
+
 export interface User {
   id: number
   userName: string
   isAdmin: boolean
   features: string[]
-  staffId?: string
+  staff?: Staff | null // 關聯的員工資料
   createdAt: Date
   updatedAt: Date
 }
 
 export interface LoginResponse {
   access_token: string
+  user: User
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -26,6 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => isAuthenticated.value && user.value !== null)
   const userRole = computed(() => user.value?.isAdmin ? 'admin' : 'user')
   const userName = computed(() => user.value?.userName || '')
+  const staff = computed(() => user.value?.staff || null)
+  const staffId = computed(() => user.value?.staff?.id || null)
+  const staffName = computed(() => user.value?.staff?.name || '')
 
   // 從 localStorage 恢復狀態
   const initializeAuth = () => {
@@ -66,16 +85,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       const loginData: LoginResponse = await response.json()
       
-      // 獲取用戶信息（這裡需要調用另一個 API 或從 JWT 解析）
-      // 暫時使用 username 作為基本信息
-      const userInfo: User = {
-        id: 1, // 暫時設為 1，實際應該從 JWT 或用戶 API 獲取
-        userName: username,
-        isAdmin: false, // 暫時設為 false，實際應該從 JWT 或用戶 API 獲取
-        features: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+      // 使用後端返回的用戶資料（包含 staff 資料）
+      const userInfo: User = loginData.user
       
       // 保存到 store
       user.value = userInfo
@@ -137,6 +148,9 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     userRole,
     userName,
+    staff,
+    staffId,
+    staffName,
     
     // 方法
     initializeAuth,

@@ -15,6 +15,7 @@ import Auth from '../views/Auth.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 import ResetPassword from '../views/ResetPassword.vue'
+import Profile from '../views/Profile.vue'
 
 const routes = [
   {
@@ -118,6 +119,12 @@ const routes = [
     name: 'Settings',
     component: Settings,
     meta: { title: '系統設定', icon: '⚙️', requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { title: '個人資料', icon: '👤', requiresAuth: true }
   }
 ]
 
