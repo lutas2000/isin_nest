@@ -13,7 +13,12 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { UserInput, ResetPasswordInput, UpdateUserInput } from './dto/auth.dto';
+import {
+  UserInput,
+  ResetPasswordInput,
+  UpdateUserInput,
+  CreateUserWithStaffInput,
+} from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
 
@@ -134,6 +139,57 @@ export class AuthController {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : '用戶資料更新失敗';
+      throw new UnauthorizedException(message);
+    }
+  }
+
+  @ApiOperation({ summary: '同時創建用戶和員工（需要管理員權限）' })
+  @ApiResponse({ status: 200, description: '用戶和員工創建成功' })
+  @ApiResponse({ status: 401, description: '權限不足或創建失敗' })
+  @ApiBearerAuth('JWT-auth')
+  @Post('/create-user-with-staff')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async createUserWithStaff(
+    @Body() input: CreateUserWithStaffInput,
+    @Request() req: any,
+  ) {
+    try {
+      const result = await this.authService.createUserWithStaff(
+        input.userName,
+        input.password,
+        {
+          name: input.name,
+          post: input.post,
+          work_group: input.work_group,
+          department: input.department,
+          wage: input.wage,
+          allowance: input.allowance,
+          organizer: input.organizer,
+          labor_insurance: input.labor_insurance,
+          health_insurance: input.health_insurance,
+          pension: input.pension,
+          is_foreign: input.is_foreign,
+          benifit: input.benifit,
+          need_check: input.need_check,
+          begain_work: input.begain_work,
+          stop_work: input.stop_work,
+          have_fake: input.have_fake,
+        },
+        input.isAdmin,
+      );
+
+      // 不回傳密碼
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userWithoutPassword } = result.user;
+
+      return {
+        message: '用戶和員工創建成功',
+        user: userWithoutPassword,
+        staff: result.staff,
+      };
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : '創建用戶和員工失敗';
       throw new UnauthorizedException(message);
     }
   }

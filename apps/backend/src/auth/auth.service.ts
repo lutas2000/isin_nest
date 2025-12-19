@@ -6,7 +6,10 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from './entities/user.entity';
 import { Feature } from './entities/feature.entity';
 import { UserFeature, PermissionType } from './entities/user-feature.entity';
+import { FeatureConfig } from './entities/feature-config.entity';
+import { FeaturePermission } from './entities/feature-permission.entity';
 import { FeaturePermissionInput } from './dto/auth.dto';
+import { Staff } from '../hr/staff/entities/staff.entity';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +20,12 @@ export class AuthService {
     private readonly featureRepository: Repository<Feature>,
     @InjectRepository(UserFeature)
     private readonly userFeatureRepository: Repository<UserFeature>,
+    @InjectRepository(FeatureConfig)
+    private readonly featureConfigRepository: Repository<FeatureConfig>,
+    @InjectRepository(FeaturePermission)
+    private readonly featurePermissionRepository: Repository<FeaturePermission>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -261,5 +270,141 @@ export class AuthService {
       where: { id: targetUser.id },
       relations: ['userFeatures', 'userFeatures.feature'],
     }) as User;
+  }
+
+  // 同時創建 user 和 staff
+  async createUserWithStaff(
+    userName: string,
+    password: string,
+    staffData: Partial<Staff>,
+    isAdmin?: boolean,
+  ): Promise<{ user: User; staff: Staff }> {
+    // 檢查使用者是否已存在
+    const existingUser = await this.userRepository.findOne({
+      where: { userName },
+    });
+
+    if (existingUser) {
+      throw new Error('使用者已存在');
+    }
+
+    // 產生鹽值並雜湊密碼
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // 建立新使用者物件
+    const newUser = this.userRepository.create({
+      userName,
+      password: hashedPassword,
+      isAdmin: isAdmin ?? false,
+    });
+
+    // 儲存使用者
+    const savedUser = await this.userRepository.save(newUser);
+
+    // 使用 user.id 作為 staff.id（轉換為字符串，確保長度不超過 10）
+    const staffId = String(savedUser.id).padStart(10, '0').slice(0, 10);
+
+    // 檢查 staff.id 是否已存在
+    const existingStaff = await this.staffRepository.findOne({
+      where: { id: staffId },
+    });
+
+    if (existingStaff) {
+      // 如果 staff 已存在，刪除剛創建的 user
+      await this.userRepository.delete(savedUser.id);
+      throw new Error('員工編號已存在');
+    }
+
+    // 建立新員工物件
+    const newStaff = this.staffRepository.create({
+      id: staffId,
+      userId: savedUser.id,
+      name: staffData.name,
+      post: staffData.post,
+      work_group: staffData.work_group,
+      department: staffData.department,
+      wage: staffData.wage ?? 0,
+      allowance: staffData.allowance ?? 0,
+      organizer: staffData.organizer ?? 0,
+      labor_insurance: staffData.labor_insurance ?? 0,
+      health_insurance: staffData.health_insurance ?? 0,
+      pension: staffData.pension ?? 0,
+      is_foreign: staffData.is_foreign ?? false,
+      benifit: staffData.benifit ?? false,
+      need_check: staffData.need_check ?? true,
+      begain_work: staffData.begain_work,
+      stop_work: staffData.stop_work,
+      have_fake: staffData.have_fake ?? false,
+    });
+
+    // 儲存員工
+    const savedStaff = await this.staffRepository.save(newStaff);
+
+    // 根據 work_group 設定預設權限
+    if (staffData.work_group) {
+      await this.applyWorkGroupPermissions(savedUser.id, staffData.work_group);
+    }
+
+    // 重新載入使用者以包含關聯資料
+    const userWithRelations = await this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['userFeatures', 'userFeatures.feature', 'staff'],
+    }) as User;
+
+    return {
+      user: userWithRelations,
+      staff: savedStaff,
+    };
+  }
+
+  // 根據 work_group 應用預設權限
+  private async applyWorkGroupPermissions(
+    userId: number,
+    workGroup: string,
+  ): Promise<void> {
+    // 查找 work_group 的預設權限配置
+    const featureConfig = await this.featureConfigRepository.findOne({
+      where: { workGroup },
+      relations: ['permissions', 'permissions.feature'],
+    });
+
+    if (!featureConfig || !featureConfig.permissions) {
+      // 如果沒有找到配置，不設定任何權限
+      return;
+    }
+
+    // 為每個預設權限創建 user feature
+    for (const permission of featureConfig.permissions) {
+      // 獲取 feature（應該已經通過 relations 載入）
+      const feature = permission.feature;
+
+      if (!feature) {
+        continue;
+      }
+
+      // 檢查是否已存在相同的 user feature
+      const existingUserFeature = await this.userFeatureRepository.findOne({
+        where: {
+          user: { id: userId },
+          feature: { id: feature.id },
+        },
+      });
+
+      if (existingUserFeature) {
+        // 如果已存在，更新權限
+        existingUserFeature.permission = permission.permission;
+        await this.userFeatureRepository.save(existingUserFeature);
+      } else {
+        // 創建新的 user feature
+        const userFeature = this.userFeatureRepository.create({
+          user: { id: userId },
+          feature: feature,
+          permission: permission.permission,
+        });
+
+        await this.userFeatureRepository.save(userFeature);
+      }
+    }
   }
 }

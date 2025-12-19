@@ -12,25 +12,6 @@
       </template>
     </PageHeader>
 
-    <!-- 員工統計 -->
-    <div class="staff-overview">
-      <div class="overview-card">
-        <div class="overview-icon">🏭</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ staffStats.activeStaff }}</div>
-          <div class="overview-label">在職員工</div>
-        </div>
-      </div>
-
-      <div class="overview-card">
-        <div class="overview-icon">💼</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ staffStats.foreignStaff }}</div>
-          <div class="overview-label">外勞人數</div>
-        </div>
-      </div>
-    </div>
-
     <!-- 員工列表 -->
     <div class="staff-content">
       <div class="content-header">
@@ -145,72 +126,112 @@
           <!-- 錯誤提示 -->
           <ErrorMessage :message="addError" type="error" />
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">員工編號 *</label>
-              <input
-                type="text"
-                class="form-control"
-                v-model="newStaff.id"
-                required
-                maxlength="10"
-              />
+          <!-- 用戶資訊區塊 -->
+          <div class="form-section">
+            <h4 class="section-title">用戶資訊</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">用戶名 *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="newStaff.userName"
+                  required
+                  placeholder="請輸入用戶名"
+                  @input="handleUserNameInput"
+                />
+                <small class="form-hint">用於登入系統的用戶名（員工編號將自動生成）</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">密碼 *</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  v-model="newStaff.password"
+                  required
+                  placeholder="請輸入密碼"
+                  minlength="6"
+                />
+                <small class="form-hint">至少 6 個字符</small>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">姓名 *</label>
-              <input
-                type="text"
-                class="form-control"
-                v-model="newStaff.name"
-                required
-                maxlength="50"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">職稱</label>
-              <input
-                type="text"
-                class="form-control"
-                v-model="newStaff.post"
-                maxlength="50"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">工作組別</label>
-              <input
-                type="text"
-                class="form-control"
-                v-model="newStaff.work_group"
-                maxlength="20"
-              />
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">是否為管理員</label>
+                <select class="form-control" v-model="newStaff.isAdmin">
+                  <option :value="false">否</option>
+                  <option :value="true">是</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">部門</label>
-              <select class="form-control" v-model="newStaff.department">
-                <option value="">選擇部門</option>
-                <option value="技術部">技術部</option>
-                <option value="生產部">生產部</option>
-                <option value="業務部">業務部</option>
-                <option value="人資部">人資部</option>
-                <option value="財務部">財務部</option>
-              </select>
+          <!-- 員工資訊區塊 -->
+          <div class="form-section">
+            <h4 class="section-title">員工資訊</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">姓名 *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="newStaff.name"
+                  required
+                  maxlength="50"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">職稱</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="newStaff.post"
+                  maxlength="50"
+                />
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">到職日期</label>
-              <input
-                type="date"
-                class="form-control"
-                v-model="newStaff.begain_work"
-                @change="handleDateChange('begain_work')"
-              />
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">工作組別</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="newStaff.work_group"
+                  maxlength="20"
+                  placeholder="例如：A組、B組"
+                />
+                <small class="form-hint">將根據工作組別自動分配預設權限</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">部門</label>
+                <select class="form-control" v-model="newStaff.department">
+                  <option value="">選擇部門</option>
+                  <option value="技術部">技術部</option>
+                  <option value="生產部">生產部</option>
+                  <option value="業務部">業務部</option>
+                  <option value="人資部">人資部</option>
+                  <option value="財務部">財務部</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">到職日期</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  v-model="newStaff.begain_work"
+                  @change="handleDateChange('begain_work')"
+                />
+              </div>
             </div>
           </div>
+
+          <!-- 薪資資訊區塊 -->
+          <div class="form-section">
+            <h4 class="section-title">薪資資訊</h4>
 
           <div class="form-row">
             <div class="form-group">
@@ -308,6 +329,7 @@
                 <option :value="true">是</option>
               </select>
             </div>
+          </div>
           </div>
 
           <div class="form-actions">
@@ -726,6 +748,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, DataTable } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
+import { apiPost } from '@/services/api';
+import { API_CONFIG } from '@/config/api';
 
 // 員工類型定義
 interface Staff {
@@ -748,12 +772,6 @@ interface Staff {
   have_fake: boolean;
 }
 
-// 員工統計
-const staffStats = ref({
-  activeStaff: 0,
-  foreignStaff: 0,
-});
-
 // 搜尋和篩選
 const staffSearch = ref('');
 const departmentFilter = ref('');
@@ -768,9 +786,35 @@ const showViewModal = ref(false);
 const addError = ref('');
 const editError = ref('');
 
-// 新增員工表單
-const newStaff = ref<Staff>({
-  id: '',
+// 新增員工表單（包含用戶資訊）
+interface CreateStaffWithUser {
+  // 用戶資訊
+  userName: string;
+  password: string;
+  isAdmin?: boolean;
+  // 員工資訊
+  name: string;
+  post?: string;
+  work_group?: string;
+  department?: string;
+  wage?: number;
+  allowance?: number;
+  organizer?: number;
+  labor_insurance?: number;
+  health_insurance?: number;
+  pension?: number;
+  is_foreign?: boolean;
+  benifit?: boolean;
+  need_check?: boolean;
+  begain_work?: string | null;
+  stop_work?: string | null;
+  have_fake?: boolean;
+}
+
+const newStaff = ref<CreateStaffWithUser>({
+  userName: '',
+  password: '',
+  isAdmin: false,
   name: '',
   post: '',
   work_group: '',
@@ -805,25 +849,12 @@ const loadStaffData = async () => {
     if (response.ok) {
       const data = await response.json();
       staffList.value = data;
-      updateStaffStats();
     }
   } catch (error) {
     console.error('載入員工資料失敗:', error);
     // 使用模擬資料作為備用
     staffList.value = getMockStaffData();
-    updateStaffStats();
   }
-};
-
-// 更新員工統計
-const updateStaffStats = () => {
-  const active = staffList.value.filter((staff) => !staff.stop_work).length;
-  const foreign = staffList.value.filter((staff) => staff.is_foreign).length;
-
-  staffStats.value = {
-    activeStaff: active,
-    foreignStaff: foreign,
-  };
 };
 
 // 模擬員工資料（當 API 不可用時使用）
@@ -981,6 +1012,14 @@ const handleDateChange = (field: 'begain_work' | 'stop_work') => {
   }
 };
 
+// 處理用戶名輸入（自動生成建議）
+const handleUserNameInput = () => {
+  // 可以根據姓名自動生成建議的用戶名
+  if (!newStaff.value.userName && newStaff.value.name) {
+    // 這裡可以添加自動生成邏輯，例如使用姓名的拼音或英文
+  }
+};
+
 // 處理編輯表單日期欄位變更
 const handleEditDateChange = (field: 'begain_work' | 'stop_work') => {
   if (editingStaff.value[field] === '') {
@@ -995,59 +1034,73 @@ const editStaff = (staff: Staff) => {
   showEditModal.value = true;
 };
 
-// 新增員工
+// 新增員工（同時創建用戶）
 const addStaff = async () => {
   // 清除之前的錯誤
   addError.value = '';
 
-  // 處理日期欄位，將空字串轉換為 null
-  const staffData: Staff = { ...newStaff.value };
-  if (staffData.begain_work === '') staffData.begain_work = null;
-  if (staffData.stop_work === '') staffData.stop_work = null;
+  // 驗證必填欄位
+  if (!newStaff.value.userName || !newStaff.value.password || !newStaff.value.name) {
+    addError.value = '請填寫所有必填欄位';
+    return;
+  }
+
+  // 驗證密碼長度
+  if (newStaff.value.password.length < 6) {
+    addError.value = '密碼長度至少需要 6 個字符';
+    return;
+  }
+
+  // 處理日期欄位，將空字串轉換為 null 或 Date 對象
+  const requestData: CreateStaffWithUser = { ...newStaff.value };
+  if (requestData.begain_work === '') {
+    requestData.begain_work = null;
+  } else if (requestData.begain_work) {
+    // 將日期字符串轉換為 Date 對象（後端會處理）
+    requestData.begain_work = new Date(requestData.begain_work).toISOString().split('T')[0] as any;
+  }
+  if (requestData.stop_work === '') {
+    requestData.stop_work = null;
+  } else if (requestData.stop_work) {
+    requestData.stop_work = new Date(requestData.stop_work).toISOString().split('T')[0] as any;
+  }
 
   try {
-    const response = await fetch('/api/staffs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(staffData),
-    });
+    const response = await apiPost<{ message: string; user: any; staff: Staff }>(
+      API_CONFIG.AUTH.CREATE_USER_WITH_STAFF,
+      requestData
+    );
 
-    if (response.ok) {
-      const newStaffData = await response.json();
-      staffList.value.push(newStaffData);
-      updateStaffStats();
+    // 將新創建的員工添加到列表
+    staffList.value.push(response.staff);
 
-      // 重置表單
-      newStaff.value = {
-        id: '',
-        name: '',
-        post: '',
-        work_group: '',
-        department: '',
-        wage: 0,
-        allowance: 0,
-        organizer: 0,
-        labor_insurance: 0,
-        health_insurance: 0,
-        pension: 0,
-        is_foreign: false,
-        benifit: false,
-        need_check: true,
-        begain_work: new Date().toISOString().split('T')[0], // 預設為今天
-        stop_work: null,
-        have_fake: false,
-      };
+    // 重置表單
+    newStaff.value = {
+      userName: '',
+      password: '',
+      isAdmin: false,
+      name: '',
+      post: '',
+      work_group: '',
+      department: '',
+      wage: 0,
+      allowance: 0,
+      organizer: 0,
+      labor_insurance: 0,
+      health_insurance: 0,
+      pension: 0,
+      is_foreign: false,
+      benifit: false,
+      need_check: true,
+      begain_work: new Date().toISOString().split('T')[0], // 預設為今天
+      stop_work: null,
+      have_fake: false,
+    };
 
-      showAddModal.value = false;
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      addError.value = errorData.message || '新增員工失敗，請稍後再試';
-    }
+    showAddModal.value = false;
   } catch (error) {
     console.error('新增員工失敗:', error);
-    addError.value = '網路連線錯誤，請檢查網路連線後再試';
+    addError.value = error instanceof Error ? error.message : '新增員工失敗，請稍後再試';
   }
 };
 
@@ -1077,7 +1130,6 @@ const updateStaff = async () => {
       );
       if (index !== -1) {
         staffList.value[index] = updatedStaff;
-        updateStaffStats();
       }
       showEditModal.value = false;
     } else {
@@ -1126,53 +1178,6 @@ onMounted(() => {
 
 .btn-icon {
   margin-right: 0.5rem;
-}
-
-/* 員工統計 */
-.staff-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.overview-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.overview-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.overview-content {
-  flex: 1;
-}
-
-.overview-value {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.overview-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
 }
 
 /* 員工列表 */
@@ -1384,6 +1389,34 @@ onMounted(() => {
   color: var(--secondary-700);
 }
 
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--secondary-200);
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.form-section .section-title {
+  margin: 0 0 1rem 0;
+  color: var(--secondary-800);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary-500);
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--font-size-xs);
+  color: var(--secondary-600);
+  font-style: italic;
+}
+
 
 /* 可點擊欄位樣式 */
 .clickable-cell {
@@ -1499,10 +1532,6 @@ onMounted(() => {
     justify-content: center;
   }
 
-  .staff-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .content-header {
     flex-direction: column;
     gap: 1rem;
@@ -1524,10 +1553,6 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .staff-overview {
-    grid-template-columns: 1fr;
-  }
-
   .table-container {
     font-size: var(--font-size-sm);
   }

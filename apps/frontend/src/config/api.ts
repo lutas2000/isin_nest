@@ -9,6 +9,7 @@ export const API_CONFIG = {
     REGISTER: '/auth/register',
     RESET_PASSWORD: '/auth/reset-password',
     UPDATE_USER: '/auth/update-user',
+    CREATE_USER_WITH_STAFF: '/auth/create-user-with-staff',
   },
   
   // HR 相關端點

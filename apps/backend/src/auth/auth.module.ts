@@ -8,6 +8,9 @@ import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
 import { Feature } from './entities/feature.entity';
 import { UserFeature } from './entities/user-feature.entity';
+import { FeatureConfig } from './entities/feature-config.entity';
+import { FeaturePermission } from './entities/feature-permission.entity';
+import { Staff } from '../hr/staff/entities/staff.entity';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
@@ -15,7 +18,14 @@ import { FeatureGuard } from './guards/feature.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Feature, UserFeature]),
+    TypeOrmModule.forFeature([
+      User,
+      Feature,
+      UserFeature,
+      FeatureConfig,
+      FeaturePermission,
+      Staff,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
