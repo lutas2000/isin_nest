@@ -110,10 +110,6 @@
 
           <div class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">系統管理</h3>
-            <router-link to="/auth" class="nav-item" active-class="active">
-              <div class="nav-icon">🔐</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">認證管理</span>
-            </router-link>
             <router-link to="/settings" class="nav-item" active-class="active">
               <div class="nav-icon">⚙️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">系統設定</span>
@@ -219,7 +215,6 @@ const pageTitles: Record<string, string> = {
   '/crm/contacts': '聯絡人',
   '/crm/orders': '工作單',
   '/crm/quotes': '報價單',
-  '/auth': '認證管理',
   '/settings': '系統設定',
   '/profile': '個人資料',
 };
