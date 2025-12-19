@@ -1,10 +1,30 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CrmConfigService } from './config.service';
 import { CrmConfig } from './entities/crm-config.entity';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { AdminGuard } from '../../auth/admin.guard';
+import { CreateCrmConfigDto, UpdateCrmConfigDto } from './dto/crm-config.dto';
 
 @ApiTags('CRM 設定')
 @Controller('crm/configs')
+@UseGuards(JwtAuthGuard, AdminGuard)
+@ApiBearerAuth('JWT-auth')
 export class CrmConfigController {
   constructor(private readonly crmConfigService: CrmConfigService) {}
 
@@ -21,6 +41,30 @@ export class CrmConfigController {
   @Get(':category')
   findByCategory(@Param('category') category: string): Promise<CrmConfig[]> {
     return this.crmConfigService.findByCategory(category);
+  }
+
+  @ApiOperation({ summary: '創建 CRM 設定' })
+  @ApiResponse({ status: 201, description: '成功創建設定', type: CrmConfig })
+  @Post()
+  async create(@Body() createDto: CreateCrmConfigDto): Promise<CrmConfig> {
+    return this.crmConfigService.create(createDto);
+  }
+
+  @ApiOperation({ summary: '更新 CRM 設定' })
+  @ApiResponse({ status: 200, description: '成功更新設定', type: CrmConfig })
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateCrmConfigDto,
+  ): Promise<CrmConfig> {
+    return this.crmConfigService.update(+id, updateDto);
+  }
+
+  @ApiOperation({ summary: '刪除 CRM 設定' })
+  @ApiResponse({ status: 200, description: '成功刪除設定' })
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
+    return this.crmConfigService.remove(+id);
   }
 }
 

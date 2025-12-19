@@ -26,6 +26,7 @@ export const API_CONFIG = {
     QUOTE_ITEMS: '/crm/quote-items',
     WORK_ORDERS: '/crm/work-orders',
     WORK_ORDER_ITEMS: '/crm/work-order-items',
+    CONFIGS: '/crm/configs',
   },
 }
 

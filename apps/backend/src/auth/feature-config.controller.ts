@@ -1,0 +1,72 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { FeatureConfigService } from './feature-config.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { AdminGuard } from './admin.guard';
+import {
+  CreateFeatureConfigDto,
+  UpdateFeatureConfigDto,
+} from './dto/feature-config.dto';
+
+@ApiTags('權限設定')
+@Controller('auth/feature-configs')
+@UseGuards(JwtAuthGuard, AdminGuard)
+@ApiBearerAuth('JWT-auth')
+export class FeatureConfigController {
+  constructor(
+    private readonly featureConfigService: FeatureConfigService,
+  ) {}
+
+  @ApiOperation({ summary: '取得所有工作組別權限設定' })
+  @ApiResponse({ status: 200, description: '成功返回設定列表' })
+  @Get()
+  async findAll() {
+    return this.featureConfigService.findAll();
+  }
+
+  @ApiOperation({ summary: '取得單個工作組別權限設定' })
+  @ApiResponse({ status: 200, description: '成功返回設定' })
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.featureConfigService.findOne(+id);
+  }
+
+  @ApiOperation({ summary: '創建工作組別權限設定' })
+  @ApiResponse({ status: 201, description: '成功創建設定' })
+  @Post()
+  async create(@Body() createDto: CreateFeatureConfigDto) {
+    return this.featureConfigService.create(createDto);
+  }
+
+  @ApiOperation({ summary: '更新工作組別權限設定' })
+  @ApiResponse({ status: 200, description: '成功更新設定' })
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateFeatureConfigDto,
+  ) {
+    return this.featureConfigService.update(+id, updateDto);
+  }
+
+  @ApiOperation({ summary: '刪除工作組別權限設定' })
+  @ApiResponse({ status: 200, description: '成功刪除設定' })
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.featureConfigService.remove(+id);
+  }
+}
+

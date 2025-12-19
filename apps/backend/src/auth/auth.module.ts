@@ -5,6 +5,10 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { FeatureConfigController } from './feature-config.controller';
+import { FeatureConfigService } from './feature-config.service';
+import { FeatureController } from './feature.controller';
+import { FeatureService } from './feature.service';
 import { User } from './entities/user.entity';
 import { Feature } from './entities/feature.entity';
 import { UserFeature } from './entities/user-feature.entity';
@@ -36,8 +40,8 @@ import { FeatureGuard } from './guards/feature.guard';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, AdminGuard, FeatureGuard],
+  controllers: [AuthController, FeatureConfigController, FeatureController],
+  providers: [AuthService, FeatureConfigService, FeatureService, JwtStrategy, JwtAuthGuard, AdminGuard, FeatureGuard],
   exports: [AuthService, JwtAuthGuard, AdminGuard, FeatureGuard],
 })
 export class AuthModule {}

@@ -52,6 +52,68 @@ export class CrmConfigService implements OnModuleInit {
     });
   }
 
+  async create(createDto: { category: string; code: string; label: string; displayOrder?: number }): Promise<CrmConfig> {
+    // 檢查是否已存在
+    const existing = await this.crmConfigRepository.findOne({
+      where: { category: createDto.category, code: createDto.code },
+    });
+
+    if (existing) {
+      throw new Error('該分類和代碼的設定已存在');
+    }
+
+    const config = this.crmConfigRepository.create({
+      category: createDto.category,
+      code: createDto.code,
+      label: createDto.label,
+      displayOrder: createDto.displayOrder ?? 0,
+    });
+
+    return this.crmConfigRepository.save(config);
+  }
+
+  async update(id: number, updateDto: { category?: string; code?: string; label?: string; displayOrder?: number }): Promise<CrmConfig> {
+    const config = await this.crmConfigRepository.findOne({ where: { id } });
+
+    if (!config) {
+      throw new Error('設定不存在');
+    }
+
+    // 如果要更新 category 或 code，檢查是否會造成重複
+    if (updateDto.category || updateDto.code) {
+      const newCategory = updateDto.category ?? config.category;
+      const newCode = updateDto.code ?? config.code;
+
+      if (newCategory !== config.category || newCode !== config.code) {
+        const existing = await this.crmConfigRepository.findOne({
+          where: { category: newCategory, code: newCode },
+        });
+
+        if (existing && existing.id !== id) {
+          throw new Error('該分類和代碼的設定已存在');
+        }
+      }
+    }
+
+    if (updateDto.category !== undefined) config.category = updateDto.category;
+    if (updateDto.code !== undefined) config.code = updateDto.code;
+    if (updateDto.label !== undefined) config.label = updateDto.label;
+    if (updateDto.displayOrder !== undefined) config.displayOrder = updateDto.displayOrder;
+
+    return this.crmConfigRepository.save(config);
+  }
+
+  async remove(id: number): Promise<{ message: string }> {
+    const config = await this.crmConfigRepository.findOne({ where: { id } });
+
+    if (!config) {
+      throw new Error('設定不存在');
+    }
+
+    await this.crmConfigRepository.remove(config);
+    return { message: '設定已刪除' };
+  }
+
   async syncDefaults(): Promise<void> {
     // 先把資料表中已有的設定全部查出來，避免使用 upsert 時因為沒有 id 而觸發 TypeORM 的錯誤
     const existing = await this.crmConfigRepository.find();
