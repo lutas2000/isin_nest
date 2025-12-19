@@ -40,6 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 計算屬性
   const isLoggedIn = computed(() => isAuthenticated.value && user.value !== null)
+  const isAdmin = computed(() => user.value?.isAdmin ?? false)
   const userRole = computed(() => user.value?.isAdmin ? 'admin' : 'user')
   const userName = computed(() => user.value?.userName || '')
   const staff = computed(() => user.value?.staff || null)
@@ -146,6 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
     
     // 計算屬性
     isLoggedIn,
+    isAdmin,
     userRole,
     userName,
     staff,
