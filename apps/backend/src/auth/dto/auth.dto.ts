@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PermissionType } from '../entities/user-feature.entity';
 
 /**
  * JWT Payload 型別定義
@@ -6,6 +7,24 @@ import { ApiProperty } from '@nestjs/swagger';
 export class JwtPayload {
   userName: string;
   sub: string;
+}
+
+/**
+ * Feature 權限輸入
+ */
+export class FeaturePermissionInput {
+  @ApiProperty({
+    description: '功能名稱',
+    example: 'crm',
+  })
+  feature!: string;
+
+  @ApiProperty({
+    description: '權限類型：read 或 write',
+    enum: PermissionType,
+    example: PermissionType.READ,
+  })
+  permission!: PermissionType;
 }
 
 /**
@@ -34,10 +53,13 @@ export class UserInput {
   @ApiProperty({
     description: '用戶功能權限列表',
     required: false,
-    type: [String],
-    example: ['feature1', 'feature2'],
+    type: [FeaturePermissionInput],
+    example: [
+      { feature: 'crm', permission: 'read' },
+      { feature: 'hr', permission: 'write' },
+    ],
   })
-  features?: string[];
+  features?: FeaturePermissionInput[];
 }
 
 /**
@@ -74,10 +96,13 @@ export class UpdateUserInput {
   @ApiProperty({
     description: '功能權限列表',
     required: false,
-    type: [String],
-    example: ['feature1', 'feature2'],
+    type: [FeaturePermissionInput],
+    example: [
+      { feature: 'crm', permission: 'read' },
+      { feature: 'hr', permission: 'write' },
+    ],
   })
-  features?: string[];
+  features?: FeaturePermissionInput[];
 }
 
 /**

@@ -4,12 +4,19 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './entities/user.entity';
+import { Feature } from './entities/feature.entity';
+import { UserFeature, PermissionType } from './entities/user-feature.entity';
+import { FeaturePermissionInput } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Feature)
+    private readonly featureRepository: Repository<Feature>,
+    @InjectRepository(UserFeature)
+    private readonly userFeatureRepository: Repository<UserFeature>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -17,7 +24,7 @@ export class AuthService {
   async validateUser(userName: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { userName },
-      relations: ['staff'], // 載入關聯的 staff 資料
+      relations: ['staff', 'userFeatures', 'userFeatures.feature'], // 載入關聯的 staff 和 feature 資料
     });
 
     if (!user) {
@@ -38,7 +45,7 @@ export class AuthService {
     userName: string,
     password: string,
     isAdmin?: boolean,
-    features?: string[],
+    features?: FeaturePermissionInput[],
   ): Promise<User> {
     // 檢查使用者是否已存在
     const existingUser = await this.userRepository.findOne({
@@ -58,11 +65,54 @@ export class AuthService {
       userName,
       password: hashedPassword,
       isAdmin: isAdmin ?? false,
-      features: features ?? [],
     });
 
-    // 儲存到資料庫
-    return await this.userRepository.save(newUser);
+    // 儲存使用者
+    const savedUser = await this.userRepository.save(newUser);
+
+    // 處理功能權限
+    if (features && features.length > 0) {
+      await this.setUserFeatures(savedUser.id, features);
+    }
+
+    // 重新載入使用者以包含關聯資料
+    return await this.userRepository.findOne({
+      where: { id: savedUser.id },
+      relations: ['userFeatures', 'userFeatures.feature'],
+    }) as User;
+  }
+
+  // 設定用戶的功能權限
+  private async setUserFeatures(
+    userId: number,
+    features: FeaturePermissionInput[],
+  ): Promise<void> {
+    // 先刪除現有的權限
+    await this.userFeatureRepository.delete({ user: { id: userId } });
+
+    // 為每個 feature 創建或更新權限
+    for (const featureInput of features) {
+      // 查找或創建 feature
+      let feature = await this.featureRepository.findOne({
+        where: { name: featureInput.feature },
+      });
+
+      if (!feature) {
+        feature = this.featureRepository.create({
+          name: featureInput.feature,
+        });
+        feature = await this.featureRepository.save(feature);
+      }
+
+      // 創建或更新 user feature
+      const userFeature = this.userFeatureRepository.create({
+        user: { id: userId },
+        feature: feature,
+        permission: featureInput.permission,
+      });
+
+      await this.userFeatureRepository.save(userFeature);
+    }
   }
 
   // 簽發 JWT Token 並返回用戶資訊
@@ -87,14 +137,21 @@ export class AuthService {
       staffData = staffWithoutSalary;
     }
 
+    // 處理 userFeatures 資料
+    const featuresData = user.userFeatures?.map((uf) => ({
+      feature: uf.feature.name,
+      permission: uf.permission,
+    })) || [];
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, staff: __, ...userWithoutPassword } = user;
+    const { password: _, staff: __, userFeatures: ___, ...userWithoutPassword } = user;
 
     return {
       access_token: this.jwtService.sign(payload), // 簽發 JWT
       user: {
         ...userWithoutPassword,
         staff: staffData,
+        features: featuresData,
       },
     };
   }
@@ -148,7 +205,7 @@ export class AuthService {
       newUserName?: string;
       password?: string;
       isAdmin?: boolean;
-      features?: string[];
+      features?: FeaturePermissionInput[];
     },
     currentUser: User,
   ): Promise<User> {
@@ -193,10 +250,16 @@ export class AuthService {
 
     // 更新功能權限（如果提供）
     if (updateData.features !== undefined) {
-      targetUser.features = updateData.features;
+      await this.setUserFeatures(targetUser.id, updateData.features);
     }
 
     // 儲存到資料庫
-    return await this.userRepository.save(targetUser);
+    await this.userRepository.save(targetUser);
+
+    // 重新載入使用者以包含關聯資料
+    return await this.userRepository.findOne({
+      where: { id: targetUser.id },
+      relations: ['userFeatures', 'userFeatures.feature'],
+    }) as User;
   }
 }

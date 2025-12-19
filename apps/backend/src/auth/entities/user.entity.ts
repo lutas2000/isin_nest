@@ -5,8 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 import { Staff } from '../../hr/staff/entities/staff.entity';
+import { UserFeature } from './user-feature.entity';
 
 @Entity('users')
 export class User {
@@ -22,8 +24,10 @@ export class User {
   @Column({ default: false })
   isAdmin: boolean;
 
-  @Column('simple-array', { default: '' })
-  features: string[];
+  @OneToMany(() => UserFeature, (userFeature) => userFeature.user, {
+    cascade: true,
+  })
+  userFeatures: UserFeature[];
 
   @OneToOne(() => Staff, (staff) => staff.user)
   staff?: Staff;
