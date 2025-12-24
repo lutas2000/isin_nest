@@ -13,6 +13,7 @@ import { Feature } from './feature.entity';
 export enum PermissionType {
   READ = 'read',
   WRITE = 'write',
+  PERSONAL = 'personal',
 }
 
 @Entity('user_features')
