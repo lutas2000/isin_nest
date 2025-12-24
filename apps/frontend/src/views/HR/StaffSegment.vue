@@ -7,7 +7,7 @@
       <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
           <span class="btn-icon">⏰</span>
-          新增段別設定
+          新增上班時段
         </button>
       </template>
     </PageHeader>
@@ -46,15 +46,7 @@
 
     <!-- 段別列表 -->
     <div class="segment-content">
-      <div class="content-header">
-        <h3>段別設定列表</h3>
-        <div class="header-controls">
-          <button class="btn btn-outline" @click="loadSegmentData">
-            <span class="btn-icon">🔄</span>
-            重新載入
-          </button>
-        </div>
-      </div>
+      <TableHeader title="上班時段列表"></TableHeader>
 
       <DataTable
         :columns="segmentColumns"
@@ -478,7 +470,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable } from '@/components';
+import { PageHeader, DataTable, TableHeader } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
 
 // 段別類型定義
@@ -941,23 +933,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.content-header {
-  padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
+/* content-header 樣式已移至 SectionHeader 組件 */
 
 /* 表格容器 */
 .table-container {

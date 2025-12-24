@@ -67,9 +67,8 @@
 
       <!-- 工時記錄 -->
       <div v-if="activeTab === 'records'" class="tab-content">
-        <div class="content-header">
-          <h3>工時記錄</h3>
-          <div class="header-controls">
+        <SectionHeader title="工時記錄">
+          <template #actions>
             <div class="search-box">
               <input 
                 type="text" 
@@ -91,8 +90,8 @@
               placeholder="結束日期"
             />
             <button class="btn btn-outline" @click="loadManhourData">重新載入</button>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="table-container">
           <template v-if="loading">
@@ -155,17 +154,16 @@
 
       <!-- 工時統計 -->
       <div v-if="activeTab === 'statistics'" class="tab-content">
-        <div class="content-header">
-          <h3>工時統計</h3>
-          <div class="header-controls">
+        <SectionHeader title="工時統計">
+          <template #actions>
             <select class="form-control" v-model="statPeriod">
               <option value="week">本週</option>
               <option value="month">本月</option>
               <option value="quarter">本季</option>
             </select>
             <button class="btn btn-primary" @click="loadStatistics">更新統計</button>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="statistics-grid">
           <div class="stat-card">
@@ -204,9 +202,8 @@
 
       <!-- 工時報表 -->
       <div v-if="activeTab === 'reports'" class="tab-content">
-        <div class="content-header">
-          <h3>工時報表</h3>
-          <div class="header-controls">
+        <SectionHeader title="工時報表">
+          <template #actions>
             <select class="form-control" v-model="reportType">
               <option value="employee">員工工時報表</option>
               <option value="date-range">日期範圍報表</option>
@@ -222,8 +219,8 @@
               v-model="reportEndDate"
             />
             <button class="btn btn-primary" @click="generateReport">產生報表</button>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="reports-content">
           <div class="report-summary">
@@ -320,7 +317,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable } from '@/components';
+import { PageHeader, DataTable, SectionHeader } from '@/components';
 import { buildApiUrl, API_CONFIG } from '../../config/api';
 import { useAuthStore } from '../../stores/auth';
 
@@ -882,25 +879,7 @@ onMounted(() => {
   padding: 2rem;
 }
 
-.content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
+/* content-header 樣式已移至 SectionHeader 組件 */
 
 .search-box {
   min-width: 300px;
@@ -1215,16 +1194,7 @@ onMounted(() => {
     text-align: center;
   }
   
-  .content-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .header-controls {
-    width: 100%;
-    flex-direction: column;
-  }
+  /* content-header 響應式設計已移至 SectionHeader 組件 */
   
   .search-box {
     min-width: auto;

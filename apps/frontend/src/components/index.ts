@@ -7,3 +7,5 @@ export { default as StatusBadge } from './StatusBadge.vue';
 export { default as Modal } from './Modal.vue';
 export { default as FormField } from './FormField.vue';
 export { default as DraggableList } from './DraggableList.vue';
+export { default as SectionHeader } from './SectionHeader.vue';
+export { default as TableHeader } from './TableHeader.vue';

@@ -57,15 +57,14 @@
 
     <!-- 假期列表 -->
     <div class="vacation-content">
-      <div class="content-header">
-        <h3>假期記錄列表</h3>
-        <div class="header-controls">
+      <SectionHeader title="假期記錄列表">
+        <template #actions>
           <button class="btn btn-outline" @click="loadVacationData">
             <span class="btn-icon">🔄</span>
             重新載入
           </button>
-        </div>
-      </div>
+        </template>
+      </SectionHeader>
 
       <div class="table-container">
         <DataTable
@@ -290,7 +289,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable } from '@/components';
+import { PageHeader, DataTable, SectionHeader } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
 
 // 假期類型定義
@@ -635,23 +634,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.content-header {
-  padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
+/* content-header 樣式已移至 SectionHeader 組件 */
 
 /* 表格容器 */
 .table-container {

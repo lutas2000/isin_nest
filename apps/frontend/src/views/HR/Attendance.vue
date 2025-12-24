@@ -67,14 +67,13 @@
 
       <!-- 今日出勤 -->
       <div v-if="activeTab === 'today'" class="tab-content">
-        <div class="content-header">
-          <h3>今日出勤狀況 - {{ todayDate }}</h3>
-          <div class="header-controls">
+        <SectionHeader :title="`今日出勤狀況 - ${todayDate}`">
+          <template #actions>
             <button class="btn btn-success" @click="refreshAttendance">
               刷新資料
             </button>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <DataTable
           :columns="todayColumns"
@@ -114,9 +113,8 @@
 
       <!-- 出勤記錄 -->
       <div v-if="activeTab === 'records'" class="tab-content">
-        <div class="content-header">
-          <h3>出勤記錄查詢</h3>
-          <div class="header-controls">
+        <SectionHeader title="出勤記錄查詢">
+          <template #actions>
             <div class="search-box">
               <input 
                 type="text" 
@@ -137,8 +135,8 @@
               <option value="sales">業務部</option>
               <option value="hr">人資部</option>
             </select>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <DataTable
           :columns="recordColumns"
@@ -179,17 +177,16 @@
 
       <!-- 統計報表 -->
       <div v-if="activeTab === 'reports'" class="tab-content">
-        <div class="content-header">
-          <h3>出勤統計報表</h3>
-          <div class="header-controls">
+        <SectionHeader title="出勤統計報表">
+          <template #actions>
             <select class="form-control" v-model="reportPeriod">
               <option value="week">本週</option>
               <option value="month">本月</option>
               <option value="quarter">本季</option>
             </select>
             <button class="btn btn-primary">匯出報表</button>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="reports-grid">
           <div class="report-card">
@@ -238,7 +235,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable } from '@/components';
+import { PageHeader, DataTable, SectionHeader } from '@/components';
 
 // 頁面標籤
 const tabs = [
@@ -740,16 +737,7 @@ onMounted(() => {
     text-align: center;
   }
   
-  .content-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .header-controls {
-    width: 100%;
-    flex-direction: column;
-  }
+  /* content-header 響應式設計已移至 SectionHeader 組件 */
   
   .search-box {
     min-width: auto;

@@ -67,9 +67,8 @@
 
       <!-- 請假申請 -->
       <div v-if="activeTab === 'applications'" class="tab-content">
-        <div class="content-header">
-          <h3>請假申請</h3>
-          <div class="header-controls">
+        <SectionHeader title="請假申請">
+          <template #actions>
             <div class="search-box">
               <input 
                 type="text" 
@@ -91,8 +90,8 @@
               <option value="personal">事假</option>
               <option value="maternity">產假</option>
             </select>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <DataTable
           :columns="applicationColumns"
@@ -149,17 +148,16 @@
 
       <!-- 請假統計 -->
       <div v-if="activeTab === 'statistics'" class="tab-content">
-        <div class="content-header">
-          <h3>請假統計</h3>
-          <div class="header-controls">
+        <SectionHeader title="請假統計">
+          <template #actions>
             <select class="form-control" v-model="statPeriod">
               <option value="month">本月</option>
               <option value="quarter">本季</option>
               <option value="year">本年</option>
             </select>
             <button class="btn btn-primary">匯出統計</button>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="statistics-grid">
           <div class="stat-card">
@@ -208,10 +206,11 @@
 
       <!-- 請假政策 -->
       <div v-if="activeTab === 'policies'" class="tab-content">
-        <div class="content-header">
-          <h3>請假政策</h3>
-          <button class="btn btn-primary">編輯政策</button>
-        </div>
+        <SectionHeader title="請假政策">
+          <template #actions>
+            <button class="btn btn-primary">編輯政策</button>
+          </template>
+        </SectionHeader>
 
         <div class="policies-grid">
           <div class="policy-card" v-for="policy in leavePolicies" :key="policy.type">
@@ -250,7 +249,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { PageHeader, DataTable } from '@/components';
+import { PageHeader, DataTable, SectionHeader } from '@/components';
 
 // 頁面標籤
 const tabs = [
@@ -508,22 +507,7 @@ const leavePolicies = ref([
   padding: 2rem;
 }
 
-.content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
+/* content-header 樣式已移至 SectionHeader 組件 */
 
 .search-box {
   min-width: 300px;

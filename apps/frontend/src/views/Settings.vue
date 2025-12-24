@@ -21,13 +21,14 @@
 
       <!-- 銷管設定 -->
       <div v-if="activeTab === 'crm'" class="settings-section">
-        <div class="section-header">
-          <h3>銷管設定</h3>
-          <button class="btn btn-primary" @click="showAddCrmModal = true">
-            <span class="btn-icon">➕</span>
-            新增設定
-          </button>
-        </div>
+        <SectionHeader title="銷管設定">
+          <template #actions>
+            <button class="btn btn-primary" @click="showAddCrmModal = true">
+              <span class="btn-icon">➕</span>
+              新增設定
+            </button>
+          </template>
+        </SectionHeader>
 
         <ErrorMessage :message="crmError" type="error" />
 
@@ -62,13 +63,14 @@
 
       <!-- 權限設定 -->
       <div v-if="activeTab === 'feature'" class="settings-section">
-        <div class="section-header">
-          <h3>權限設定</h3>
-          <button class="btn btn-primary" @click="showAddFeatureModal = true">
-            <span class="btn-icon">➕</span>
-            新增工作組別
-          </button>
-        </div>
+        <SectionHeader title="權限設定">
+          <template #actions>
+            <button class="btn btn-primary" @click="showAddFeatureModal = true">
+              <span class="btn-icon">➕</span>
+              新增工作組別
+            </button>
+          </template>
+        </SectionHeader>
 
         <ErrorMessage :message="featureError" type="error" />
 
@@ -249,7 +251,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, Modal, DraggableList } from '@/components';
+import { PageHeader, DataTable, Modal, DraggableList, SectionHeader } from '@/components';
 import ErrorMessage from '@/components/ErrorMessage.vue';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -602,18 +604,7 @@ onMounted(() => {
   border-bottom-color: var(--primary-500);
 }
 
-/* 區塊標題 */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.section-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
+/* 區塊標題 - 已移至 SectionHeader 組件 */
 
 .category-section {
   margin-bottom: 2rem;
@@ -746,11 +737,7 @@ onMounted(() => {
     text-align: left;
   }
 
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
+  /* section-header 響應式設計已移至 SectionHeader 組件 */
 
   .permission-row {
     grid-template-columns: 1fr;

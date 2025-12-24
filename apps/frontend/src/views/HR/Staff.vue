@@ -14,9 +14,8 @@
 
     <!-- 員工列表 -->
     <div class="staff-content">
-      <div class="content-header">
-        <h3>員工列表</h3>
-        <div class="header-controls">
+      <TableHeader title="員工列表">
+        <template #actions>
           <div class="search-box">
             <input
               type="text"
@@ -38,8 +37,8 @@
             <option value="active">在職</option>
             <option value="resigned">離職</option>
           </select>
-        </div>
-      </div>
+        </template>
+      </TableHeader>
 
       <DataTable
         :columns="tableColumns"
@@ -746,7 +745,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable } from '@/components';
+import { PageHeader, DataTable, TableHeader } from '@/components';
 import ErrorMessage from '../../components/ErrorMessage.vue';
 import { apiPost } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -1188,23 +1187,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.content-header {
-  padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
+/* content-header 樣式已移至 SectionHeader 組件 */
 
 .search-box {
   min-width: 300px;
@@ -1532,16 +1515,7 @@ onMounted(() => {
     justify-content: center;
   }
 
-  .content-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .header-controls {
-    width: 100%;
-    flex-direction: column;
-  }
+  /* content-header 響應式設計已移至 SectionHeader 組件 */
 
   .search-box {
     min-width: auto;

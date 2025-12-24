@@ -174,6 +174,61 @@
 - `#item`: 自定義項目內容，接收 `{ item, index }`
 - `#actions`: 自定義操作按鈕，接收 `{ item, index }`
 
+### 10. SectionHeader
+
+區塊標題組件，用於顯示區塊標題和操作按鈕。
+
+```vue
+<SectionHeader title="區塊標題">
+  <template #actions>
+    <button class="btn btn-primary">
+      <span class="btn-icon">➕</span>
+      新增
+    </button>
+  </template>
+</SectionHeader>
+```
+
+**Props:**
+- `title` (required): 區塊標題文字
+
+**Slots:**
+- `#actions`: 操作按鈕區域（可選）
+
+### 11. TableHeader
+
+表格標題組件，專門用於表格容器內部的標題和操作區域。
+
+```vue
+<TableHeader title="員工列表">
+  <template #actions>
+    <div class="search-box">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="搜尋..."
+        v-model="searchQuery"
+      />
+    </div>
+    <select class="form-control" v-model="filter">
+      <option value="">全部</option>
+      <option value="active">啟用</option>
+    </select>
+    <button class="btn btn-primary">新增</button>
+  </template>
+</TableHeader>
+```
+
+**Props:**
+- `title` (optional): 表格標題文字
+
+**Slots:**
+- `#actions`: 操作區域，可放置搜尋框、篩選器、按鈕等
+
+**與 SectionHeader 的區別：**
+- `TableHeader` 專為表格容器設計，內建 padding 和 border-bottom
+- `SectionHeader` 用於一般區塊標題，margin-bottom 較大
+
 ## 使用方式
 
 ### 導入組件
@@ -189,6 +244,8 @@ import {
   Modal,
   FormField,
   DraggableList,
+  SectionHeader,
+  TableHeader,
 } from '@/components';
 ```
 
@@ -223,6 +280,22 @@ import {
         <div>{{ item.name }}</div>
       </template>
     </DraggableList>
+
+    <SectionHeader title="區塊標題">
+      <template #actions>
+        <button class="btn btn-primary">操作</button>
+      </template>
+    </SectionHeader>
+
+    <div class="table-container">
+      <TableHeader title="數據列表">
+        <template #actions>
+          <input type="text" class="form-control" placeholder="搜尋..." />
+          <button class="btn btn-primary">新增</button>
+        </template>
+      </TableHeader>
+      <DataTable :columns="columns" :data="data" />
+    </div>
   </div>
 </template>
 ```

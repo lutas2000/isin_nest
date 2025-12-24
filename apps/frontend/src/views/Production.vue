@@ -84,9 +84,8 @@
 
       <!-- 設備狀態 -->
       <div v-if="activeTab === 'equipment'" class="tab-content">
-        <div class="content-header">
-          <h3>設備狀態監控</h3>
-          <div class="header-controls">
+        <SectionHeader title="設備狀態監控">
+          <template #actions>
             <select class="form-control" v-model="equipmentFilter">
               <option value="">全部狀態</option>
               <option value="running">運行中</option>
@@ -94,8 +93,8 @@
               <option value="maintenance">維護中</option>
               <option value="error">故障</option>
             </select>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="equipment-grid">
           <div
@@ -161,10 +160,11 @@
 
       <!-- 生產排程 -->
       <div v-if="activeTab === 'schedule'" class="tab-content">
-        <div class="content-header">
-          <h3>生產排程</h3>
-          <button class="btn btn-primary">新增工單</button>
-        </div>
+        <SectionHeader title="生產排程">
+          <template #actions>
+            <button class="btn btn-primary">新增工單</button>
+          </template>
+        </SectionHeader>
 
         <div class="schedule-container">
           <div class="schedule-header">
@@ -222,17 +222,16 @@
 
       <!-- 品質控制 -->
       <div v-if="activeTab === 'quality'" class="tab-content">
-        <div class="content-header">
-          <h3>品質控制</h3>
-          <div class="header-controls">
+        <SectionHeader title="品質控制">
+          <template #actions>
             <select class="form-control" v-model="qualityFilter">
               <option value="">全部狀態</option>
               <option value="passed">合格</option>
               <option value="failed">不合格</option>
               <option value="pending">待檢驗</option>
             </select>
-          </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="quality-stats">
           <div class="stat-card">
@@ -318,6 +317,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { SectionHeader } from '@/components';
 
 // 頁面標籤
 const tabs = [
@@ -610,22 +610,7 @@ const filteredInspections = computed(() => {
   padding: 2rem;
 }
 
-.content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
+/* content-header 樣式已移至 SectionHeader 組件 */
 
 /* 設備網格 */
 .equipment-grid {
