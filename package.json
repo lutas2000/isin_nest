@@ -31,7 +31,8 @@
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "nx:graph": "nx graph",
     "nx:affected": "nx affected:graph",
-    "create-admin": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-admin.ts"
+    "create-admin": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-admin.ts",
+    "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
