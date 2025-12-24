@@ -13,10 +13,18 @@ export class FeatureConfig {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column({
+    unique: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   workGroup: string;
 
-  @Column({ nullable: true })
+  @Column({
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   description: string;
 
   @OneToMany(() => FeaturePermission, (permission) => permission.featureConfig, {

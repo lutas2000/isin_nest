@@ -95,7 +95,7 @@
                 class="permission-badge"
                 :class="getPermissionClass(perm.permission)"
               >
-                {{ perm.feature.name }}: {{ perm.permission }}
+                {{ perm.feature.name }}: {{ getPermissionLabel(perm.permission) }}
               </span>
               <span v-if="!row.permissions || row.permissions.length === 0" class="text-muted">
                 無權限設定
@@ -213,15 +213,20 @@
                 <option value="">選擇功能</option>
                 <option
                   v-for="feature in availableFeatures"
-                  :key="feature.id"
+                  :key="feature.name"
                   :value="feature.name"
                 >
-                  {{ feature.name }} - {{ feature.description || '無描述' }}
+                  {{ feature.label }} ({{ feature.name }})
                 </option>
               </select>
               <select class="form-control" v-model="perm.permission" required>
-                <option value="read">讀取</option>
-                <option value="write">寫入</option>
+                <option
+                  v-for="permType in availablePermissionTypes"
+                  :key="permType.value"
+                  :value="permType.value"
+                >
+                  {{ permType.label }}
+                </option>
               </select>
               <button
                 type="button"
@@ -311,15 +316,23 @@ const draggedOverIndex = ref<number | null>(null);
 
 // Feature 設定
 interface Feature {
-  id: number;
   name: string;
-  description?: string;
+  label: string;
+  description: string;
+  module: string;
+  category: string;
+}
+
+interface PermissionType {
+  value: string;
+  label: string;
+  description: string;
 }
 
 interface FeaturePermission {
   id: number;
   feature: Feature;
-  permission: 'read' | 'write';
+  permission: 'read' | 'write' | 'personal';
 }
 
 interface FeatureConfig {
@@ -331,6 +344,7 @@ interface FeatureConfig {
 
 const featureConfigs = ref<FeatureConfig[]>([]);
 const availableFeatures = ref<Feature[]>([]);
+const availablePermissionTypes = ref<PermissionType[]>([]);
 const featureError = ref('');
 const showAddFeatureModal = ref(false);
 const showEditFeatureModal = ref(false);
@@ -371,10 +385,18 @@ const loadFeatureConfigs = async () => {
 
 const loadFeatures = async () => {
   try {
-    // 假設有這個 API，如果沒有需要創建
-    availableFeatures.value = await apiGet<Feature[]>('/auth/features');
+    availableFeatures.value = await apiGet<Feature[]>('/auth/features/list');
   } catch (error) {
     console.error('載入功能列表失敗:', error);
+    featureError.value = error instanceof Error ? error.message : '載入功能列表失敗';
+  }
+};
+
+const loadPermissionTypes = async () => {
+  try {
+    availablePermissionTypes.value = await apiGet<PermissionType[]>('/auth/features/permissions');
+  } catch (error) {
+    console.error('載入權限類型失敗:', error);
   }
 };
 
@@ -571,7 +593,10 @@ const closeFeatureModal = () => {
 };
 
 const addPermission = () => {
-  featureForm.value.permissions.push({ feature: '', permission: 'read' });
+  const defaultPermission = availablePermissionTypes.value.length > 0 
+    ? availablePermissionTypes.value[0].value 
+    : 'read';
+  featureForm.value.permissions.push({ feature: '', permission: defaultPermission });
 };
 
 const removePermission = (index: number) => {
@@ -579,7 +604,14 @@ const removePermission = (index: number) => {
 };
 
 const getPermissionClass = (permission: string) => {
-  return permission === 'write' ? 'badge-write' : 'badge-read';
+  if (permission === 'write') return 'badge-write';
+  if (permission === 'personal') return 'badge-personal';
+  return 'badge-read';
+};
+
+const getPermissionLabel = (permission: string) => {
+  const permType = availablePermissionTypes.value.find(p => p.value === permission);
+  return permType ? permType.label : permission;
 };
 
 // 初始化
@@ -587,6 +619,7 @@ onMounted(() => {
   loadCrmConfigs();
   loadFeatureConfigs();
   loadFeatures();
+  loadPermissionTypes();
 });
 </script>
 
@@ -680,6 +713,11 @@ onMounted(() => {
 .badge-write {
   background-color: var(--success-100);
   color: var(--success-700);
+}
+
+.badge-personal {
+  background-color: var(--warning-100);
+  color: var(--warning-700);
 }
 
 /* 權限編輯器 */
