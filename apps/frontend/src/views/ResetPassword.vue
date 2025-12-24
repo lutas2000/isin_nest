@@ -63,9 +63,6 @@
             />
           </div>
 
-          <ErrorMessage :message="errorMessage" type="error" />
-
-          <ErrorMessage :message="successMessage" type="success" />
 
           <button
             type="submit"
@@ -96,11 +93,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useErrorStore } from '../stores/error';
 import { buildApiUrl, API_CONFIG } from '../config/api';
-import ErrorMessage from '../components/ErrorMessage.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const errorStore = useErrorStore();
 
 const resetForm = ref({
   userName: '',
@@ -110,7 +108,6 @@ const resetForm = ref({
 });
 
 const isLoading = ref(false);
-const errorMessage = ref('');
 const successMessage = ref('');
 
 // 表單驗證
@@ -135,24 +132,24 @@ onMounted(() => {
 const handleResetPassword = async () => {
   // 驗證新密碼長度
   if (resetForm.value.newPassword.length < 6) {
-    errorMessage.value = '新密碼至少需要6個字元';
+    errorStore.showError('新密碼至少需要6個字元');
     return;
   }
 
   // 驗證兩次輸入的新密碼是否一致
   if (resetForm.value.newPassword !== resetForm.value.confirmPassword) {
-    errorMessage.value = '兩次輸入的新密碼不一致';
+    errorStore.showError('兩次輸入的新密碼不一致');
     return;
   }
 
   // 驗證新密碼不能與目前密碼相同
   if (resetForm.value.oldPassword === resetForm.value.newPassword) {
-    errorMessage.value = '新密碼不能與目前密碼相同';
+    errorStore.showError('新密碼不能與目前密碼相同');
     return;
   }
 
   isLoading.value = true;
-  errorMessage.value = '';
+  errorStore.clearError();
   successMessage.value = '';
 
   try {
@@ -193,9 +190,9 @@ const handleResetPassword = async () => {
   } catch (error) {
     console.error('Reset password error:', error);
     if (error instanceof Error) {
-      errorMessage.value = error.message;
+      errorStore.showError(error.message);
     } else {
-      errorMessage.value = '重設密碼失敗，請檢查輸入資訊是否正確';
+      errorStore.showError('重設密碼失敗，請檢查輸入資訊是否正確');
     }
   } finally {
     isLoading.value = false;

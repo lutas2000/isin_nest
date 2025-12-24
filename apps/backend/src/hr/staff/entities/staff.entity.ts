@@ -57,27 +57,27 @@ export class Staff {
   })
   department?: string; // 部門（允許 NULL 值）
 
-  @ApiProperty({ description: '本薪', example: 50000 })
+  @ApiProperty({ description: '本薪', required: false, example: 50000 })
   @Column({ type: 'int', default: 0 })
   wage: number; // 本薪
 
-  @ApiProperty({ description: '勤务津贴', example: 5000 })
+  @ApiProperty({ description: '勤務津貼', required: false, example: 5000 })
   @Column({ type: 'int', default: 0 })
   allowance: number; // 勤務津貼
 
-  @ApiProperty({ description: '幹部加給', example: 3000 })
+  @ApiProperty({ description: '幹部加給', required: false, example: 3000 })
   @Column({ type: 'int', default: 0 })
   organizer: number; // 幹部加給
 
-  @ApiProperty({ description: '勞保', example: 2000 })
+  @ApiProperty({ description: '勞保', required: false, example: 2000 })
   @Column({ type: 'int', default: 0 })
   labor_insurance: number; // 勞保
 
-  @ApiProperty({ description: '健保', example: 1500 })
+  @ApiProperty({ description: '健保', required: false, example: 1500 })
   @Column({ type: 'int', default: 0 })
   health_insurance: number; // 健保
 
-  @ApiProperty({ description: '退休提撥', example: 3000 })
+  @ApiProperty({ description: '退休提撥', required: false, example: 3000 })
   @Column({ type: 'int', default: 0 })
   pension: number; // 退休提撥
 
@@ -94,7 +94,7 @@ export class Staff {
   need_check: boolean; // 是否需要打卡（tinyint 1）
 
   @ApiProperty({
-    description: '到职日期',
+    description: '到職日期',
     required: false,
     example: '2023-01-01',
   })
@@ -102,14 +102,14 @@ export class Staff {
   begain_work?: Date; // 到職日期（允許 NULL 值）
 
   @ApiProperty({
-    description: '离职日期',
+    description: '離職日期',
     required: false,
     example: '2024-12-31',
   })
   @Column({ type: 'date', nullable: true })
   stop_work?: Date; // 離職日期（允許 NULL 值）
 
-  @ApiProperty({ description: '是否需要外账', example: false })
+  @ApiProperty({ description: '是否需要外帳', example: false })
   @Column({ type: 'tinyint', width: 1, default: 0 })
   have_fake: boolean; // 是否需要外帳（tinyint 1）
 

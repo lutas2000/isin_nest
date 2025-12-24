@@ -5,6 +5,7 @@ export { default as DataTable } from './DataTable.vue';
 export { default as SearchFilters } from './SearchFilters.vue';
 export { default as StatusBadge } from './StatusBadge.vue';
 export { default as Modal } from './Modal.vue';
+export { default as ErrorModal } from './ErrorModal.vue';
 export { default as FormField } from './FormField.vue';
 export { default as DraggableList } from './DraggableList.vue';
 export { default as SectionHeader } from './SectionHeader.vue';

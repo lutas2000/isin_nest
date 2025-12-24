@@ -26,8 +26,6 @@
             :disabled="isLoading"
           />
 
-          <ErrorMessage :message="errorMessage" type="error" />
-
           <button
             type="submit"
             class="login-btn"
@@ -46,11 +44,12 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import ErrorMessage from '@/components/ErrorMessage.vue';
+import { useErrorStore } from '../stores/error';
 import { PageHeader, FormField } from '@/components';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const errorStore = useErrorStore();
 
 const loginForm = ref({
   username: '',
@@ -58,25 +57,25 @@ const loginForm = ref({
 });
 
 const isLoading = ref(false);
-const errorMessage = ref('');
 
 const handleLogin = async () => {
   if (!loginForm.value.username || !loginForm.value.password) {
-    errorMessage.value = '請填寫所有欄位';
+    errorStore.showError('請填寫所有欄位');
     return;
   }
 
   isLoading.value = true;
-  errorMessage.value = '';
+  errorStore.clearError();
 
-  try {
-    await authStore.login(loginForm.value.username, loginForm.value.password);
+  const result = await authStore.login(loginForm.value.username, loginForm.value.password);
+  
+  if (result.success) {
     router.push('/');
-  } catch (error: any) {
-    errorMessage.value = error.message || '登入失敗，請檢查您的帳戶資訊';
-  } finally {
-    isLoading.value = false;
+  } else {
+    errorStore.showError(result.error || '登入失敗，請檢查您的帳戶資訊');
   }
+  
+  isLoading.value = false;
 };
 
 onMounted(() => {

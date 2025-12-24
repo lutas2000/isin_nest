@@ -132,8 +132,6 @@
         </div>
 
         <form class="modal-form" @submit.prevent="addSegment">
-          <!-- 錯誤提示 -->
-          <ErrorMessage :message="addError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -254,8 +252,6 @@
         </div>
 
         <form class="modal-form" @submit.prevent="updateSegment">
-          <!-- 錯誤提示 -->
-          <ErrorMessage :message="editError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -471,7 +467,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, DataTable, TableHeader } from '@/components';
-import ErrorMessage from '../../components/ErrorMessage.vue';
+import { useErrorStore } from '@/stores/error';
+
+const errorStore = useErrorStore();
 
 // 段別類型定義
 interface StaffSegment {
@@ -512,9 +510,6 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
 
-// 錯誤狀態
-const addError = ref('');
-const editError = ref('');
 
 // 新增段別表單
 const newSegment = ref<StaffSegment>({
@@ -692,14 +687,12 @@ const viewSegment = (segment: StaffSegment) => {
 // 編輯段別
 const editSegment = (segment: StaffSegment) => {
   editingSegment.value = { ...segment };
-  editError.value = '';
   showEditModal.value = true;
 };
 
 // 新增段別
 const addSegment = async () => {
-  // 清除之前的錯誤
-  addError.value = '';
+  errorStore.clearError();
 
   try {
     const response = await fetch('/api/staff-segment', {
@@ -732,18 +725,17 @@ const addSegment = async () => {
       showAddModal.value = false;
     } else {
       const errorData = await response.json().catch(() => ({}));
-      addError.value = errorData.message || '新增段別失敗，請稍後再試';
+      errorStore.showError(errorData.message || '新增段別失敗，請稍後再試');
     }
   } catch (error) {
     console.error('新增段別失敗:', error);
-    addError.value = '網路連線錯誤，請檢查網路連線後再試';
+    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
   }
 };
 
 // 更新段別
 const updateSegment = async () => {
-  // 清除之前的錯誤
-  editError.value = '';
+  errorStore.clearError();
 
   try {
     const response = await fetch(`/api/staff-segment/${editingSegment.value.id}`, {
@@ -766,11 +758,11 @@ const updateSegment = async () => {
       showEditModal.value = false;
     } else {
       const errorData = await response.json().catch(() => ({}));
-      editError.value = errorData.message || '更新段別失敗，請稍後再試';
+      errorStore.showError(errorData.message || '更新段別失敗，請稍後再試');
     }
   } catch (error) {
     console.error('更新段別失敗:', error);
-    editError.value = '網路連線錯誤，請檢查網路連線後再試';
+    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
   }
 };
 

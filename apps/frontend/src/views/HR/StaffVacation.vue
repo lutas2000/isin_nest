@@ -127,8 +127,6 @@
         </div>
 
         <form class="modal-form" @submit.prevent="addVacation">
-          <!-- 錯誤提示 -->
-          <ErrorMessage :message="addError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -189,8 +187,6 @@
         </div>
 
         <form class="modal-form" @submit.prevent="updateVacation">
-          <!-- 錯誤提示 -->
-          <ErrorMessage :message="editError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -290,7 +286,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, DataTable, SectionHeader } from '@/components';
-import ErrorMessage from '../../components/ErrorMessage.vue';
+import { useErrorStore } from '@/stores/error';
+
+const errorStore = useErrorStore();
 
 // 假期類型定義
 interface StaffVacation {
@@ -311,9 +309,6 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
 
-// 錯誤狀態
-const addError = ref('');
-const editError = ref('');
 
 // 新增假期表單
 const newVacation = ref<StaffVacation>({
@@ -423,14 +418,12 @@ const viewVacation = (vacation: StaffVacation) => {
 // 編輯假期
 const editVacation = (vacation: StaffVacation) => {
   editingVacation.value = { ...vacation };
-  editError.value = '';
   showEditModal.value = true;
 };
 
 // 新增假期
 const addVacation = async () => {
-  // 清除之前的錯誤
-  addError.value = '';
+  errorStore.clearError();
 
   try {
     const response = await fetch('/api/staff-vacation', {
@@ -455,18 +448,17 @@ const addVacation = async () => {
       showAddModal.value = false;
     } else {
       const errorData = await response.json().catch(() => ({}));
-      addError.value = errorData.message || '新增假期失敗，請稍後再試';
+      errorStore.showError(errorData.message || '新增假期失敗，請稍後再試');
     }
   } catch (error) {
     console.error('新增假期失敗:', error);
-    addError.value = '網路連線錯誤，請檢查網路連線後再試';
+    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
   }
 };
 
 // 更新假期
 const updateVacation = async () => {
-  // 清除之前的錯誤
-  editError.value = '';
+  errorStore.clearError();
 
   try {
     const dateString = typeof editingVacation.value.date === 'string' 
@@ -500,11 +492,11 @@ const updateVacation = async () => {
       showEditModal.value = false;
     } else {
       const errorData = await response.json().catch(() => ({}));
-      editError.value = errorData.message || '更新假期失敗，請稍後再試';
+      errorStore.showError(errorData.message || '更新假期失敗，請稍後再試');
     }
   } catch (error) {
     console.error('更新假期失敗:', error);
-    editError.value = '網路連線錯誤，請檢查網路連線後再試';
+    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
   }
 };
 

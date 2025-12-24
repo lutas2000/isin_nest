@@ -186,17 +186,30 @@
         @click="closeMobileSidebar"
       ></div>
     </template>
+
+    <!-- 全局錯誤 Modal -->
+    <ErrorModal
+      :show="errorStore.show"
+      :message="errorStore.message"
+      :type="errorStore.type"
+      :title="errorStore.isLogoutError ? '登出提示' : '錯誤'"
+      @close="handleErrorClose"
+      @confirm="handleErrorConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { useErrorStore } from './stores/error';
+import ErrorModal from './components/ErrorModal.vue';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const errorStore = useErrorStore();
 
 const sidebarCollapsed = ref(false);
 const showMobileOverlay = ref(false);
@@ -300,9 +313,25 @@ watch(
   },
 );
 
-// 組件卸載時移除事件監聽
-import { onUnmounted } from 'vue';
+// 處理錯誤 Modal 關閉
+const handleErrorClose = () => {
+  errorStore.clearError();
+};
 
+// 處理錯誤 Modal 確認
+const handleErrorConfirm = () => {
+  if (errorStore.isLogoutError) {
+    // 401 錯誤：登出並跳轉到登入頁面
+    errorStore.clearError();
+    authStore.logout();
+    router.push('/login');
+  } else {
+    // 其他錯誤：關閉 modal
+    errorStore.clearError();
+  }
+};
+
+// 組件卸載時移除事件監聽
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
   document.removeEventListener('click', handleClickOutside);

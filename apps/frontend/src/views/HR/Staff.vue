@@ -122,24 +122,22 @@
         </div>
 
         <form class="modal-form" @submit.prevent="addStaff">
-          <!-- 錯誤提示 -->
-          <ErrorMessage :message="addError" type="error" />
 
           <!-- 用戶資訊區塊 -->
           <div class="form-section">
             <h4 class="section-title">用戶資訊</h4>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">用戶名 *</label>
+                <label class="form-label">員工編號 *</label>
                 <input
                   type="text"
                   class="form-control"
                   v-model="newStaff.userName"
                   required
-                  placeholder="請輸入用戶名"
+                  placeholder="請輸入員工編號"
                   @input="handleUserNameInput"
                 />
-                <small class="form-hint">用於登入系統的用戶名（員工編號將自動生成）</small>
+                <small class="form-hint">用於登入系統的ID</small>
               </div>
               <div class="form-group">
                 <label class="form-label">密碼 *</label>
@@ -358,8 +356,6 @@
         </div>
 
         <form class="modal-form" @submit.prevent="updateStaff">
-          <!-- 錯誤提示 -->
-          <ErrorMessage :message="editError" type="error" />
 
           <div class="form-row">
             <div class="form-group">
@@ -746,9 +742,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, DataTable, TableHeader } from '@/components';
-import ErrorMessage from '../../components/ErrorMessage.vue';
+import { useErrorStore } from '@/stores/error';
 import { apiPost } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
+
+const errorStore = useErrorStore();
 
 // 員工類型定義
 interface Staff {
@@ -781,9 +779,6 @@ const showAddModal = ref(false);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
 
-// 錯誤狀態
-const addError = ref('');
-const editError = ref('');
 
 // 新增員工表單（包含用戶資訊）
 interface CreateStaffWithUser {
@@ -1029,24 +1024,22 @@ const handleEditDateChange = (field: 'begain_work' | 'stop_work') => {
 // 編輯員工
 const editStaff = (staff: Staff) => {
   editingStaff.value = { ...staff };
-  editError.value = '';
   showEditModal.value = true;
 };
 
 // 新增員工（同時創建用戶）
 const addStaff = async () => {
-  // 清除之前的錯誤
-  addError.value = '';
+  errorStore.clearError();
 
   // 驗證必填欄位
   if (!newStaff.value.userName || !newStaff.value.password || !newStaff.value.name) {
-    addError.value = '請填寫所有必填欄位';
+    errorStore.showError('請填寫所有必填欄位');
     return;
   }
 
   // 驗證密碼長度
   if (newStaff.value.password.length < 6) {
-    addError.value = '密碼長度至少需要 6 個字符';
+    errorStore.showError('密碼長度至少需要 6 個字符');
     return;
   }
 
@@ -1099,14 +1092,13 @@ const addStaff = async () => {
     showAddModal.value = false;
   } catch (error) {
     console.error('新增員工失敗:', error);
-    addError.value = error instanceof Error ? error.message : '新增員工失敗，請稍後再試';
+    errorStore.showError(error instanceof Error ? error.message : '新增員工失敗，請稍後再試');
   }
 };
 
 // 更新員工
 const updateStaff = async () => {
-  // 清除之前的錯誤
-  editError.value = '';
+  errorStore.clearError();
 
   // 處理日期欄位，將空字串轉換為 null
   const staffData: Staff = { ...editingStaff.value };
@@ -1133,11 +1125,11 @@ const updateStaff = async () => {
       showEditModal.value = false;
     } else {
       const errorData = await response.json().catch(() => ({}));
-      editError.value = errorData.message || '更新員工失敗，請稍後再試';
+      errorStore.showError(errorData.message || '更新員工失敗，請稍後再試');
     }
   } catch (error) {
     console.error('更新員工失敗:', error);
-    editError.value = '網路連線錯誤，請檢查網路連線後再試';
+    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
   }
 };
 

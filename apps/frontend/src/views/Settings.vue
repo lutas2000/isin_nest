@@ -30,7 +30,6 @@
           </template>
         </SectionHeader>
 
-        <ErrorMessage :message="crmError" type="error" />
 
         <!-- 依分類顯示設定 -->
         <div v-for="category in crmCategories" :key="category" class="category-section">
@@ -72,7 +71,6 @@
           </template>
         </SectionHeader>
 
-        <ErrorMessage :message="featureError" type="error" />
 
         <DataTable
           :columns="featureTableColumns"
@@ -252,9 +250,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, DataTable, Modal, DraggableList, SectionHeader } from '@/components';
-import ErrorMessage from '@/components/ErrorMessage.vue';
+import { useErrorStore } from '@/stores/error';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
+
+const errorStore = useErrorStore();
 
 // 頁籤
 const tabs = [
@@ -274,7 +274,6 @@ interface CrmConfig {
 }
 
 const crmConfigs = ref<CrmConfig[]>([]);
-const crmError = ref('');
 const showAddCrmModal = ref(false);
 const showEditCrmModal = ref(false);
 const editingCrmId = ref<number | null>(null);
@@ -335,7 +334,6 @@ interface FeatureConfig {
 const featureConfigs = ref<FeatureConfig[]>([]);
 const availableFeatures = ref<Feature[]>([]);
 const availablePermissionTypes = ref<PermissionType[]>([]);
-const featureError = ref('');
 const showAddFeatureModal = ref(false);
 const showEditFeatureModal = ref(false);
 const editingFeatureId = ref<number | null>(null);
@@ -358,7 +356,7 @@ const loadCrmConfigs = async () => {
     crmConfigs.value = await apiGet<CrmConfig[]>(API_CONFIG.CRM.CONFIGS || '/crm/configs');
   } catch (error) {
     console.error('載入銷管設定失敗:', error);
-    crmError.value = error instanceof Error ? error.message : '載入失敗';
+    errorStore.showError(error instanceof Error ? error.message : '載入失敗');
   }
 };
 
@@ -369,7 +367,7 @@ const loadFeatureConfigs = async () => {
     );
   } catch (error) {
     console.error('載入權限設定失敗:', error);
-    featureError.value = error instanceof Error ? error.message : '載入失敗';
+    errorStore.showError(error instanceof Error ? error.message : '載入失敗');
   }
 };
 
@@ -378,7 +376,7 @@ const loadFeatures = async () => {
     availableFeatures.value = await apiGet<Feature[]>('/auth/features/list');
   } catch (error) {
     console.error('載入功能列表失敗:', error);
-    featureError.value = error instanceof Error ? error.message : '載入功能列表失敗';
+    errorStore.showError(error instanceof Error ? error.message : '載入功能列表失敗');
   }
 };
 
@@ -408,7 +406,7 @@ const deleteCrmConfig = async (config: CrmConfig) => {
     await apiRequest(`/crm/configs/${config.id}`, { method: 'DELETE' });
     await loadCrmConfigs();
   } catch (error) {
-    crmError.value = error instanceof Error ? error.message : '刪除失敗';
+    errorStore.showError(error instanceof Error ? error.message : '刪除失敗');
   }
 };
 
@@ -437,7 +435,7 @@ const saveCrmConfig = async () => {
     await loadCrmConfigs();
     closeCrmModal();
   } catch (error) {
-    crmError.value = error instanceof Error ? error.message : '儲存失敗';
+    errorStore.showError(error instanceof Error ? error.message : '儲存失敗');
   }
 };
 
@@ -472,7 +470,7 @@ const handleCrmOrderChange = async (newConfigs: CrmConfig[], category: string) =
     );
     await loadCrmConfigs();
   } catch (error) {
-    crmError.value = error instanceof Error ? error.message : '更新順序失敗';
+    errorStore.showError(error instanceof Error ? error.message : '更新順序失敗');
   }
 };
 
@@ -499,7 +497,7 @@ const deleteFeatureConfig = async (config: FeatureConfig) => {
     });
     await loadFeatureConfigs();
   } catch (error) {
-    featureError.value = error instanceof Error ? error.message : '刪除失敗';
+    errorStore.showError(error instanceof Error ? error.message : '刪除失敗');
   }
 };
 
@@ -516,7 +514,7 @@ const saveFeatureConfig = async () => {
     await loadFeatureConfigs();
     closeFeatureModal();
   } catch (error) {
-    featureError.value = error instanceof Error ? error.message : '儲存失敗';
+    errorStore.showError(error instanceof Error ? error.message : '儲存失敗');
   }
 };
 
