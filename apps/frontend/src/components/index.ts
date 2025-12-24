@@ -6,3 +6,4 @@ export { default as SearchFilters } from './SearchFilters.vue';
 export { default as StatusBadge } from './StatusBadge.vue';
 export { default as Modal } from './Modal.vue';
 export { default as FormField } from './FormField.vue';
+export { default as DraggableList } from './DraggableList.vue';

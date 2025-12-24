@@ -135,6 +135,45 @@
 
 **支援的類型：** `text`, `email`, `password`, `number`, `select`, `textarea`
 
+### 9. DraggableList
+
+可拖曳排序的列表組件，支援自定義項目內容和操作按鈕。
+
+```vue
+<DraggableList
+  :items="configList"
+  :show-actions="true"
+  item-key="id"
+  @order-change="handleOrderChange"
+>
+  <template #item="{ item, index }">
+    <div class="item-code">{{ item.code }}</div>
+    <div class="item-label">{{ item.label }}</div>
+  </template>
+  
+  <template #actions="{ item, index }">
+    <button class="btn btn-sm btn-primary" @click="editItem(item)">
+      編輯
+    </button>
+    <button class="btn btn-sm btn-danger" @click="deleteItem(item)">
+      刪除
+    </button>
+  </template>
+</DraggableList>
+```
+
+**Props:**
+- `items` (required): 要顯示的項目陣列
+- `showActions` (optional, default: `true`): 是否顯示操作按鈕區域
+- `itemKey` (optional, default: `'id'`): 用於識別項目的鍵名
+
+**Events:**
+- `order-change`: 當項目順序改變時觸發，參數為重新排序後的項目陣列
+
+**Slots:**
+- `#item`: 自定義項目內容，接收 `{ item, index }`
+- `#actions`: 自定義操作按鈕，接收 `{ item, index }`
+
 ## 使用方式
 
 ### 導入組件
@@ -149,6 +188,7 @@ import {
   StatusBadge,
   Modal,
   FormField,
+  DraggableList,
 } from '@/components';
 ```
 
@@ -177,6 +217,12 @@ import {
         <StatusBadge :text="row.status" variant="success" />
       </template>
     </DataTable>
+
+    <DraggableList :items="draggableItems" @order-change="handleOrderChange">
+      <template #item="{ item }">
+        <div>{{ item.name }}</div>
+      </template>
+    </DraggableList>
   </div>
 </template>
 ```

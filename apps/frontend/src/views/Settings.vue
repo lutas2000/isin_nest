@@ -34,39 +34,29 @@
         <!-- 依分類顯示設定 -->
         <div v-for="category in crmCategories" :key="category" class="category-section">
           <h4 class="category-title">{{ getCategoryLabel(category) }}</h4>
-          <div class="draggable-list">
-            <div
-              v-for="(config, index) in getCrmConfigsByCategory(category)"
-              :key="config.id"
-              class="draggable-item"
-              :class="{ 'dragging': draggedItem?.config.id === config.id }"
-              :draggable="true"
-              @dragstart="handleDragStart($event, config, category)"
-              @dragover.prevent="handleDragOver($event, index, category)"
-              @drop="handleDrop($event, index, category)"
-              @dragend="handleDragEnd"
-            >
-              <div class="drag-handle">☰</div>
-              <div class="item-content">
-                <div class="item-code">{{ config.code }}</div>
-                <div class="item-label">{{ config.label }}</div>
-              </div>
-              <div class="item-actions">
-                <button
-                  class="btn btn-sm btn-primary"
-                  @click="editCrmConfig(config)"
-                >
-                  編輯
-                </button>
-                <button
-                  class="btn btn-sm btn-danger"
-                  @click="deleteCrmConfig(config)"
-                >
-                  刪除
-                </button>
-              </div>
-            </div>
-          </div>
+          <DraggableList
+            :items="getCrmConfigsByCategory(category)"
+            @order-change="handleCrmOrderChange($event, category)"
+          >
+            <template #item="{ item: config }">
+              <div class="item-code">{{ config.code }}</div>
+              <div class="item-label">{{ config.label }}</div>
+            </template>
+            <template #actions="{ item: config }">
+              <button
+                class="btn btn-sm btn-primary"
+                @click="editCrmConfig(config)"
+              >
+                編輯
+              </button>
+              <button
+                class="btn btn-sm btn-danger"
+                @click="deleteCrmConfig(config)"
+              >
+                刪除
+              </button>
+            </template>
+          </DraggableList>
         </div>
       </div>
 
@@ -259,7 +249,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, Modal } from '@/components';
+import { PageHeader, DataTable, Modal, DraggableList } from '@/components';
 import ErrorMessage from '@/components/ErrorMessage.vue';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -310,9 +300,7 @@ const getCrmConfigsByCategory = (category: string) => {
     .sort((a, b) => a.displayOrder - b.displayOrder);
 };
 
-// 拖曳相關
-const draggedItem = ref<{ config: CrmConfig; category: string } | null>(null);
-const draggedOverIndex = ref<number | null>(null);
+// 拖曳相關 - 已移至 DraggableList 組件
 
 // Feature 設定
 interface Feature {
@@ -462,48 +450,8 @@ const closeCrmModal = () => {
   };
 };
 
-// 拖曳處理
-const handleDragStart = (event: DragEvent, config: CrmConfig, category: string) => {
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', '');
-  }
-  draggedItem.value = { config, category };
-  if (event.target) {
-    (event.target as HTMLElement).style.opacity = '0.5';
-  }
-};
-
-const handleDragOver = (event: DragEvent, index: number, category: string) => {
-  if (!draggedItem.value || draggedItem.value.category !== category) return;
-  
-  event.preventDefault();
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = 'move';
-  }
-  draggedOverIndex.value = index;
-};
-
-const handleDrop = async (event: DragEvent, dropIndex: number, category: string) => {
-  event.preventDefault();
-  
-  if (!draggedItem.value || draggedItem.value.category !== category) return;
-  
-  const configs = getCrmConfigsByCategory(category);
-  const draggedIndex = configs.findIndex(
-    (c) => c.id === draggedItem.value!.config.id
-  );
-  
-  if (draggedIndex === -1 || draggedIndex === dropIndex) {
-    handleDragEnd();
-    return;
-  }
-  
-  // 重新排序
-  const newConfigs = [...configs];
-  const [removed] = newConfigs.splice(draggedIndex, 1);
-  newConfigs.splice(dropIndex, 0, removed);
-  
+// 拖曳處理 - 處理順序改變
+const handleCrmOrderChange = async (newConfigs: CrmConfig[], category: string) => {
   // 更新 display order
   const updates = newConfigs.map((config, index) => ({
     id: config.id,
@@ -524,17 +472,6 @@ const handleDrop = async (event: DragEvent, dropIndex: number, category: string)
   } catch (error) {
     crmError.value = error instanceof Error ? error.message : '更新順序失敗';
   }
-  
-  handleDragEnd();
-};
-
-const handleDragEnd = () => {
-  draggedItem.value = null;
-  draggedOverIndex.value = null;
-  // 恢復所有項目的透明度
-  document.querySelectorAll('.draggable-item').forEach((item) => {
-    (item as HTMLElement).style.opacity = '1';
-  });
 };
 
 // Feature 設定操作
@@ -784,54 +721,7 @@ onMounted(() => {
   margin-right: 0.5rem;
 }
 
-/* 拖曳列表 */
-.draggable-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.draggable-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: white;
-  border: 1px solid var(--secondary-200);
-  border-radius: var(--border-radius);
-  cursor: move;
-  transition: all 0.2s ease;
-}
-
-.draggable-item:hover {
-  border-color: var(--primary-300);
-  box-shadow: var(--shadow);
-}
-
-.draggable-item.dragging {
-  opacity: 0.5;
-  background-color: var(--primary-50);
-}
-
-.drag-handle {
-  color: var(--secondary-400);
-  font-size: 1.25rem;
-  cursor: grab;
-  user-select: none;
-  padding: 0.25rem;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.item-content {
-  flex: 1;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
+/* 項目內容樣式 */
 .item-code {
   font-weight: 600;
   color: var(--secondary-800);
@@ -840,11 +730,6 @@ onMounted(() => {
 
 .item-label {
   color: var(--secondary-700);
-}
-
-.item-actions {
-  display: flex;
-  gap: 0.5rem;
 }
 
 /* 響應式設計 */
