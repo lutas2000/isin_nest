@@ -66,7 +66,7 @@
           <template #actions>
             <button class="btn btn-primary" @click="showAddFeatureModal = true">
               <span class="btn-icon">➕</span>
-              新增工作組別
+              新增職稱
             </button>
           </template>
         </SectionHeader>
@@ -171,13 +171,13 @@
     >
       <form @submit.prevent="saveFeatureConfig">
         <div class="form-group">
-          <label class="form-label">工作組別 *</label>
+          <label class="form-label">職稱 *</label>
           <input
             type="text"
             class="form-control"
-            v-model="featureForm.workGroup"
+            v-model="featureForm.jobTitle"
             required
-            placeholder="例如：A組"
+            placeholder="例如：經理"
           />
         </div>
 
@@ -187,7 +187,7 @@
             class="form-control"
             v-model="featureForm.description"
             rows="3"
-            placeholder="工作組別的描述"
+            placeholder="職稱的描述"
           />
         </div>
 
@@ -326,7 +326,7 @@ interface FeaturePermission {
 
 interface FeatureConfig {
   id: number;
-  workGroup: string;
+  jobTitle: string;
   description?: string;
   permissions?: FeaturePermission[];
 }
@@ -339,13 +339,13 @@ const showEditFeatureModal = ref(false);
 const editingFeatureId = ref<number | null>(null);
 
 const featureForm = ref({
-  workGroup: '',
+  jobTitle: '',
   description: '',
   permissions: [] as Array<{ feature: string; permission: string }>,
 });
 
 const featureTableColumns = [
-  { key: 'workGroup', label: '工作組別' },
+  { key: 'jobTitle', label: '職稱' },
   { key: 'description', label: '描述' },
   { key: 'permissions', label: '權限' },
 ];
@@ -478,7 +478,7 @@ const handleCrmOrderChange = async (newConfigs: CrmConfig[], category: string) =
 const editFeatureConfig = (config: FeatureConfig) => {
   editingFeatureId.value = config.id;
   featureForm.value = {
-    workGroup: config.workGroup,
+    jobTitle: config.jobTitle,
     description: config.description || '',
     permissions: (config.permissions || []).map((p) => ({
       feature: p.feature.name,
@@ -489,7 +489,7 @@ const editFeatureConfig = (config: FeatureConfig) => {
 };
 
 const deleteFeatureConfig = async (config: FeatureConfig) => {
-  if (!confirm(`確定要刪除「${config.workGroup}」的權限設定嗎？`)) return;
+  if (!confirm(`確定要刪除「${config.jobTitle}」的權限設定嗎？`)) return;
 
   try {
     await apiRequest(`/auth/feature-configs/${config.id}`, {
@@ -523,7 +523,7 @@ const closeFeatureModal = () => {
   showEditFeatureModal.value = false;
   editingFeatureId.value = null;
   featureForm.value = {
-    workGroup: '',
+    jobTitle: '',
     description: '',
     permissions: [],
   };

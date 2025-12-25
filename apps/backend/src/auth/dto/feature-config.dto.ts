@@ -9,10 +9,10 @@ export class FeaturePermissionDto {
 }
 
 export class CreateFeatureConfigDto {
-  @ApiProperty({ description: '工作組別', example: 'A組' })
-  workGroup!: string;
+  @ApiProperty({ description: '職稱', example: '經理' })
+  jobTitle!: string;
 
-  @ApiProperty({ description: '描述', required: false, example: 'A組的預設權限' })
+  @ApiProperty({ description: '描述', required: false, example: '經理的預設權限' })
   description?: string;
 
   @ApiProperty({
@@ -28,10 +28,10 @@ export class CreateFeatureConfigDto {
 }
 
 export class UpdateFeatureConfigDto {
-  @ApiProperty({ description: '工作組別', required: false, example: 'A組' })
-  workGroup?: string;
+  @ApiProperty({ description: '職稱', required: false, example: '經理' })
+  jobTitle?: string;
 
-  @ApiProperty({ description: '描述', required: false, example: 'A組的預設權限' })
+  @ApiProperty({ description: '描述', required: false, example: '經理的預設權限' })
   description?: string;
 
   @ApiProperty({

@@ -23,7 +23,7 @@ export class FeatureConfigService {
   async findAll() {
     return this.featureConfigRepository.find({
       relations: ['permissions', 'permissions.feature'],
-      order: { workGroup: 'ASC' },
+      order: { jobTitle: 'ASC' },
     });
   }
 
@@ -36,7 +36,7 @@ export class FeatureConfigService {
 
   async create(createDto: CreateFeatureConfigDto) {
     const featureConfig = this.featureConfigRepository.create({
-      workGroup: createDto.workGroup,
+      jobTitle: createDto.jobTitle,
       description: createDto.description,
     });
 
@@ -56,11 +56,11 @@ export class FeatureConfigService {
     });
 
     if (!featureConfig) {
-      throw new Error('工作組別設定不存在');
+      throw new Error('職稱設定不存在');
     }
 
-    if (updateDto.workGroup !== undefined) {
-      featureConfig.workGroup = updateDto.workGroup;
+    if (updateDto.jobTitle !== undefined) {
+      featureConfig.jobTitle = updateDto.jobTitle;
     }
     if (updateDto.description !== undefined) {
       featureConfig.description = updateDto.description;
@@ -82,11 +82,11 @@ export class FeatureConfigService {
     });
 
     if (!featureConfig) {
-      throw new Error('工作組別設定不存在');
+      throw new Error('職稱設定不存在');
     }
 
     await this.featureConfigRepository.remove(featureConfig);
-    return { message: '工作組別設定已刪除' };
+    return { message: '職稱設定已刪除' };
   }
 
   private async updatePermissions(

@@ -31,28 +31,28 @@ export class FeatureConfigController {
     private readonly featureConfigService: FeatureConfigService,
   ) {}
 
-  @ApiOperation({ summary: '取得所有工作組別權限設定' })
+  @ApiOperation({ summary: '取得所有職稱權限設定' })
   @ApiResponse({ status: 200, description: '成功返回設定列表' })
   @Get()
   async findAll() {
     return this.featureConfigService.findAll();
   }
 
-  @ApiOperation({ summary: '取得單個工作組別權限設定' })
+  @ApiOperation({ summary: '取得單個職稱權限設定' })
   @ApiResponse({ status: 200, description: '成功返回設定' })
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.featureConfigService.findOne(+id);
   }
 
-  @ApiOperation({ summary: '創建工作組別權限設定' })
+  @ApiOperation({ summary: '創建職稱權限設定' })
   @ApiResponse({ status: 201, description: '成功創建設定' })
   @Post()
   async create(@Body() createDto: CreateFeatureConfigDto) {
     return this.featureConfigService.create(createDto);
   }
 
-  @ApiOperation({ summary: '更新工作組別權限設定' })
+  @ApiOperation({ summary: '更新職稱權限設定' })
   @ApiResponse({ status: 200, description: '成功更新設定' })
   @Put(':id')
   async update(
@@ -62,7 +62,7 @@ export class FeatureConfigController {
     return this.featureConfigService.update(+id, updateDto);
   }
 
-  @ApiOperation({ summary: '刪除工作組別權限設定' })
+  @ApiOperation({ summary: '刪除職稱權限設定' })
   @ApiResponse({ status: 200, description: '成功刪除設定' })
   @Delete(':id')
   async remove(@Param('id') id: string) {

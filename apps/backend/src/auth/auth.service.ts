@@ -341,9 +341,9 @@ export class AuthService {
     // 儲存員工
     const savedStaff = await this.staffRepository.save(newStaff);
 
-    // 根據 work_group 設定預設權限
-    if (staffData.work_group) {
-      await this.applyWorkGroupPermissions(savedUser.id, staffData.work_group);
+    // 根據職稱設定預設權限
+    if (staffData.post) {
+      await this.applyJobTitlePermissions(savedUser.id, staffData.post);
     }
 
     // 重新載入使用者以包含關聯資料
@@ -358,14 +358,14 @@ export class AuthService {
     };
   }
 
-  // 根據 work_group 應用預設權限
-  private async applyWorkGroupPermissions(
+  // 根據職稱應用預設權限
+  private async applyJobTitlePermissions(
     userId: number,
-    workGroup: string,
+    jobTitle: string,
   ): Promise<void> {
-    // 查找 work_group 的預設權限配置
+    // 查找職稱的預設權限配置
     const featureConfig = await this.featureConfigRepository.findOne({
-      where: { workGroup },
+      where: { jobTitle },
       relations: ['permissions', 'permissions.feature'],
     });
 

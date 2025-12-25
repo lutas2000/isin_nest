@@ -2,7 +2,7 @@
 
 ## 概述
 
-這個 API 允許管理員同時創建用戶（User）和員工（Staff）記錄，並根據員工的 `work_group` 自動分配預設的功能權限。
+這個 API 允許管理員同時創建用戶（User）和員工（Staff）記錄，並根據員工的 `post`（職稱）自動分配預設的功能權限。
 
 ## API Endpoint
 
@@ -15,7 +15,7 @@ POST /auth/create-user-with-staff
 ## 功能特點
 
 1. **自動關聯**：創建的 staff.id 會自動設置為 user.id（轉換為字符串格式）
-2. **自動權限分配**：根據 `work_group` 從 `feature_configs` 表中查找預設權限並自動分配
+2. **自動權限分配**：根據 `post`（職稱）從 `feature_configs` 表中查找預設權限並自動分配
 3. **事務安全**：如果創建過程中出現錯誤，會自動回滾
 
 ## 請求格式
@@ -72,20 +72,20 @@ POST /auth/create-user-with-staff
 }
 ```
 
-## 設定 work_group 預設權限
+## 設定職稱預設權限
 
 ### 1. 創建 FeatureConfig
 
-首先需要在 `feature_configs` 表中創建 work_group 的配置：
+首先需要在 `feature_configs` 表中創建職稱的配置：
 
 ```sql
-INSERT INTO feature_configs (workGroup, description) 
-VALUES ('A組', 'A組的預設權限配置');
+INSERT INTO feature_configs (jobTitle, description) 
+VALUES ('經理', '經理的預設權限配置');
 ```
 
 ### 2. 創建 FeaturePermission
 
-然後在 `feature_permissions` 表中為該 work_group 設定功能權限：
+然後在 `feature_permissions` 表中為該職稱設定功能權限：
 
 ```sql
 -- 假設 feature 表中已有 'crm' 和 'hr' 功能
@@ -97,15 +97,15 @@ VALUES
 
 ### 3. 使用範例
 
-當創建用戶和員工時，如果指定了 `work_group: 'A組'`，系統會自動：
-1. 查找 `feature_configs` 表中 `workGroup = 'A組'` 的配置
+當創建用戶和員工時，如果指定了 `post: '經理'`，系統會自動：
+1. 查找 `feature_configs` 表中 `jobTitle = '經理'` 的配置
 2. 獲取該配置下的所有 `feature_permissions`
 3. 為新創建的用戶自動分配這些權限
 
 ## 注意事項
 
 1. **staff.id 格式**：staff.id 會自動設置為 user.id（轉換為字符串，長度限制為 10 個字符）
-2. **work_group 可選**：如果沒有提供 `work_group` 或找不到對應的配置，則不會分配任何預設權限
+2. **職稱可選**：如果沒有提供 `post`（職稱）或找不到對應的配置，則不會分配任何預設權限
 3. **權限覆蓋**：如果用戶已經有某個功能的權限，會更新為配置中的權限
 4. **唯一性檢查**：系統會檢查用戶名和員工編號是否已存在，如果存在會返回錯誤
 

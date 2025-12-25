@@ -159,14 +159,14 @@ export class CreateUserWithStaffInput {
   name!: string;
 
   @ApiProperty({
-    description: '職稱',
+    description: '職稱（用於自動分配預設權限）',
     required: false,
-    example: '工程師',
+    example: '經理',
   })
   post?: string;
 
   @ApiProperty({
-    description: '工作組別（用於自動分配預設權限）',
+    description: '工作組別',
     required: false,
     example: 'A組',
   })
