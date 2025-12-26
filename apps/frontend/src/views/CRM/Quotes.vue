@@ -5,7 +5,7 @@
       description="管理客戶報價單、追蹤報價狀態和處理報價流程"
     >
       <template #actions>
-        <button class="btn btn-primary" @click="showCreateModal = true">
+        <button class="btn btn-primary" @click="openCreateModal">
           <span class="btn-icon">💰</span>
           新增報價單
         </button>
@@ -108,10 +108,12 @@
     </div>
 
     <!-- 創建/編輯報價單 Modal -->
-    <Modal v-if="showCreateModal" @close="closeModal" :large="true">
-      <template #title>{{ editingQuote ? '編輯報價單' : '新增報價單' }}</template>
-      <template #body>
-        <div class="modal-form">
+    <Modal 
+      :show="showCreateModal" 
+      :title="editingQuote ? '編輯報價單' : '新增報價單'"
+      @close="closeModal"
+    >
+      <div class="modal-form">
           <div class="form-row">
             <div class="form-group">
               <label>經手人 *</label>
@@ -179,7 +181,6 @@
             ></textarea>
           </div>
         </div>
-      </template>
       <template #footer>
         <button class="btn btn-outline" @click="closeModal">取消</button>
         <button 
@@ -193,10 +194,13 @@
     </Modal>
 
     <!-- 查看詳情 Modal -->
-    <Modal v-if="showDetailsModal && selectedQuote" @close="showDetailsModal = false" :large="true">
-      <template #title>報價單詳情 #{{ selectedQuote.id }}</template>
-      <template #body>
-        <div class="details-content">
+    <Modal 
+      v-if="selectedQuote"
+      :show="showDetailsModal" 
+      :title="`報價單詳情 #${selectedQuote.id}`"
+      @close="showDetailsModal = false"
+    >
+      <div class="details-content">
           <div class="details-section">
             <h4>基本資訊</h4>
             <div class="details-grid">
@@ -283,7 +287,6 @@
             </div>
           </div>
         </div>
-      </template>
     </Modal>
   </div>
 </template>
@@ -293,6 +296,8 @@ import { ref, computed, onMounted } from 'vue';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
+import { apiGet } from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 
 // 報價單資料
 const quotes = ref<Quote[]>([]);
@@ -303,7 +308,19 @@ const quoteStatusFilter = ref('');
 
 // 客戶和員工資料（用於下拉選單）
 const customers = ref<Customer[]>([]);
-const staffList = ref<any[]>([]); // 需要從 HR 模組獲取員工資料
+
+// 員工類型定義
+interface Staff {
+  id: string;
+  name: string;
+  department?: string;
+  [key: string]: any;
+}
+
+const staffList = ref<Staff[]>([]); // 銷管部員工列表
+
+// 認證 store
+const authStore = useAuthStore();
 
 // Modal 控制
 const showCreateModal = ref(false);
@@ -405,14 +422,17 @@ const loadCustomers = async () => {
   }
 };
 
-// 載入員工資料（暫時使用空陣列，需要實作 HR API）
+// 載入員工資料（只顯示銷管部的員工）
 const loadStaff = async () => {
   try {
-    // TODO: 實作從 HR 模組獲取員工資料
-    // staffList.value = await staffService.getAll();
-    staffList.value = [];
+    const allStaff = await apiGet<Staff[]>('/staffs');
+    // 過濾出部門為「銷管部」的員工
+    staffList.value = allStaff.filter(
+      (staff) => staff.department === '銷管部'
+    );
   } catch (err) {
     console.error('Failed to load staff:', err);
+    staffList.value = [];
   }
 };
 
@@ -492,6 +512,20 @@ const convertToWorkOrder = async (id: number) => {
   } catch (err) {
     alert(err instanceof Error ? err.message : '轉換失敗，請確認報價單已簽名');
   }
+};
+
+// 打開創建 Modal
+const openCreateModal = () => {
+  editingQuote.value = null;
+  // 預設為當前登入用戶的員工 ID
+  quoteForm.value = {
+    staffId: authStore.staffId || '',
+    customerId: '',
+    totalAmount: 0,
+    notes: '',
+    isSigned: false,
+  };
+  showCreateModal.value = true;
 };
 
 // 關閉 Modal
