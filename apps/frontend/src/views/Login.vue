@@ -1,9 +1,8 @@
 <template>
   <div class="login-page">
     <div class="login-container">
-      <PageHeader 
-        title="ISIN CNC 管理系統"
-        description="請登入您的帳戶以存取系統功能"
+      <SectionHeader 
+        title="奕新雷射 管理系統"
       />
 
       <div class="login-form-container">
@@ -24,6 +23,7 @@
             placeholder="請輸入密碼"
             required
             :disabled="isLoading"
+            @keyup.enter="handleLogin"
           />
 
           <button
@@ -45,7 +45,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useErrorStore } from '../stores/error';
-import { PageHeader, FormField } from '@/components';
+import { PageHeader, FormField, SectionHeader } from '@/components';
 
 const router = useRouter();
 const authStore = useAuthStore();

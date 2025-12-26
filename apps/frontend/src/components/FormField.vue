@@ -19,6 +19,7 @@
       :maxlength="maxlength"
       v-model="inputValue"
       @input="$emit('update:modelValue', $event.target.value)"
+      @keyup="$emit('keyup', $event)"
     />
     
     <select
@@ -98,6 +99,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | number | boolean];
+  'keyup': [event: KeyboardEvent];
 }>();
 
 const fieldId = ref(`field-${Math.random().toString(36).substr(2, 9)}`);
