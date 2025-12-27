@@ -97,58 +97,47 @@
         <div v-if="quoteItems.length === 0" class="empty-message">
           此報價單尚無工件項目
         </div>
-        <div v-else class="quote-items-list">
-          <div 
-            class="quote-item-card" 
-            v-for="item in quoteItems" 
-            :key="item.id"
-          >
-            <div class="quote-item-header">
-              <span class="quote-item-title">工件 #{{ item.id }}</span>
-              <div class="quote-item-header-right">
-                <span class="quote-item-amount">
-                  NT$ {{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}
-                </span>
-                <div class="quote-item-actions">
-                  <button class="btn btn-sm btn-primary" @click="editItem(item)">編輯</button>
-                  <button class="btn btn-sm btn-danger" @click="deleteItem(item.id)">刪除</button>
-                </div>
-              </div>
-            </div>
-            <div class="quote-item-details">
-              <div class="detail-row" v-if="item.customerFile">
-                <span class="detail-label">客戶圖檔：</span>
-                <span class="detail-value">{{ item.customerFile }}</span>
-              </div>
-              <div class="detail-row" v-if="item.material">
-                <span class="detail-label">材質：</span>
-                <span class="detail-value">{{ item.material }}</span>
-              </div>
-              <div class="detail-row" v-if="item.thickness">
-                <span class="detail-label">厚度：</span>
-                <span class="detail-value">{{ item.thickness }}</span>
-              </div>
-              <div class="detail-row" v-if="item.processing">
-                <span class="detail-label">加工：</span>
-                <span class="detail-value">{{ item.processing }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">數量：</span>
-                <span class="detail-value">{{ item.quantity }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">單價：</span>
-                <span class="detail-value">NT$ {{ Number(item.unitPrice).toLocaleString('zh-TW') }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">小計：</span>
-                <span class="detail-value highlight">
-                  NT$ {{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DataTable
+          v-else
+          :columns="itemTableColumns"
+          :data="quoteItems"
+          :show-actions="true"
+        >
+          <template #cell-customerFile="{ value }">
+            {{ value || '-' }}
+          </template>
+
+          <template #cell-material="{ value }">
+            {{ value || '-' }}
+          </template>
+
+          <template #cell-thickness="{ value }">
+            {{ value || '-' }}
+          </template>
+
+          <template #cell-processing="{ value }">
+            {{ value || '-' }}
+          </template>
+
+          <template #cell-quantity="{ value }">
+            {{ value }}
+          </template>
+
+          <template #cell-unitPrice="{ value }">
+            NT$ {{ Number(value).toLocaleString('zh-TW') }}
+          </template>
+
+          <template #cell-subtotal="{ row }">
+            <span class="highlight">
+              NT$ {{ Number(row.unitPrice * row.quantity).toLocaleString('zh-TW') }}
+            </span>
+          </template>
+          
+          <template #actions="{ row }">
+            <button class="btn btn-sm btn-primary" @click="editItem(row)">編輯</button>
+            <button class="btn btn-sm btn-danger" @click="deleteItem(row.id)">刪除</button>
+          </template>
+        </DataTable>
       </div>
     </div>
 
@@ -242,7 +231,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PageHeader, StatusBadge, TableHeader, Modal } from '@/components';
+import { PageHeader, StatusBadge, TableHeader, Modal, DataTable } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 
@@ -267,6 +256,18 @@ const itemForm = ref({
   quantity: 0,
   unitPrice: 0,
 });
+
+// 表格列定義
+const itemTableColumns = [
+  { key: 'id', label: '工件編號' },
+  { key: 'customerFile', label: '客戶圖檔' },
+  { key: 'material', label: '材質' },
+  { key: 'thickness', label: '厚度' },
+  { key: 'processing', label: '加工' },
+  { key: 'quantity', label: '數量' },
+  { key: 'unitPrice', label: '單價' },
+  { key: 'subtotal', label: '小計' },
+];
 
 // 載入報價單資料
 const loadQuote = async () => {
@@ -487,13 +488,6 @@ onMounted(() => {
 }
 
 /* 報價單工件列表 */
-.quote-items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 2rem;
-}
-
 .empty-message {
   padding: 3rem;
   text-align: center;
@@ -501,74 +495,7 @@ onMounted(() => {
   font-size: var(--font-size-base);
 }
 
-.quote-item-card {
-  background: var(--secondary-50);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-  border: 1px solid var(--secondary-200);
-  transition: box-shadow 0.2s ease;
-}
-
-.quote-item-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.quote-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--secondary-200);
-}
-
-.quote-item-title {
-  font-weight: 600;
-  font-size: var(--font-size-lg);
-  color: var(--secondary-900);
-}
-
-.quote-item-header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.quote-item-amount {
-  font-weight: 600;
-  font-size: var(--font-size-lg);
-  color: var(--primary-600);
-}
-
-.quote-item-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.quote-item-details {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-.detail-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.detail-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-  font-weight: 500;
-  min-width: 80px;
-}
-
-.detail-value {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-900);
-}
-
-.detail-value.highlight {
+.highlight {
   font-weight: 600;
   color: var(--primary-600);
 }
@@ -623,27 +550,6 @@ onMounted(() => {
 
   .quote-item-details {
     grid-template-columns: 1fr;
-  }
-
-  .quote-item-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .quote-item-header-right {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .quote-item-actions {
-    width: 100%;
-  }
-
-  .quote-item-actions .btn {
-    flex: 1;
   }
 
   .form-row {
