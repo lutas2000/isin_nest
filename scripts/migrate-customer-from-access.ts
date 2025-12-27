@@ -36,6 +36,65 @@ const ACCESS_FILE_PATH =
   process.argv[2] || process.env.ACCESS_FILE_PATH || '';
 
 /**
+ * 清理字串，移除無效字符和控制字符
+ * 保留常見的空白字符（空格、換行、Tab）
+ */
+function cleanString(value: string | null | undefined): string | undefined {
+  if (!value || typeof value !== 'string') {
+    return undefined;
+  }
+
+  // 移除 NULL 字節和其他控制字符（保留常見的空白字符）
+  // \x09 = Tab, \x0A = 換行, \x0D = 回車
+  let cleaned = value
+    .replace(/\0/g, '') // 移除 NULL 字節
+    .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '') // 移除控制字符（保留 \x09 Tab, \x0A 換行, \x0D 回車）
+    .trim();
+
+  // 如果清理後為空，返回 undefined
+  if (cleaned === '') {
+    return undefined;
+  }
+
+  // 驗證並修復 UTF-8 編碼
+  try {
+    // 先嘗試直接驗證是否為有效的 UTF-8
+    const buffer = Buffer.from(cleaned, 'utf8');
+    const validated = buffer.toString('utf8');
+    
+    // 檢查是否包含有效的 UTF-8 字符
+    if (validated.length === 0) {
+      return undefined;
+    }
+    
+    // 再次移除可能產生的 NULL 字節
+    const final = validated.replace(/\0/g, '').trim();
+    
+    return final || undefined;
+  } catch (error) {
+    // 如果 UTF-8 轉換失敗，嘗試從 latin1 修復
+    // 這通常發生在編碼轉換不完整的情況下
+    try {
+      // 將字串視為 latin1 編碼的位元組序列，然後嘗試解碼為 UTF-8
+      const latin1Buffer = Buffer.from(cleaned, 'latin1');
+      // 嘗試將 latin1 位元組重新解釋為 UTF-8
+      const repaired = latin1Buffer.toString('utf8');
+      
+      // 移除無效字符
+      const final = repaired
+        .replace(/\0/g, '')
+        .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '')
+        .trim();
+      
+      return final || undefined;
+    } catch (e) {
+      // 如果所有嘗試都失敗，返回 undefined
+      return undefined;
+    }
+  }
+}
+
+/**
  * 將 Big5 編碼的字串轉換為 UTF-8
  */
 function convertBig5ToUtf8(value: any): any {
@@ -245,8 +304,8 @@ function convertCustToCustomer(custRow: any): Partial<Customer> {
     accountNumber: custRow.account ? String(custRow.account).trim() : undefined,
     creditLimit: custRow.credit != null ? Number(custRow.credit) : 0,
     accountReceivable: custRow.debt != null ? Number(custRow.debt) : 0,
-    fax: custRow.fax ? String(custRow.fax).trim() : undefined,
-    email: custRow.email ? String(custRow.email).trim() : undefined,
+    fax: cleanString(custRow.fax),
+    email: cleanString(custRow.email),
     mainProducts: custRow.prod ? String(custRow.prod).trim() : undefined,
     notes: custRow.remark ? String(custRow.remark).trim() : undefined,
     ownerName: custRow.master ? String(custRow.master).trim() : undefined,

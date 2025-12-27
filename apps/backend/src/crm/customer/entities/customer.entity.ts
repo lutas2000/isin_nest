@@ -114,6 +114,8 @@ export class Customer {
     type: 'varchar',
     length: 50,
     nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
   })
   fax?: string;
 
@@ -122,6 +124,8 @@ export class Customer {
     type: 'varchar',
     length: 200,
     nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
   })
   email?: string;
 
