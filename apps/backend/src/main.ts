@@ -1,9 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+  
+  try {
+    logger.log('正在啟動應用程式...');
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    });
 
   // 啟用 CORS
   app.enableCors({
@@ -36,9 +43,20 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+    const port = process.env.PORT ?? 3000;
+    await app.listen(port);
+    logger.log(`✅ 應用程式已成功啟動在端口 ${port}`);
+    logger.log(`📚 Swagger 文件: http://localhost:${port}/api`);
+  } catch (error) {
+    logger.error('❌ 應用程式啟動失敗:', error);
+    if (error instanceof Error) {
+      logger.error('錯誤訊息:', error.message);
+      logger.error('錯誤堆疊:', error.stack);
+    }
+    process.exit(1);
+  }
 }
 void bootstrap();

@@ -55,7 +55,7 @@ export class Contact {
 
   // 關聯到 Customer（多對一）
   @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
-  @ManyToOne(() => Customer, (customer) => customer.contacts)
+  @ManyToOne(() => Customer, (customer) => customer.contacts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 }

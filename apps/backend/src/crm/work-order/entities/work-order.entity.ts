@@ -91,7 +91,7 @@ export class WorkOrder {
 
   // 關聯到 Customer
   @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
-  @ManyToOne(() => Customer, (customer) => customer.workOrders)
+  @ManyToOne(() => Customer, (customer) => customer.workOrders, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 

@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Quote } from '../../quote/entities/quote.entity';
+import { Customer } from '../../customer/entities/customer.entity';
 
 @Entity('quote_item')
 export class QuoteItem {
@@ -19,6 +20,10 @@ export class QuoteItem {
   @ApiProperty({ description: '報價單ID', example: 1 })
   @Column({ type: 'int', name: 'quote_id' })
   quoteId: number;
+
+  @ApiProperty({ description: '客戶ID', example: 'CUST001' })
+  @Column({ type: 'varchar', length: 50, name: 'customer_id', nullable: true })
+  customerId?: string;
 
   @ApiProperty({ description: '客戶圖檔（檔案名稱）', example: 'customer_file.dxf' })
   @Column({
@@ -81,8 +86,14 @@ export class QuoteItem {
 
   // 關聯到 Quote（多對一）
   @ApiProperty({ description: '關聯的報價單資料', type: () => Quote })
-  @ManyToOne(() => Quote, (quote) => quote.quoteItems)
+  @ManyToOne(() => Quote, (quote) => quote.quoteItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'quote_id' })
   quote: Quote;
+
+  // 關聯到 Customer（多對一）
+  @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
+  @ManyToOne(() => Customer, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'customer_id' })
+  customer?: Customer;
 }
 

@@ -45,7 +45,24 @@ export const apiRequest = async <T>(
     throw new Error(errorMessage)
   }
   
-  return response.json()
+  // 檢查響應是否有內容（某些 DELETE 請求可能返回空響應）
+  const contentLength = response.headers.get('content-length')
+
+  // 如果響應體為空，直接返回空對象
+  if (contentLength === '0') {
+    return {} as T
+  }
+
+  // 嘗試解析 JSON，如果失敗（空 body 或非 JSON 格式）則返回空對象
+  try {
+    const text = await response.text()
+    if (!text.trim()) {
+      return {} as T
+    }
+    return JSON.parse(text) as T
+  } catch {
+    return {} as T
+  }
 }
 
 // GET 請求

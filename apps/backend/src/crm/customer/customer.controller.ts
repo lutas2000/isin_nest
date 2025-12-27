@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { Customer } from './entities/customer.entity';
@@ -6,6 +6,8 @@ import { Customer } from './entities/customer.entity';
 @ApiTags('客戶管理')
 @Controller('crm/customers')
 export class CustomerController {
+  private readonly logger = new Logger(CustomerController.name);
+  
   constructor(private readonly customerService: CustomerService) {}
 
   @ApiOperation({ summary: '獲取所有客戶' })
@@ -14,12 +16,22 @@ export class CustomerController {
   @ApiQuery({ name: 'search', required: false, description: '搜尋關鍵字（客戶ID、公司名稱、公司簡稱）', example: '台灣' })
   @ApiResponse({ status: 200, description: '成功返回客戶列表', type: [Customer] })
   @Get()
-  findAll(
+  async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
   ) {
-    return this.customerService.findAll(page, limit, search);
+    try {
+      const result = await this.customerService.findAll(page, limit, search);
+      return result;
+    } catch (error) {
+      this.logger.error('查詢客戶列表失敗:', error);
+      if (error instanceof Error) {
+        this.logger.error('錯誤訊息:', error.message);
+        this.logger.error('錯誤堆疊:', error.stack);
+      }
+      throw error;
+    }
   }
 
   @ApiOperation({ summary: '根據ID獲取單個客戶' })
@@ -44,8 +56,18 @@ export class CustomerController {
   @ApiResponse({ status: 200, description: '成功刪除客戶' })
   @ApiResponse({ status: 404, description: '客戶不存在' })
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<void> {
-    return this.customerService.remove(id);
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
+    try {
+      await this.customerService.remove(id);
+      return { message: '客戶已成功刪除' };
+    } catch (error) {
+      this.logger.error(`刪除客戶失敗 - id: ${id}`, error);
+      if (error instanceof Error) {
+        this.logger.error('錯誤訊息:', error.message);
+        this.logger.error('錯誤堆疊:', error.stack);
+      }
+      throw error;
+    }
   }
 
   @ApiOperation({ summary: '更新客戶資料' })

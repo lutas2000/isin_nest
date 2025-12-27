@@ -131,7 +131,7 @@ export class WorkOrderItem {
 
   // 關聯到 WorkOrder（多對一）
   @ApiProperty({ description: '關聯的工單資料', type: () => WorkOrder })
-  @ManyToOne(() => WorkOrder, (workOrder) => workOrder.workOrderItems)
+  @ManyToOne(() => WorkOrder, (workOrder) => workOrder.workOrderItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'work_order_id' })
   workOrder: WorkOrder;
 
