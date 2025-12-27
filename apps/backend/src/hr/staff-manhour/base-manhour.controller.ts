@@ -29,9 +29,14 @@ export abstract class BaseManhourController<T extends BaseManhour> {
     description: '成功返回工時記錄列表',
     type: [Object], // 使用 Object 因為泛型在 Swagger 中的限制
   })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @Get()
-  findAll(): Promise<T[]> {
-    return this.service.findAll();
+  findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.service.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個工時記錄' })

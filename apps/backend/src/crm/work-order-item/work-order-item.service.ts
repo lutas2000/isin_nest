@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WorkOrderItem } from './entities/work-order-item.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class WorkOrderItemService {
@@ -10,10 +11,26 @@ export class WorkOrderItemService {
     private workOrderItemRepository: Repository<WorkOrderItem>,
   ) {}
 
-  findAll(): Promise<WorkOrderItem[]> {
-    return this.workOrderItemRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<WorkOrderItem[] | PaginatedResponseDto<WorkOrderItem>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.workOrderItemRepository.findAndCount({
       relations: ['workOrder', 'drawingStaff'],
+      order: { createdAt: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   findOne(id: number): Promise<WorkOrderItem | null> {
@@ -23,11 +40,28 @@ export class WorkOrderItemService {
     });
   }
 
-  findByWorkOrderId(workOrderId: string): Promise<WorkOrderItem[]> {
-    return this.workOrderItemRepository.find({
+  async findByWorkOrderId(
+    workOrderId: string,
+    page?: number,
+    limit?: number,
+  ): Promise<WorkOrderItem[] | PaginatedResponseDto<WorkOrderItem>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.workOrderItemRepository.findAndCount({
       where: { workOrderId },
       relations: ['workOrder', 'drawingStaff'],
+      order: { createdAt: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   async create(workOrderItem: Partial<WorkOrderItem>): Promise<WorkOrderItem> {

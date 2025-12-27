@@ -49,8 +49,19 @@ export const apiRequest = async <T>(
 }
 
 // GET 請求
-export const apiGet = <T>(endpoint: string): Promise<T> => {
-  return apiRequest<T>(endpoint, { method: 'GET' })
+export const apiGet = <T>(endpoint: string, params?: Record<string, any>): Promise<T> => {
+  let url = endpoint
+  if (params) {
+    const queryString = new URLSearchParams(
+      Object.entries(params)
+        .filter(([_, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => [key, String(value)])
+    ).toString()
+    if (queryString) {
+      url += `?${queryString}`
+    }
+  }
+  return apiRequest<T>(url, { method: 'GET' })
 }
 
 // POST 請求

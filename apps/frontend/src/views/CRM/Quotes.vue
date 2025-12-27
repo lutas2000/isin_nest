@@ -68,6 +68,12 @@
         :columns="tableColumns"
         :data="filteredQuotes"
         :show-actions="true"
+        :pagination="true"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        @update:page="handlePageChange"
+        @update:page-size="handlePageSizeChange"
       >
         <template #cell-customer="{ row }">
           {{ row.customer?.companyName || row.customer?.companyShortName || '未指定' }}
@@ -304,6 +310,11 @@ import { useAuthStore } from '@/stores/auth';
 const quotes = ref<Quote[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+// 分頁狀態
+const currentPage = ref(1);
+const pageSize = ref(50);
+const total = ref(0);
 const quoteSearch = ref('');
 const quoteStatusFilter = ref('');
 
@@ -408,7 +419,16 @@ const loadQuotes = async () => {
   loading.value = true;
   error.value = null;
   try {
-    quotes.value = await quoteService.getAll();
+    const response = await quoteService.getAll(currentPage.value, pageSize.value);
+    // 檢查是否為分頁回應
+    if (response && typeof response === 'object' && 'data' in response) {
+      quotes.value = response.data;
+      total.value = response.total;
+    } else {
+      // 向後兼容：如果不是分頁回應，直接使用數組
+      quotes.value = response as Quote[];
+      total.value = quotes.value.length;
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入報價單失敗';
     console.error('Failed to load quotes:', err);
@@ -417,10 +437,28 @@ const loadQuotes = async () => {
   }
 };
 
+// 處理分頁變化
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadQuotes();
+};
+
+const handlePageSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  currentPage.value = 1;
+  loadQuotes();
+};
+
 // 載入客戶資料
 const loadCustomers = async () => {
   try {
-    customers.value = await customerService.getAll();
+    const response = await customerService.getAll();
+    // 處理分頁回應或直接數組
+    if (response && typeof response === 'object' && 'data' in response) {
+      customers.value = response.data;
+    } else {
+      customers.value = response as Customer[];
+    }
   } catch (err) {
     console.error('Failed to load customers:', err);
   }

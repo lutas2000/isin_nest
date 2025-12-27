@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QuoteItem } from './entities/quote-item.entity';
 import { Quote } from '../quote/entities/quote.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class QuoteItemService {
@@ -13,10 +14,26 @@ export class QuoteItemService {
     private quoteRepository: Repository<Quote>,
   ) {}
 
-  findAll(): Promise<QuoteItem[]> {
-    return this.quoteItemRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<QuoteItem[] | PaginatedResponseDto<QuoteItem>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.quoteItemRepository.findAndCount({
       relations: ['quote'],
+      order: { createdAt: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   findOne(id: number): Promise<QuoteItem | null> {
@@ -26,11 +43,28 @@ export class QuoteItemService {
     });
   }
 
-  findByQuoteId(quoteId: number): Promise<QuoteItem[]> {
-    return this.quoteItemRepository.find({
+  async findByQuoteId(
+    quoteId: number,
+    page?: number,
+    limit?: number,
+  ): Promise<QuoteItem[] | PaginatedResponseDto<QuoteItem>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.quoteItemRepository.findAndCount({
       where: { quoteId },
       relations: ['quote'],
+      order: { createdAt: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   /**

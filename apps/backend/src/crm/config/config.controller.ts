@@ -6,7 +6,9 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -14,6 +16,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CrmConfigService } from './config.service';
 import { CrmConfig } from './entities/crm-config.entity';
@@ -29,10 +32,15 @@ export class CrmConfigController {
   constructor(private readonly crmConfigService: CrmConfigService) {}
 
   @ApiOperation({ summary: '取得所有 CRM 設定' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回設定列表', type: [CrmConfig] })
   @Get()
-  findAll(): Promise<CrmConfig[]> {
-    return this.crmConfigService.findAll();
+  findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.crmConfigService.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '依分類取得設定' })

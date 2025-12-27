@@ -6,12 +6,15 @@ import {
   Delete,
   Body,
   Param,
+  Query,
+  ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FeatureConfigService } from './feature-config.service';
@@ -32,10 +35,15 @@ export class FeatureConfigController {
   ) {}
 
   @ApiOperation({ summary: '取得所有職稱權限設定' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回設定列表' })
   @Get()
-  async findAll() {
-    return this.featureConfigService.findAll();
+  async findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.featureConfigService.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '取得單個職稱權限設定' })

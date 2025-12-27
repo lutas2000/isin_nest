@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class CustomerService {
@@ -10,10 +11,41 @@ export class CustomerService {
     private customerRepository: Repository<Customer>,
   ) {}
 
-  findAll(): Promise<Customer[]> {
-    return this.customerRepository.find({
-      relations: ['contacts'],
-    });
+  async findAll(
+    page?: number,
+    limit?: number,
+    search?: string,
+  ): Promise<Customer[] | PaginatedResponseDto<Customer>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    // 建立查詢建構器
+    const queryBuilder = this.customerRepository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.contacts', 'contacts')
+      .orderBy('customer.createdAt', 'DESC');
+
+    // 如果有搜尋關鍵字，添加搜尋條件
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      queryBuilder.where(
+        '(customer.id LIKE :search OR customer.companyName LIKE :search OR customer.companyShortName LIKE :search)',
+        { search: searchTerm },
+      );
+    }
+
+    // 執行分頁查詢
+    const [data, total] = await queryBuilder
+      .take(maxLimit)
+      .skip(skip)
+      .getManyAndCount();
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   findOne(id: string): Promise<Customer | null> {

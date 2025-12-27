@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Quote } from './entities/quote.entity';
 import { WorkOrderService } from '../work-order/work-order.service';
 import { WorkOrder } from '../work-order/entities/work-order.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class QuoteService {
@@ -14,10 +15,26 @@ export class QuoteService {
     private workOrderService: WorkOrderService,
   ) {}
 
-  findAll(): Promise<Quote[]> {
-    return this.quoteRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<Quote[] | PaginatedResponseDto<Quote>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.quoteRepository.findAndCount({
       relations: ['staff', 'customer', 'quoteItems'],
+      order: { createdAt: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   findOne(id: number): Promise<Quote | null> {

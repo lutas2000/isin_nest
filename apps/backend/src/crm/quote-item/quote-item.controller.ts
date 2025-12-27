@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { QuoteItemService } from './quote-item.service';
 import { QuoteItem } from './entities/quote-item.entity';
@@ -10,13 +10,19 @@ export class QuoteItemController {
 
   @ApiOperation({ summary: '獲取所有報價單工件' })
   @ApiQuery({ name: 'quoteId', required: false, description: '報價單ID' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回報價單工件列表', type: [QuoteItem] })
   @Get()
-  findAll(@Query('quoteId') quoteId?: string): Promise<QuoteItem[]> {
+  findAll(
+    @Query('quoteId') quoteId?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
     if (quoteId) {
-      return this.quoteItemService.findByQuoteId(+quoteId);
+      return this.quoteItemService.findByQuoteId(+quoteId, page, limit);
     }
-    return this.quoteItemService.findAll();
+    return this.quoteItemService.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個報價單工件' })

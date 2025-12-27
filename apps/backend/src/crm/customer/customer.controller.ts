@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { Customer } from './entities/customer.entity';
 
@@ -9,10 +9,17 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @ApiOperation({ summary: '獲取所有客戶' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
+  @ApiQuery({ name: 'search', required: false, description: '搜尋關鍵字（客戶ID、公司名稱、公司簡稱）', example: '台灣' })
   @ApiResponse({ status: 200, description: '成功返回客戶列表', type: [Customer] })
   @Get()
-  findAll(): Promise<Customer[]> {
-    return this.customerService.findAll();
+  findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('search') search?: string,
+  ) {
+    return this.customerService.findAll(page, limit, search);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個客戶' })

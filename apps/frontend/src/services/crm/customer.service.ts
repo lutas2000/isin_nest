@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
+import { PaginatedResponse } from '../../types/pagination'
 
 export interface Customer {
   id: string
@@ -38,9 +39,13 @@ export interface Contact {
 }
 
 export const customerService = {
-  // 獲取所有客戶
-  getAll: (): Promise<Customer[]> => {
-    return apiGet<Customer[]>(API_CONFIG.CRM.CUSTOMERS)
+  // 獲取所有客戶（支援分頁和搜尋）
+  getAll: (page?: number, limit?: number, search?: string): Promise<Customer[] | PaginatedResponse<Customer>> => {
+    const params: Record<string, any> = {}
+    if (page !== undefined) params.page = page
+    if (limit !== undefined) params.limit = limit
+    if (search !== undefined && search.trim()) params.search = search.trim()
+    return apiGet<Customer[] | PaginatedResponse<Customer>>(API_CONFIG.CRM.CUSTOMERS, params)
   },
 
   // 獲取單個客戶

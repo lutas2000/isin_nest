@@ -44,13 +44,18 @@ export class StaffSegmentController {
 
   @Get()
   @ApiOperation({ summary: '取得所有員工段別設定' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({
     status: 200,
     description: '成功取得員工段別設定列表',
     type: [StaffSegment],
   })
-  async findAll(): Promise<StaffSegment[]> {
-    return await this.staffSegmentService.findAll();
+  async findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return await this.staffSegmentService.findAll(page, limit);
   }
 
   @Get('staff/:staffId')

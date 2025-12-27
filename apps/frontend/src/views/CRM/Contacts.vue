@@ -27,8 +27,14 @@
       <DataTable
         v-else
         :columns="tableColumns"
-        :data="filteredContacts"
+        :data="contacts"
         :show-actions="true"
+        :pagination="true"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        @update:page="handlePageChange"
+        @update:page-size="handlePageSizeChange"
       >
         <template #cell-customer="{ row }">
           {{ row.customer?.companyName || '未知' }}
@@ -53,9 +59,11 @@
     </div>
 
     <!-- 創建/編輯聯絡人 Modal -->
-    <Modal v-if="showCreateModal" @close="closeModal">
-      <template #title>{{ editingContact ? '編輯聯絡人' : '新增聯絡人' }}</template>
-      <template #body>
+    <Modal 
+      :show="showCreateModal" 
+      :title="editingContact ? '編輯聯絡人' : '新增聯絡人'"
+      @close="closeModal"
+    >
         <div class="modal-form">
           <div class="form-group">
             <label>姓名 *</label>
@@ -106,7 +114,6 @@
             />
           </div>
         </div>
-      </template>
       <template #footer>
         <button class="btn btn-outline" @click="closeModal">取消</button>
         <button 
@@ -120,9 +127,12 @@
     </Modal>
 
     <!-- 查看詳情 Modal -->
-    <Modal v-if="showDetailsModal && selectedContact" @close="showDetailsModal = false">
-      <template #title>聯絡人詳情 - {{ selectedContact.name }}</template>
-      <template #body>
+    <Modal 
+      v-if="selectedContact"
+      :show="showDetailsModal" 
+      :title="`聯絡人詳情 - ${selectedContact.name}`"
+      @close="showDetailsModal = false"
+    >
         <div class="details-content">
           <div class="details-section">
             <h4>基本資訊</h4>
@@ -178,7 +188,6 @@
             </div>
           </div>
         </div>
-      </template>
     </Modal>
   </div>
 </template>
@@ -186,9 +195,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { PageHeader, OverviewCard, DataTable, SearchFilters, Modal } from '@/components';
-import { contactService, type Contact } from '@/services/crm/contact.service';
-import { customerService, type Customer } from '@/services/crm/customer.service';
+import { PageHeader, DataTable, SearchFilters, Modal } from '@/components';
+import { contactService } from '@/services/crm/contact.service';
+import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 
 const route = useRoute();
 
@@ -198,6 +207,11 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const contactSearch = ref('');
 const selectedCustomerFilter = ref('');
+
+// 分頁狀態
+const currentPage = ref(1);
+const pageSize = ref(50);
+const total = ref(0);
 
 // 當前客戶（用於客戶模式）
 const currentCustomer = ref<Customer | null>(null);
@@ -238,29 +252,6 @@ const contactForm = ref({
   email: '',
 });
 
-// 聯絡人統計
-const contactsStats = computed(() => {
-  const total = contacts.value.length;
-  const uniqueCustomers = new Set(contacts.value.map(c => c.customerId)).size;
-  const withEmail = contacts.value.filter(c => c.email).length;
-  const withPhone = contacts.value.filter(c => c.phones && c.phones.length > 0).length;
-  
-  return {
-    totalContacts: total,
-    totalCustomers: uniqueCustomers,
-    withEmail,
-    withPhone,
-  };
-});
-
-// 客戶選項（用於篩選器）
-const customerOptions = computed(() => {
-  return customers.value.map(c => ({
-    value: c.id,
-    label: c.companyName,
-  }));
-});
-
 // 表格列定義
 const tableColumns = [
   { key: 'id', label: 'ID' },
@@ -269,45 +260,6 @@ const tableColumns = [
   { key: 'phones', label: '電話' },
   { key: 'email', label: 'Email' },
 ];
-
-// 篩選後的聯絡人
-const filteredContacts = computed(() => {
-  let filtered = contacts.value;
-
-  // 客戶模式：先篩選出該客戶的聯絡人
-  if (isCustomerMode.value && route.params.customerId) {
-    filtered = filtered.filter(
-      (contact) => contact.customerId === route.params.customerId
-    );
-  }
-
-  // 文字搜尋
-  if (contactSearch.value) {
-    const search = contactSearch.value.toLowerCase();
-    if (isCustomerMode.value) {
-      // 客戶模式：只搜尋聯絡人姓名
-      filtered = filtered.filter(
-        (contact) => contact.name.toLowerCase().includes(search)
-      );
-    } else {
-      // 一般模式：搜尋聯絡人姓名或客戶名稱
-      filtered = filtered.filter(
-        (contact) =>
-          contact.name.toLowerCase().includes(search) ||
-          contact.customer?.companyName.toLowerCase().includes(search),
-      );
-    }
-  }
-
-  // 客戶篩選（僅在非客戶模式下生效）
-  if (!isCustomerMode.value && selectedCustomerFilter.value) {
-    filtered = filtered.filter(
-      (contact) => contact.customerId === selectedCustomerFilter.value
-    );
-  }
-
-  return filtered;
-});
 
 // 表單驗證
 const isFormValid = computed(() => {
@@ -319,7 +271,18 @@ const loadContacts = async () => {
   loading.value = true;
   error.value = null;
   try {
-    contacts.value = await contactService.getAll();
+    const customerId = isCustomerMode.value ? (route.params.customerId as string) : (selectedCustomerFilter.value || undefined);
+    const searchTerm = contactSearch.value.trim() || undefined;
+    const response = await contactService.getAll(customerId, currentPage.value, pageSize.value, searchTerm);
+    // 檢查是否為分頁回應
+    if (response && typeof response === 'object' && 'data' in response) {
+      contacts.value = response.data;
+      total.value = response.total;
+    } else {
+      // 向後兼容：如果不是分頁回應，直接使用數組
+      contacts.value = response as Contact[];
+      total.value = contacts.value.length;
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入聯絡人失敗';
     console.error('Failed to load contacts:', err);
@@ -328,10 +291,28 @@ const loadContacts = async () => {
   }
 };
 
+// 處理分頁變化
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadContacts();
+};
+
+const handlePageSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  currentPage.value = 1;
+  loadContacts();
+};
+
 // 載入客戶資料
 const loadCustomers = async () => {
   try {
-    customers.value = await customerService.getAll();
+    const response = await customerService.getAll();
+    // 處理分頁回應或直接數組
+    if (response && typeof response === 'object' && 'data' in response) {
+      customers.value = response.data;
+    } else {
+      customers.value = response as Customer[];
+    }
   } catch (err) {
     console.error('Failed to load customers:', err);
   }
@@ -452,6 +433,18 @@ const initPage = async () => {
   resetForm();
 };
 
+// 監聽搜尋關鍵字變化，自動重新載入
+watch(contactSearch, () => {
+  currentPage.value = 1; // 重置到第一頁
+  loadContacts();
+});
+
+// 監聽客戶篩選器變化，自動重新載入
+watch(selectedCustomerFilter, () => {
+  currentPage.value = 1; // 重置到第一頁
+  loadContacts();
+});
+
 // 監聽路由參數變化
 watch(
   () => route.params.customerId,
@@ -461,6 +454,8 @@ watch(
     } else {
       currentCustomer.value = null;
     }
+    currentPage.value = 1; // 重置到第一頁
+    await loadContacts();
     resetForm();
   }
 );

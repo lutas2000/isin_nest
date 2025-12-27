@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-content">
       <h1>{{ title }}</h1>
-      <p>{{ description }}</p>
+      <p v-if="description">{{ description }}</p>
     </div>
     <div class="header-actions" v-if="$slots.actions">
       <slot name="actions"></slot>
@@ -13,10 +13,10 @@
 <script setup lang="ts">
 interface Props {
   title: string;
-  description: string;
+  description?: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 </script>
 
 <style scoped>

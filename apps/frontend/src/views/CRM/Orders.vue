@@ -56,6 +56,12 @@
         :columns="tableColumns"
         :data="filteredOrders"
         :show-actions="true"
+        :pagination="true"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        @update:page="handlePageChange"
+        @update:page-size="handlePageSizeChange"
       >
         <template #cell-customer="{ row }">
           {{ row.customer?.companyName || row.customer?.companyShortName || '未知' }}
@@ -334,6 +340,11 @@ import { customerService, type Customer } from '@/services/crm/customer.service'
 const orders = ref<WorkOrder[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+// 分頁狀態
+const currentPage = ref(1);
+const pageSize = ref(50);
+const total = ref(0);
 const orderSearch = ref('');
 const orderStatusFilter = ref('');
 
@@ -431,7 +442,16 @@ const loadOrders = async () => {
   loading.value = true;
   error.value = null;
   try {
-    orders.value = await workOrderService.getAll();
+    const response = await workOrderService.getAll(currentPage.value, pageSize.value);
+    // 檢查是否為分頁回應
+    if (response && typeof response === 'object' && 'data' in response) {
+      orders.value = response.data;
+      total.value = response.total;
+    } else {
+      // 向後兼容：如果不是分頁回應，直接使用數組
+      orders.value = response as WorkOrder[];
+      total.value = orders.value.length;
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入工單失敗';
     console.error('Failed to load work orders:', err);
@@ -440,10 +460,28 @@ const loadOrders = async () => {
   }
 };
 
+// 處理分頁變化
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadOrders();
+};
+
+const handlePageSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  currentPage.value = 1;
+  loadOrders();
+};
+
 // 載入客戶資料
 const loadCustomers = async () => {
   try {
-    customers.value = await customerService.getAll();
+    const response = await customerService.getAll();
+    // 處理分頁回應或直接數組
+    if (response && typeof response === 'object' && 'data' in response) {
+      customers.value = response.data;
+    } else {
+      customers.value = response as Customer[];
+    }
   } catch (err) {
     console.error('Failed to load customers:', err);
   }

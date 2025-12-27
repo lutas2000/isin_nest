@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendRecord } from './entities/attend-record.entity';
 import { Staff } from '../staff/entities/staff.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import {
   AttendRecordCsvReader,
   AttendRecordUsbReader,
@@ -70,17 +71,26 @@ export class AttendRecordService {
   /**
    * 取得所有出勤記錄（支援分頁）
    */
-  async findAll(page: number = 1, limit: number = 50): Promise<AttendRecord[]> {
-    // 限制最大每頁筆數
-    const maxLimit = Math.min(limit, 100);
-    const skip = (page - 1) * maxLimit;
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<AttendRecord[] | PaginatedResponseDto<AttendRecord>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
 
-    return await this.attendRecordRepository.find({
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.attendRecordRepository.findAndCount({
       relations: ['staff'],
       order: { createTime: 'DESC' },
       take: maxLimit,
       skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   /**

@@ -30,9 +30,14 @@ export class StaffLeaveController {
     description: '成功返回請假記錄列表',
     type: [StaffLeave],
   })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @Get() // 處理 GET 請求，返回所有請假記錄
-  async findAll(): Promise<StaffLeave[]> {
-    return await this.staffLeaveService.findAll();
+  async findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return await this.staffLeaveService.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '根據日期範圍查詢請假記錄' })

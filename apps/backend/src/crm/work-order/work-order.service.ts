@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WorkOrder } from './entities/work-order.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class WorkOrderService {
@@ -10,10 +11,26 @@ export class WorkOrderService {
     private workOrderRepository: Repository<WorkOrder>,
   ) {}
 
-  findAll(): Promise<WorkOrder[]> {
-    return this.workOrderRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<WorkOrder[] | PaginatedResponseDto<WorkOrder>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.workOrderRepository.findAndCount({
       relations: ['staff', 'customer', 'workOrderItems'],
+      order: { createdAt: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   findOne(id: string): Promise<WorkOrder | null> {

@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
+import { PaginatedResponse } from '../../types/pagination'
 
 export interface WorkOrderItem {
   id: number
@@ -40,9 +41,12 @@ export interface WorkOrder {
 }
 
 export const workOrderService = {
-  // 獲取所有工單
-  getAll: (): Promise<WorkOrder[]> => {
-    return apiGet<WorkOrder[]>(API_CONFIG.CRM.WORK_ORDERS)
+  // 獲取所有工單（支援分頁）
+  getAll: (page?: number, limit?: number): Promise<WorkOrder[] | PaginatedResponse<WorkOrder>> => {
+    const params: Record<string, any> = {}
+    if (page !== undefined) params.page = page
+    if (limit !== undefined) params.limit = limit
+    return apiGet<WorkOrder[] | PaginatedResponse<WorkOrder>>(API_CONFIG.CRM.WORK_ORDERS, params)
   },
 
   // 獲取單個工單
@@ -72,12 +76,13 @@ export const workOrderService = {
 }
 
 export const workOrderItemService = {
-  // 獲取所有工單工件
-  getAll: (workOrderId?: string): Promise<WorkOrderItem[]> => {
-    const url = workOrderId
-      ? `${API_CONFIG.CRM.WORK_ORDER_ITEMS}?workOrderId=${workOrderId}`
-      : API_CONFIG.CRM.WORK_ORDER_ITEMS
-    return apiGet<WorkOrderItem[]>(url)
+  // 獲取所有工單工件（支援分頁）
+  getAll: (workOrderId?: string, page?: number, limit?: number): Promise<WorkOrderItem[] | PaginatedResponse<WorkOrderItem>> => {
+    const params: Record<string, any> = {}
+    if (workOrderId) params.workOrderId = workOrderId
+    if (page !== undefined) params.page = page
+    if (limit !== undefined) params.limit = limit
+    return apiGet<WorkOrderItem[] | PaginatedResponse<WorkOrderItem>>(API_CONFIG.CRM.WORK_ORDER_ITEMS, params)
   },
 
   // 獲取單個工單工件

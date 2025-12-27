@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffLeave } from './entities/staff-leave.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class StaffLeaveService {
@@ -11,11 +12,26 @@ export class StaffLeaveService {
   ) {}
 
   // 獲取所有請假記錄
-  async findAll(): Promise<StaffLeave[]> {
-    return await this.staffLeaveRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<StaffLeave[] | PaginatedResponseDto<StaffLeave>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.staffLeaveRepository.findAndCount({
       relations: ['staff', 'verifyByStaff'],
-      order: { id: 'DESC' }, // 按 ID 降序排列，最新的在前面
+      order: { id: 'DESC' },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   // 根據 ID 獲取單一請假記錄

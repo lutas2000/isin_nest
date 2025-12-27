@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffSegment } from './entities/staff-segment.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 export interface CreateStaffSegmentDto {
   staffId: string;
@@ -45,11 +46,26 @@ export class StaffSegmentService {
       : savedStaffSegment;
   }
 
-  async findAll(): Promise<StaffSegment[]> {
-    return await this.staffSegmentRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<StaffSegment[] | PaginatedResponseDto<StaffSegment>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.staffSegmentRepository.findAndCount({
       relations: ['staff'],
       order: { id: 'ASC' } as any,
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   async findOne(id: number): Promise<StaffSegment> {

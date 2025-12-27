@@ -9,7 +9,8 @@
 - [x] 調整工時管理頁面
 - [x] 詳細權限設定(require feature in controllers)
 - [x] 搬移sql資料庫(staff)
-- [ ] 連接 access (cust)
+- [x] 連接 access (cust)
+- [ ] api pagging
 - [ ] 轉換 python api
 - [ ] Cutting
 - [ ] 計算薪資
@@ -20,6 +21,7 @@
 
 ## Know Errors
 - [ ] access 轉換失敗 cust
-    - 1EW, DAQ
-    - email 格式錯誤？
+    - 1EW, DAQ, MMB, RC1, TCJ, UBC, VAL
+    - fax, email 格式錯誤？
+    - ER_TRUNCATED_WRONG_VALUE_FOR_FIELD: Incorrect string value: '\xE5\x81\x9C\xE7\x94\xA8...' for column 'fax' at row 1
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { WorkOrderItemService } from './work-order-item.service';
 import { WorkOrderItem } from './entities/work-order-item.entity';
@@ -10,13 +10,19 @@ export class WorkOrderItemController {
 
   @ApiOperation({ summary: '獲取所有工單工件' })
   @ApiQuery({ name: 'workOrderId', required: false, description: '工單ID' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回工單工件列表', type: [WorkOrderItem] })
   @Get()
-  findAll(@Query('workOrderId') workOrderId?: string): Promise<WorkOrderItem[]> {
+  findAll(
+    @Query('workOrderId') workOrderId?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
     if (workOrderId) {
-      return this.workOrderItemService.findByWorkOrderId(workOrderId);
+      return this.workOrderItemService.findByWorkOrderId(workOrderId, page, limit);
     }
-    return this.workOrderItemService.findAll();
+    return this.workOrderItemService.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個工單工件' })

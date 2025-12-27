@@ -1,14 +1,31 @@
 import { Repository } from 'typeorm';
 import { BaseManhour } from './entities/base-manhour.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 export abstract class BaseManhourService<T extends BaseManhour> {
   constructor(private repository: Repository<T>) {}
 
   // 查詢所有工時記錄
-  findAll(): Promise<T[]> {
-    return this.repository.find({
-      relations: ['staff'], // 載入關聯的員工資料
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<T[] | PaginatedResponseDto<T>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.repository.findAndCount({
+      relations: ['staff'],
+      order: { day: 'DESC' } as any,
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   // 根據ID查詢單一工時記錄

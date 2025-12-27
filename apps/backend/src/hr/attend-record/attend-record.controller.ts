@@ -109,9 +109,9 @@ export class AttendRecordController {
     attendType?: number,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 50,
-  ): Promise<AttendRecord[]> {
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
     // 如果有日期範圍查詢
     if (startDate && endDate) {
       const start = new Date(startDate);

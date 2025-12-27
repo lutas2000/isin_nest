@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CrmConfig } from './entities/crm-config.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = {
   shipping_method: [
@@ -32,14 +33,29 @@ export class CrmConfigService implements OnModuleInit {
     await this.syncDefaults();
   }
 
-  async findAll(): Promise<CrmConfig[]> {
-    return this.crmConfigRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<CrmConfig[] | PaginatedResponseDto<CrmConfig>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.crmConfigRepository.findAndCount({
       order: {
         category: 'ASC',
         displayOrder: 'ASC',
         code: 'ASC',
       },
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   async findByCategory(category: string): Promise<CrmConfig[]> {

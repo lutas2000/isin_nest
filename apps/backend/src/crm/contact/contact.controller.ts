@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ContactService } from './contact.service';
 import { Contact } from './entities/contact.entity';
@@ -10,13 +10,21 @@ export class ContactController {
 
   @ApiOperation({ summary: '獲取所有聯絡人' })
   @ApiQuery({ name: 'customerId', required: false, description: '客戶ID' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
+  @ApiQuery({ name: 'search', required: false, description: '搜尋關鍵字（聯絡人姓名、客戶名稱）', example: '張三' })
   @ApiResponse({ status: 200, description: '成功返回聯絡人列表', type: [Contact] })
   @Get()
-  findAll(@Query('customerId') customerId?: string): Promise<Contact[]> {
+  findAll(
+    @Query('customerId') customerId?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('search') search?: string,
+  ) {
     if (customerId) {
-      return this.contactService.findByCustomerId(customerId);
+      return this.contactService.findByCustomerId(customerId, page, limit, search);
     }
-    return this.contactService.findAll();
+    return this.contactService.findAll(page, limit, search);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個聯絡人' })

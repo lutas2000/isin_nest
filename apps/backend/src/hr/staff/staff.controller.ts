@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { Staff } from './entities/staff.entity';
 
@@ -9,10 +9,15 @@ export class StaffController {
   constructor(private readonly usersService: StaffService) {}
 
   @ApiOperation({ summary: '獲取所有員工' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回員工列表', type: [Staff] })
   @Get() // 處理 GET 請求，返回所有用戶
-  findAll(): Promise<Staff[]> {
-    return this.usersService.findAll();
+  findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.usersService.findAll(page, limit);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個員工' })

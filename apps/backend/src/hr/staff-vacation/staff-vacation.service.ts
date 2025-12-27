@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffVacation } from './entities/staff-vacation.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 export interface CreateStaffVacationDto {
   date: Date | string;
@@ -30,10 +31,25 @@ export class StaffVacationService {
     return await this.staffVacationRepository.save(staffVacation);
   }
 
-  async findAll(): Promise<StaffVacation[]> {
-    return await this.staffVacationRepository.find({
+  async findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<StaffVacation[] | PaginatedResponseDto<StaffVacation>> {
+    // 使用預設值：page=1, limit=50
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+
+    // 限制最大每頁筆數
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.staffVacationRepository.findAndCount({
       order: { date: 'DESC' } as any,
+      take: maxLimit,
+      skip: skip,
     });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   async findOne(date: Date | string): Promise<StaffVacation> {

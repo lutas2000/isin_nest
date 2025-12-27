@@ -34,10 +34,43 @@
         </tbody>
       </table>
     </div>
+    
+    <!-- 分頁控制 -->
+    <div v-if="pagination" class="pagination-container">
+      <div class="pagination-info">
+        顯示第 {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, total) }} 筆，共 {{ total }} 筆
+      </div>
+      <div class="pagination-controls">
+        <select v-model="localPageSize" @change="handlePageSizeChange" class="page-size-select">
+          <option :value="25">25 筆/頁</option>
+          <option :value="50">50 筆/頁</option>
+          <option :value="100">100 筆/頁</option>
+        </select>
+        <button 
+          class="btn btn-sm btn-outline" 
+          :disabled="currentPage === 1"
+          @click="goToPage(currentPage - 1)"
+        >
+          上一頁
+        </button>
+        <span class="page-info">
+          第 {{ currentPage }} / {{ totalPages }} 頁
+        </span>
+        <button 
+          class="btn btn-sm btn-outline" 
+          :disabled="currentPage === totalPages"
+          @click="goToPage(currentPage + 1)"
+        >
+          下一頁
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+
 interface Column {
   key: string;
   label: string;
@@ -49,16 +82,51 @@ interface Props {
   data: any[];
   showActions?: boolean;
   rowKey?: string;
+  pagination?: boolean;
+  currentPage?: number;
+  pageSize?: number;
+  total?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showActions: true,
-  rowKey: 'id'
+  rowKey: 'id',
+  pagination: false,
+  currentPage: 1,
+  pageSize: 50,
+  total: 0,
+});
+
+const emit = defineEmits<{
+  'update:page': [page: number];
+  'update:page-size': [pageSize: number];
+}>();
+
+const localPageSize = ref(props.pageSize);
+
+const totalPages = computed(() => {
+  return Math.ceil(props.total / props.pageSize);
 });
 
 const getRowKey = (row: any, index: number) => {
   return row[props.rowKey] || index;
 };
+
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    emit('update:page', page);
+  }
+};
+
+const handlePageSizeChange = () => {
+  emit('update:page-size', localPageSize.value);
+  // 重置到第一頁
+  emit('update:page', 1);
+};
+
+watch(() => props.pageSize, (newSize) => {
+  localPageSize.value = newSize;
+});
 </script>
 
 <style scoped>
@@ -103,6 +171,48 @@ const getRowKey = (row: any, index: number) => {
   gap: 0.5rem;
 }
 
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid var(--secondary-200);
+  background-color: var(--secondary-50);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  color: var(--secondary-600);
+  font-size: var(--font-size-sm);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-size-select {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--secondary-300);
+  border-radius: var(--border-radius);
+  background: white;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.page-info {
+  padding: 0 0.5rem;
+  color: var(--secondary-600);
+  font-size: var(--font-size-sm);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
   .table-container {
@@ -117,6 +227,16 @@ const getRowKey = (row: any, index: number) => {
   .action-buttons {
     flex-direction: column;
     gap: 0.25rem;
+  }
+  
+  .pagination-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 }
 </style>

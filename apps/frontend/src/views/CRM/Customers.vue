@@ -25,8 +25,14 @@
       <DataTable
         v-else
         :columns="tableColumns"
-        :data="filteredCustomers"
+        :data="customers"
         :show-actions="true"
+        :pagination="true"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :total="total"
+        @update:page="handlePageChange"
+        @update:page-size="handlePageSizeChange"
       >
         <template #cell-id="{ row, value }">
           <button
@@ -255,8 +261,9 @@
 
     <!-- 查看詳情 Modal（含聯絡人列表） -->
     <Modal
-      :show="showDetailsModal && !!selectedCustomer"
-      :title="selectedCustomer ? `客戶詳情 - ${selectedCustomer.companyName}` : '客戶詳情'"
+      v-if="selectedCustomer"
+      :show="showDetailsModal"
+      :title="`客戶詳情 - ${selectedCustomer.companyName}`"
       @close="showDetailsModal = false"
     >
       <div class="details-content">
@@ -353,11 +360,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { PageHeader, DataTable, SearchFilters, Modal } from '@/components';
-import { customerService, type Customer } from '@/services/crm/customer.service';
-import { contactService, type Contact } from '@/services/crm/contact.service';
+import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
+import { contactService } from '@/services/crm/contact.service';
 
 const router = useRouter();
 
@@ -366,6 +373,11 @@ const customers = ref<Customer[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const customerSearch = ref('');
+
+// 分頁狀態
+const currentPage = ref(1);
+const pageSize = ref(50);
+const total = ref(0);
 
 // Modal 控制
 const showCreateModal = ref(false);
@@ -410,23 +422,6 @@ const tableColumns = [
   { key: 'accountReceivable', label: '帳款' },
 ];
 
-// 篩選後的客戶
-const filteredCustomers = computed(() => {
-  let filtered = customers.value;
-
-  if (customerSearch.value) {
-    const search = customerSearch.value.toLowerCase();
-    filtered = filtered.filter(
-      (customer) =>
-        customer.id.toLowerCase().includes(search) ||
-        customer.companyName.toLowerCase().includes(search) ||
-        customer.companyShortName?.toLowerCase().includes(search),
-    );
-  }
-
-  return filtered;
-});
-
 // 表單驗證
 const isFormValid = computed(() => {
   return customerForm.value.id && customerForm.value.companyName;
@@ -437,7 +432,17 @@ const loadCustomers = async () => {
   loading.value = true;
   error.value = null;
   try {
-    customers.value = await customerService.getAll();
+    const searchTerm = customerSearch.value.trim() || undefined;
+    const response = await customerService.getAll(currentPage.value, pageSize.value, searchTerm);
+    // 檢查是否為分頁回應
+    if (response && typeof response === 'object' && 'data' in response) {
+      customers.value = response.data;
+      total.value = response.total;
+    } else {
+      // 向後兼容：如果不是分頁回應，直接使用數組
+      customers.value = response as Customer[];
+      total.value = customers.value.length;
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入客戶失敗';
     console.error('Failed to load customers:', err);
@@ -446,12 +451,30 @@ const loadCustomers = async () => {
   }
 };
 
+// 處理分頁變化
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadCustomers();
+};
+
+const handlePageSizeChange = (newSize: number) => {
+  pageSize.value = newSize;
+  currentPage.value = 1;
+  loadCustomers();
+};
+
 // 載入特定客戶的聯絡人
 const loadCustomerContacts = async (customerId: string) => {
   contactsLoading.value = true;
   contactsError.value = null;
   try {
-    customerContacts.value = await contactService.getAll(customerId);
+    const response = await contactService.getAll(customerId);
+    // 處理分頁回應或直接數組
+    if (response && typeof response === 'object' && 'data' in response) {
+      customerContacts.value = response.data;
+    } else {
+      customerContacts.value = response as Contact[];
+    }
   } catch (err) {
     contactsError.value = err instanceof Error ? err.message : '載入聯絡人失敗';
     console.error('Failed to load customer contacts:', err);
@@ -586,6 +609,12 @@ const closeModal = () => {
     notes: '',
   };
 };
+
+// 監聽搜尋關鍵字變化，自動重新載入
+watch(customerSearch, () => {
+  currentPage.value = 1; // 重置到第一頁
+  loadCustomers();
+});
 
 // 初始化
 onMounted(() => {

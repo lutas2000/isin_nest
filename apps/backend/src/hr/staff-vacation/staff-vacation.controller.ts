@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -45,13 +46,18 @@ export class StaffVacationController {
 
   @Get()
   @ApiOperation({ summary: '取得所有假期記錄' })
+  @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({
     status: 200,
     description: '成功取得假期記錄列表',
     type: [StaffVacation],
   })
-  async findAll(): Promise<StaffVacation[]> {
-    return await this.staffVacationService.findAll();
+  async findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return await this.staffVacationService.findAll(page, limit);
   }
 
   @Get('date-range')

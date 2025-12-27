@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
+import { PaginatedResponse } from '../../types/pagination'
 
 export interface QuoteItem {
   id: number
@@ -46,9 +47,12 @@ export interface WorkOrder {
 }
 
 export const quoteService = {
-  // 獲取所有報價單
-  getAll: (): Promise<Quote[]> => {
-    return apiGet<Quote[]>(API_CONFIG.CRM.QUOTES)
+  // 獲取所有報價單（支援分頁）
+  getAll: (page?: number, limit?: number): Promise<Quote[] | PaginatedResponse<Quote>> => {
+    const params: Record<string, any> = {}
+    if (page !== undefined) params.page = page
+    if (limit !== undefined) params.limit = limit
+    return apiGet<Quote[] | PaginatedResponse<Quote>>(API_CONFIG.CRM.QUOTES, params)
   },
 
   // 獲取單個報價單
@@ -78,12 +82,13 @@ export const quoteService = {
 }
 
 export const quoteItemService = {
-  // 獲取所有報價單工件
-  getAll: (quoteId?: number): Promise<QuoteItem[]> => {
-    const url = quoteId
-      ? `${API_CONFIG.CRM.QUOTE_ITEMS}?quoteId=${quoteId}`
-      : API_CONFIG.CRM.QUOTE_ITEMS
-    return apiGet<QuoteItem[]>(url)
+  // 獲取所有報價單工件（支援分頁）
+  getAll: (quoteId?: number, page?: number, limit?: number): Promise<QuoteItem[] | PaginatedResponse<QuoteItem>> => {
+    const params: Record<string, any> = {}
+    if (quoteId !== undefined) params.quoteId = quoteId
+    if (page !== undefined) params.page = page
+    if (limit !== undefined) params.limit = limit
+    return apiGet<QuoteItem[] | PaginatedResponse<QuoteItem>>(API_CONFIG.CRM.QUOTE_ITEMS, params)
   },
 
   // 獲取單個報價單工件
