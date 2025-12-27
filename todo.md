@@ -10,7 +10,7 @@
 - [x] 詳細權限設定(require feature in controllers)
 - [x] 搬移sql資料庫(staff)
 - [x] 連接 access (cust)
-- [ ] api pagging
+- [x] api pagging
 - [ ] 轉換 python api
 - [ ] Cutting
 - [ ] 計算薪資

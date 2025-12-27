@@ -48,10 +48,6 @@
           {{ value && value.length > 0 ? value[0] : '無' }}
         </template>
 
-        <template #cell-creditLimit="{ value }">
-          NT$ {{ Number(value).toLocaleString('zh-TW') }}
-        </template>
-
         <template #cell-accountReceivable="{ value }">
           NT$ {{ Number(value).toLocaleString('zh-TW') }}
         </template>
@@ -61,7 +57,6 @@
             聯絡人
           </button>
           <button class="btn btn-sm btn-primary" @click="editCustomer(row)">編輯</button>
-          <button class="btn btn-sm btn-danger" @click="deleteCustomer(row.id)">刪除</button>
         </template>
       </DataTable>
     </div>
@@ -252,10 +247,21 @@
           </div>
       </div>
       <template #footer>
-        <button class="btn btn-outline" @click="closeModal">取消</button>
-        <button class="btn btn-primary" @click="saveCustomer" :disabled="!isFormValid">
-          {{ editingCustomer ? '更新' : '建立' }}
-        </button>
+        <div class="modal-footer-actions">
+          <button class="btn btn-outline" @click="closeModal">取消</button>
+          <div class="footer-right">
+            <button 
+              v-if="editingCustomer && authStore.isAdmin" 
+              class="btn btn-danger" 
+              @click="handleDeleteFromModal"
+            >
+              刪除
+            </button>
+            <button class="btn btn-primary" @click="saveCustomer" :disabled="!isFormValid">
+              {{ editingCustomer ? '更新' : '建立' }}
+            </button>
+          </div>
+        </div>
       </template>
     </Modal>
 
@@ -365,8 +371,10 @@ import { useRouter } from 'vue-router';
 import { PageHeader, DataTable, SearchFilters, Modal } from '@/components';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 import { contactService } from '@/services/crm/contact.service';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 // 客戶資料
 const customers = ref<Customer[]>([]);
@@ -418,7 +426,6 @@ const tableColumns = [
   { key: 'companyShortName', label: '公司簡稱' },
   { key: 'phones', label: '電話' },
   { key: 'email', label: 'Email' },
-  { key: 'creditLimit', label: '信用額度' },
   { key: 'accountReceivable', label: '帳款' },
 ];
 
@@ -573,12 +580,15 @@ const saveCustomer = async () => {
   }
 };
 
-// 刪除客戶
-const deleteCustomer = async (id: string) => {
+// 從 Modal 中刪除客戶
+const handleDeleteFromModal = async () => {
+  if (!editingCustomer.value) return;
+  
   if (!confirm('確定要刪除此客戶嗎？此操作無法復原。')) return;
   
   try {
-    await customerService.delete(id);
+    await customerService.delete(editingCustomer.value.id);
+    closeModal();
     await loadCustomers();
   } catch (err) {
     alert(err instanceof Error ? err.message : '刪除客戶失敗');
@@ -716,6 +726,20 @@ onMounted(() => {
 
 textarea.form-control {
   resize: vertical;
+}
+
+/* Modal Footer 樣式 */
+.modal-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.footer-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 /* 詳情 Modal 樣式 */
