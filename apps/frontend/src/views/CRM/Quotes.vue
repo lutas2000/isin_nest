@@ -293,6 +293,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
@@ -321,6 +322,9 @@ const staffList = ref<Staff[]>([]); // 銷管部員工列表
 
 // 認證 store
 const authStore = useAuthStore();
+
+// 路由
+const router = useRouter();
 
 // Modal 控制
 const showCreateModal = ref(false);
@@ -436,15 +440,9 @@ const loadStaff = async () => {
   }
 };
 
-// 查看詳情
-const viewDetails = async (quote: Quote) => {
-  try {
-    // 獲取完整的報價單資料（包含關聯的 quoteItems）
-    selectedQuote.value = await quoteService.getById(quote.id);
-    showDetailsModal.value = true;
-  } catch (err) {
-    alert(err instanceof Error ? err.message : '載入報價單詳情失敗');
-  }
+// 查看詳情（導航到 QuoteItems 頁面）
+const viewDetails = (quote: Quote) => {
+  router.push(`/crm/quotes/${quote.id}/items`);
 };
 
 // 編輯報價單

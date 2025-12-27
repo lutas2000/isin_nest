@@ -11,6 +11,7 @@ import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
+import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 import ResetPassword from '../views/ResetPassword.vue'
@@ -106,6 +107,12 @@ const routes = [
     name: 'CRMQuotes',
     component: CRMQuotes,
     meta: { title: '報價管理', icon: '💰', requiresAuth: true }
+  },
+  {
+    path: '/crm/quotes/:id/items',
+    name: 'CRMQuoteItems',
+    component: CRMQuoteItems,
+    meta: { title: '報價單詳情', icon: '💰', requiresAuth: true }
   },
   {
     path: '/settings',
