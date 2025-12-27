@@ -12,34 +12,6 @@
       </template>
     </PageHeader>
 
-    <!-- 報價統計 -->
-    <div class="quotes-overview">
-      <OverviewCard
-        icon="📋"
-        :value="quotesStats.totalQuotes"
-        label="總報價數"
-        variant="primary"
-      />
-      <OverviewCard
-        icon="💰"
-        :value="`NT$ ${quotesStats.totalValue}`"
-        label="總報價金額"
-        variant="success"
-      />
-      <OverviewCard
-        icon="⏳"
-        :value="quotesStats.pendingQuotes"
-        label="待簽名"
-        variant="warning"
-      />
-      <OverviewCard
-        icon="✅"
-        :value="quotesStats.signedQuotes"
-        label="已簽名"
-        variant="info"
-      />
-    </div>
-
     <!-- 報價單列表 -->
     <div class="quotes-content">
       <SearchFilters
@@ -350,21 +322,6 @@ const quoteForm = ref({
   totalAmount: 0,
   notes: '',
   isSigned: false,
-});
-
-// 報價統計
-const quotesStats = computed(() => {
-  const total = quotes.value.length;
-  const totalValue = quotes.value.reduce((sum, q) => sum + Number(q.totalAmount), 0);
-  const pendingQuotes = quotes.value.filter(q => !q.isSigned).length;
-  const signedQuotes = quotes.value.filter(q => q.isSigned).length;
-  
-  return {
-    totalQuotes: total,
-    totalValue: totalValue.toLocaleString('zh-TW'),
-    pendingQuotes,
-    signedQuotes,
-  };
 });
 
 // 表格列定義

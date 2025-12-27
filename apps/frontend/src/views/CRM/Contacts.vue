@@ -254,7 +254,6 @@ const contactForm = ref({
 
 // 表格列定義
 const tableColumns = [
-  { key: 'id', label: 'ID' },
   { key: 'name', label: '姓名' },
   { key: 'customer', label: '所屬客戶' },
   { key: 'phones', label: '電話' },
