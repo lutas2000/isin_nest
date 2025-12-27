@@ -151,6 +151,24 @@ export class Customer {
   })
   notes?: string;
 
+  @ApiProperty({ description: '負責人姓名', example: '黃茂榮' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
+  ownerName?: string;
+
+  @ApiProperty({ description: 'DXF 檔案路徑', example: '/path/to/file.dxf' })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  dxfPath?: string;
+
   @CreateDateColumn({
     type: 'datetime',
     name: 'created_at',

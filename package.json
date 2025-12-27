@@ -32,7 +32,9 @@
     "nx:graph": "nx graph",
     "nx:affected": "nx affected:graph",
     "create-admin": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-admin.ts",
-    "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts"
+    "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts",
+    "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
+    "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -51,6 +53,8 @@
     "class-validator": "^0.14.2",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.4.7",
+    "iconv-lite": "^0.7.1",
+    "mdb-reader": "^3.1.0",
     "mysql": "^2.18.1",
     "node-cron": "^4.2.1",
     "passport": "^0.7.0",
