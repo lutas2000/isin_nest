@@ -272,7 +272,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
+import { PageHeader, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { apiGet } from '@/services/api';
