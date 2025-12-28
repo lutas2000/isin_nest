@@ -15,7 +15,12 @@ import { WorkOrder } from '../../work-order/entities/work-order.entity';
 @Entity('customer')
 export class Customer {
   @ApiProperty({ description: '客戶ID', example: 'CUST001' })
-  @PrimaryColumn({ type: 'varchar', length: 50 })
+  @PrimaryColumn({
+    type: 'varchar',
+    length: 50,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   id: string;
 
   @ApiProperty({ description: '公司名稱', example: '台灣精密工業股份有限公司' })
