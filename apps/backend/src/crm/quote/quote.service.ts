@@ -37,7 +37,7 @@ export class QuoteService {
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
-  findOne(id: string): Promise<Quote | null> {
+  async findOne(id: string): Promise<Quote | null> {
     return this.quoteRepository.findOne({
       where: { id },
       relations: ['staff', 'customer', 'quoteItems'],
@@ -45,7 +45,39 @@ export class QuoteService {
   }
 
   async create(quote: Partial<Quote>): Promise<Quote> {
-    const newQuote = this.quoteRepository.create(quote);
+    // 驗證 customerId 是否存在
+    if (!quote.customerId) {
+      throw new Error('客戶 ID 為必填欄位');
+    }
+
+    // 生成報價單 ID：客戶ID-Q + 序號
+    const customerId = quote.customerId;
+    
+    // 查詢該客戶最新的報價單序號
+    const lastQuote = await this.quoteRepository
+      .createQueryBuilder('quote')
+      .where('quote.customer_id = :customerId', { customerId })
+      .orderBy('quote.id', 'DESC')
+      .getOne();
+
+    let sequenceNumber = 1;
+    if (lastQuote) {
+      // 從最後一筆報價單 ID 中提取序號（格式：CUST001-Q001）
+      const match = lastQuote.id.match(/-Q(\d+)$/);
+      if (match) {
+        sequenceNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+
+    // 格式化序號為 3 位數（例如：001, 002, ...）
+    const formattedSequence = sequenceNumber.toString().padStart(3, '0');
+    const quoteId = `${customerId}-Q${formattedSequence}`;
+
+    const newQuote = this.quoteRepository.create({
+      ...quote,
+      id: quoteId,
+    });
+    
     return this.quoteRepository.save(newQuote);
   }
 
@@ -56,7 +88,9 @@ export class QuoteService {
   async update(id: string, quote: Partial<Quote>): Promise<Quote | null> {
     const existingQuote = await this.quoteRepository.findOneBy({ id });
     if (existingQuote) {
-      Object.assign(existingQuote, quote);
+      // 不允許修改 ID 和 customerId
+      const { id: _, customerId: __, ...updateData } = quote;
+      Object.assign(existingQuote, updateData);
       return this.quoteRepository.save(existingQuote);
     }
     return null;

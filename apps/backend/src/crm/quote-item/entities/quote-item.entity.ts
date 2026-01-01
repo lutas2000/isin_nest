@@ -21,7 +21,7 @@ export class QuoteItem {
   })
   id: string;
 
-  @ApiProperty({ description: '報價單ID', example: '00010301' })
+  @ApiProperty({ description: '報價單ID', example: 'CUST001-Q001' })
   @Column({ 
     name: 'quote_id',
     type: 'varchar',

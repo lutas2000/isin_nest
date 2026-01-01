@@ -4,7 +4,7 @@ import { PaginatedResponse } from '../../types/pagination'
 
 export interface QuoteItem {
   id: number
-  quoteId: number
+  quoteId: string
   customerFile?: string
   material?: string
   thickness?: string
@@ -16,9 +16,9 @@ export interface QuoteItem {
 }
 
 export interface Quote {
-  id: number
+  id: string
   staffId: string
-  customerId?: string
+  customerId: string
   totalAmount: number
   notes?: string
   isSigned: boolean
@@ -56,7 +56,7 @@ export const quoteService = {
   },
 
   // 獲取單個報價單
-  getById: (id: number): Promise<Quote> => {
+  getById: (id: string): Promise<Quote> => {
     return apiGet<Quote>(`${API_CONFIG.CRM.QUOTES}/${id}`)
   },
 
@@ -66,24 +66,24 @@ export const quoteService = {
   },
 
   // 更新報價單
-  update: (id: number, data: Partial<Quote>): Promise<Quote> => {
+  update: (id: string, data: Partial<Quote>): Promise<Quote> => {
     return apiPost<Quote>(`${API_CONFIG.CRM.QUOTES}/${id}`, data)
   },
 
   // 刪除報價單
-  delete: (id: number): Promise<void> => {
+  delete: (id: string): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.QUOTES}/${id}`)
   },
 
   // 將報價單轉換為工單
-  convertToWorkOrder: (id: number): Promise<WorkOrder> => {
+  convertToWorkOrder: (id: string): Promise<WorkOrder> => {
     return apiPost<WorkOrder>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-work-order`)
   },
 }
 
 export const quoteItemService = {
   // 獲取所有報價單工件（支援分頁）
-  getAll: (quoteId?: number, page?: number, limit?: number): Promise<QuoteItem[] | PaginatedResponse<QuoteItem>> => {
+  getAll: (quoteId?: string, page?: number, limit?: number): Promise<QuoteItem[] | PaginatedResponse<QuoteItem>> => {
     const params: Record<string, any> = {}
     if (quoteId !== undefined) params.quoteId = quoteId
     if (page !== undefined) params.page = page
