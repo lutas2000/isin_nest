@@ -44,7 +44,7 @@ export class QuoteItemService {
   }
 
   async findByQuoteId(
-    quoteId: number,
+    quoteId: string,
     page?: number,
     limit?: number,
   ): Promise<QuoteItem[] | PaginatedResponseDto<QuoteItem>> {
@@ -70,7 +70,7 @@ export class QuoteItemService {
   /**
    * 重新計算報價單總價
    */
-  private async recalculateQuoteTotal(quoteId: number): Promise<void> {
+  private async recalculateQuoteTotal(quoteId: string): Promise<void> {
     // 獲取該報價單的所有工件
     const quoteItems = await this.quoteItemRepository.find({
       where: { quoteId },

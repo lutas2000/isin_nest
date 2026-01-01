@@ -17,9 +17,9 @@ export class QuoteItem {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '報價單ID', example: 1 })
-  @Column({ type: 'int', name: 'quote_id' })
-  quoteId: number;
+  @ApiProperty({ description: '報價單ID', example: 'CUST001-Q001' })
+  @Column({ type: 'varchar', length: 100, name: 'quote_id' })
+  quoteId: string;
 
   @ApiProperty({ description: '客戶ID', example: 'CUST001' })
   @Column({ type: 'varchar', length: 50, name: 'customer_id', nullable: true })

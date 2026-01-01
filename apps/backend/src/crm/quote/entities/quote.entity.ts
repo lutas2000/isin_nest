@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
   OneToMany,
@@ -15,17 +15,17 @@ import { QuoteItem } from '../../quote-item/entities/quote-item.entity';
 
 @Entity('quote')
 export class Quote {
-  @ApiProperty({ description: '報價單ID', example: 1 })
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ApiProperty({ description: '報價單ID（格式：客戶ID-序號）', example: 'CUST001-Q001' })
+  @PrimaryColumn({ type: 'varchar', length: 100 })
+  id: string;
 
   @ApiProperty({ description: '經手人員工編號', example: 'STAFF001' })
   @Column({ type: 'varchar', length: 10, name: 'staff_id' })
   staffId: string;
 
   @ApiProperty({ description: '客戶ID', example: 'CUST001' })
-  @Column({ type: 'varchar', length: 50, name: 'customer_id', nullable: true })
-  customerId?: string;
+  @Column({ type: 'varchar', length: 50, name: 'customer_id' })
+  customerId: string;
 
   @ApiProperty({ description: '總計金額', example: 100000 })
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
@@ -66,7 +66,7 @@ export class Quote {
   @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
   @ManyToOne(() => Customer, (customer) => customer.quotes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
-  customer?: Customer;
+  customer: Customer;
 
   // 關聯到 QuoteItem（一對多）
   @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.quote)
