@@ -271,7 +271,7 @@ const itemTableColumns = [
 
 // 載入報價單資料
 const loadQuote = async () => {
-  const quoteId = Number(route.params.id);
+  const quoteId = route.params.id as string;
   if (!quoteId) {
     error.value = '無效的報價單編號';
     return;

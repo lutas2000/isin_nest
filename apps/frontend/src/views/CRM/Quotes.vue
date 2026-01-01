@@ -94,6 +94,22 @@
       <div class="modal-form">
           <div class="form-row">
             <div class="form-group">
+              <label>客戶 *</label>
+              <select 
+                class="form-control" 
+                v-model="quoteForm.customerId"
+              >
+                <option value="">請選擇客戶</option>
+                <option 
+                  v-for="customer in customers" 
+                  :key="customer.id" 
+                  :value="customer.id"
+                >
+                  {{ customer.companyName }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>經手人 *</label>
               <select 
                 class="form-control" 
@@ -106,22 +122,6 @@
                   :value="staff.id"
                 >
                   {{ staff.name }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>客戶</label>
-              <select 
-                class="form-control" 
-                v-model="quoteForm.customerId"
-              >
-                <option value="">請選擇客戶（可選）</option>
-                <option 
-                  v-for="customer in customers" 
-                  :key="customer.id" 
-                  :value="customer.id"
-                >
-                  {{ customer.companyName }}
                 </option>
               </select>
             </div>
@@ -361,7 +361,7 @@ const filteredQuotes = computed(() => {
 
 // 表單驗證
 const isFormValid = computed(() => {
-  return quoteForm.value.staffId;
+  return quoteForm.value.staffId && quoteForm.value.customerId;
 });
 
 // 處理篩選器更新
@@ -463,7 +463,7 @@ const saveQuote = async () => {
   try {
     const data: Partial<Quote> = {
       staffId: quoteForm.value.staffId,
-      customerId: quoteForm.value.customerId || undefined,
+      customerId: quoteForm.value.customerId,
       totalAmount: quoteForm.value.totalAmount,
       notes: quoteForm.value.notes || undefined,
       isSigned: quoteForm.value.isSigned,
@@ -483,7 +483,7 @@ const saveQuote = async () => {
 };
 
 // 刪除報價單
-const deleteQuote = async (id: number) => {
+const deleteQuote = async (id: string) => {
   if (!confirm('確定要刪除此報價單嗎？此操作無法復原。')) return;
   
   try {
@@ -495,7 +495,7 @@ const deleteQuote = async (id: number) => {
 };
 
 // 轉換為工單
-const convertToWorkOrder = async (id: number) => {
+const convertToWorkOrder = async (id: string) => {
   if (!confirm('確定要將此報價單轉換為工單嗎？')) return;
   
   try {
