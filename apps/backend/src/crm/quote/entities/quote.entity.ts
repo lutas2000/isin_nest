@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
   OneToMany,
@@ -15,16 +15,35 @@ import { QuoteItem } from '../../quote-item/entities/quote-item.entity';
 
 @Entity('quote')
 export class Quote {
-  @ApiProperty({ description: '報價單ID', example: 1 })
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ApiProperty({ description: '報價單ID', example: '00010301' })
+  @PrimaryColumn({
+    type: 'varchar',
+    length: 50,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
+  id: string;
 
   @ApiProperty({ description: '經手人員工編號', example: 'STAFF001' })
-  @Column({ type: 'varchar', length: 10, name: 'staff_id' })
-  staffId: string;
+  @Column({
+    type: 'varchar',
+    length: 10,
+    name: 'staff_id',
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
+  staffId?: string;
 
   @ApiProperty({ description: '客戶ID', example: 'CUST001' })
-  @Column({ type: 'varchar', length: 50, name: 'customer_id', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'customer_id',
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   customerId?: string;
 
   @ApiProperty({ description: '總計金額', example: 100000 })
@@ -58,9 +77,9 @@ export class Quote {
 
   // 關聯到 Staff（經手人）
   @ApiProperty({ description: '關聯的員工資料', type: () => Staff })
-  @ManyToOne(() => Staff)
+  @ManyToOne(() => Staff, { nullable: true })
   @JoinColumn({ name: 'staff_id' })
-  staff: Staff;
+  staff?: Staff;
 
   // 關聯到 Customer
   @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })

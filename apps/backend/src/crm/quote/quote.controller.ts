@@ -22,12 +22,12 @@ export class QuoteController {
   }
 
   @ApiOperation({ summary: '根據ID獲取單個報價單' })
-  @ApiParam({ name: 'id', description: '報價單ID', example: 1 })
+  @ApiParam({ name: 'id', description: '報價單ID', example: '00010301' })
   @ApiResponse({ status: 200, description: '成功返回報價單信息', type: Quote })
   @ApiResponse({ status: 404, description: '報價單不存在' })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<Quote | null> {
-    return this.quoteService.findOne(+id);
+    return this.quoteService.findOne(id);
   }
 
   @ApiOperation({ summary: '建立新報價單' })
@@ -39,16 +39,16 @@ export class QuoteController {
   }
 
   @ApiOperation({ summary: '刪除報價單' })
-  @ApiParam({ name: 'id', description: '報價單ID', example: 1 })
+  @ApiParam({ name: 'id', description: '報價單ID', example: '00010301' })
   @ApiResponse({ status: 200, description: '成功刪除報價單' })
   @ApiResponse({ status: 404, description: '報價單不存在' })
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
-    return this.quoteService.remove(+id);
+    return this.quoteService.remove(id);
   }
 
   @ApiOperation({ summary: '更新報價單資料' })
-  @ApiParam({ name: 'id', description: '報價單ID', example: 1 })
+  @ApiParam({ name: 'id', description: '報價單ID', example: '00010301' })
   @ApiResponse({ status: 200, description: '成功更新報價單資料', type: Quote })
   @ApiResponse({ status: 404, description: '報價單不存在' })
   @Post(':id')
@@ -56,16 +56,16 @@ export class QuoteController {
     @Param('id') id: string,
     @Body() data: Partial<Quote>,
   ): Promise<Quote | null> {
-    return this.quoteService.update(+id, data);
+    return this.quoteService.update(id, data);
   }
 
   @ApiOperation({ summary: '將報價單轉換為工單' })
-  @ApiParam({ name: 'id', description: '報價單ID', example: 1 })
+  @ApiParam({ name: 'id', description: '報價單ID', example: '00010301' })
   @ApiResponse({ status: 200, description: '成功轉換為工單', type: WorkOrder })
   @ApiResponse({ status: 400, description: '報價單未簽名或不存在' })
   @Post(':id/convert-to-work-order')
   convertToWorkOrder(@Param('id') id: string): Promise<WorkOrder | null> {
-    return this.quoteService.convertToWorkOrder(+id);
+    return this.quoteService.convertToWorkOrder(id);
   }
 }
 

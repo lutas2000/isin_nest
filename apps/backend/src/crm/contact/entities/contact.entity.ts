@@ -38,7 +38,13 @@ export class Contact {
   email?: string;
 
   @ApiProperty({ description: '客戶ID', example: 'CUST001' })
-  @Column({ type: 'varchar', length: 50, name: 'customer_id' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'customer_id',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   customerId: string;
 
   @CreateDateColumn({

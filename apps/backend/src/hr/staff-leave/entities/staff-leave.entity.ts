@@ -15,7 +15,12 @@ export class StaffLeave {
   id: number; // 請假記錄編號
 
   @ApiProperty({ description: '員工ID', example: 'STAFF001' })
-  @Column({ type: 'varchar', length: 10, nullable: true })
+  @Column({ 
+    type: 'varchar',
+    length: 10,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci'
+  })
   staff_id: string; // 員工ID
 
   @ApiProperty({ description: '員工資料', type: () => Staff, required: false })

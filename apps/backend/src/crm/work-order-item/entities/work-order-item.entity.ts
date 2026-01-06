@@ -18,7 +18,13 @@ export class WorkOrderItem {
   id: number;
 
   @ApiProperty({ description: '工單ID', example: 'WO001' })
-  @Column({ type: 'varchar', length: 50, name: 'work_order_id' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'work_order_id',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   workOrderId: string;
 
   @ApiProperty({ description: 'CAD 檔案（檔案名稱）', example: 'design.dxf' })
@@ -103,7 +109,14 @@ export class WorkOrderItem {
   estimatedCuttingTime?: number;
 
   @ApiProperty({ description: '繪圖負責人員工編號', example: 'STAFF001', required: false })
-  @Column({ type: 'varchar', length: 10, nullable: true, name: 'drawing_staff_id' })
+  @Column({ 
+    type: 'varchar',
+    length: 10,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+    nullable: true, 
+    name: 'drawing_staff_id' 
+  })
   drawingStaffId?: string;
 
   @ApiProperty({ description: '狀態', example: 'TODO', required: false })

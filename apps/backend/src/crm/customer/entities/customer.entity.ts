@@ -9,7 +9,6 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Contact } from '../../contact/entities/contact.entity';
 import { Quote } from '../../quote/entities/quote.entity';
-import { QuoteItem } from '../../quote-item/entities/quote-item.entity';
 import { WorkOrder } from '../../work-order/entities/work-order.entity';
 
 @Entity('customer')
@@ -198,10 +197,6 @@ export class Customer {
   // 關聯到 Quote（一對多）
   @OneToMany(() => Quote, (quote) => quote.customer)
   quotes?: Quote[];
-
-  // 關聯到 QuoteItem（一對多）
-  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.customer)
-  quoteItems?: QuoteItem[];
 
   // 關聯到 WorkOrder（一對多）
   @OneToMany(() => WorkOrder, (workOrder) => workOrder.customer)

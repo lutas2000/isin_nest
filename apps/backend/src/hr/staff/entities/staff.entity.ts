@@ -11,7 +11,12 @@ import { User } from '../../../auth/entities/user.entity';
 @Entity('staff') // 表名為 staff
 export class Staff {
   @ApiProperty({ description: '員工編號', example: 'STAFF001' })
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @PrimaryColumn({
+    type: 'varchar',
+    length: 10,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   id: string; // 員工編號
 
   @ApiProperty({ description: '關聯的用戶ID', required: false, example: 1 })

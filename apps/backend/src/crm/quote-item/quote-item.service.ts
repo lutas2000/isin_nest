@@ -36,7 +36,7 @@ export class QuoteItemService {
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
-  findOne(id: number): Promise<QuoteItem | null> {
+  findOne(id: string): Promise<QuoteItem | null> {
     return this.quoteItemRepository.findOne({
       where: { id },
       relations: ['quote'],
@@ -44,7 +44,7 @@ export class QuoteItemService {
   }
 
   async findByQuoteId(
-    quoteId: number,
+    quoteId: string,
     page?: number,
     limit?: number,
   ): Promise<QuoteItem[] | PaginatedResponseDto<QuoteItem>> {
@@ -70,7 +70,7 @@ export class QuoteItemService {
   /**
    * 重新計算報價單總價
    */
-  private async recalculateQuoteTotal(quoteId: number): Promise<void> {
+  private async recalculateQuoteTotal(quoteId: string): Promise<void> {
     // 獲取該報價單的所有工件
     const quoteItems = await this.quoteItemRepository.find({
       where: { quoteId },
@@ -100,7 +100,7 @@ export class QuoteItemService {
     return savedItem;
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     // 先獲取要刪除的工件，以便知道屬於哪個報價單
     const quoteItem = await this.quoteItemRepository.findOneBy({ id });
     if (!quoteItem) {
@@ -116,7 +116,7 @@ export class QuoteItemService {
     await this.recalculateQuoteTotal(quoteId);
   }
 
-  async update(id: number, quoteItem: Partial<QuoteItem>): Promise<QuoteItem | null> {
+  async update(id: string, quoteItem: Partial<QuoteItem>): Promise<QuoteItem | null> {
     const existingQuoteItem = await this.quoteItemRepository.findOneBy({ id });
     if (!existingQuoteItem) {
       return null;

@@ -37,7 +37,7 @@ export class QuoteService {
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
-  findOne(id: number): Promise<Quote | null> {
+  findOne(id: string): Promise<Quote | null> {
     return this.quoteRepository.findOne({
       where: { id },
       relations: ['staff', 'customer', 'quoteItems'],
@@ -49,11 +49,11 @@ export class QuoteService {
     return this.quoteRepository.save(newQuote);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     await this.quoteRepository.delete(id);
   }
 
-  async update(id: number, quote: Partial<Quote>): Promise<Quote | null> {
+  async update(id: string, quote: Partial<Quote>): Promise<Quote | null> {
     const existingQuote = await this.quoteRepository.findOneBy({ id });
     if (existingQuote) {
       Object.assign(existingQuote, quote);
@@ -62,7 +62,7 @@ export class QuoteService {
     return null;
   }
 
-  async convertToWorkOrder(quoteId: number): Promise<WorkOrder | null> {
+  async convertToWorkOrder(quoteId: string): Promise<WorkOrder | null> {
     const quote = await this.findOne(quoteId);
     if (!quote || !quote.isSigned) {
       return null; // 報價單不存在或未簽名

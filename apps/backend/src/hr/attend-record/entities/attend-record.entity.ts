@@ -16,7 +16,13 @@ export class AttendRecord {
   id: number;
 
   @ApiProperty({ description: '員工編號', example: 'STAFF001' })
-  @Column({ type: 'varchar', length: 10, name: 'staff_id' })
+  @Column({ 
+    name: 'staff_id',
+    type: 'varchar',
+    length: 10,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   staffId: string;
 
   @ApiProperty({ description: '員工姓名', example: '張三', required: false })

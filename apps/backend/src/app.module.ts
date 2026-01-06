@@ -39,6 +39,7 @@ import { CrmModule } from './crm/crm.module';
           reconnectTries: 3,
           reconnectInterval: 1000,
         },
+        // logging: ['error', 'schema'], // debug db 用
       }),
     }),
     // 業務模組

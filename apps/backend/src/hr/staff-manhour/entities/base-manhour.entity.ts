@@ -8,7 +8,12 @@ export abstract class BaseManhour {
   id: number; // 主鍵，自動遞增
 
   @ApiProperty({ description: '員工ID', example: 'STAFF001' })
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ 
+    type: 'varchar',
+    length: 10,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci'
+  })
   staffId: string; // 員工編號
 
   @ApiProperty({

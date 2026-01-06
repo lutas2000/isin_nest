@@ -15,7 +15,12 @@ export class StaffSegment {
   id: number;
 
   @ApiProperty({ description: '員工編號', example: 'STAFF001' })
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ 
+    type: 'varchar',
+    length: 10,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+   })
   staffId: string;
 
   @ApiProperty({ description: '開始時間', example: '08:00:00' })

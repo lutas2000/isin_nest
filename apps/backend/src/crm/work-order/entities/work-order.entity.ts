@@ -20,11 +20,23 @@ export class WorkOrder {
   id: string;
 
   @ApiProperty({ description: '業務員員工編號', example: 'STAFF001' })
-  @Column({ type: 'varchar', length: 10, name: 'staff_id' })
+  @Column({
+    type: 'varchar',
+    length: 10,
+    name: 'staff_id',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   staffId: string;
 
   @ApiProperty({ description: '客戶ID', example: 'CUST001' })
-  @Column({ type: 'varchar', length: 50, name: 'customer_id' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'customer_id',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
   customerId: string;
 
   @ApiProperty({ description: '運送方式', example: 'EXPRESS' })

@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
   JoinColumn,
@@ -9,21 +9,27 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Quote } from '../../quote/entities/quote.entity';
-import { Customer } from '../../customer/entities/customer.entity';
 
 @Entity('quote_item')
 export class QuoteItem {
-  @ApiProperty({ description: '報價單工件ID', example: 1 })
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ApiProperty({ description: '報價單工件ID', example: '00010301_1' })
+  @PrimaryColumn({
+    type: 'varchar',
+    length: 50,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
+  id: string;
 
-  @ApiProperty({ description: '報價單ID', example: 1 })
-  @Column({ type: 'int', name: 'quote_id' })
-  quoteId: number;
-
-  @ApiProperty({ description: '客戶ID', example: 'CUST001' })
-  @Column({ type: 'varchar', length: 50, name: 'customer_id', nullable: true })
-  customerId?: string;
+  @ApiProperty({ description: '報價單ID', example: '00010301' })
+  @Column({ 
+    name: 'quote_id',
+    type: 'varchar',
+    length: 50,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+   })
+  quoteId: string;
 
   @ApiProperty({ description: '客戶圖檔（檔案名稱）', example: 'customer_file.dxf' })
   @Column({
@@ -72,6 +78,15 @@ export class QuoteItem {
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
   unitPrice: number;
 
+  @ApiProperty({ description: '備註', example: '一、以上報價有效期限 7 天。' })
+  @Column({
+    type: 'text',
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+  })
+  notes?: string;
+
   @CreateDateColumn({
     type: 'datetime',
     name: 'created_at',
@@ -89,11 +104,5 @@ export class QuoteItem {
   @ManyToOne(() => Quote, (quote) => quote.quoteItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'quote_id' })
   quote: Quote;
-
-  // 關聯到 Customer（多對一）
-  @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
-  @ManyToOne(() => Customer, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'customer_id' })
-  customer?: Customer;
 }
 
