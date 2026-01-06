@@ -34,7 +34,8 @@
     "create-admin": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-admin.ts",
     "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts",
     "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
-    "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts"
+    "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts",
+    "migrate-quote-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-quote-from-access.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
