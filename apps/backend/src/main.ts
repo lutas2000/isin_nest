@@ -2,15 +2,48 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { FileLoggerService } from './common/logger/file-logger.service';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  const fileLogger = new FileLoggerService();
+  
+  // 處理未捕獲的異常
+  process.on('uncaughtException', (error: Error) => {
+    logger.error('未捕獲的異常:', error);
+    fileLogger.error(
+      `未捕獲的異常: ${error.message}`,
+      error.stack,
+      'UncaughtException',
+    );
+    process.exit(1);
+  });
+
+  // 處理未處理的 Promise rejection
+  process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+    logger.error('未處理的 Promise rejection:', reason);
+    const errorMessage = reason instanceof Error 
+      ? reason.message 
+      : String(reason);
+    const errorStack = reason instanceof Error 
+      ? reason.stack 
+      : JSON.stringify(reason, null, 2);
+    fileLogger.error(
+      `未處理的 Promise rejection: ${errorMessage}`,
+      errorStack,
+      'UnhandledRejection',
+    );
+  });
   
   try {
     logger.log('正在啟動應用程式...');
     const app = await NestFactory.create(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
+
+    // 註冊全局異常過濾器
+    app.useGlobalFilters(new GlobalExceptionFilter());
 
   // 啟用 CORS
   app.enableCors({
@@ -52,10 +85,24 @@ async function bootstrap() {
     logger.log(`📚 Swagger 文件: http://localhost:${port}/api`);
   } catch (error) {
     logger.error('❌ 應用程式啟動失敗:', error);
+    
+    // 將啟動錯誤寫入檔案
     if (error instanceof Error) {
+      fileLogger.error(
+        `應用程式啟動失敗: ${error.message}`,
+        error.stack,
+        'Bootstrap',
+      );
       logger.error('錯誤訊息:', error.message);
       logger.error('錯誤堆疊:', error.stack);
+    } else {
+      fileLogger.error(
+        `應用程式啟動失敗: ${String(error)}`,
+        undefined,
+        'Bootstrap',
+      );
     }
+    
     process.exit(1);
   }
 }
