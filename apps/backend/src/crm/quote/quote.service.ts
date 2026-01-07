@@ -50,28 +50,43 @@ export class QuoteService {
       throw new Error('客戶 ID 為必填欄位');
     }
 
-    // 生成報價單 ID：客戶ID-Q + 序號
     const customerId = quote.customerId;
-    
-    // 查詢該客戶最新的報價單序號
-    const lastQuote = await this.quoteRepository
-      .createQueryBuilder('quote')
-      .where('quote.customer_id = :customerId', { customerId })
-      .orderBy('quote.id', 'DESC')
-      .getOne();
+    let quoteId: string;
 
-    let sequenceNumber = 1;
-    if (lastQuote) {
-      // 從最後一筆報價單 ID 中提取序號（格式：CUST001-Q001）
-      const match = lastQuote.id.match(/-Q(\d+)$/);
-      if (match) {
-        sequenceNumber = parseInt(match[1], 10) + 1;
+    // 如果已經提供了 ID，使用提供的 ID
+    if (quote.id) {
+      quoteId = quote.id;
+      // 驗證提供的 ID 是否以客戶 ID 開頭
+      if (!quoteId.startsWith(customerId)) {
+        throw new Error(`報價單 ID 必須以客戶 ID (${customerId}) 開頭`);
       }
-    }
+      // 檢查 ID 是否已存在
+      const existingQuote = await this.quoteRepository.findOneBy({ id: quoteId });
+      if (existingQuote) {
+        throw new Error(`報價單 ID ${quoteId} 已存在`);
+      }
+    } else {
+      // 自動生成報價單 ID：客戶ID-Q + 序號
+      // 查詢該客戶最新的報價單序號
+      const lastQuote = await this.quoteRepository
+        .createQueryBuilder('quote')
+        .where('quote.customer_id = :customerId', { customerId })
+        .orderBy('quote.id', 'DESC')
+        .getOne();
 
-    // 格式化序號為 3 位數（例如：001, 002, ...）
-    const formattedSequence = sequenceNumber.toString().padStart(3, '0');
-    const quoteId = `${customerId}-Q${formattedSequence}`;
+      let sequenceNumber = 1;
+      if (lastQuote) {
+        // 從最後一筆報價單 ID 中提取序號（格式：CUST001-Q001）
+        const match = lastQuote.id.match(/-Q(\d+)$/);
+        if (match) {
+          sequenceNumber = parseInt(match[1], 10) + 1;
+        }
+      }
+
+      // 格式化序號為 3 位數（例如：001, 002, ...）
+      const formattedSequence = sequenceNumber.toString().padStart(3, '0');
+      quoteId = `${customerId}-Q${formattedSequence}`;
+    }
 
     const newQuote = this.quoteRepository.create({
       ...quote,

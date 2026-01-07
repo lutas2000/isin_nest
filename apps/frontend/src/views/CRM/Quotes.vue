@@ -94,6 +94,24 @@
       <div class="modal-form">
           <div class="form-row">
             <div class="form-group">
+              <label>報價單 ID *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                :class="{ 'form-control-error': idError }"
+                v-model="quoteForm.id"
+                :placeholder="customerIdPrefix ? `${customerIdPrefix}-...` : '請先選擇客戶'"
+                :disabled="!quoteForm.customerId"
+                @blur="validateQuoteId"
+              />
+              <small class="form-hint" v-if="quoteForm.customerId && !idError">
+                必須以 {{ quoteForm.customerId }} 開頭
+              </small>
+              <small class="form-error" v-if="idError">
+                {{ idError }}
+              </small>
+            </div>
+            <div class="form-group">
               <label>客戶 *</label>
               <select 
                 class="form-control" 
@@ -109,6 +127,9 @@
                 </option>
               </select>
             </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label>經手人 *</label>
               <select 
@@ -270,7 +291,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { PageHeader, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
@@ -317,12 +338,56 @@ const selectedQuote = ref<Quote | null>(null);
 
 // 表單資料
 const quoteForm = ref({
+  id: '',
   staffId: '',
   customerId: '',
   totalAmount: 0,
   notes: '',
   isSigned: false,
 });
+
+// 客戶 ID 前綴（用於顯示提示）
+const customerIdPrefix = computed(() => quoteForm.value.customerId || '');
+
+// 監聽客戶選擇變化，自動更新 ID 前綴
+watch(() => quoteForm.value.customerId, (newCustomerId) => {
+  if (newCustomerId && !editingQuote.value) {
+    // 如果選擇了新客戶且不是編輯模式
+    const currentId = quoteForm.value.id;
+    
+    // 如果 ID 為空或不符合新客戶 ID 前綴，則重置
+    if (!currentId || !currentId.startsWith(newCustomerId)) {
+      // 只設置前綴，讓用戶自己輸入後續部分
+      quoteForm.value.id = newCustomerId;
+    }
+  } else if (!newCustomerId) {
+    // 如果清空客戶選擇，也清空 ID
+    quoteForm.value.id = '';
+  }
+});
+
+// ID 驗證錯誤訊息
+const idError = ref('');
+
+// 驗證 ID 格式
+const validateQuoteId = () => {
+  if (!quoteForm.value.customerId) {
+    idError.value = '';
+    return;
+  }
+  
+  if (!quoteForm.value.id || quoteForm.value.id.trim() === '') {
+    idError.value = '請輸入報價單 ID';
+    return;
+  }
+  
+  if (!quoteForm.value.id.startsWith(quoteForm.value.customerId)) {
+    idError.value = `報價單 ID 必須以 ${quoteForm.value.customerId} 開頭`;
+    return;
+  }
+  
+  idError.value = '';
+};
 
 // 表格列定義
 const tableColumns = [
@@ -361,7 +426,10 @@ const filteredQuotes = computed(() => {
 
 // 表單驗證
 const isFormValid = computed(() => {
-  return quoteForm.value.staffId && quoteForm.value.customerId;
+  const hasId = quoteForm.value.id && quoteForm.value.id.trim() !== '';
+  const hasCustomerId = quoteForm.value.customerId;
+  const idStartsWithCustomer = !hasCustomerId || quoteForm.value.id.startsWith(quoteForm.value.customerId);
+  return quoteForm.value.staffId && hasCustomerId && hasId && idStartsWithCustomer && !idError.value;
 });
 
 // 處理篩選器更新
@@ -441,6 +509,7 @@ const viewDetails = (quote: Quote) => {
 const editQuote = (quote: Quote) => {
   editingQuote.value = quote;
   quoteForm.value = {
+    id: quote.id,
     staffId: quote.staffId,
     customerId: quote.customerId || '',
     totalAmount: Number(quote.totalAmount),
@@ -452,13 +521,15 @@ const editQuote = (quote: Quote) => {
 
 // 儲存報價單
 const saveQuote = async () => {
+  validateQuoteId();
   if (!isFormValid.value) {
-    alert('請填寫必填欄位');
+    alert(idError.value || '請填寫必填欄位');
     return;
   }
 
   try {
     const data: Partial<Quote> = {
+      id: quoteForm.value.id.trim(),
       staffId: quoteForm.value.staffId,
       customerId: quoteForm.value.customerId,
       totalAmount: quoteForm.value.totalAmount,
@@ -507,8 +578,10 @@ const convertToWorkOrder = async (id: string) => {
 // 打開創建 Modal
 const openCreateModal = () => {
   editingQuote.value = null;
+  idError.value = '';
   // 預設為當前登入用戶的員工 ID
   quoteForm.value = {
+    id: '',
     staffId: authStore.staffId || '',
     customerId: '',
     totalAmount: 0,
@@ -522,7 +595,9 @@ const openCreateModal = () => {
 const closeModal = () => {
   showCreateModal.value = false;
   editingQuote.value = null;
+  idError.value = '';
   quoteForm.value = {
+    id: '',
     staffId: '',
     customerId: '',
     totalAmount: 0,
@@ -610,6 +685,33 @@ onMounted(() => {
 .form-control:focus {
   outline: none;
   border-color: var(--primary-500);
+}
+
+.form-control:disabled {
+  background-color: var(--secondary-100);
+  cursor: not-allowed;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--font-size-xs);
+  color: var(--secondary-600);
+}
+
+.form-error {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--font-size-xs);
+  color: var(--danger-600);
+}
+
+.form-control-error {
+  border-color: var(--danger-500);
+}
+
+.form-control-error:focus {
+  border-color: var(--danger-600);
 }
 
 select.form-control {
