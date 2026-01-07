@@ -842,7 +842,17 @@ const loadStaffData = async () => {
     const response = await fetch('/api/staffs');
     if (response.ok) {
       const data = await response.json();
-      staffList.value = data;
+      // 確保最後一定是陣列，避免之後呼叫 push 時出現「不是函式」的錯誤
+      const list =
+        Array.isArray(data)
+          ? data
+          : Array.isArray((data as any)?.items)
+            ? (data as any).items
+            : Array.isArray((data as any)?.data)
+              ? (data as any).data
+              : [];
+
+      staffList.value = list;
     }
   } catch (error) {
     console.error('載入員工資料失敗:', error);
