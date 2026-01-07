@@ -200,17 +200,24 @@
                 />
                 <small class="form-hint">將根據工作組別自動分配預設權限</small>
               </div>
-              <div class="form-group">
-                <label class="form-label">部門</label>
-                <select class="form-control" v-model="newStaff.department">
-                  <option value="">選擇部門</option>
-                  <option value="技術部">技術部</option>
-                  <option value="生產部">生產部</option>
-                  <option value="業務部">業務部</option>
-                  <option value="人資部">人資部</option>
-                  <option value="財務部">財務部</option>
-                </select>
-              </div>
+            <div class="form-group">
+              <label class="form-label">部門</label>
+              <!-- 可手動輸入或從目前已存在部門中選擇 -->
+              <input
+                type="text"
+                class="form-control"
+                v-model="newStaff.department"
+                list="department-options"
+                placeholder="輸入或選擇部門"
+              />
+              <datalist id="department-options">
+                <option
+                  v-for="dept in departmentOptions"
+                  :key="dept"
+                  :value="dept"
+                />
+              </datalist>
+            </div>
             </div>
 
             <div class="form-row">
@@ -403,14 +410,14 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">部門</label>
-              <select class="form-control" v-model="editingStaff.department">
-                <option value="">選擇部門</option>
-                <option value="技術部">技術部</option>
-                <option value="生產部">生產部</option>
-                <option value="業務部">業務部</option>
-                <option value="人資部">人資部</option>
-                <option value="財務部">財務部</option>
-              </select>
+              <!-- 可手動輸入或從目前已存在部門中選擇 -->
+              <input
+                type="text"
+                class="form-control"
+                v-model="editingStaff.department"
+                list="department-options"
+                placeholder="輸入或選擇部門"
+              />
             </div>
             <div class="form-group">
               <label class="form-label">到職日期</label>
@@ -959,6 +966,17 @@ const getMockStaffData = () => [
     have_fake: false,
   },
 ];
+
+// 部門選項（從目前員工資料中彙總）
+const departmentOptions = computed(() => {
+  const set = new Set<string>()
+  staffList.value.forEach((staff) => {
+    if (staff.department) {
+      set.add(staff.department)
+    }
+  })
+  return Array.from(set).sort()
+})
 
 // 篩選後的員工列表
 const filteredStaff = computed(() => {
