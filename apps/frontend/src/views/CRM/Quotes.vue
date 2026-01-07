@@ -424,11 +424,8 @@ const loadCustomers = async () => {
 // 載入員工資料（只顯示銷管部的員工）
 const loadStaff = async () => {
   try {
-    const allStaff = await apiGet<Staff[]>('/staffs');
-    // 過濾出部門為「銷管部」的員工
-    staffList.value = allStaff.filter(
-      (staff) => staff.department === '銷管部'
-    );
+    const salesStaff = await apiGet<Staff[]>('/staffs/all?department=銷管部');
+    staffList.value = salesStaff;
   } catch (err) {
     console.error('Failed to load staff:', err);
     staffList.value = [];

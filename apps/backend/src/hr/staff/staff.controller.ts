@@ -11,13 +11,24 @@ export class StaffController {
   @ApiOperation({ summary: '獲取所有員工' })
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
-  @ApiResponse({ status: 200, description: '成功返回員工列表', type: [Staff] })
+  @ApiResponse({ status: 200, description: '成功返回員工列表（分頁）', type: [Staff] })
   @Get() // 處理 GET 請求，返回所有用戶
   findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     return this.usersService.findAll(page, limit);
+  }
+
+  @ApiOperation({ summary: '獲取所有員工（不分頁）' })
+  @ApiResponse({ status: 200, description: '成功返回所有員工列表（不分頁）', type: [Staff] })
+  @Get('all')
+  findAllWithoutPagination(
+    @Query('department') department?: string,
+  ): Promise<Staff[]> {
+    return this.usersService.findAllWithoutPagination({
+      department,
+    });
   }
 
   @ApiOperation({ summary: '根據ID獲取單個員工' })

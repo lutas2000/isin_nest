@@ -11,6 +11,9 @@ export class StaffService {
     private staffRepository: Repository<Staff>, // 注入 Repository
   ) {}
 
+  /**
+   * 取得所有員工（分頁）
+   */
   async findAll(
     page?: number,
     limit?: number,
@@ -30,6 +33,23 @@ export class StaffService {
     });
 
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+  }
+
+  /**
+   * 取得所有員工（不分頁）
+   * 給前端下拉選單等場景使用，保證回傳為純陣列，並支援簡單條件篩選。
+   */
+  async findAllWithoutPagination(filter?: { department?: string }): Promise<Staff[]> {
+    const where: Partial<Staff> = {};
+
+    if (filter?.department) {
+      where.department = filter.department;
+    }
+
+    return this.staffRepository.find({
+      where,
+      order: { id: 'ASC' },
+    });
   }
 
   findOne(id: string): Promise<Staff | null> {
