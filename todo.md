@@ -13,6 +13,7 @@
 - [x] 連接 access (cust)
 - [x] api pagging
 - [x] 連接 access (quote)
+- [ ] 修復報價單、工作單等問題
 - [ ] AutoCAD 預覽(dfx to image)
 - [ ] 轉換 python api
 - [ ] Cutting

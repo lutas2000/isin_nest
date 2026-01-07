@@ -18,6 +18,14 @@ export class QuoteItemService {
     page?: number,
     limit?: number,
   ): Promise<QuoteItem[] | PaginatedResponseDto<QuoteItem>> {
+    // 如果沒有提供分頁參數，返回所有數據（數組）
+    if (page === undefined && limit === undefined) {
+      return await this.quoteItemRepository.find({
+        relations: ['quote'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+
     // 使用預設值：page=1, limit=50
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
@@ -48,6 +56,15 @@ export class QuoteItemService {
     page?: number,
     limit?: number,
   ): Promise<QuoteItem[] | PaginatedResponseDto<QuoteItem>> {
+    // 如果沒有提供分頁參數，返回所有數據（數組）
+    if (page === undefined && limit === undefined) {
+      return await this.quoteItemRepository.find({
+        where: { quoteId },
+        relations: ['quote'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+
     // 使用預設值：page=1, limit=50
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;

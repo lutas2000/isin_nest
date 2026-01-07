@@ -85,13 +85,20 @@ export const quoteService = {
 }
 
 export const quoteItemService = {
+  // 獲取所有報價單工件（不支援分頁，返回數組）
+  getAll: (quoteId?: string): Promise<QuoteItem[]> => {
+    const params: Record<string, any> = {}
+    if (quoteId !== undefined) params.quoteId = quoteId
+    return apiGet<QuoteItem[]>(API_CONFIG.CRM.QUOTE_ITEMS, params)
+  },
+
   // 獲取所有報價單工件（支援分頁）
-  getAll: (quoteId?: string, page?: number, limit?: number): Promise<QuoteItem[] | PaginatedResponse<QuoteItem>> => {
+  getAllPaginated: (quoteId?: string, page?: number, limit?: number): Promise<PaginatedResponse<QuoteItem>> => {
     const params: Record<string, any> = {}
     if (quoteId !== undefined) params.quoteId = quoteId
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
-    return apiGet<QuoteItem[] | PaginatedResponse<QuoteItem>>(API_CONFIG.CRM.QUOTE_ITEMS, params)
+    return apiGet<PaginatedResponse<QuoteItem>>(API_CONFIG.CRM.QUOTE_ITEMS, params)
   },
 
   // 獲取單個報價單工件

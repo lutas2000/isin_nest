@@ -283,8 +283,6 @@ const loadQuote = async () => {
   try {
     // 載入報價單詳細資料
     quote.value = await quoteService.getById(quoteId);
-    
-    // 載入報價單工件列表
     quoteItems.value = await quoteItemService.getAll(quoteId);
   } catch (err) {
     error.value = err instanceof Error ? err.message : '載入報價單資料失敗';
