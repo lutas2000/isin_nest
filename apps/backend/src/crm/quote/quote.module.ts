@@ -5,10 +5,11 @@ import { QuoteController } from './quote.controller';
 import { Quote } from './entities/quote.entity';
 import { QuoteItemModule } from '../quote-item/quote-item.module';
 import { WorkOrderModule } from '../work-order/work-order.module';
+import { WorkOrder } from '../work-order/entities/work-order.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Quote]),
+    TypeOrmModule.forFeature([Quote, WorkOrder]),
     QuoteItemModule,
     forwardRef(() => WorkOrderModule),
   ],

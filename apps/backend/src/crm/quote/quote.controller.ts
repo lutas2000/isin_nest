@@ -64,8 +64,11 @@ export class QuoteController {
   @ApiResponse({ status: 200, description: '成功轉換為工單', type: WorkOrder })
   @ApiResponse({ status: 400, description: '報價單未簽名或不存在' })
   @Post(':id/convert-to-work-order')
-  convertToWorkOrder(@Param('id') id: string): Promise<WorkOrder | null> {
-    return this.quoteService.convertToWorkOrder(id);
+  convertToWorkOrder(
+    @Param('id') id: string,
+    @Body() body: { shippingMethod: string; paymentMethod: string },
+  ): Promise<WorkOrder | null> {
+    return this.quoteService.convertToWorkOrder(id, body.shippingMethod, body.paymentMethod);
   }
 }
 

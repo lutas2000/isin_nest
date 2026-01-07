@@ -287,6 +287,52 @@
           </div>
         </div>
     </Modal>
+
+    <!-- 轉工單 Modal -->
+    <Modal 
+      :show="showConvertModal" 
+      title="轉換為工單"
+      @close="closeConvertModal"
+    >
+      <div class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>運送方式 *</label>
+            <select 
+              class="form-control" 
+              v-model="convertForm.shippingMethod"
+            >
+              <option value="">請選擇運送方式</option>
+              <option value="自取">自取</option>
+              <option value="快遞">快遞</option>
+              <option value="貨運">貨運</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>付款方式 *</label>
+            <select 
+              class="form-control" 
+              v-model="convertForm.paymentMethod"
+            >
+              <option value="">請選擇付款方式</option>
+              <option value="現金">現金</option>
+              <option value="轉帳">轉帳</option>
+              <option value="月結">月結</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <button class="btn btn-outline" @click="closeConvertModal">取消</button>
+        <button 
+          class="btn btn-primary" 
+          @click="confirmConvertToWorkOrder" 
+          :disabled="!isConvertFormValid"
+        >
+          確認轉換
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -333,8 +379,10 @@ const router = useRouter();
 // Modal 控制
 const showCreateModal = ref(false);
 const showDetailsModal = ref(false);
+const showConvertModal = ref(false);
 const editingQuote = ref<Quote | null>(null);
 const selectedQuote = ref<Quote | null>(null);
+const convertingQuoteId = ref<string | null>(null);
 
 // 表單資料
 const quoteForm = ref({
@@ -344,6 +392,12 @@ const quoteForm = ref({
   totalAmount: 0,
   notes: '',
   isSigned: false,
+});
+
+// 轉工單表單資料
+const convertForm = ref({
+  shippingMethod: '',
+  paymentMethod: '',
 });
 
 // 客戶 ID 前綴（用於顯示提示）
@@ -562,18 +616,51 @@ const deleteQuote = async (id: string) => {
   }
 };
 
-// 轉換為工單
-const convertToWorkOrder = async (id: string) => {
-  if (!confirm('確定要將此報價單轉換為工單嗎？')) return;
-  
+// 轉換為工單 - 打開 modal
+const convertToWorkOrder = (id: string) => {
+  convertingQuoteId.value = id;
+  convertForm.value = {
+    shippingMethod: '',
+    paymentMethod: '',
+  };
+  showConvertModal.value = true;
+};
+
+// 確認轉換為工單
+const confirmConvertToWorkOrder = async () => {
+  if (!isConvertFormValid.value || !convertingQuoteId.value) {
+    alert('請選擇運送方式和付款方式');
+    return;
+  }
+
   try {
-    await quoteService.convertToWorkOrder(id);
+    await quoteService.convertToWorkOrder(
+      convertingQuoteId.value,
+      convertForm.value.shippingMethod,
+      convertForm.value.paymentMethod
+    );
     alert('成功轉換為工單！');
+    closeConvertModal();
     await loadQuotes();
   } catch (err) {
     alert(err instanceof Error ? err.message : '轉換失敗，請確認報價單已簽名');
   }
 };
+
+// 關閉轉工單 Modal
+const closeConvertModal = () => {
+  showConvertModal.value = false;
+  convertingQuoteId.value = null;
+  convertForm.value = {
+    shippingMethod: '',
+    paymentMethod: '',
+  };
+};
+
+// 轉工單表單驗證
+const isConvertFormValid = computed(() => {
+  return convertForm.value.shippingMethod !== '' && convertForm.value.paymentMethod !== '';
+});
 
 // 打開創建 Modal
 const openCreateModal = () => {

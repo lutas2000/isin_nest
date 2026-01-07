@@ -76,8 +76,11 @@ export const quoteService = {
   },
 
   // 將報價單轉換為工單
-  convertToWorkOrder: (id: string): Promise<WorkOrder> => {
-    return apiPost<WorkOrder>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-work-order`)
+  convertToWorkOrder: (id: string, shippingMethod: string, paymentMethod: string): Promise<WorkOrder> => {
+    return apiPost<WorkOrder>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-work-order`, {
+      shippingMethod,
+      paymentMethod,
+    })
   },
 }
 

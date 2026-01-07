@@ -11,6 +11,8 @@ export class QuoteService {
   constructor(
     @InjectRepository(Quote)
     private quoteRepository: Repository<Quote>,
+    @InjectRepository(WorkOrder)
+    private workOrderRepository: Repository<WorkOrder>,
     @Inject(forwardRef(() => WorkOrderService))
     private workOrderService: WorkOrderService,
   ) {}
@@ -111,17 +113,35 @@ export class QuoteService {
     return null;
   }
 
-  async convertToWorkOrder(quoteId: string): Promise<WorkOrder | null> {
+  async convertToWorkOrder(
+    quoteId: string,
+    shippingMethod: string,
+    paymentMethod: string,
+  ): Promise<WorkOrder | null> {
     const quote = await this.findOne(quoteId);
     if (!quote || !quote.isSigned) {
       return null; // 報價單不存在或未簽名
     }
 
-    // 建立工單
+    // 驗證必填欄位
+    if (!shippingMethod || !paymentMethod) {
+      throw new Error('運送方式和付款方式為必填欄位');
+    }
+
+    // 檢查工單 ID 是否已存在
+    const existingWorkOrder = await this.workOrderRepository.findOneBy({ id: quote.id });
+    if (existingWorkOrder) {
+      throw new Error(`工單 ID ${quote.id} 已存在`);
+    }
+
+    // 建立工單，直接使用報價單 ID
     const workOrderData: Partial<WorkOrder> = {
+      id: quote.id,
       customerId: quote.customerId,
       staffId: quote.staffId,
       amount: quote.totalAmount,
+      shippingMethod,
+      paymentMethod,
       notes: `由報價單 #${quote.id} 轉換`,
     };
 
