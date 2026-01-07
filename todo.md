@@ -1,5 +1,6 @@
 ## Todo List
 
+### CRM
 - [x] User 權限管理
 - [x] 員工管理
 - [x] 自動執行 (con)
@@ -11,12 +12,16 @@
 - [x] 搬移sql資料庫(staff)
 - [x] 連接 access (cust)
 - [x] api pagging
-- [ ] 連接 access (quote)
+- [x] 連接 access (quote)
 - [ ] AutoCAD 預覽(dfx to image)
 - [ ] 轉換 python api
 - [ ] Cutting
 - [ ] 影印
 - [ ] 計算薪資
 - [ ] docker file
+- [ ] 改用 supabase db?
 - [ ] Slack 通知功能
 
+### 硬體相關
+- [ ] 添購 Mac mini 作為新server
+- [ ] 確認機台抓的檔案是否為 server
