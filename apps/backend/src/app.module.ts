@@ -34,7 +34,10 @@ function parseBool(value: string | undefined): boolean | undefined {
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
+        // 注意：本專案後端是用 Nx webpack bundle 成單一檔案，`__dirname` 掃描在容器內可能找不到 entity 檔。
+        // 因此改用 autoLoadEntities，讓各 Module 的 TypeOrmModule.forFeature([Entity]) 自動註冊到 DataSource。
+        autoLoadEntities: true,
+        entities: [], // 避免 bundle 情境下 glob 掃描失敗造成 EntityMetadataNotFoundError
         // Docker/本機快速啟動可用 DB_SYNC=true 自動建表；正式環境建議關閉並改用 migration
         synchronize:
           parseBool(configService.get<string>('DB_SYNC')) ??
