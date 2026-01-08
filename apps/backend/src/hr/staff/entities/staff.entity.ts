@@ -14,21 +14,17 @@ export class Staff {
   @PrimaryColumn({
     type: 'varchar',
     length: 10,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   id: string; // 員工編號
 
   @ApiProperty({ description: '關聯的用戶ID', required: false, example: 1 })
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   userId?: number; // 關聯的用戶 ID
 
   @ApiProperty({ description: '姓名', example: '張三' })
   @Column({
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   name: string; // 姓名
 
@@ -37,8 +33,6 @@ export class Staff {
     type: 'varchar',
     length: 50,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   post?: string; // 職稱（允許 NULL 值）
 
@@ -47,8 +41,6 @@ export class Staff {
     type: 'varchar',
     length: 20,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   work_group?: string; // 工作組別（允許 NULL 值）
 
@@ -57,8 +49,6 @@ export class Staff {
     type: 'varchar',
     length: 30,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   department?: string; // 部門（允許 NULL 值）
 
@@ -87,15 +77,15 @@ export class Staff {
   pension: number; // 退休提撥
 
   @ApiProperty({ description: '是否為外勞', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0 })
+  @Column({ type: 'boolean', default: false })
   is_foreign: boolean; // 是否為外勞（tinyint 1）
 
   @ApiProperty({ description: '是否參加福委會', example: true })
-  @Column({ type: 'tinyint', width: 1, default: 0 })
+  @Column({ type: 'boolean', default: false })
   benifit: boolean; // 是否參加福利會（tinyint 1）
 
   @ApiProperty({ description: '是否需要打卡', example: true })
-  @Column({ type: 'tinyint', width: 1, default: 1 })
+  @Column({ type: 'boolean', default: true })
   need_check: boolean; // 是否需要打卡（tinyint 1）
 
   @ApiProperty({
@@ -115,7 +105,7 @@ export class Staff {
   stop_work?: Date; // 離職日期（允許 NULL 值）
 
   @ApiProperty({ description: '是否需要外帳', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0 })
+  @Column({ type: 'boolean', default: false })
   have_fake: boolean; // 是否需要外帳（tinyint 1）
 
   @OneToOne(() => User, (user) => user.staff, { nullable: true })

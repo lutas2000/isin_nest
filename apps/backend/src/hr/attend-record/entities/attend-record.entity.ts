@@ -20,8 +20,6 @@ export class AttendRecord {
     name: 'staff_id',
     type: 'varchar',
     length: 10,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   staffId: string;
 
@@ -31,8 +29,6 @@ export class AttendRecord {
     length: 6,
     nullable: true,
     name: 'staff_name',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   staffName?: string;
 
@@ -41,7 +37,7 @@ export class AttendRecord {
     example: '2024-01-01T09:00:00Z',
   })
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'create_time',
   })
   createTime: Date;

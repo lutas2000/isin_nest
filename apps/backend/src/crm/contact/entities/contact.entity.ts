@@ -20,13 +20,11 @@ export class Contact {
   @Column({
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   name: string;
 
   @ApiProperty({ description: '電話（多個）', example: ['02-1234-5678', '0912-345-678'] })
-  @Column('json', { nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   phones?: string[];
 
   @ApiProperty({ description: 'Email', example: 'contact@company.com' })
@@ -42,19 +40,17 @@ export class Contact {
     type: 'varchar',
     length: 50,
     name: 'customer_id',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   customerId: string;
 
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'updated_at',
   })
   updatedAt: Date;

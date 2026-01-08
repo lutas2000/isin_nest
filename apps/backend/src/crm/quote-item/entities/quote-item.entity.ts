@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Quote } from '../../quote/entities/quote.entity';
+import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('quote_item')
 export class QuoteItem {
@@ -16,8 +17,6 @@ export class QuoteItem {
   @PrimaryColumn({
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   id: string;
 
@@ -26,8 +25,6 @@ export class QuoteItem {
     name: 'quote_id',
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
    })
   quoteId: string;
 
@@ -37,8 +34,6 @@ export class QuoteItem {
     length: 500,
     nullable: true,
     name: 'customer_file',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   customerFile?: string;
 
@@ -47,8 +42,6 @@ export class QuoteItem {
     type: 'varchar',
     length: 100,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   material?: string;
 
@@ -65,8 +58,6 @@ export class QuoteItem {
     type: 'varchar',
     length: 200,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   processing?: string;
 
@@ -75,26 +66,30 @@ export class QuoteItem {
   quantity: number;
 
   @ApiProperty({ description: '單價', example: 1000 })
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    transformer: numericTransformer,
+  })
   unitPrice: number;
 
   @ApiProperty({ description: '備註', example: '一、以上報價有效期限 7 天。' })
   @Column({
     type: 'text',
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   notes?: string;
 
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'updated_at',
   })
   updatedAt: Date;

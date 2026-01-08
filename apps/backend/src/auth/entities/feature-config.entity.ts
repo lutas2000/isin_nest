@@ -15,15 +15,11 @@ export class FeatureConfig {
 
   @Column({
     unique: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   jobTitle: string;
 
   @Column({
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   description: string;
 
@@ -32,10 +28,10 @@ export class FeatureConfig {
   })
   permissions: FeaturePermission[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }
 

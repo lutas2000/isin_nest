@@ -22,10 +22,10 @@ export class Feature {
   @OneToMany(() => UserFeature, (userFeature) => userFeature.feature)
   userFeatures: UserFeature[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }
 

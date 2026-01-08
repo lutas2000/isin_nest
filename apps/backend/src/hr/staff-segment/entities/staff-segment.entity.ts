@@ -18,8 +18,6 @@ export class StaffSegment {
   @Column({ 
     type: 'varchar',
     length: 10,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
    })
   staffId: string;
 
@@ -32,15 +30,15 @@ export class StaffSegment {
   end_time: string;
 
   @ApiProperty({ description: '是否跨日', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0 })
+  @Column({ type: 'boolean', default: false })
   cross_day: boolean;
 
   @ApiProperty({ description: '責任制', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0 })
+  @Column({ type: 'boolean', default: false })
   duty: boolean;
 
   @ApiProperty({ description: '夜班', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0 })
+  @Column({ type: 'boolean', default: false })
   night_work: boolean;
 
   @ApiProperty({ description: '休息時間(分)', example: 60 })

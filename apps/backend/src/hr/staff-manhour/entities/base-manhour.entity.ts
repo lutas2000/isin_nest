@@ -11,8 +11,6 @@ export abstract class BaseManhour {
   @Column({ 
     type: 'varchar',
     length: 10,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci'
   })
   staffId: string; // 員工編號
 
@@ -21,7 +19,7 @@ export abstract class BaseManhour {
     required: false,
     example: '2024-01-01 09:00:00',
   })
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   start_time?: Date; // 開始時間
 
   @ApiProperty({
@@ -29,7 +27,7 @@ export abstract class BaseManhour {
     required: false,
     example: '2024-01-01 18:00:00',
   })
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   end_time?: Date; // 結束時間
 
   @ApiProperty({ description: '上班時間(小時)', example: 8.5 })

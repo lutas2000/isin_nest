@@ -20,24 +20,16 @@ import { CrmModule } from './crm/crm.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'mysql', // 資料庫類型，可改為 mysql、sqlite 等
+        type: 'postgres',
         host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
+        port: Number(configService.get<string>('DB_PORT')) || 5432,
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
         synchronize: process.env.NODE_ENV === 'development', // 只在開發環境啟用同步
-        charset: 'utf8mb4',
         extra: {
-          charset: 'utf8mb4',
-          collation: 'utf8mb4_unicode_ci',
-          connectionLimit: 10,
-          acquireTimeout: 60000,
-          timeout: 60000,
-          reconnect: true,
-          reconnectTries: 3,
-          reconnectInterval: 1000,
+          max: 10,
         },
         // logging: ['error', 'schema'], // debug db 用
       }),

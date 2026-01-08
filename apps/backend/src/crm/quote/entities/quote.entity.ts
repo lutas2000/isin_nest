@@ -12,6 +12,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Customer } from '../../customer/entities/customer.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { QuoteItem } from '../../quote-item/entities/quote-item.entity';
+import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('quote')
 export class Quote {
@@ -19,8 +20,6 @@ export class Quote {
   @PrimaryColumn({
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   id: string;
 
@@ -30,8 +29,6 @@ export class Quote {
     length: 10,
     name: 'staff_id',
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   staffId?: string;
 
@@ -41,36 +38,38 @@ export class Quote {
     length: 50,
     name: 'customer_id',
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   customerId?: string;
 
   @ApiProperty({ description: '總計金額', example: 100000 })
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    transformer: numericTransformer,
+  })
   totalAmount: number;
 
   @ApiProperty({ description: '注意事項', example: '請於一週內回覆' })
   @Column({
     type: 'text',
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   notes?: string;
 
   @ApiProperty({ description: '客戶是否簽名', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0, name: 'is_signed' })
+  @Column({ type: 'boolean', default: false, name: 'is_signed' })
   isSigned: boolean;
 
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'updated_at',
   })
   updatedAt: Date;
