@@ -213,128 +213,17 @@
         </button>
       </template>
     </Modal>
-
-    <!-- 查看詳情 Modal -->
-    <Modal 
-      :show="showDetailsModal && !!selectedOrder" 
-      :title="`工單詳情 ${selectedOrder?.id || ''}`"
-      @close="showDetailsModal = false"
-    >
-        <div class="details-content" v-if="selectedOrder">
-          <div class="details-section">
-            <h4>基本資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">工單編號：</span>
-                <span class="details-value">{{ selectedOrder.id }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">業務員：</span>
-                <span class="details-value">{{ selectedOrder.staff?.name || '未知' }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">客戶：</span>
-                <span class="details-value">
-                  {{ selectedOrder.customer?.companyName || selectedOrder.customer?.companyShortName || '未知' }}
-                </span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">狀態：</span>
-                <span class="details-value">
-                  <StatusBadge 
-                    :text="selectedOrder.isCompleted ? '已完成' : '進行中'" 
-                    :variant="selectedOrder.isCompleted ? 'success' : 'info'"
-                  />
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section">
-            <h4>訂單資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">運送方式：</span>
-                <span class="details-value">{{ selectedOrder.shippingMethod }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">付款方式：</span>
-                <span class="details-value">{{ selectedOrder.paymentMethod }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">金額：</span>
-                <span class="details-value">NT$ {{ Number(selectedOrder.amount).toLocaleString('zh-TW') }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section" v-if="selectedOrder.notes">
-            <h4>備註</h4>
-            <p>{{ selectedOrder.notes }}</p>
-          </div>
-
-          <div class="details-section">
-            <h4>時間資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">建立時間：</span>
-                <span class="details-value">
-                  {{ selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString('zh-TW') : '未知' }}
-                </span>
-              </div>
-              <div class="details-item" v-if="selectedOrder.endedAt">
-                <span class="details-label">完成時間：</span>
-                <span class="details-value">
-                  {{ new Date(selectedOrder.endedAt).toLocaleString('zh-TW') }}
-                </span>
-              </div>
-              <div class="details-item" v-if="selectedOrder.updatedAt">
-                <span class="details-label">更新時間：</span>
-                <span class="details-value">
-                  {{ new Date(selectedOrder.updatedAt).toLocaleString('zh-TW') }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section" v-if="selectedOrder.workOrderItems && selectedOrder.workOrderItems.length > 0">
-            <h4>工單工件</h4>
-            <div class="work-order-items-list">
-              <div 
-                class="work-order-item-card" 
-                v-for="item in selectedOrder.workOrderItems" 
-                :key="item.id"
-              >
-                <div class="work-order-item-header">
-                  <span class="work-order-item-title">工件 #{{ item.id }}</span>
-                  <span class="work-order-item-amount">NT$ {{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}</span>
-                </div>
-                <div class="work-order-item-details">
-                  <div v-if="item.cadFile">CAD 檔案：{{ item.cadFile }}</div>
-                  <div v-if="item.customerFile">客戶檔案：{{ item.customerFile }}</div>
-                  <div v-if="item.material">材料：{{ item.material }}</div>
-                  <div v-if="item.thickness">厚度：{{ item.thickness }}</div>
-                  <div v-if="item.processing">加工：{{ item.processing }}</div>
-                  <div>來源：{{ item.source }}</div>
-                  <div>數量：{{ item.quantity }} {{ item.unit || '' }}</div>
-                  <div>單價：NT$ {{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
-                  <div v-if="item.estimatedCuttingTime">預估切割時間：{{ item.estimatedCuttingTime }} 分鐘</div>
-                  <div>狀態：{{ item.status }}</div>
-                  <div v-if="item.drawingStaff">繪圖負責人：{{ item.drawingStaff.name }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
+
+const router = useRouter();
 
 // 工單資料
 const orders = ref<WorkOrder[]>([]);
@@ -354,9 +243,7 @@ const staffList = ref<any[]>([]); // 需要從 HR 模組獲取員工資料
 
 // Modal 控制
 const showCreateModal = ref(false);
-const showDetailsModal = ref(false);
 const editingOrder = ref<WorkOrder | null>(null);
-const selectedOrder = ref<WorkOrder | null>(null);
 
 // 表單資料
 const orderForm = ref({
@@ -498,15 +385,9 @@ const loadStaff = async () => {
   }
 };
 
-// 查看詳情
-const viewDetails = async (order: WorkOrder) => {
-  try {
-    // 獲取完整的工單資料（包含關聯的 workOrderItems）
-    selectedOrder.value = await workOrderService.getById(order.id);
-    showDetailsModal.value = true;
-  } catch (err) {
-    alert(err instanceof Error ? err.message : '載入工單詳情失敗');
-  }
+// 查看詳情（導航到 WorkOrderItems 頁面）
+const viewDetails = (order: WorkOrder) => {
+  router.push(`/crm/orders/${order.id}/items`);
 };
 
 // 編輯工單

@@ -10,6 +10,7 @@ import HRStaffVacation from '../views/HR/StaffVacation.vue'
 import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
+import CRMWorkOrderItems from '../views/CRM/WorkOrderItem.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
 import Settings from '../views/Settings.vue'
@@ -101,6 +102,12 @@ const routes = [
     name: 'CRMOrders',
     component: CRMOrders,
     meta: { title: '訂單管理', icon: '📋', requiresAuth: true }
+  },
+  {
+    path: '/crm/orders/:id/items',
+    name: 'CRMWorkOrderItems',
+    component: CRMWorkOrderItems,
+    meta: { title: '工作單詳情', icon: '📋', requiresAuth: true }
   },
   {
     path: '/crm/quotes',
