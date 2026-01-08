@@ -1,7 +1,8 @@
 // API 配置文件
 export const API_CONFIG = {
   // 後端 API 基礎 URL
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
+  // Docker/反向代理情境建議用 `/api`（同網域轉發到後端），避免跨網域與主機名稱問題
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
   
   // 認證相關端點
   AUTH: {
