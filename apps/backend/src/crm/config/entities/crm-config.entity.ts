@@ -27,8 +27,6 @@ export class CrmConfig {
   @Column({
     type: 'varchar',
     length: 100,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   label: string;
 
@@ -36,10 +34,10 @@ export class CrmConfig {
   @Column({ type: 'int', name: 'display_order', default: 0 })
   displayOrder: number;
 
-  @CreateDateColumn({ type: 'datetime', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'datetime', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
 }
 

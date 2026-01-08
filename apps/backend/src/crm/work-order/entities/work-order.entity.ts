@@ -12,6 +12,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Customer } from '../../customer/entities/customer.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { WorkOrderItem } from '../../work-order-item/entities/work-order-item.entity';
+import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('work_order')
 export class WorkOrder {
@@ -24,8 +25,6 @@ export class WorkOrder {
     type: 'varchar',
     length: 10,
     name: 'staff_id',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   staffId: string;
 
@@ -34,8 +33,6 @@ export class WorkOrder {
     type: 'varchar',
     length: 50,
     name: 'customer_id',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   customerId: string;
 
@@ -44,8 +41,6 @@ export class WorkOrder {
     type: 'varchar',
     length: 50,
     name: 'shipping_method',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   shippingMethod: string;
 
@@ -54,8 +49,6 @@ export class WorkOrder {
     type: 'varchar',
     length: 50,
     name: 'payment_method',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   paymentMethod: string;
 
@@ -63,34 +56,38 @@ export class WorkOrder {
   @Column({
     type: 'text',
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   notes?: string;
 
   @ApiProperty({ description: '金額', example: 100000 })
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    transformer: numericTransformer,
+  })
   amount: number;
 
   @ApiProperty({ description: '是否完成', example: false })
-  @Column({ type: 'tinyint', width: 1, default: 0, name: 'is_completed' })
+  @Column({ type: 'boolean', default: false, name: 'is_completed' })
   isCompleted: boolean;
 
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;
 
   @Column({
-    type: 'datetime',
+    type: 'timestamptz',
     nullable: true,
     name: 'ended_at',
   })
   endedAt?: Date;
 
   @UpdateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'updated_at',
   })
   updatedAt: Date;

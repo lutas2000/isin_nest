@@ -32,9 +32,9 @@ export class User {
   @OneToOne(() => Staff, (staff) => staff.user)
   staff?: Staff;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

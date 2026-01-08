@@ -10,6 +10,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { WorkOrder } from '../../work-order/entities/work-order.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
+import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('work_order_item')
 export class WorkOrderItem {
@@ -22,8 +23,6 @@ export class WorkOrderItem {
     type: 'varchar',
     length: 50,
     name: 'work_order_id',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   workOrderId: string;
 
@@ -33,8 +32,6 @@ export class WorkOrderItem {
     length: 500,
     nullable: true,
     name: 'cad_file',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   cadFile?: string;
 
@@ -44,8 +41,6 @@ export class WorkOrderItem {
     length: 500,
     nullable: true,
     name: 'customer_file',
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   customerFile?: string;
 
@@ -54,8 +49,6 @@ export class WorkOrderItem {
     type: 'varchar',
     length: 100,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   material?: string;
 
@@ -76,8 +69,6 @@ export class WorkOrderItem {
     type: 'varchar',
     length: 20,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   unit?: string;
 
@@ -85,8 +76,6 @@ export class WorkOrderItem {
   @Column({
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   source: string;
 
@@ -95,13 +84,18 @@ export class WorkOrderItem {
     type: 'varchar',
     length: 500,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   processing?: string;
 
   @ApiProperty({ description: '單價', example: 1000 })
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'unit_price' })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'unit_price',
+    transformer: numericTransformer,
+  })
   unitPrice: number;
 
   @ApiProperty({ description: '估計切割時間（分鐘）', example: 120 })
@@ -112,8 +106,6 @@ export class WorkOrderItem {
   @Column({ 
     type: 'varchar',
     length: 10,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
     nullable: true, 
     name: 'drawing_staff_id' 
   })
@@ -125,19 +117,17 @@ export class WorkOrderItem {
     length: 50,
     default: 'TODO',
     nullable: false,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   status: string;
 
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'updated_at',
   })
   updatedAt: Date;

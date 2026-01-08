@@ -18,8 +18,6 @@ export class StaffLeave {
   @Column({ 
     type: 'varchar',
     length: 10,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci'
   })
   staff_id: string; // 員工ID
 
@@ -32,8 +30,6 @@ export class StaffLeave {
   @Column({
     type: 'varchar',
     length: 20,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   type: string; // 請假類型
 
@@ -41,14 +37,14 @@ export class StaffLeave {
     description: '開始時間',
     example: '2023-12-01 09:00:00',
   })
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamptz' })
   start_time: Date; // 開始時間
 
   @ApiProperty({
     description: '結束時間',
     example: '2023-12-01 18:00:00',
   })
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamptz' })
   end_time: Date; // 結束時間
 
   @ApiProperty({ description: '請假時數', example: 8.0 })

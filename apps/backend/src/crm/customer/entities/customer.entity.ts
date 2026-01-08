@@ -10,6 +10,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Contact } from '../../contact/entities/contact.entity';
 import { Quote } from '../../quote/entities/quote.entity';
 import { WorkOrder } from '../../work-order/entities/work-order.entity';
+import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('customer')
 export class Customer {
@@ -17,8 +18,6 @@ export class Customer {
   @PrimaryColumn({
     type: 'varchar',
     length: 50,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   id: string;
 
@@ -26,8 +25,6 @@ export class Customer {
   @Column({
     type: 'varchar',
     length: 200,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   companyName: string;
 
@@ -36,8 +33,6 @@ export class Customer {
     type: 'varchar',
     length: 200,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   invoiceTitle?: string;
 
@@ -46,17 +41,15 @@ export class Customer {
     type: 'varchar',
     length: 100,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   companyShortName?: string;
 
   @ApiProperty({ description: '電話（多個）', example: ['02-1234-5678', '0912-345-678'] })
-  @Column('json', { nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   phones?: string[];
 
   @ApiProperty({ description: '統一編號（多個）', example: ['12345678'] })
-  @Column('json', { nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   taxIds?: string[];
 
   @ApiProperty({ description: '郵遞區號', example: '100' })
@@ -72,8 +65,6 @@ export class Customer {
     type: 'varchar',
     length: 500,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   address?: string;
 
@@ -82,8 +73,6 @@ export class Customer {
     type: 'varchar',
     length: 500,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   deliveryAddress?: string;
 
@@ -92,8 +81,6 @@ export class Customer {
     type: 'varchar',
     length: 200,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   bank?: string;
 
@@ -106,11 +93,23 @@ export class Customer {
   accountNumber?: string;
 
   @ApiProperty({ description: '信用額度', example: 1000000 })
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    transformer: numericTransformer,
+  })
   creditLimit: number;
 
   @ApiProperty({ description: '帳款', example: 500000 })
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    transformer: numericTransformer,
+  })
   accountReceivable: number;
 
   @ApiProperty({ description: '傳真', example: '02-1234-5679' })
@@ -118,8 +117,6 @@ export class Customer {
     type: 'varchar',
     length: 50,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   fax?: string;
 
@@ -128,8 +125,6 @@ export class Customer {
     type: 'varchar',
     length: 200,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   email?: string;
 
@@ -138,8 +133,6 @@ export class Customer {
     type: 'varchar',
     length: 500,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   mainProducts?: string;
 
@@ -155,8 +148,6 @@ export class Customer {
   @Column({
     type: 'text',
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   notes?: string;
 
@@ -165,8 +156,6 @@ export class Customer {
     type: 'varchar',
     length: 50,
     nullable: true,
-    charset: 'utf8mb4',
-    collation: 'utf8mb4_unicode_ci',
   })
   ownerName?: string;
 
@@ -179,13 +168,13 @@ export class Customer {
   dxfPath?: string;
 
   @CreateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'created_at',
   })
   createdAt: Date;
 
   @UpdateDateColumn({
-    type: 'datetime',
+    type: 'timestamptz',
     name: 'updated_at',
   })
   updatedAt: Date;
