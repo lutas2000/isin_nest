@@ -111,9 +111,9 @@ npm install -g nx
 # 資料庫配置
 DB_HOST=localhost
 DB_PORT=5004
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-DB_DATABASE=isin_db
+DB_USER=your_username
+DB_PASS=your_password
+DB_NAME=isin_db
 
 # JWT 配置
 JWT_SECRET=your_jwt_secret
