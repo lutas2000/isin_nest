@@ -36,7 +36,7 @@ export class CrmConfigService implements OnModuleInit {
   async findAll(
     page?: number,
     limit?: number,
-  ): Promise<CrmConfig[] | PaginatedResponseDto<CrmConfig>> {
+  ): Promise<PaginatedResponseDto<CrmConfig>> {
     // 使用預設值：page=1, limit=50
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
@@ -56,6 +56,16 @@ export class CrmConfigService implements OnModuleInit {
     });
 
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+  }
+
+  async findAllWithoutPagination(): Promise<CrmConfig[]> {
+    return this.crmConfigRepository.find({
+      order: {
+        category: 'ASC',
+        displayOrder: 'ASC',
+        code: 'ASC',
+      },
+    });
   }
 
   async findByCategory(category: string): Promise<CrmConfig[]> {

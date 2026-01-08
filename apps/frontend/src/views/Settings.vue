@@ -353,10 +353,12 @@ const featureTableColumns = [
 // 載入資料
 const loadCrmConfigs = async () => {
   try {
-    crmConfigs.value = await apiGet<CrmConfig[]>(API_CONFIG.CRM.CONFIGS || '/crm/configs');
+    crmConfigs.value = await apiGet<CrmConfig[]>(API_CONFIG.CRM.CONFIGS_ALL || '/crm/configs/all');
   } catch (error) {
     console.error('載入銷管設定失敗:', error);
     errorStore.showError(error instanceof Error ? error.message : '載入失敗');
+    // 確保即使出錯也設置為空數組
+    crmConfigs.value = [];
   }
 };
 

@@ -42,7 +42,6 @@ import { CrmModule } from './crm/crm.module';
         // logging: ['error', 'schema'], // debug db 用
       }),
     }),
-    // 業務模組
     HrModule,
     AuthModule,
     SchedulerModule,

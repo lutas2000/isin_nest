@@ -31,16 +31,23 @@ import { CreateCrmConfigDto, UpdateCrmConfigDto } from './dto/crm-config.dto';
 export class CrmConfigController {
   constructor(private readonly crmConfigService: CrmConfigService) {}
 
-  @ApiOperation({ summary: '取得所有 CRM 設定' })
+  @ApiOperation({ summary: '取得所有 CRM 設定（分頁）' })
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
-  @ApiResponse({ status: 200, description: '成功返回設定列表', type: [CrmConfig] })
+  @ApiResponse({ status: 200, description: '成功返回設定列表（分頁）' })
   @Get()
   findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     return this.crmConfigService.findAll(page, limit);
+  }
+
+  @ApiOperation({ summary: '取得所有 CRM 設定（無分頁）' })
+  @ApiResponse({ status: 200, description: '成功返回所有設定列表', type: [CrmConfig] })
+  @Get('all')
+  findAllWithoutPagination(): Promise<CrmConfig[]> {
+    return this.crmConfigService.findAllWithoutPagination();
   }
 
   @ApiOperation({ summary: '依分類取得設定' })
