@@ -451,13 +451,36 @@ const cancelNewRow = () => {
 // 處理表格層級的快捷鍵（row 層級）
 const handleTableKeyDown = (event: KeyboardEvent) => {
   // 如果正在編輯欄位（有 focusedFieldKey），不處理 row 層級的快捷鍵
-  // 但如果是新增行且沒有 focusedFieldKey，則不處理（新增行應該由 handleFieldKeyDown 處理）
   if (focusedFieldKey.value !== null) {
     return;
   }
 
-  // 如果是新增行模式，不處理 row 層級快捷鍵
+  // 如果是新增行模式，不處理 row 層級快捷鍵（新增行由欄位層級處理）
   if (isNewRowFocused.value) {
+    return;
+  }
+
+  // 先處理上下鍵，避免瀏覽器捲動，並支援 row 之間的移動
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    if (props.data.length === 0) return;
+
+    event.preventDefault();
+
+    // 如果目前沒有 focus row，預設到第一筆
+    if (focusedRowIndex.value === null) {
+      focusedRowIndex.value = 0;
+      return;
+    }
+
+    if (event.key === 'ArrowUp' && focusedRowIndex.value > 0) {
+      focusedRowIndex.value -= 1;
+    } else if (
+      event.key === 'ArrowDown' &&
+      focusedRowIndex.value < props.data.length - 1
+    ) {
+      focusedRowIndex.value += 1;
+    }
+
     return;
   }
 
