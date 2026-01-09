@@ -76,6 +76,8 @@ isin_nest/
 ```bash
 # 安裝所有依賴（包括 Nx 相關）
 npm install
+cd apps/frontend
+npm install
 
 # 安裝 Nx CLI (可選)
 npm install -g nx
