@@ -5,7 +5,7 @@
       description="管理客戶報價單、追蹤報價狀態和處理報價流程"
     >
       <template #actions>
-        <button class="btn btn-primary" @click="openCreateModal">
+        <button class="btn btn-primary" @click="showNewRow = true">
           <span class="btn-icon">💰</span>
           新增報價單
         </button>
@@ -35,173 +35,87 @@
 
       <div v-if="loading" class="loading-message">載入中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <DataTable
+      <EditableDataTable
         v-else
-        :columns="tableColumns"
+        :columns="editableColumns"
         :data="filteredQuotes"
         :show-actions="true"
         :pagination="true"
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
+        :editable="true"
+        :show-new-row="showNewRow"
+        :new-row-template="newRowTemplate"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
+        @field-change="handleFieldChange"
+        @save="handleSave"
+        @new-row-save="handleNewRowSave"
+        @new-row-cancel="showNewRow = false"
       >
-        <template #cell-customer="{ row }">
-          {{ row.customer?.companyName || row.customer?.companyShortName || '未指定' }}
+        <template #cell-id="{ row, value }">
+          <span v-if="value">{{ value }}</span>
+          <span v-else class="text-muted">待生成</span>
         </template>
 
-        <template #cell-staff="{ row }">
-          {{ row.staff?.name || '未知' }}
+        <template #cell-customerId="{ row, value }">
+          <span v-if="!row.customerId">未指定</span>
+          <span v-else>{{ row.customer?.companyName || row.customer?.companyShortName || value }}</span>
         </template>
 
-        <template #cell-status="{ row }">
+        <template #cell-staffId="{ row, value }">
+          <span v-if="!row.staffId">未知</span>
+          <span v-else>{{ row.staff?.name || value }}</span>
+        </template>
+
+        <template #cell-isSigned="{ row, value }">
           <StatusBadge 
-            :text="row.isSigned ? '已簽名' : '待簽名'" 
-            :variant="row.isSigned ? 'success' : 'warning'"
+            :text="value ? '已簽名' : '待簽名'" 
+            :variant="value ? 'success' : 'warning'"
           />
         </template>
         
         <template #cell-totalAmount="{ value }">
-          NT$ {{ Number(value).toLocaleString('zh-TW') }}
+          NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+        </template>
+
+        <template #cell-notes="{ value }">
+          <span v-if="value && value.length > 50" :title="value">
+            {{ value.substring(0, 50) }}...
+          </span>
+          <span v-else>{{ value || '' }}</span>
         </template>
 
         <template #cell-createdAt="{ value }">
           {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
         </template>
         
-        <template #actions="{ row }">
-          <button class="btn btn-sm btn-outline" @click="viewDetails(row)">查看</button>
-          <button class="btn btn-sm btn-primary" @click="editQuote(row)">編輯</button>
+        <template #actions="{ row, isEditing }">
           <button 
+            v-if="!isEditing"
+            class="btn btn-sm btn-outline" 
+            @click="viewDetails(row)"
+          >
+            查看
+          </button>
+          <button 
+            v-if="!isEditing && row.isSigned"
             class="btn btn-sm btn-success" 
-            v-if="row.isSigned"
             @click="convertToWorkOrder(row.id)"
           >
             轉工單
           </button>
-          <button class="btn btn-sm btn-danger" @click="deleteQuote(row.id)">刪除</button>
+          <button 
+            v-if="!isEditing"
+            class="btn btn-sm btn-danger" 
+            @click="deleteQuote(row.id)"
+          >
+            刪除
+          </button>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
-
-    <!-- 創建/編輯報價單 Modal -->
-    <Modal 
-      :show="showCreateModal" 
-      :title="editingQuote ? '編輯報價單' : '新增報價單'"
-      @close="closeModal"
-    >
-      <div class="modal-form">
-          <div class="form-row" v-if="editingQuote">
-            <div class="form-group">
-              <label>報價單 ID</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                :value="editingQuote.id"
-                disabled
-              />
-              <small class="form-hint">報價單 ID 由系統自動產生</small>
-            </div>
-            <div class="form-group">
-              <label>客戶 *</label>
-              <select 
-                class="form-control" 
-                v-model="quoteForm.customerId"
-              >
-                <option value="">請選擇客戶</option>
-                <option 
-                  v-for="customer in customers" 
-                  :key="customer.id" 
-                  :value="customer.id"
-                >
-                  {{ customer.companyName }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row" v-else>
-            <div class="form-group">
-              <label>客戶 *</label>
-              <select 
-                class="form-control" 
-                v-model="quoteForm.customerId"
-              >
-                <option value="">請選擇客戶</option>
-                <option 
-                  v-for="customer in customers" 
-                  :key="customer.id" 
-                  :value="customer.id"
-                >
-                  {{ customer.companyName }}
-                </option>
-              </select>
-              <small class="form-hint">報價單 ID 將由系統自動產生</small>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>經手人 *</label>
-              <select 
-                class="form-control" 
-                v-model="quoteForm.staffId"
-              >
-                <option value="">請選擇經手人</option>
-                <option 
-                  v-for="staff in staffList" 
-                  :key="staff.id" 
-                  :value="staff.id"
-                >
-                  {{ staff.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>總計金額</label>
-              <input 
-                type="number" 
-                class="form-control" 
-                v-model="quoteForm.totalAmount"
-                placeholder="0"
-              />
-            </div>
-            <div class="form-group">
-              <label>是否簽名</label>
-              <select 
-                class="form-control" 
-                v-model="quoteForm.isSigned"
-              >
-                <option :value="false">待簽名</option>
-                <option :value="true">已簽名</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>注意事項</label>
-            <textarea 
-              class="form-control" 
-              v-model="quoteForm.notes"
-              rows="3"
-              placeholder="請輸入注意事項"
-            ></textarea>
-          </div>
-        </div>
-      <template #footer>
-        <button class="btn btn-outline" @click="closeModal">取消</button>
-        <button 
-          class="btn btn-primary" 
-          @click="saveQuote" 
-          :disabled="!isFormValid"
-        >
-          {{ editingQuote ? '更新' : '建立' }}
-        </button>
-      </template>
-    </Modal>
 
     <!-- 查看詳情 Modal -->
     <Modal 
@@ -350,7 +264,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { apiGet } from '@/services/api';
@@ -388,16 +302,15 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 // Modal 控制
-const showCreateModal = ref(false);
 const showDetailsModal = ref(false);
 const showConvertModal = ref(false);
-const editingQuote = ref<Quote | null>(null);
 const selectedQuote = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
+const showNewRow = ref(false);
 
-// 表單資料
-const quoteForm = ref({
-  staffId: '',
+// 新增行模板
+const newRowTemplate = () => ({
+  staffId: authStore.staffId || '',
   customerId: '',
   totalAmount: 0,
   notes: '',
@@ -410,15 +323,58 @@ const convertForm = ref({
   paymentMethod: '',
 });
 
-// 表格列定義
-const tableColumns = [
-  { key: 'id', label: '報價單編號' },
-  { key: 'customer', label: '客戶' },
-  { key: 'staff', label: '經手人' },
-  { key: 'totalAmount', label: '總金額' },
-  { key: 'status', label: '狀態' },
-  { key: 'createdAt', label: '建立日期' },
-];
+// 可編輯表格列定義
+const editableColumns = computed<EditableColumn[]>(() => [
+  { 
+    key: 'id', 
+    label: '報價單編號', 
+    editable: false 
+  },
+  { 
+    key: 'customerId', 
+    label: '客戶', 
+    editable: true, 
+    required: true, 
+    type: 'select',
+    options: () => customers.value.map(c => ({ value: c.id, label: c.companyName }))
+  },
+  { 
+    key: 'staffId', 
+    label: '經手人', 
+    editable: true, 
+    required: true, 
+    type: 'select',
+    options: () => staffList.value.map(s => ({ value: s.id, label: s.name }))
+  },
+  { 
+    key: 'totalAmount', 
+    label: '總金額', 
+    editable: true, 
+    type: 'number' 
+  },
+  { 
+    key: 'isSigned', 
+    label: '是否簽名', 
+    editable: true, 
+    type: 'select',
+    options: [
+      { value: false, label: '待簽名' },
+      { value: true, label: '已簽名' }
+    ]
+  },
+  { 
+    key: 'notes', 
+    label: '注意事項', 
+    editable: true, 
+    type: 'text',
+    truncate: true
+  },
+  { 
+    key: 'createdAt', 
+    label: '建立日期', 
+    editable: false 
+  },
+]);
 
 // 篩選後的報價單
 const filteredQuotes = computed(() => {
@@ -445,10 +401,9 @@ const filteredQuotes = computed(() => {
   return filtered;
 });
 
-// 表單驗證
-const isFormValid = computed(() => {
-  return quoteForm.value.staffId && quoteForm.value.customerId;
-});
+// 自動保存防抖計時器
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const savingQuotes = ref<Set<string>>(new Set());
 
 // 處理篩選器更新
 const handleFilterUpdate = (key: string, value: string) => {
@@ -523,46 +478,107 @@ const viewDetails = (quote: Quote) => {
   router.push(`/crm/quotes/${quote.id}/items`);
 };
 
-// 編輯報價單
-const editQuote = (quote: Quote) => {
-  editingQuote.value = quote;
-  quoteForm.value = {
-    staffId: quote.staffId,
-    customerId: quote.customerId || '',
-    totalAmount: Number(quote.totalAmount),
-    notes: quote.notes || '',
-    isSigned: quote.isSigned,
-  };
-  showCreateModal.value = true;
+// 處理欄位變更（自動保存）
+const handleFieldChange = (row: Quote, field: string, value: any, isNew: boolean) => {
+  if (isNew) {
+    // 新增模式：檢查必要欄位後自動保存
+    const newQuote = { ...row, [field]: value };
+    if (newQuote.customerId && newQuote.staffId) {
+      // 清除之前的計時器
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+      }
+      // 設置新的防抖計時器
+      autoSaveTimer = setTimeout(async () => {
+        try {
+          const data: Partial<Quote> = {
+            staffId: newQuote.staffId,
+            customerId: newQuote.customerId,
+            totalAmount: newQuote.totalAmount || 0,
+            notes: newQuote.notes || undefined,
+            isSigned: newQuote.isSigned || false,
+          };
+          const saved = await quoteService.create(data);
+          showNewRow.value = false;
+          await loadQuotes();
+        } catch (err) {
+          console.error('自動保存失敗:', err);
+          alert('自動保存失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
+        }
+      }, 500);
+    }
+  } else {
+    // 編輯模式：直接更新
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer);
+    }
+    const timerKey = `${row.id}-${field}`;
+    autoSaveTimer = setTimeout(async () => {
+      try {
+        savingQuotes.value.add(timerKey);
+        const data: Partial<Quote> = {
+          [field]: value,
+        };
+        await quoteService.update(row.id, data);
+        // 更新本地資料
+        const index = quotes.value.findIndex(q => q.id === row.id);
+        if (index >= 0) {
+          quotes.value[index] = { ...quotes.value[index], [field]: value };
+        }
+      } catch (err) {
+        console.error('自動保存失敗:', err);
+        alert('自動保存失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
+      } finally {
+        savingQuotes.value.delete(timerKey);
+      }
+    }, 500);
+  }
 };
 
-// 儲存報價單
-const saveQuote = async () => {
-  if (!isFormValid.value) {
-    alert('請填寫必填欄位');
-    return;
-  }
-
+// 處理手動保存
+const handleSave = async (row: Quote, isNew: boolean) => {
   try {
-    const data: Partial<Quote> = {
-      staffId: quoteForm.value.staffId,
-      customerId: quoteForm.value.customerId,
-      totalAmount: quoteForm.value.totalAmount,
-      notes: quoteForm.value.notes || undefined,
-      isSigned: quoteForm.value.isSigned,
-    };
-
-    if (editingQuote.value) {
-      await quoteService.update(editingQuote.value.id, data);
+    if (isNew) {
+      const data: Partial<Quote> = {
+        staffId: row.staffId,
+        customerId: row.customerId,
+        totalAmount: row.totalAmount || 0,
+        notes: row.notes || undefined,
+        isSigned: row.isSigned || false,
+      };
+      const saved = await quoteService.create(data);
+      await loadQuotes();
     } else {
-      // 創建時不傳遞 ID，讓後端自動產生
-      await quoteService.create(data);
+      const data: Partial<Quote> = {
+        staffId: row.staffId,
+        customerId: row.customerId,
+        totalAmount: row.totalAmount || 0,
+        notes: row.notes || undefined,
+        isSigned: row.isSigned || false,
+      };
+      await quoteService.update(row.id, data);
+      await loadQuotes();
     }
-
-    closeModal();
-    await loadQuotes();
   } catch (err) {
     alert(err instanceof Error ? err.message : '儲存報價單失敗');
+  }
+};
+
+// 處理新增行保存
+const handleNewRowSave = async (row: any) => {
+  try {
+    const data: Partial<Quote> = {
+      staffId: row.staffId,
+      customerId: row.customerId,
+      totalAmount: row.totalAmount || 0,
+      notes: row.notes || undefined,
+      isSigned: row.isSigned || false,
+    };
+    await quoteService.create(data);
+    showNewRow.value = false;
+    await loadQuotes();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '建立報價單失敗');
   }
 };
 
@@ -624,32 +640,6 @@ const isConvertFormValid = computed(() => {
   return convertForm.value.shippingMethod !== '' && convertForm.value.paymentMethod !== '';
 });
 
-// 打開創建 Modal
-const openCreateModal = () => {
-  editingQuote.value = null;
-  // 預設為當前登入用戶的員工 ID
-  quoteForm.value = {
-    staffId: authStore.staffId || '',
-    customerId: '',
-    totalAmount: 0,
-    notes: '',
-    isSigned: false,
-  };
-  showCreateModal.value = true;
-};
-
-// 關閉 Modal
-const closeModal = () => {
-  showCreateModal.value = false;
-  editingQuote.value = null;
-  quoteForm.value = {
-    staffId: '',
-    customerId: '',
-    totalAmount: 0,
-    notes: '',
-    isSigned: false,
-  };
-};
 
 // 初始化
 onMounted(() => {
