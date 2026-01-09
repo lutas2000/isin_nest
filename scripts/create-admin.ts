@@ -26,15 +26,15 @@ async function createAdminUser() {
 
   // 建立資料庫連接
   const dbHost = process.env.DB_HOST || 'localhost';
-  const dbPort = parseInt(process.env.DB_PORT || '3306', 10);
-  const dbUser = process.env.DB_USER || process.env.DB_USERNAME || 'root';
+  const dbPort = parseInt(process.env.DB_PORT || '5432', 10);
+  const dbUser = process.env.DB_USER || process.env.DB_USERNAME || 'postgres';
   const dbPass = process.env.DB_PASS || process.env.DB_PASSWORD || '';
   const dbName = process.env.DB_NAME || process.env.DB_DATABASE || 'isin_db';
 
   console.log(`📊 資料庫配置: ${dbUser}@${dbHost}:${dbPort}/${dbName}`);
 
   const dataSource = new DataSource({
-    type: 'mysql',
+    type: 'postgres',
     host: dbHost,
     port: dbPort,
     username: dbUser,
@@ -42,11 +42,6 @@ async function createAdminUser() {
     database: dbName,
     entities: [User, Staff],
     synchronize: false,
-    charset: 'utf8mb4',
-    extra: {
-      charset: 'utf8mb4',
-      collation: 'utf8mb4_unicode_ci',
-    },
   });
 
   try {
