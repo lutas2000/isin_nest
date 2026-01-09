@@ -4,20 +4,44 @@ import * as dotenv from 'dotenv';
 import * as bcrypt from 'bcrypt';
 import { resolve } from 'path';
 
-// 載入環境變數
-const envPath = resolve(__dirname, '../apps/backend/.env');
+// 載入環境變數（改為使用 scripts/.env）
+const envPath = resolve(__dirname, './.env');
 dotenv.config({ path: envPath });
 
-// 資料庫配置
-const dbConfig = {
+// 來源（舊）MySQL 資料庫配置
+const SOURCE_DB =
+  process.env.SOURCE_DB_NAME ||
+  process.env.SOURCE_DB_DATABASE ||
+  'isin2';
+
+const sourceDbConfig = {
+  host: process.env.SOURCE_DB_HOST || process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.SOURCE_DB_PORT || '3306', 10),
+  user:
+    process.env.SOURCE_DB_USER ||
+    process.env.SOURCE_DB_USERNAME ||
+    process.env.DB_USER ||
+    process.env.DB_USERNAME ||
+    'root',
+  password:
+    process.env.SOURCE_DB_PASS ||
+    process.env.SOURCE_DB_PASSWORD ||
+    process.env.DB_PASS ||
+    process.env.DB_PASSWORD ||
+    '',
+};
+
+// 目標（新）PostgreSQL 資料庫配置
+const TARGET_DB =
+  process.env.DB_NAME || process.env.DB_DATABASE || 'isin_db';
+
+const targetDbConfig = {
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  user: process.env.DB_USER || process.env.DB_USERNAME || 'root',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  user: process.env.DB_USER || process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASS || process.env.DB_PASSWORD || '',
 };
 
-const SOURCE_DB = 'isin2';
-const TARGET_DB = 'test_isin2';
 const DEFAULT_PASSWORD = 'isinisin';
 
 /**
@@ -28,7 +52,7 @@ async function getCommonColumns(
   targetDataSource: DataSource,
   tableName: string,
 ): Promise<string[]> {
-  // 取得來源資料表欄位
+  // 取得來源（MySQL）資料表欄位
   const sourceColumns = await sourceDataSource.query(
     `SELECT COLUMN_NAME 
      FROM INFORMATION_SCHEMA.COLUMNS 
@@ -37,12 +61,12 @@ async function getCommonColumns(
   );
   const sourceColumnNames = sourceColumns.map((row: any) => row.COLUMN_NAME);
 
-  // 取得目標資料表欄位
+  // 取得目標（PostgreSQL）資料表欄位
   const targetColumns = await targetDataSource.query(
-    `SELECT COLUMN_NAME 
-     FROM INFORMATION_SCHEMA.COLUMNS 
-     WHERE TABLE_SCHEMA = '${TARGET_DB}' AND TABLE_NAME = '${tableName}' 
-     ORDER BY ORDINAL_POSITION`,
+    `SELECT column_name AS "COLUMN_NAME"
+     FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = '${tableName}'
+     ORDER BY ordinal_position`,
   );
   const targetColumnNames = targetColumns.map((row: any) => row.COLUMN_NAME);
 
@@ -71,12 +95,10 @@ async function createUsersForStaff(
 
   for (const staffId of staffIds) {
     try {
-      // 轉義 staffId 以防止 SQL 注入
-      const escapedStaffId = staffId.replace(/'/g, "''");
-      
-      // 檢查是否已存在
+      // 檢查 PostgreSQL 中 users 是否已存在對應帳號
       const existingUsers = await targetDataSource.query(
-        `SELECT id FROM \`${TARGET_DB}\`.\`users\` WHERE userName = '${escapedStaffId}'`,
+        `SELECT id FROM "users" WHERE "userName" = $1`,
+        [staffId],
       );
 
       if (existingUsers.length > 0) {
@@ -85,26 +107,21 @@ async function createUsersForStaff(
         skippedCount++;
         console.log(`   ⏭️  跳過: ${staffId} (已存在 user id: ${existingUsers[0].id})`);
       } else {
-        // 轉義密碼
-        const escapedPassword = hashedPassword.replace(/'/g, "''");
-        
-        // 建立新的 user
-        await targetDataSource.query(
-          `INSERT INTO \`${TARGET_DB}\`.\`users\` (userName, password, isAdmin, createdAt, updatedAt) 
-           VALUES ('${escapedStaffId}', '${escapedPassword}', 0, NOW(), NOW())`,
-        );
-
-        // 取得插入的 id
+        // 建立新的 user（PostgreSQL）
         const newUsers = await targetDataSource.query(
-          `SELECT id FROM \`${TARGET_DB}\`.\`users\` WHERE userName = '${escapedStaffId}'`,
+          `INSERT INTO "users" ("userName", "password", "isAdmin", "createdAt", "updatedAt") 
+           VALUES ($1, $2, $3, NOW(), NOW())
+           RETURNING id`,
+          [staffId, hashedPassword, 0],
         );
 
-        if (newUsers.length > 0 && newUsers[0].id) {
-          staffToUserIdMap.set(staffId, newUsers[0].id);
+        const newUser = newUsers[0];
+        if (newUser && newUser.id) {
+          staffToUserIdMap.set(staffId, newUser.id);
           createdCount++;
-          console.log(
-            `   ✅ 建立: ${staffId} -> user id: ${newUsers[0].id}`,
-          );
+          console.log(`   ✅ 建立: ${staffId} -> user id: ${newUser.id}`);
+        } else {
+          console.warn(`   ⚠️ 建立 user 成功但無法取得 id (${staffId})`);
         }
       }
     } catch (error) {
@@ -156,10 +173,10 @@ async function copyStaffTable(
     //   console.log('✅ 已清空目標資料表 staff (使用 DELETE)');
     // }
 
-    // 從來源資料表讀取資料
-    const columnsStr = commonColumns.map((col) => `\`${col}\``).join(', ');
+    // 從來源（MySQL）資料表讀取資料
+    const mysqlColumnsStr = commonColumns.map((col) => `\`${col}\``).join(', ');
     const rows = await sourceDataSource.query(
-      `SELECT ${columnsStr} FROM \`${SOURCE_DB}\`.\`staff\``,
+      `SELECT ${mysqlColumnsStr} FROM \`${SOURCE_DB}\`.\`staff\``,
     );
 
     if (rows.length === 0) {
@@ -189,6 +206,20 @@ async function copyStaffTable(
             }
           }
 
+          // 特殊處理：PostgreSQL 中的布林欄位（來源 MySQL 以 0/1 儲存）
+          if (
+            ['is_foreign', 'benifit', 'need_check', 'have_fake'].includes(col)
+          ) {
+            if (value === null || value === undefined) {
+              return 'NULL';
+            }
+
+            // 盡量用數字 0 / 1 判斷，否則退回 truthy / falsy
+            const num = typeof value === 'number' ? value : Number(value);
+            const boolValue = Number.isNaN(num) ? !!value : num === 1;
+            return boolValue ? 'TRUE' : 'FALSE';
+          }
+
           if (value === null || value === undefined) {
             return 'NULL';
           }
@@ -202,12 +233,14 @@ async function copyStaffTable(
             return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
           }
           if (typeof value === 'boolean') {
-            return value ? '1' : '0';
+            // PostgreSQL 布林常數
+            return value ? 'TRUE' : 'FALSE';
           }
           if (typeof value === 'object') {
             // Buffer 類型（BLOB）
             if (Buffer.isBuffer(value)) {
-              return `0x${value.toString('hex')}`;
+              // 以十六進位字串形式存入（PostgreSQL 可視需要再轉為 bytea）
+              return `'\\x${value.toString('hex')}'`;
             }
             // JSON 欄位
             return `'${JSON.stringify(value).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
@@ -221,7 +254,9 @@ async function copyStaffTable(
         return `(${rowValues.join(', ')})`;
       });
 
-      const insertSql = `INSERT INTO \`${TARGET_DB}\`.\`staff\` (${columnsStr}) VALUES ${values.join(', ')}`;
+      // 對目標（PostgreSQL）使用雙引號包住欄位名稱
+      const pgColumnsStr = commonColumns.map((col) => `"${col}"`).join(', ');
+      const insertSql = `INSERT INTO "staff" (${pgColumnsStr}) VALUES ${values.join(', ')}`;
       await targetDataSource.query(insertSql);
       insertedCount += batch.length;
       console.log(`   ✅ 已插入 ${insertedCount}/${rows.length} 筆資料`);
@@ -246,20 +281,25 @@ async function copyStaffTableData() {
     console.log('🚀 開始複製 staff 資料表...');
     console.log(`📊 來源資料庫: ${SOURCE_DB}`);
     console.log(`📊 目標資料庫: ${TARGET_DB}`);
-    console.log(`🔌 資料庫主機: ${dbConfig.host}:${dbConfig.port}`);
+    console.log(
+      `🔌 來源資料庫主機: ${sourceDbConfig.host}:${sourceDbConfig.port}`,
+    );
+    console.log(
+      `🔌 目標資料庫主機: ${targetDbConfig.host}:${targetDbConfig.port}`,
+    );
 
     // 連接來源資料庫
     console.log('\n🔌 正在連接來源資料庫...');
-    console.log(`   主機: ${dbConfig.host}:${dbConfig.port}`);
-    console.log(`   用戶: ${dbConfig.user}`);
+    console.log(`   主機: ${sourceDbConfig.host}:${sourceDbConfig.port}`);
+    console.log(`   用戶: ${sourceDbConfig.user}`);
     console.log(`   資料庫: ${SOURCE_DB}`);
     
     sourceDataSource = new DataSource({
       type: 'mysql',
-      host: dbConfig.host,
-      port: dbConfig.port,
-      username: dbConfig.user,
-      password: dbConfig.password,
+      host: sourceDbConfig.host,
+      port: sourceDbConfig.port,
+      username: sourceDbConfig.user,
+      password: sourceDbConfig.password,
       database: SOURCE_DB,
       synchronize: false,
       charset: 'utf8mb4',
@@ -289,28 +329,22 @@ async function copyStaffTableData() {
 
     // 連接目標資料庫
     console.log('\n🔌 正在連接目標資料庫...');
-    console.log(`   主機: ${dbConfig.host}:${dbConfig.port}`);
-    console.log(`   用戶: ${dbConfig.user}`);
+    console.log(`   主機: ${targetDbConfig.host}:${targetDbConfig.port}`);
+    console.log(`   用戶: ${targetDbConfig.user}`);
     console.log(`   資料庫: ${TARGET_DB}`);
     
     targetDataSource = new DataSource({
-      type: 'mysql',
-      host: dbConfig.host,
-      port: dbConfig.port,
-      username: dbConfig.user,
-      password: dbConfig.password,
+      type: 'postgres',
+      host: targetDbConfig.host,
+      port: targetDbConfig.port,
+      username: targetDbConfig.user,
+      password: targetDbConfig.password,
       database: TARGET_DB,
       synchronize: false,
-      charset: 'utf8mb4',
       extra: {
-        charset: 'utf8mb4',
-        collation: 'utf8mb4_unicode_ci',
-        connectionLimit: 10,
-        acquireTimeout: 60000,
-        timeout: 60000,
-        reconnect: true,
-        reconnectTries: 3,
-        reconnectInterval: 1000,
+        max: 10,
+        connectionTimeoutMillis: 60000,
+        idleTimeoutMillis: 30000,
       },
     });
     
@@ -388,10 +422,20 @@ async function copyStaffTableData() {
     }
     
     console.error('\n   請檢查 .env 檔案中的資料庫配置：');
-    console.error(`   DB_HOST=${dbConfig.host}`);
-    console.error(`   DB_PORT=${dbConfig.port}`);
-    console.error(`   DB_USER=${dbConfig.user}`);
-    console.error(`   DB_PASS=${dbConfig.password ? '***' : '(未設定)'}`);
+    console.error(`   SOURCE_DB_HOST=${sourceDbConfig.host}`);
+    console.error(`   SOURCE_DB_PORT=${sourceDbConfig.port}`);
+    console.error(`   SOURCE_DB_USER=${sourceDbConfig.user}`);
+    console.error(
+      `   SOURCE_DB_PASS=${
+        sourceDbConfig.password ? '***' : '(未設定)'
+      }`,
+    );
+    console.error(`   DB_HOST=${targetDbConfig.host}`);
+    console.error(`   DB_PORT=${targetDbConfig.port}`);
+    console.error(`   DB_USER=${targetDbConfig.user}`);
+    console.error(
+      `   DB_PASS=${targetDbConfig.password ? '***' : '(未設定)'}`,
+    );
     
     process.exit(1);
   } finally {
