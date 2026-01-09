@@ -1,5 +1,6 @@
 <template>
   <div 
+    ref="tableRef"
     class="editable-data-table"
     @keydown="handleTableKeyDown"
     tabindex="0"
@@ -67,6 +68,7 @@
               'new-row': isNewRow(row),
               'focused-row': focusedRowIndex === index && !isEditing(row, index)
             }"
+            @dblclick="handleRowDblClick(row, index)"
           >
             <td v-for="column in columns" :key="column.key">
               <EditableCell
@@ -224,6 +226,7 @@ const newRowData = ref<any>({});
 const focusedRowIndex = ref<number | null>(null);
 const focusedFieldKey = ref<string | null>(null);
 const isNewRowFocused = ref(false);
+const tableRef = ref<HTMLDivElement | null>(null);
 
 const totalPages = computed(() => {
   return Math.ceil(props.total / props.pageSize);
@@ -296,6 +299,17 @@ const truncateText = (text: string, maxLength: number) => {
   return text.substring(0, maxLength) + '...';
 };
 
+// 滑鼠雙擊 row 進入編輯模式
+const handleRowDblClick = (row: any, index: number) => {
+  // 若整個表格不可編輯，或該列已在編輯中，就不處理
+  if (!props.editable || isEditing(row, index)) {
+    return;
+  }
+
+  startEdit(row, index);
+  emit('row-edit', row, index);
+};
+
 const isNewRowValid = computed(() => {
   return props.columns
     .filter(col => col.required)
@@ -349,6 +363,12 @@ onMounted(() => {
   if (props.data.length > 0 && !props.showNewRow) {
     focusedRowIndex.value = 0;
   }
+  // 自動 focus 到表格，讓鍵盤操作可以立即使用
+  nextTick(() => {
+    if (tableRef.value) {
+      tableRef.value.focus();
+    }
+  });
 });
 
 const goToPage = (page: number) => {
