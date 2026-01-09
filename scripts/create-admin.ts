@@ -4,6 +4,8 @@ import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 import { User } from '../apps/backend/src/auth/entities/user.entity';
 import { Staff } from '../apps/backend/src/hr/staff/entities/staff.entity';
+import { UserFeature } from '../apps/backend/src/auth/entities/user-feature.entity';
+import { Feature } from '../apps/backend/src/auth/entities/feature.entity';
 import { resolve } from 'path';
 
 // 載入環境變數
@@ -40,7 +42,7 @@ async function createAdminUser() {
     username: dbUser,
     password: dbPass,
     database: dbName,
-    entities: [User, Staff],
+    entities: [User, Staff, UserFeature, Feature],
     synchronize: false,
   });
 
@@ -89,7 +91,7 @@ async function createAdminUser() {
         userName,
         password: hashedPassword,
         isAdmin: true,
-        features: [],
+        // 預設沒有任何功能權限，之後可透過後台或腳本設定 userFeatures
       });
 
       const savedUser = await userRepository.save(newUser);
