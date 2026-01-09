@@ -55,13 +55,20 @@
         @new-row-cancel="showNewRow = false"
       >
         <template #cell-id="{ row, value }">
-          <span v-if="value">{{ value }}</span>
+          <button 
+            v-if="value" 
+            class="link-button" 
+            type="button" 
+            @click="viewDetails(row)"
+          >
+            {{ value }}
+          </button>
           <span v-else class="text-muted">待生成</span>
         </template>
 
         <template #cell-customerId="{ row, value }">
           <span v-if="!row.customerId">未指定</span>
-          <span v-else>{{ row.customer?.companyName || row.customer?.companyShortName || value }}</span>
+          <span v-else>{{ row.customer?.companyShortName || value }}</span>
         </template>
 
         <template #cell-staffId="{ row, value }">
@@ -92,13 +99,6 @@
         </template>
         
         <template #actions="{ row, isEditing }">
-          <button 
-            v-if="!isEditing"
-            class="btn btn-sm btn-outline" 
-            @click="viewDetails(row)"
-          >
-            查看
-          </button>
           <button 
             v-if="!isEditing && row.isSigned"
             class="btn btn-sm btn-success" 
@@ -139,7 +139,7 @@
               <div class="details-item">
                 <span class="details-label">客戶：</span>
                 <span class="details-value">
-                  {{ selectedQuote.customer?.companyName || selectedQuote.customer?.companyShortName || '未指定' }}
+                  {{ selectedQuote.customer?.companyShortName || '未指定' }}
                 </span>
               </div>
               <div class="details-item">
@@ -336,7 +336,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true, 
     required: true, 
     type: 'select',
-    options: () => customers.value.map(c => ({ value: c.id, label: c.companyName }))
+    options: () => customers.value.map(c => ({ value: c.id, label: c.companyShortName || c.companyName }))
   },
   { 
     key: 'staffId', 
@@ -383,12 +383,11 @@ const filteredQuotes = computed(() => {
   // 文字搜尋
   if (quoteSearch.value) {
     const search = quoteSearch.value.toLowerCase();
-    filtered = filtered.filter(
-      (quote) =>
-        quote.id.toString().includes(search) ||
-        quote.customer?.companyName?.toLowerCase().includes(search) ||
-        quote.customer?.companyShortName?.toLowerCase().includes(search),
-    );
+      filtered = filtered.filter(
+        (quote) =>
+          quote.id.toString().includes(search) ||
+          quote.customer?.companyShortName?.toLowerCase().includes(search),
+      );
   }
 
   // 狀態篩選
@@ -682,6 +681,21 @@ onMounted(() => {
 
 .btn-icon {
   margin-right: 0.5rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--primary-600);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-button:hover {
+  color: var(--primary-700);
 }
 
 /* Modal 表單樣式 */
