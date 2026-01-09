@@ -23,8 +23,8 @@ dotenv.config({ path: envPath });
 // 資料庫配置
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  user: process.env.DB_USER || process.env.DB_USERNAME || 'root',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  user: process.env.DB_USER || process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASS || process.env.DB_PASSWORD || '',
 };
 
@@ -412,7 +412,7 @@ async function migrateCustomerFromAccess() {
     // 連接目標資料庫
     console.log('\n🔌 正在連接目標資料庫...');
     targetDataSource = new DataSource({
-      type: 'mysql',
+      type: 'postgres',
       host: dbConfig.host,
       port: dbConfig.port,
       username: dbConfig.user,
@@ -420,16 +420,10 @@ async function migrateCustomerFromAccess() {
       database: TARGET_DB,
       entities: [Customer, Contact, Quote, WorkOrder, QuoteItem, WorkOrderItem, Staff, User, UserFeature, Feature],
       synchronize: false,
-      charset: 'utf8mb4',
       extra: {
-        charset: 'utf8mb4',
-        collation: 'utf8mb4_unicode_ci',
-        connectionLimit: 10,
-        acquireTimeout: 60000,
-        timeout: 60000,
-        reconnect: true,
-        reconnectTries: 3,
-        reconnectInterval: 1000,
+        max: 10,
+        connectionTimeoutMillis: 60000,
+        idleTimeoutMillis: 30000,
       },
     });
 
