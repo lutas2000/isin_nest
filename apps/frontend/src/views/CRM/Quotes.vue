@@ -53,6 +53,9 @@
         @save="handleSave"
         @new-row-save="handleNewRowSave"
         @new-row-cancel="showNewRow = false"
+        @row-delete="handleRowDelete"
+        @row-view="handleRowView"
+        @row-edit="handleRowEdit"
       >
         <template #cell-id="{ row, value }">
           <button 
@@ -591,6 +594,29 @@ const deleteQuote = async (id: string) => {
   } catch (err) {
     alert(err instanceof Error ? err.message : '刪除報價單失敗');
   }
+};
+
+// 處理 row-delete 事件（快捷鍵觸發）
+const handleRowDelete = async (row: Quote) => {
+  if (!confirm('確定要刪除此報價單嗎？此操作無法復原。')) return;
+  
+  try {
+    await quoteService.delete(row.id);
+    await loadQuotes();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '刪除報價單失敗');
+  }
+};
+
+// 處理 row-view 事件（快捷鍵觸發）
+const handleRowView = (row: Quote) => {
+  viewDetails(row);
+};
+
+// 處理 row-edit 事件（快捷鍵觸發，F2）
+const handleRowEdit = (row: Quote, index: number) => {
+  // 編輯狀態會由 EditableDataTable 內部處理
+  // 這裡可以加入額外的邏輯，例如記錄編輯歷史等
 };
 
 // 轉換為工單 - 打開 modal

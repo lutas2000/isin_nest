@@ -1,5 +1,9 @@
 <template>
-  <div class="editable-data-table">
+  <div 
+    class="editable-data-table"
+    @keydown="handleTableKeyDown"
+    tabindex="0"
+  >
     <div class="table-container">
       <table class="table">
         <thead>
@@ -17,7 +21,10 @@
             v-if="showNewRow" 
             :key="'new-row'"
             class="new-row"
-            :class="{ 'editing-row': true }"
+            :class="{ 
+              'editing-row': true,
+              'focused-row': isNewRowFocused
+            }"
           >
             <td v-for="column in columns" :key="column.key">
               <EditableCell
@@ -26,9 +33,10 @@
                 :row="newRowData"
                 :is-new="true"
                 :is-editing="true"
+                :is-focused="isNewRowFocused && focusedFieldKey === column.key && isColumnEditable(column)"
                 :options="getColumnOptions(column)"
                 @update:value="handleNewRowFieldChange(column.key, $event)"
-                @keydown="handleKeyDown($event, null, column.key)"
+                @keydown="handleFieldKeyDown($event, null, column.key, -1)"
               />
             </td>
             <td v-if="showActions">
@@ -56,7 +64,8 @@
             :key="getRowKey(row, index)"
             :class="{ 
               'editing-row': editingRowId === getRowKey(row, index),
-              'new-row': isNewRow(row)
+              'new-row': isNewRow(row),
+              'focused-row': focusedRowIndex === index && !isEditing(row, index)
             }"
           >
             <td v-for="column in columns" :key="column.key">
@@ -67,9 +76,10 @@
                 :row="row"
                 :is-new="false"
                 :is-editing="true"
+                :is-focused="focusedRowIndex === index && focusedFieldKey === column.key"
                 :options="getColumnOptions(column)"
-                @update:value="handleFieldChange(row, column.key, $event)"
-                @keydown="handleKeyDown($event, row, column.key)"
+                @update:value="handleFieldChange(row, column.key, $event, index)"
+                @keydown="handleFieldKeyDown($event, row, column.key, index)"
               />
               <slot 
                 v-else
@@ -150,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import EditableCell from './EditableCell.vue';
 
 interface Column {
@@ -202,16 +212,52 @@ const emit = defineEmits<{
   'cancel': [row: any];
   'new-row-save': [row: any];
   'new-row-cancel': [];
+  'row-delete': [row: any];
+  'row-view': [row: any];
+  'row-edit': [row: any, index: number];
 }>();
 
 const localPageSize = ref(props.pageSize);
 const editingRowId = ref<string | null>(null);
 const editingData = ref<Record<string, any>>({});
 const newRowData = ref<any>({});
+const focusedRowIndex = ref<number | null>(null);
+const focusedFieldKey = ref<string | null>(null);
+const isNewRowFocused = ref(false);
 
 const totalPages = computed(() => {
   return Math.ceil(props.total / props.pageSize);
 });
+
+// 可編輯欄位 keys
+const editableColumnKeys = computed(() => {
+  return props.columns
+    .filter(col => isColumnEditable(col))
+    .map(col => col.key);
+});
+
+// 取得第一個可編輯欄位 key
+const getFirstEditableFieldKey = (): string | null => {
+  return editableColumnKeys.value.length > 0 ? editableColumnKeys.value[0] : null;
+};
+
+// 取得下一個可編輯欄位 key
+const getNextEditableFieldKey = (currentKey: string): string | null => {
+  const currentIndex = editableColumnKeys.value.indexOf(currentKey);
+  if (currentIndex === -1 || currentIndex === editableColumnKeys.value.length - 1) {
+    return null;
+  }
+  return editableColumnKeys.value[currentIndex + 1];
+};
+
+// 取得上一個可編輯欄位 key
+const getPrevEditableFieldKey = (currentKey: string): string | null => {
+  const currentIndex = editableColumnKeys.value.indexOf(currentKey);
+  if (currentIndex <= 0) {
+    return null;
+  }
+  return editableColumnKeys.value[currentIndex - 1];
+};
 
 const getRowKey = (row: any, index: number) => {
   return row[props.rowKey] || `row-${index}`;
@@ -265,10 +311,45 @@ watch(() => props.showNewRow, (show) => {
     newRowData.value = typeof props.newRowTemplate === 'function' 
       ? props.newRowTemplate() 
       : { ...props.newRowTemplate };
+    // 當顯示新增行時，設定 focus
+    isNewRowFocused.value = true;
+    focusedFieldKey.value = getFirstEditableFieldKey();
+    focusedRowIndex.value = null;
   } else if (!show) {
     newRowData.value = {};
+    isNewRowFocused.value = false;
+    // 恢復 focus 到第一筆資料
+    if (props.data.length > 0) {
+      focusedRowIndex.value = 0;
+      focusedFieldKey.value = null;
+    }
   }
 }, { immediate: true });
+
+// 監聽資料變化，確保 focus row 有效
+watch(() => props.data, (newData) => {
+  if (newData.length > 0) {
+    // 如果有資料但沒有 focus row，設定為第一筆
+    if (focusedRowIndex.value === null && !isNewRowFocused.value) {
+      focusedRowIndex.value = 0;
+    }
+    // 如果 focus row index 超出範圍，調整為最後一筆
+    else if (focusedRowIndex.value !== null && focusedRowIndex.value >= newData.length) {
+      focusedRowIndex.value = Math.max(0, newData.length - 1);
+    }
+  } else {
+    // 沒有資料時清除 focus
+    focusedRowIndex.value = null;
+    focusedFieldKey.value = null;
+  }
+}, { immediate: true });
+
+// 初始化 focus
+onMounted(() => {
+  if (props.data.length > 0 && !props.showNewRow) {
+    focusedRowIndex.value = 0;
+  }
+});
 
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
@@ -285,12 +366,24 @@ const startEdit = (row: any, index: number) => {
   const key = getRowKey(row, index);
   editingRowId.value = key;
   editingData.value[key] = { ...row };
+  // 設定 focus
+  focusedRowIndex.value = index;
+  focusedFieldKey.value = getFirstEditableFieldKey();
+  isNewRowFocused.value = false;
+  // 等待 DOM 更新後 focus 到第一個欄位
+  nextTick(() => {
+    // focus 會由 EditableCell 的 isFocused prop 處理
+  });
 };
 
 const cancelEdit = (row: any, index: number) => {
   const key = getRowKey(row, index);
   editingRowId.value = null;
   delete editingData.value[key];
+  // 清除 field focus，保留 row focus
+  focusedFieldKey.value = null;
+  focusedRowIndex.value = index;
+  isNewRowFocused.value = false;
   emit('cancel', row);
 };
 
@@ -302,10 +395,15 @@ const saveRow = (row: any, index: number) => {
   }
   editingRowId.value = null;
   delete editingData.value[key];
+  // 清除 field focus，保留 row focus
+  focusedFieldKey.value = null;
+  focusedRowIndex.value = index;
+  isNewRowFocused.value = false;
 };
 
-const handleFieldChange = (row: any, field: string, value: any) => {
-  const key = getRowKey(row, 0);
+const handleFieldChange = (row: any, field: string, value: any, index?: number) => {
+  const rowIndex = index ?? (focusedRowIndex.value ?? 0);
+  const key = getRowKey(row, rowIndex);
   if (!editingData.value[key]) {
     editingData.value[key] = { ...row };
   }
@@ -324,33 +422,149 @@ const saveNewRow = () => {
     newRowData.value = typeof props.newRowTemplate === 'function' 
       ? props.newRowTemplate() 
       : { ...props.newRowTemplate };
+    // 保存後，focus 回到第一筆資料（如果有的話）
+    if (props.data.length > 0) {
+      focusedRowIndex.value = 0;
+      focusedFieldKey.value = null;
+      isNewRowFocused.value = false;
+    } else {
+      focusedFieldKey.value = getFirstEditableFieldKey();
+    }
   }
 };
 
 const cancelNewRow = () => {
   newRowData.value = typeof props.newRowTemplate === 'function' 
-    ? props.newRowTemplate() 
-    : { ...props.newRowTemplate };
+      ? props.newRowTemplate() 
+      : { ...props.newRowTemplate };
+  // 取消新增行，focus 回到第一筆資料（如果有的話）
+  isNewRowFocused.value = false;
+  focusedFieldKey.value = null;
+  if (props.data.length > 0) {
+    focusedRowIndex.value = 0;
+  } else {
+    focusedRowIndex.value = null;
+  }
   emit('new-row-cancel');
 };
 
-const handleKeyDown = (event: KeyboardEvent, row: any | null, field: string) => {
+// 處理表格層級的快捷鍵（row 層級）
+const handleTableKeyDown = (event: KeyboardEvent) => {
+  // 如果正在編輯欄位（有 focusedFieldKey），不處理 row 層級的快捷鍵
+  // 但如果是新增行且沒有 focusedFieldKey，則不處理（新增行應該由 handleFieldKeyDown 處理）
+  if (focusedFieldKey.value !== null) {
+    return;
+  }
+
+  // 如果是新增行模式，不處理 row 層級快捷鍵
+  if (isNewRowFocused.value) {
+    return;
+  }
+
+  if (focusedRowIndex.value === null || props.data.length === 0) {
+    return;
+  }
+
+  const currentRow = props.data[focusedRowIndex.value];
+  const currentIndex = focusedRowIndex.value;
+
+  // 檢查是否正在編輯該 row
+  const isEditingCurrentRow = editingRowId.value === getRowKey(currentRow, currentIndex);
+
+  if (event.key === 'Delete' || event.key === 'Del') {
+    // 只有在非編輯狀態時才允許刪除
+    if (!isEditingCurrentRow) {
+      event.preventDefault();
+      emit('row-delete', currentRow);
+    }
+  } else if (event.key === 'Enter') {
+    // 只有在非編輯狀態時才允許查看詳情
+    if (!isEditingCurrentRow) {
+      event.preventDefault();
+      emit('row-view', currentRow);
+    }
+  } else if (event.key === 'F2') {
+    // 只有在非編輯狀態時才允許進入編輯
+    if (!isEditingCurrentRow) {
+      event.preventDefault();
+      startEdit(currentRow, currentIndex);
+      emit('row-edit', currentRow, currentIndex);
+    }
+  } else if (event.key === 'Escape') {
+    // 如果 row 正在編輯，取消編輯
+    if (isEditingCurrentRow) {
+      event.preventDefault();
+      // 檢查是否為暫存 row
+      if (currentRow.__isNew === true || currentRow.__isDraft === true) {
+        // 丟棄暫存 row
+        emit('row-delete', currentRow);
+      } else {
+        cancelEdit(currentRow, currentIndex);
+      }
+    }
+  }
+};
+
+// 處理欄位層級的快捷鍵
+const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: string, rowIndex: number) => {
   if (event.key === 'Escape') {
     event.preventDefault();
     if (row) {
-      cancelEdit(row);
+      // 檢查是否為暫存 row
+      if (row.__isNew === true || row.__isDraft === true) {
+        emit('row-delete', row);
+      } else {
+        cancelEdit(row, rowIndex);
+      }
     } else {
       cancelNewRow();
     }
   } else if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
-    if (row) {
-      saveRow(row);
-    } else if (isNewRowValid.value) {
-      saveNewRow();
+    const nextField = getNextEditableFieldKey(fieldKey);
+    if (nextField) {
+      // 跳到下一個欄位
+      focusedFieldKey.value = nextField;
+      if (row) {
+        focusedRowIndex.value = rowIndex;
+        isNewRowFocused.value = false;
+      } else {
+        isNewRowFocused.value = true;
+      }
+    } else {
+      // 最後一個欄位，儲存
+      if (row) {
+        saveRow(row, rowIndex);
+      } else if (isNewRowValid.value) {
+        saveNewRow();
+      }
+    }
+  } else if (event.key === 'Tab' && !event.shiftKey) {
+    event.preventDefault();
+    const nextField = getNextEditableFieldKey(fieldKey);
+    if (nextField) {
+      focusedFieldKey.value = nextField;
+      if (row) {
+        focusedRowIndex.value = rowIndex;
+        isNewRowFocused.value = false;
+      } else {
+        isNewRowFocused.value = true;
+      }
+    }
+  } else if (event.key === 'Tab' && event.shiftKey) {
+    event.preventDefault();
+    const prevField = getPrevEditableFieldKey(fieldKey);
+    if (prevField) {
+      focusedFieldKey.value = prevField;
+      if (row) {
+        focusedRowIndex.value = rowIndex;
+        isNewRowFocused.value = false;
+      } else {
+        isNewRowFocused.value = true;
+      }
     }
   }
-  // Tab 導航由瀏覽器原生處理
+  // 上下鍵在 select 中保留原生行為，不攔截
 };
 
 watch(() => props.pageSize, (newSize) => {
@@ -402,6 +616,15 @@ watch(() => props.pageSize, (newSize) => {
 
 .table tbody tr.new-row {
   background-color: var(--info-50);
+}
+
+.table tbody tr.focused-row {
+  background-color: var(--secondary-100);
+  border-left: 3px solid var(--primary-500);
+}
+
+.editable-data-table:focus {
+  outline: none;
 }
 
 .required-mark {

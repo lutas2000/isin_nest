@@ -3,6 +3,7 @@
     <!-- 文字輸入 -->
     <input
       v-if="column.type === 'text' || !column.type"
+      ref="inputRef"
       type="text"
       class="form-control"
       :class="{ 
@@ -18,6 +19,7 @@
     <!-- 數字輸入 -->
     <input
       v-else-if="column.type === 'number'"
+      ref="inputRef"
       type="number"
       class="form-control"
       :class="{ 
@@ -34,6 +36,7 @@
     <!-- 下拉選單 -->
     <select
       v-else-if="column.type === 'select'"
+      ref="selectRef"
       class="form-control"
       :class="{ 
         'required-field-empty': column.required && (!value || value === ''),
@@ -57,6 +60,7 @@
     <!-- 文字區域 -->
     <textarea
       v-else-if="column.type === 'textarea'"
+      ref="textareaRef"
       class="form-control"
       :class="{ 
         'required-field-empty': column.required && (!value || value === ''),
@@ -72,6 +76,7 @@
     <!-- 布林值（下拉選單） -->
     <select
       v-else-if="column.type === 'boolean'"
+      ref="selectRef"
       class="form-control"
       :value="value"
       @change="handleSelectChange($event)"
@@ -88,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import type { EditableColumn } from './EditableDataTable.vue';
 
 interface Props {
@@ -97,10 +102,13 @@ interface Props {
   row: any;
   isNew: boolean;
   isEditing: boolean;
+  isFocused?: boolean;
   options?: Array<{value: any, label: string}>;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isFocused: false,
+});
 
 const emit = defineEmits<{
   'update:value': [value: any];
@@ -108,6 +116,25 @@ const emit = defineEmits<{
 }>();
 
 const isSaving = ref(false);
+const inputRef = ref<HTMLInputElement | null>(null);
+const selectRef = ref<HTMLSelectElement | null>(null);
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
+
+// 當 isFocused 變為 true 時，自動 focus 到對應的 input
+watch(() => props.isFocused, (focused) => {
+  if (focused) {
+    nextTick(() => {
+      const element = inputRef.value || selectRef.value || textareaRef.value;
+      if (element) {
+        element.focus();
+        // 如果是 input 或 textarea，選取所有文字
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+          element.select();
+        }
+      }
+    });
+  }
+}, { immediate: true });
 
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
