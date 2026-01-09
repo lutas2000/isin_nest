@@ -34,7 +34,10 @@ function parseBool(value: string | undefined): boolean | undefined {
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'], // 定義實體的位置
+        // 由各 module 的 TypeOrmModule.forFeature([...]) 自動註冊 entity
+        // 避免 Nx webpack bundle 情境下 __dirname glob 掃描失效
+        autoLoadEntities: true,
+        entities: [],
         // Docker/本機快速啟動可用 DB_SYNC=true 自動建表；正式環境建議關閉並改用 migration
         synchronize:
           parseBool(configService.get<string>('DB_SYNC')) ??

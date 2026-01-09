@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import Home from '../views/Home.vue'
 import Production from '../views/Production.vue'
 import HRStaff from '../views/HR/Staff.vue'
@@ -140,7 +140,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach(async (to, _, next) => {
+router.beforeEach(async (to: RouteLocationNormalized, _: RouteLocationNormalized, next: NavigationGuardNext) => {
   // 設置頁面標題
   document.title = to.meta.title ? `${to.meta.title} - ISIN CNC 管理系統` : 'ISIN CNC 管理系統'
   
