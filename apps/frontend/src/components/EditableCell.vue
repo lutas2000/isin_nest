@@ -87,13 +87,59 @@
       <option :value="false">否</option>
     </select>
 
+    <!-- 可搜尋的下拉選單 -->
+    <div
+      v-else-if="column.type === 'search-select'"
+      class="search-select-container"
+      @blur="handleSearchSelectBlur"
+    >
+      <input
+        ref="searchInputRef"
+        type="text"
+        class="form-control search-input"
+        :class="{ 
+          'required-field-empty': column.required && (!value || value === ''),
+          'form-control-error': column.required && (!value || value === '')
+        }"
+        :value="searchDisplayValue"
+        @input="handleSearchInput($event)"
+        @keydown="handleSearchKeyDown"
+        @focus="handleSearchFocus"
+        placeholder="輸入搜尋關鍵字..."
+      />
+      <div v-if="showSearchDropdown" class="search-dropdown">
+        <div v-if="searchLoading" class="search-loading">載入中...</div>
+        <div
+          v-else-if="searchResults.length === 0"
+          class="search-no-results"
+        >
+          無搜尋結果
+        </div>
+        <div
+          v-else
+          class="search-results"
+        >
+          <div
+            v-for="(option, idx) in searchResults"
+            :key="getOptionValue(option)"
+            class="search-result-item"
+            :class="{ 'selected': getOptionValue(option) === value, 'highlighted': highlightedIndex === idx }"
+            @mousedown.prevent="selectSearchOption(option)"
+            @mouseenter="highlightedIndex = idx"
+          >
+            {{ getOptionLabel(option) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 載入指示器 -->
     <span v-if="isSaving" class="saving-indicator">💾</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, computed } from 'vue';
 import type { EditableColumn } from './EditableDataTable.vue';
 
 interface Props {
@@ -104,6 +150,7 @@ interface Props {
   isEditing: boolean;
   isFocused?: boolean;
   options?: Array<{value: any, label: string}>;
+  searchFunction?: (searchTerm: string) => Promise<Array<{value: any, label: string}>>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -119,12 +166,30 @@ const isSaving = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);
 const selectRef = ref<HTMLSelectElement | null>(null);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const searchInputRef = ref<HTMLInputElement | null>(null);
+
+// 可搜尋下拉選單相關狀態
+const searchTerm = ref('');
+const searchResults = ref<Array<{value: any, label: string}>>([]);
+const searchLoading = ref(false);
+const showSearchDropdown = ref(false);
+const highlightedIndex = ref(-1);
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+const selectedOptionLabel = ref<string>('');
+
+// 計算顯示值
+const searchDisplayValue = computed(() => {
+  if (searchTerm.value) {
+    return searchTerm.value;
+  }
+  return selectedOptionLabel.value || '';
+});
 
 // 當 isFocused 變為 true 時，自動 focus 到對應的 input
 watch(() => props.isFocused, (focused) => {
   if (focused) {
     nextTick(() => {
-      const element = inputRef.value || selectRef.value || textareaRef.value;
+      const element = inputRef.value || selectRef.value || textareaRef.value || searchInputRef.value;
       if (element) {
         element.focus();
         // 如果是 input 或 textarea，選取所有文字
@@ -133,6 +198,34 @@ watch(() => props.isFocused, (focused) => {
         }
       }
     });
+  }
+}, { immediate: true });
+
+// 監聽 value 變化，更新選中項的 label
+watch(() => props.value, async (newValue) => {
+  if (props.column.type === 'search-select' && newValue) {
+    // 如果有 options，從中找對應的 label
+    if (props.options && props.options.length > 0) {
+      const option = props.options.find(opt => getOptionValue(opt) === newValue);
+      if (option) {
+        selectedOptionLabel.value = getOptionLabel(option);
+        return;
+      }
+    }
+    // 如果沒有找到，嘗試搜尋（用空字串搜尋以獲取所有結果）
+    if (props.searchFunction) {
+      try {
+        const results = await props.searchFunction('');
+        const option = results.find(opt => getOptionValue(opt) === newValue);
+        if (option) {
+          selectedOptionLabel.value = getOptionLabel(option);
+        }
+      } catch (err) {
+        console.error('Failed to load option label:', err);
+      }
+    }
+  } else if (!newValue) {
+    selectedOptionLabel.value = '';
   }
 }, { immediate: true });
 
@@ -180,6 +273,114 @@ const getOptionLabel = (option: any) => {
   }
   return String(option);
 };
+
+// 可搜尋下拉選單的處理函數
+const handleSearchInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  searchTerm.value = target.value;
+  highlightedIndex.value = -1;
+  
+  // 清除之前的計時器
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+
+  // 如果沒有輸入，隱藏下拉選單
+  if (!searchTerm.value.trim()) {
+    showSearchDropdown.value = false;
+    searchResults.value = [];
+    return;
+  }
+
+  // 顯示下拉選單
+  showSearchDropdown.value = true;
+
+  // 防抖搜尋
+  searchDebounceTimer = setTimeout(async () => {
+    if (!props.searchFunction) return;
+    
+    searchLoading.value = true;
+    try {
+      const results = await props.searchFunction(searchTerm.value.trim());
+      searchResults.value = results;
+      highlightedIndex.value = -1;
+    } catch (err) {
+      console.error('Search failed:', err);
+      searchResults.value = [];
+    } finally {
+      searchLoading.value = false;
+    }
+  }, 300);
+};
+
+const handleSearchFocus = () => {
+  // 如果已經有值，顯示下拉選單並搜尋
+  if (searchTerm.value.trim() || props.value) {
+    showSearchDropdown.value = true;
+    if (searchTerm.value.trim() && props.searchFunction) {
+      handleSearchInput({ target: searchInputRef.value } as any);
+    }
+  }
+};
+
+const handleSearchKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (showSearchDropdown.value && searchResults.value.length > 0) {
+      highlightedIndex.value = Math.min(
+        highlightedIndex.value + 1,
+        searchResults.value.length - 1
+      );
+    }
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (showSearchDropdown.value) {
+      highlightedIndex.value = Math.max(highlightedIndex.value - 1, -1);
+    }
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    if (showSearchDropdown.value && highlightedIndex.value >= 0 && searchResults.value.length > 0) {
+      selectSearchOption(searchResults.value[highlightedIndex.value]);
+    } else {
+      // 如果沒有高亮選項，發送 keydown 事件讓父組件處理
+      emit('keydown', event);
+    }
+  } else if (event.key === 'Escape') {
+    showSearchDropdown.value = false;
+    searchTerm.value = '';
+    emit('keydown', event);
+  } else {
+    // 其他按鍵正常處理
+    emit('keydown', event);
+  }
+};
+
+const selectSearchOption = (option: {value: any, label: string}) => {
+  const optionValue = getOptionValue(option);
+  emit('update:value', optionValue);
+  selectedOptionLabel.value = getOptionLabel(option);
+  searchTerm.value = '';
+  showSearchDropdown.value = false;
+  highlightedIndex.value = -1;
+};
+
+const handleSearchSelectBlur = (event: FocusEvent) => {
+  // 延遲隱藏，讓點擊選項的 mousedown 事件可以執行
+  setTimeout(() => {
+    // 檢查 focus 是否還在容器內
+    const relatedTarget = event.relatedTarget as HTMLElement;
+    if (!relatedTarget || !searchInputRef.value?.parentElement?.contains(relatedTarget)) {
+      showSearchDropdown.value = false;
+      // 如果沒有選中值，清空搜尋
+      if (!props.value) {
+        searchTerm.value = '';
+      } else {
+        // 恢復顯示選中的 label
+        searchTerm.value = '';
+      }
+    }
+  }, 200);
+};
 </script>
 
 <style scoped>
@@ -224,6 +425,65 @@ select.form-control {
 textarea.form-control {
   resize: vertical;
   min-height: 2.5rem;
+}
+
+/* 可搜尋下拉選單樣式 */
+.search-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border: 1px solid var(--secondary-300);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.25rem;
+}
+
+.search-loading,
+.search-no-results {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--secondary-600);
+  font-size: var(--font-size-sm);
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-result-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--secondary-200);
+  transition: background-color 0.15s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover,
+.search-result-item.highlighted {
+  background-color: var(--primary-50);
+}
+
+.search-result-item.selected {
+  background-color: var(--primary-100);
+  font-weight: 500;
 }
 
 .saving-indicator {

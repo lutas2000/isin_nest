@@ -36,6 +36,7 @@
                 :is-editing="true"
                 :is-focused="isNewRowFocused && focusedFieldKey === column.key && isColumnEditable(column)"
                 :options="getColumnOptions(column)"
+                :search-function="column.searchFunction"
                 @update:value="handleNewRowFieldChange(column.key, $event)"
                 @keydown="handleFieldKeyDown($event, null, column.key, -1)"
               />
@@ -80,6 +81,7 @@
                 :is-editing="true"
                 :is-focused="focusedRowIndex === index && focusedFieldKey === column.key"
                 :options="getColumnOptions(column)"
+                :search-function="column.searchFunction"
                 @update:value="handleFieldChange(row, column.key, $event, index)"
                 @keydown="handleFieldKeyDown($event, row, column.key, index)"
               />
@@ -174,8 +176,9 @@ interface Column {
 export interface EditableColumn extends Column {
   editable?: boolean;
   required?: boolean;
-  type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean';
+  type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select';
   options?: Array<{value: any, label: string}> | (() => Array<{value: any, label: string}>);
+  searchFunction?: (searchTerm: string) => Promise<Array<{value: any, label: string}>>;
   truncate?: boolean;
   validator?: (value: any) => boolean;
 }

@@ -33,10 +33,9 @@ export class CustomerService {
     // 如果有搜尋關鍵字，添加搜尋條件
     if (search && search.trim()) {
       const searchTerm = `%${search.trim()}%`;
-      // 使用 CONVERT 將 id 欄位轉換為 utf8mb4，因為 id 欄位可能是 latin1 charset
-      // 這樣可以避免 collation 衝突，同時支援中文搜尋
+      // Postgres 中直接將 id cast 成文字並使用 ILIKE 做不分大小寫搜尋
       queryBuilder.where(
-        '(CONVERT(customer.id USING utf8mb4) LIKE :search OR customer.companyName LIKE :search OR customer.companyShortName LIKE :search)',
+        '(CAST(customer.id AS TEXT) ILIKE :search OR customer.companyName ILIKE :search OR customer.companyShortName ILIKE :search)',
         { search: searchTerm },
       );
     }

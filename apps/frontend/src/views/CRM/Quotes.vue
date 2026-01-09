@@ -338,16 +338,47 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '客戶', 
     editable: true, 
     required: true, 
-    type: 'select',
-    options: () => customers.value.map(c => ({ value: c.id, label: c.companyShortName || c.companyName }))
+    type: 'search-select',
+    searchFunction: async (searchTerm: string) => {
+      try {
+        const response = await customerService.getAll(undefined, undefined, searchTerm);
+        const customerList = Array.isArray(response) ? response : (response as any).data || [];
+        return customerList.map((c: Customer) => {
+          // 顯示格式：簡稱 (全名) 或 全名，如果有 id 也顯示
+          let label = c.companyShortName || c.companyName || c.id;
+          if (c.companyShortName && c.companyName && c.companyShortName !== c.companyName) {
+            label = `${c.companyShortName} (${c.companyName})`;
+          }
+          return {
+            value: c.id,
+            label: label
+          };
+        });
+      } catch (err) {
+        console.error('Failed to search customers:', err);
+        return [];
+      }
+    }
   },
   { 
     key: 'staffId', 
     label: '經手人', 
     editable: true, 
     required: true, 
-    type: 'select',
-    options: () => staffList.value.map(s => ({ value: s.id, label: s.name }))
+    type: 'search-select',
+    searchFunction: async (searchTerm: string) => {
+      try {
+        const params: Record<string, any> = { department: '銷管部' };
+        if (searchTerm.trim()) {
+          params.search = searchTerm.trim();
+        }
+        const staffList = await apiGet<Staff[]>('/staffs/all', params);
+        return staffList.map(s => ({ value: s.id, label: s.name }));
+      } catch (err) {
+        console.error('Failed to search staff:', err);
+        return [];
+      }
+    }
   },
   { 
     key: 'totalAmount', 
