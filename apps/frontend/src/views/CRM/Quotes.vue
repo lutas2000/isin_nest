@@ -168,7 +168,7 @@
           </div>
 
           <div class="details-section" v-if="selectedQuote.notes">
-            <h4>注意事項</h4>
+            <h4>備註</h4>
             <p>{{ selectedQuote.notes }}</p>
           </div>
 
@@ -367,7 +367,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
   },
   { 
     key: 'notes', 
-    label: '注意事項', 
+    label: '備註', 
     editable: true, 
     type: 'text',
     truncate: true
