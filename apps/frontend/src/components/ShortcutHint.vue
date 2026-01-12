@@ -79,6 +79,13 @@ const allShortcuts = computed<Shortcut[]>(() => {
     
     shortcuts.push(
       {
+        key: 'insert',
+        display: 'Insert / F7',
+        label: '新增行',
+        disabled: isEditing.value,
+        action: 'new-row-show'
+      },
+      {
         key: 'arrow-up',
         display: '↑',
         label: '上一行',

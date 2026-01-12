@@ -240,6 +240,7 @@ const emit = defineEmits<{
   'cancel': [row: any];
   'new-row-save': [row: any];
   'new-row-cancel': [];
+  'new-row-show': [];
   'row-delete': [row: any];
   'row-view': [row: any];
   'row-edit': [row: any, index: number];
@@ -537,6 +538,16 @@ const cancelNewRow = () => {
 
 // 處理表格層級的快捷鍵（row 層級）
 const handleTableKeyDown = (event: KeyboardEvent) => {
+  // 處理 Insert 或 F7 新增行快捷鍵（優先處理，不受其他狀態影響）
+  if (event.key === 'Insert' || event.key === 'F7') {
+    event.preventDefault();
+    // 只有在沒有正在編輯任何欄位，且沒有正在顯示新增行時才觸發
+    if (focusedFieldKey.value === null && !isNewRowFocused.value && !editingRowId.value) {
+      emit('new-row-show');
+    }
+    return;
+  }
+
   // 如果正在編輯欄位（有 focusedFieldKey），不處理 row 層級的快捷鍵
   if (focusedFieldKey.value !== null) {
     return;

@@ -60,6 +60,7 @@
         @save="handleSave"
         @new-row-save="handleNewRowSave"
         @new-row-cancel="showNewRow = false"
+        @new-row-show="showNewRow = true"
         @row-delete="handleRowDelete"
         @row-view="handleRowView"
         @row-edit="handleRowEdit"
@@ -737,6 +738,10 @@ const handleShortcutClick = (action: string) => {
       if (currentRowIndex !== null && data[currentRowIndex]) {
         editableTableRef.value.cancelEdit(data[currentRowIndex], currentRowIndex);
       }
+      break;
+
+    case 'new-row-show':
+      showNewRow.value = true;
       break;
 
     case 'save-and-next':
