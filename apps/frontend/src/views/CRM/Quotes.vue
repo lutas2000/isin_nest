@@ -4,12 +4,6 @@
       title="報價單管理" 
       description="管理客戶報價單、追蹤報價狀態和處理報價流程"
     >
-      <template #actions>
-        <button class="btn btn-primary" @click="showNewRow = true">
-          <span class="btn-icon">💰</span>
-          新增報價單
-        </button>
-      </template>
     </PageHeader>
 
     <!-- 快捷鍵提示 -->
