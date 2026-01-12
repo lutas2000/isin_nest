@@ -451,10 +451,6 @@ const filteredQuotes = computed(() => {
   return filtered;
 });
 
-// 自動保存防抖計時器
-let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
-const savingQuotes = ref<Set<string>>(new Set());
-
 // 處理篩選器更新
 const handleFilterUpdate = (key: string, value: string) => {
   if (key === 'status') {
@@ -545,7 +541,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         notes: row.notes || undefined,
         isSigned: row.isSigned || false,
       };
-      const saved = await quoteService.create(data);
+      await quoteService.create(data);
       await loadQuotes();
     } else {
       const data: Partial<Quote> = {
