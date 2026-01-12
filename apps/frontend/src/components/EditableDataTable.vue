@@ -630,6 +630,7 @@ const handleTableKeyDown = (event: KeyboardEvent) => {
 const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: string, rowIndex: number) => {
   if (event.key === 'Escape') {
     event.preventDefault();
+    event.stopPropagation(); // 阻止事件冒泡到表格層級
     if (row) {
       // 檢查是否為暫存 row
       if (row.__isNew === true || row.__isDraft === true) {
@@ -642,6 +643,7 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
     }
   } else if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
+    event.stopPropagation(); // 阻止事件冒泡到表格層級，避免觸發查看詳情
     // Enter 鍵：移動到下一個欄位，只有最後一個欄位才保存並退出編輯
     const nextField = getNextEditableFieldKey(fieldKey);
     if (nextField) {
@@ -666,6 +668,7 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
     }
   } else if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault();
+    event.stopPropagation(); // 阻止事件冒泡到表格層級
     const nextField = getNextEditableFieldKey(fieldKey);
     if (nextField) {
       focusedFieldKey.value = nextField;
@@ -678,6 +681,7 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
     }
   } else if (event.key === 'Tab' && event.shiftKey) {
     event.preventDefault();
+    event.stopPropagation(); // 阻止事件冒泡到表格層級
     const prevField = getPrevEditableFieldKey(fieldKey);
     if (prevField) {
       focusedFieldKey.value = prevField;
