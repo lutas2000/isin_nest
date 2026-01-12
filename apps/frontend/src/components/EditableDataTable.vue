@@ -29,6 +29,7 @@
           >
             <td v-for="column in columns" :key="column.key">
               <EditableCell
+                v-if="isColumnEditable(column)"
                 :column="column"
                 :value="newRowData[column.key]"
                 :row="newRowData"
@@ -41,6 +42,18 @@
                 @keydown="handleFieldKeyDown($event, null, column.key, -1)"
                 @blur="handleNewRowBlur"
               />
+              <slot 
+                v-else
+                :name="`cell-${column.key}`" 
+                :row="newRowData" 
+                :value="newRowData[column.key]"
+                :column="column"
+              >
+                <span v-if="column.truncate && typeof newRowData[column.key] === 'string'" class="truncated-text">
+                  {{ truncateText(newRowData[column.key], 50) }}
+                </span>
+                <span v-else>{{ newRowData[column.key] }}</span>
+              </slot>
             </td>
             <td v-if="showActions">
               <div class="action-buttons">

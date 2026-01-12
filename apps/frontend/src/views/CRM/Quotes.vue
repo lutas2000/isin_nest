@@ -403,7 +403,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
   { 
     key: 'totalAmount', 
     label: '總金額', 
-    editable: true, 
+    editable: false, 
     type: 'number' 
   },
   { 
