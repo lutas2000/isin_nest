@@ -71,7 +71,12 @@
 
         <template #cell-customerId="{ row, value }">
           <span v-if="!row.customerId">未指定</span>
-          <span v-else>{{ value }}</span>
+          <span 
+            v-else 
+            :title="row.customer?.companyName || row.customer?.companyShortName || value"
+          >
+            {{ value }}
+          </span>
         </template>
 
         <template #cell-staffId="{ row, value }">
