@@ -483,19 +483,10 @@ const handleFieldChange = (row: any, field: string, value: any, index?: number) 
   // emit('field-change', row, field, value, false);
 };
 
-// 處理欄位失去 focus 時保存
+// 處理欄位失去 focus（不再自動保存，只有按下保存按鈕或最後一個欄位 Enter 才保存）
 const handleFieldBlur = (row: any, field: string, index?: number) => {
-  const rowIndex = index ?? (focusedRowIndex.value ?? 0);
-  const key = getRowKey(row, rowIndex);
-  // 如果有編輯資料且正在編輯該行，保存該行
-  if (editingData.value[key] && editingRowId.value === key) {
-    // 延遲保存，避免與其他事件衝突
-    setTimeout(() => {
-      if (editingRowId.value === key) {
-        saveRow(row, rowIndex);
-      }
-    }, 100);
-  }
+  // 移除自動保存邏輯，保持編輯狀態
+  // 用戶需要明確按下保存按鈕或最後一個欄位 Enter 才會保存
 };
 
 const handleNewRowFieldChange = (field: string, value: any) => {
@@ -640,24 +631,25 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
     }
   } else if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
-    // Enter 鍵時先保存當前欄位
-    if (row) {
-      saveRow(row, rowIndex);
-    }
-    // 然後移動到下一個欄位或退出編輯
+    // Enter 鍵：移動到下一個欄位，只有最後一個欄位才保存並退出編輯
     const nextField = getNextEditableFieldKey(fieldKey);
     if (nextField) {
-      // 跳到下一個欄位（需要重新進入編輯模式）
+      // 跳到下一個欄位，保持編輯模式
       if (row) {
-        startEdit(row, rowIndex);
+        // 確保仍在編輯模式
+        if (editingRowId.value !== getRowKey(row, rowIndex)) {
+          startEdit(row, rowIndex);
+        }
         focusedFieldKey.value = nextField;
       } else {
         focusedFieldKey.value = nextField;
         isNewRowFocused.value = true;
       }
     } else {
-      // 最後一個欄位，已經保存，退出編輯
-      if (!row && isNewRowValid.value) {
+      // 最後一個欄位，保存並退出編輯
+      if (row) {
+        saveRow(row, rowIndex);
+      } else if (isNewRowValid.value) {
         saveNewRow();
       }
     }
