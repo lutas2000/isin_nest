@@ -692,6 +692,20 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
 watch(() => props.pageSize, (newSize) => {
   localPageSize.value = newSize;
 });
+
+// 暴露狀態和方法供外部組件使用
+defineExpose({
+  focusedRowIndex,
+  focusedFieldKey,
+  isNewRowFocused,
+  editingRowId,
+  data: () => props.data,
+  startEdit,
+  cancelEdit,
+  saveRow,
+  saveNewRow,
+  cancelNewRow,
+});
 </script>
 
 <style scoped>

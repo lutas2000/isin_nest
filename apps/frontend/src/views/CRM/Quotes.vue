@@ -12,6 +12,12 @@
       </template>
     </PageHeader>
 
+    <!-- 快捷鍵提示 -->
+    <ShortcutHint 
+      :table-state="tableState" 
+      @shortcut-click="handleShortcutClick"
+    />
+
     <!-- 報價單列表 -->
     <div class="quotes-content">
       <SearchFilters
@@ -37,6 +43,7 @@
       <div v-else-if="error" class="error-message">{{ error }}</div>
       <EditableDataTable
         v-else
+        ref="editableTableRef"
         :columns="editableColumns"
         :data="filteredQuotes"
         :show-actions="true"
@@ -287,9 +294,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { apiGet } from '@/services/api';
@@ -332,6 +339,26 @@ const showConvertModal = ref(false);
 const selectedQuote = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
 const showNewRow = ref(false);
+
+// EditableDataTable ref
+const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+
+// 表格狀態（用於 ShortcutHint）
+// 使用 computed 來確保響應式更新
+const tableState = computed(() => {
+  const tableRef = editableTableRef.value;
+  if (!tableRef) return null;
+  
+  // 訪問 ref 屬性以觸發響應式追蹤
+  // 這些屬性本身是 ref，Vue 會自動追蹤它們的變化
+  return {
+    focusedRowIndex: tableRef.focusedRowIndex,
+    focusedFieldKey: tableRef.focusedFieldKey,
+    isNewRowFocused: tableRef.isNewRowFocused,
+    editingRowId: tableRef.editingRowId,
+    data: tableRef.data,
+  };
+});
 
 // 新增行模板
 const newRowTemplate = () => ({
@@ -661,6 +688,69 @@ const isConvertFormValid = computed(() => {
   return convertForm.value.shippingMethod !== '' && convertForm.value.paymentMethod !== '';
 });
 
+// 處理快捷鍵點擊
+const handleShortcutClick = (action: string) => {
+  if (!editableTableRef.value || !tableState.value) return;
+
+  const state = tableState.value;
+  const data = state.data();
+  const currentRowIndex = state.focusedRowIndex;
+
+  switch (action) {
+    case 'arrow-up':
+      if (currentRowIndex !== null && currentRowIndex > 0) {
+        // 通過設置 focusedRowIndex 來移動（需要通過 ref 訪問）
+        // 由於 focusedRowIndex 是 ref，我們需要直接操作
+        // 但由於它是只讀的，我們需要通過鍵盤事件模擬
+        // 實際上，這個操作應該由表格內部處理，這裡我們不處理
+        break;
+      }
+      break;
+
+    case 'arrow-down':
+      if (currentRowIndex !== null && currentRowIndex < data.length - 1) {
+        // 同上，由表格內部處理
+        break;
+      }
+      break;
+
+    case 'row-view':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        handleRowView(data[currentRowIndex]);
+      }
+      break;
+
+    case 'row-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editableTableRef.value.startEdit(data[currentRowIndex], currentRowIndex);
+        handleRowEdit(data[currentRowIndex], currentRowIndex);
+      }
+      break;
+
+    case 'row-delete':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        handleRowDelete(data[currentRowIndex]);
+      }
+      break;
+
+    case 'cancel-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editableTableRef.value.cancelEdit(data[currentRowIndex], currentRowIndex);
+      }
+      break;
+
+    case 'save-and-next':
+    case 'next-field':
+    case 'prev-field':
+      // 這些操作由表格內部處理，不需要額外操作
+      // 但我們可以觸發對應的鍵盤事件
+      break;
+
+    case 'cancel-new-row':
+      editableTableRef.value.cancelNewRow();
+      break;
+  }
+};
 
 // 初始化
 onMounted(() => {
