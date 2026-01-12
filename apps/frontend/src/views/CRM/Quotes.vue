@@ -21,7 +21,7 @@
     <!-- 報價單列表 -->
     <div class="quotes-content">
       <SearchFilters
-        title="報價單列表"
+        title=""
         :show-search="true"
         search-placeholder="搜尋報價單編號或客戶..."
         :filters="[
