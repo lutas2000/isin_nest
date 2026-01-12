@@ -52,42 +52,43 @@ export class QuoteService {
       throw new Error('客戶 ID 為必填欄位');
     }
 
-    const customerId = quote.customerId;
     let quoteId: string;
 
     // 如果已經提供了 ID，使用提供的 ID
     if (quote.id) {
       quoteId = quote.id;
-      // 驗證提供的 ID 是否以客戶 ID 開頭
-      if (!quoteId.startsWith(customerId)) {
-        throw new Error(`報價單 ID 必須以客戶 ID (${customerId}) 開頭`);
-      }
       // 檢查 ID 是否已存在
       const existingQuote = await this.quoteRepository.findOneBy({ id: quoteId });
       if (existingQuote) {
         throw new Error(`報價單 ID ${quoteId} 已存在`);
       }
     } else {
-      // 自動生成報價單 ID：客戶ID-Q + 序號
-      // 查詢該客戶最新的報價單序號
-      const lastQuote = await this.quoteRepository
+      // 自動生成報價單 ID：純數字格式（例如：00010301, 00010302, ...）
+      // 查找所有純數字的報價單 ID，找出最大序號
+      const allQuotes = await this.quoteRepository
         .createQueryBuilder('quote')
-        .where('quote.customer_id = :customerId', { customerId })
-        .orderBy('quote.id', 'DESC')
-        .getOne();
-
-      let sequenceNumber = 1;
-      if (lastQuote) {
-        // 從最後一筆報價單 ID 中提取序號（格式：CUST001-Q001）
-        const match = lastQuote.id.match(/-Q(\d+)$/);
-        if (match) {
-          sequenceNumber = parseInt(match[1], 10) + 1;
+        .getMany();
+      
+      let sequenceNumber = 10301; // 預設起始序號
+      if (allQuotes.length > 0) {
+        // 從所有純數字的報價單 ID 中提取數字，找出最大值
+        const numbers = allQuotes
+          .map(q => {
+            // 只處理純數字的 ID
+            if (/^\d+$/.test(q.id)) {
+              return parseInt(q.id, 10);
+            }
+            return 0;
+          })
+          .filter(n => n > 0);
+        
+        if (numbers.length > 0) {
+          sequenceNumber = Math.max(...numbers) + 1;
         }
       }
 
-      // 格式化序號為 3 位數（例如：001, 002, ...）
-      const formattedSequence = sequenceNumber.toString().padStart(3, '0');
-      quoteId = `${customerId}-Q${formattedSequence}`;
+      // 格式化序號為 8 位數（例如：00010301, 00010302, ...）
+      quoteId = sequenceNumber.toString().padStart(8, '0');
     }
 
     const newQuote = this.quoteRepository.create({
@@ -105,8 +106,8 @@ export class QuoteService {
   async update(id: string, quote: Partial<Quote>): Promise<Quote | null> {
     const existingQuote = await this.quoteRepository.findOneBy({ id });
     if (existingQuote) {
-      // 不允許修改 ID 和 customerId
-      const { id: _, customerId: __, ...updateData } = quote;
+      // 只排除 ID，允許修改 customerId 和其他欄位
+      const { id: _, ...updateData } = quote;
       Object.assign(existingQuote, updateData);
       return this.quoteRepository.save(existingQuote);
     }

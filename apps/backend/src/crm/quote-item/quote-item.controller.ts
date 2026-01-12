@@ -9,7 +9,7 @@ export class QuoteItemController {
   constructor(private readonly quoteItemService: QuoteItemService) {}
 
   @ApiOperation({ summary: '獲取所有報價單工件' })
-  @ApiQuery({ name: 'quoteId', required: false, description: '報價單ID（例如：CUST001-Q001）' })
+  @ApiQuery({ name: 'quoteId', required: false, description: '報價單ID（例如：00010301）' })
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回報價單工件列表', type: [QuoteItem] })
