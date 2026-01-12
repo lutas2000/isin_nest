@@ -71,7 +71,7 @@
 
         <template #cell-customerId="{ row, value }">
           <span v-if="!row.customerId">未指定</span>
-          <span v-else>{{ row.customer?.companyShortName || value }}</span>
+          <span v-else>{{ value }}</span>
         </template>
 
         <template #cell-staffId="{ row, value }">
@@ -361,11 +361,9 @@ const editableColumns = computed<EditableColumn[]>(() => [
         const response = await customerService.getAll(undefined, undefined, searchTerm);
         const customerList = Array.isArray(response) ? response : (response as any).data || [];
         return customerList.map((c: Customer) => {
-          // 顯示格式：簡稱 (全名) 或 全名，如果有 id 也顯示
-          let label = c.companyShortName || c.companyName || c.id;
-          if (c.companyShortName && c.companyName && c.companyShortName !== c.companyName) {
-            label = `${c.companyShortName} (${c.companyName})`;
-          }
+          // 顯示格式：ID(簡稱)
+          const shortName = c.companyShortName || '';
+          const label = shortName ? `${c.id}(${shortName})` : c.id;
           return {
             value: c.id,
             label: label
