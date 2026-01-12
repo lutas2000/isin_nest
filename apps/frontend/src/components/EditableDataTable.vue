@@ -39,6 +39,7 @@
                 :search-function="column.searchFunction"
                 @update:value="handleNewRowFieldChange(column.key, $event)"
                 @keydown="handleFieldKeyDown($event, null, column.key, -1)"
+                @blur="handleNewRowBlur"
               />
             </td>
             <td v-if="showActions">
@@ -84,6 +85,7 @@
                 :search-function="column.searchFunction"
                 @update:value="handleFieldChange(row, column.key, $event, index)"
                 @keydown="handleFieldKeyDown($event, row, column.key, index)"
+                @blur="handleFieldBlur(row, column.key, index)"
               />
               <slot 
                 v-else
@@ -100,7 +102,15 @@
             </td>
             <td v-if="showActions">
               <div class="action-buttons">
-                <slot name="actions" :row="row" :index="index" :is-editing="isEditing(row, index)">
+                <slot 
+                  name="actions" 
+                  :row="row" 
+                  :index="index" 
+                  :is-editing="isEditing(row, index)"
+                  :save="() => saveRow(row, index)"
+                  :cancel="() => cancelEdit(row, index)"
+                  :start-edit="() => startEdit(row, index)"
+                >
                   <button 
                     v-if="!isEditing(row, index)"
                     class="btn btn-sm btn-primary" 
@@ -283,6 +293,8 @@ const isColumnEditable = (column: EditableColumn) => {
 
 const getEditingValue = (row: any, field: string, index: number) => {
   const key = getRowKey(row, index);
+  // 如果正在編輯該行，優先使用 editingData 中的值（包括空字串、null、undefined）
+  // 這樣可以確保用戶清空的值不會被原始資料覆蓋
   if (editingData.value[key] && field in editingData.value[key]) {
     return editingData.value[key][field];
   }
@@ -344,7 +356,27 @@ watch(() => props.showNewRow, (show) => {
 }, { immediate: true });
 
 // 監聽資料變化，確保 focus row 有效
-watch(() => props.data, (newData) => {
+watch(() => props.data, (newData, oldData) => {
+  // 如果正在編輯某一行，保持 editingData 不變（避免資料更新時覆蓋編輯中的值）
+  if (editingRowId.value) {
+    // 找到正在編輯的行在新資料中的位置
+    const editingRow = newData.find((row: any, idx: number) => 
+      getRowKey(row, idx) === editingRowId.value
+    );
+    if (editingRow) {
+      // 更新 editingData 中不存在的欄位（保持用戶正在編輯的欄位不變）
+      const key = editingRowId.value;
+      if (editingData.value[key]) {
+        // 只更新 editingData 中不存在的欄位，保留用戶已編輯的欄位
+        Object.keys(editingRow).forEach(field => {
+          if (!(field in editingData.value[key])) {
+            editingData.value[key][field] = editingRow[field];
+          }
+        });
+      }
+    }
+  }
+  
   if (newData.length > 0) {
     // 如果有資料但沒有 focus row，設定為第一筆
     if (focusedRowIndex.value === null && !isNewRowFocused.value) {
@@ -427,16 +459,44 @@ const saveRow = (row: any, index: number) => {
 const handleFieldChange = (row: any, field: string, value: any, index?: number) => {
   const rowIndex = index ?? (focusedRowIndex.value ?? 0);
   const key = getRowKey(row, rowIndex);
+  // 確保 editingData 存在，如果不存在則初始化
   if (!editingData.value[key]) {
     editingData.value[key] = { ...row };
   }
+  // 明確設置值，包括空字串、null、undefined
+  // 只更新本地狀態，不觸發保存
   editingData.value[key][field] = value;
-  emit('field-change', row, field, value, false);
+  // 不觸發 field-change 事件（避免自動保存）
+  // emit('field-change', row, field, value, false);
+};
+
+// 處理欄位失去 focus 時保存
+const handleFieldBlur = (row: any, field: string, index?: number) => {
+  const rowIndex = index ?? (focusedRowIndex.value ?? 0);
+  const key = getRowKey(row, rowIndex);
+  // 如果有編輯資料且正在編輯該行，保存該行
+  if (editingData.value[key] && editingRowId.value === key) {
+    // 延遲保存，避免與其他事件衝突
+    setTimeout(() => {
+      if (editingRowId.value === key) {
+        saveRow(row, rowIndex);
+      }
+    }, 100);
+  }
 };
 
 const handleNewRowFieldChange = (field: string, value: any) => {
+  // 只更新本地狀態，不觸發保存
   newRowData.value[field] = value;
-  emit('field-change', newRowData.value, field, value, true);
+  // 不觸發 field-change 事件（避免自動保存）
+  // emit('field-change', newRowData.value, field, value, true);
+};
+
+// 處理新增行欄位失去 focus
+const handleNewRowBlur = () => {
+  // 新增行失去 focus 時不自動保存，需要用戶明確點擊保存按鈕
+  // 或者可以在最後一個欄位失去 focus 時自動保存（如果所有必填欄位都已填寫）
+  // 這裡我們選擇不自動保存，讓用戶明確操作
 };
 
 const saveNewRow = () => {
@@ -567,21 +627,24 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
     }
   } else if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
+    // Enter 鍵時先保存當前欄位
+    if (row) {
+      saveRow(row, rowIndex);
+    }
+    // 然後移動到下一個欄位或退出編輯
     const nextField = getNextEditableFieldKey(fieldKey);
     if (nextField) {
-      // 跳到下一個欄位
-      focusedFieldKey.value = nextField;
+      // 跳到下一個欄位（需要重新進入編輯模式）
       if (row) {
-        focusedRowIndex.value = rowIndex;
-        isNewRowFocused.value = false;
+        startEdit(row, rowIndex);
+        focusedFieldKey.value = nextField;
       } else {
+        focusedFieldKey.value = nextField;
         isNewRowFocused.value = true;
       }
     } else {
-      // 最後一個欄位，儲存
-      if (row) {
-        saveRow(row, rowIndex);
-      } else if (isNewRowValid.value) {
+      // 最後一個欄位，已經保存，退出編輯
+      if (!row && isNewRowValid.value) {
         saveNewRow();
       }
     }

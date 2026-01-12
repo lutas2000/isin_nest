@@ -101,21 +101,38 @@
           {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
         </template>
         
-        <template #actions="{ row, isEditing }">
-          <button 
-            v-if="!isEditing && row.isSigned"
-            class="btn btn-sm btn-success" 
-            @click="convertToWorkOrder(row.id)"
-          >
-            轉工單
-          </button>
-          <button 
-            v-if="!isEditing"
-            class="btn btn-sm btn-danger" 
-            @click="deleteQuote(row.id)"
-          >
-            刪除
-          </button>
+        <template #actions="{ row, isEditing, save, cancel }">
+          <!-- 編輯模式：顯示保存和取消按鈕 -->
+          <template v-if="isEditing">
+            <button 
+              class="btn btn-sm btn-success" 
+              @click="save"
+            >
+              保存
+            </button>
+            <button 
+              class="btn btn-sm btn-outline" 
+              @click="cancel"
+            >
+              取消
+            </button>
+          </template>
+          <!-- 非編輯模式：顯示原有按鈕 -->
+          <template v-else>
+            <button 
+              v-if="row.isSigned"
+              class="btn btn-sm btn-success" 
+              @click="convertToWorkOrder(row.id)"
+            >
+              轉工單
+            </button>
+            <button 
+              class="btn btn-sm btn-danger" 
+              @click="deleteQuote(row.id)"
+            >
+              刪除
+            </button>
+          </template>
         </template>
       </EditableDataTable>
     </div>
@@ -511,61 +528,10 @@ const viewDetails = (quote: Quote) => {
   router.push(`/crm/quotes/${quote.id}/items`);
 };
 
-// 處理欄位變更（自動保存）
+// 處理欄位變更（僅更新本地狀態，不自動保存）
 const handleFieldChange = (row: Quote, field: string, value: any, isNew: boolean) => {
-  if (isNew) {
-    // 新增模式：檢查必要欄位後自動保存
-    const newQuote = { ...row, [field]: value };
-    if (newQuote.customerId && newQuote.staffId) {
-      // 清除之前的計時器
-      if (autoSaveTimer) {
-        clearTimeout(autoSaveTimer);
-      }
-      // 設置新的防抖計時器
-      autoSaveTimer = setTimeout(async () => {
-        try {
-          const data: Partial<Quote> = {
-            staffId: newQuote.staffId,
-            customerId: newQuote.customerId,
-            totalAmount: newQuote.totalAmount || 0,
-            notes: newQuote.notes || undefined,
-            isSigned: newQuote.isSigned || false,
-          };
-          const saved = await quoteService.create(data);
-          showNewRow.value = false;
-          await loadQuotes();
-        } catch (err) {
-          console.error('自動保存失敗:', err);
-          alert('自動保存失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
-        }
-      }, 500);
-    }
-  } else {
-    // 編輯模式：直接更新
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer);
-    }
-    const timerKey = `${row.id}-${field}`;
-    autoSaveTimer = setTimeout(async () => {
-      try {
-        savingQuotes.value.add(timerKey);
-        const data: Partial<Quote> = {
-          [field]: value,
-        };
-        await quoteService.update(row.id, data);
-        // 更新本地資料
-        const index = quotes.value.findIndex(q => q.id === row.id);
-        if (index >= 0) {
-          quotes.value[index] = { ...quotes.value[index], [field]: value };
-        }
-      } catch (err) {
-        console.error('自動保存失敗:', err);
-        alert('自動保存失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
-      } finally {
-        savingQuotes.value.delete(timerKey);
-      }
-    }, 500);
-  }
+  // 只更新本地狀態，不觸發自動保存
+  // 保存將在 Enter 或 blur 時觸發
 };
 
 // 處理手動保存

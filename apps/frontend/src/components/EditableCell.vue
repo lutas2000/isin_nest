@@ -91,7 +91,6 @@
     <div
       v-else-if="column.type === 'search-select'"
       class="search-select-container"
-      @blur="handleSearchSelectBlur"
     >
       <input
         ref="searchInputRef"
@@ -105,6 +104,7 @@
         @input="handleSearchInput($event)"
         @keydown="handleSearchKeyDown"
         @focus="handleSearchFocus"
+        @blur="handleSearchSelectBlur"
         placeholder="輸入搜尋關鍵字..."
       />
       <div v-if="showSearchDropdown" class="search-dropdown">
@@ -160,6 +160,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:value': [value: any];
   'keydown': [event: KeyboardEvent];
+  'blur': [];
 }>();
 
 const isSaving = ref(false);
@@ -179,10 +180,16 @@ const selectedOptionLabel = ref<string>('');
 
 // 計算顯示值
 const searchDisplayValue = computed(() => {
+  // 如果用戶正在輸入搜尋關鍵字，顯示搜尋關鍵字
   if (searchTerm.value) {
     return searchTerm.value;
   }
-  return selectedOptionLabel.value || '';
+  // 如果沒有搜尋關鍵字但有選中的值，顯示選中的 label
+  if (props.value && selectedOptionLabel.value) {
+    return selectedOptionLabel.value;
+  }
+  // 否則顯示空字串
+  return '';
 });
 
 // 當 isFocused 變為 true 時，自動 focus 到對應的 input
@@ -257,7 +264,8 @@ const handleKeyDown = (event: KeyboardEvent) => {
 };
 
 const handleBlur = () => {
-  // 可以在此處觸發驗證或自動保存
+  // 當失去 focus 時，觸發保存事件
+  emit('blur');
 };
 
 const getOptionValue = (option: any) => {
@@ -285,10 +293,15 @@ const handleSearchInput = (event: Event) => {
     clearTimeout(searchDebounceTimer);
   }
 
-  // 如果沒有輸入，隱藏下拉選單
+  // 如果輸入框被清空，允許清空值（如果欄位不是必填）
   if (!searchTerm.value.trim()) {
     showSearchDropdown.value = false;
     searchResults.value = [];
+    // 如果原本有值且欄位不是必填，允許清空
+    if (props.value) {
+      emit('update:value', '');
+      selectedOptionLabel.value = '';
+    }
     return;
   }
 
@@ -349,6 +362,17 @@ const handleSearchKeyDown = (event: KeyboardEvent) => {
     showSearchDropdown.value = false;
     searchTerm.value = '';
     emit('keydown', event);
+  } else if (event.key === 'Backspace' || event.key === 'Delete') {
+    // 當用戶刪除文字時，如果輸入框已清空且原本有值，允許清空值
+    const target = event.target as HTMLInputElement;
+    if (target.value === '' && props.value) {
+      // 允許清空值（如果欄位不是必填）
+      if (!props.column.required) {
+        emit('update:value', '');
+        selectedOptionLabel.value = '';
+      }
+    }
+    // 繼續正常處理輸入
   } else {
     // 其他按鍵正常處理
     emit('keydown', event);
@@ -378,6 +402,8 @@ const handleSearchSelectBlur = (event: FocusEvent) => {
         // 恢復顯示選中的 label
         searchTerm.value = '';
       }
+      // 發送 blur 事件，觸發父組件的保存邏輯
+      emit('blur');
     }
   }, 200);
 };
