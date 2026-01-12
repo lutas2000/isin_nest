@@ -81,7 +81,7 @@ const allShortcuts = computed<Shortcut[]>(() => {
       {
         key: 'insert',
         display: 'Insert / F7',
-        label: '新增行',
+        label: '新增',
         disabled: isEditing.value,
         action: 'new-row-show'
       },
