@@ -123,10 +123,12 @@
           <div
             v-else
             class="search-results"
+            ref="searchResultsRef"
           >
             <div
               v-for="(option, idx) in searchResults"
               :key="getOptionValue(option)"
+              :ref="el => setResultItemRef(el, idx)"
               class="search-result-item"
               :class="{ 'selected': getOptionValue(option) === value, 'highlighted': highlightedIndex === idx }"
               @mousedown.prevent="selectSearchOption(option)"
@@ -174,6 +176,7 @@ const inputRef = ref<HTMLInputElement | null>(null);
 const selectRef = ref<HTMLSelectElement | null>(null);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const searchInputRef = ref<HTMLInputElement | null>(null);
+const searchResultsRef = ref<HTMLDivElement | null>(null);
 
 // 可搜尋下拉選單相關狀態
 const searchTerm = ref('');
@@ -188,6 +191,7 @@ const dropdownStyle = ref<{ top: string; left: string; width: string }>({
   left: '0px',
   width: '0px',
 });
+const resultItemRefs = ref<(HTMLDivElement | null)[]>([]);
 
 // 計算顯示值
 const searchDisplayValue = computed(() => {
@@ -285,6 +289,33 @@ onUnmounted(() => {
   window.removeEventListener('scroll', updateDropdownPosition, true);
   window.removeEventListener('resize', updateDropdownPosition);
 });
+
+// 設置結果項目的 ref
+const setResultItemRef = (el: any, idx: number) => {
+  if (el) {
+    resultItemRefs.value[idx] = el as HTMLDivElement;
+  }
+};
+
+// 監聽 highlightedIndex 變化，自動捲動到高亮的項目
+watch(highlightedIndex, (newIndex) => {
+  if (newIndex >= 0 && resultItemRefs.value[newIndex] && showSearchDropdown.value) {
+    nextTick(() => {
+      const highlightedItem = resultItemRefs.value[newIndex];
+      if (highlightedItem && searchResultsRef.value) {
+        highlightedItem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }
+    });
+  }
+});
+
+// 監聽 searchResults 變化，重置 refs 數組
+watch(() => searchResults.value, () => {
+  resultItemRefs.value = new Array(searchResults.value.length).fill(null);
+}, { deep: true });
 
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
