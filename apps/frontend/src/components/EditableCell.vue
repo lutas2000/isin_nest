@@ -107,30 +107,36 @@
         @blur="handleSearchSelectBlur"
         placeholder="輸入搜尋關鍵字..."
       />
-      <div v-if="showSearchDropdown" class="search-dropdown">
-        <div v-if="searchLoading" class="search-loading">載入中...</div>
-        <div
-          v-else-if="searchResults.length === 0"
-          class="search-no-results"
+      <Teleport to="body">
+        <div 
+          v-if="showSearchDropdown" 
+          class="search-dropdown"
+          :style="dropdownStyle"
         >
-          無搜尋結果
-        </div>
-        <div
-          v-else
-          class="search-results"
-        >
+          <div v-if="searchLoading" class="search-loading">載入中...</div>
           <div
-            v-for="(option, idx) in searchResults"
-            :key="getOptionValue(option)"
-            class="search-result-item"
-            :class="{ 'selected': getOptionValue(option) === value, 'highlighted': highlightedIndex === idx }"
-            @mousedown.prevent="selectSearchOption(option)"
-            @mouseenter="highlightedIndex = idx"
+            v-else-if="searchResults.length === 0"
+            class="search-no-results"
           >
-            {{ getOptionLabel(option) }}
+            無搜尋結果
+          </div>
+          <div
+            v-else
+            class="search-results"
+          >
+            <div
+              v-for="(option, idx) in searchResults"
+              :key="getOptionValue(option)"
+              class="search-result-item"
+              :class="{ 'selected': getOptionValue(option) === value, 'highlighted': highlightedIndex === idx }"
+              @mousedown.prevent="selectSearchOption(option)"
+              @mouseenter="highlightedIndex = idx"
+            >
+              {{ getOptionLabel(option) }}
+            </div>
           </div>
         </div>
-      </div>
+      </Teleport>
     </div>
 
     <!-- 載入指示器 -->
@@ -139,7 +145,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick, computed, onUnmounted } from 'vue';
 import type { EditableColumn } from './EditableDataTable.vue';
 
 interface Props {
@@ -177,6 +183,11 @@ const showSearchDropdown = ref(false);
 const highlightedIndex = ref(-1);
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 const selectedOptionLabel = ref<string>('');
+const dropdownStyle = ref<{ top: string; left: string; width: string }>({
+  top: '0px',
+  left: '0px',
+  width: '0px',
+});
 
 // 計算顯示值
 const searchDisplayValue = computed(() => {
@@ -235,6 +246,45 @@ watch(() => props.value, async (newValue) => {
     selectedOptionLabel.value = '';
   }
 }, { immediate: true });
+
+// 計算下拉選單位置
+const updateDropdownPosition = () => {
+  if (!searchInputRef.value || !showSearchDropdown.value) {
+    return;
+  }
+  
+  nextTick(() => {
+    if (!searchInputRef.value) return;
+    
+    const rect = searchInputRef.value.getBoundingClientRect();
+    // 使用 fixed 定位，位置相對於視窗，不需要加上滾動偏移
+    dropdownStyle.value = {
+      top: `${rect.bottom}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+    };
+  });
+};
+
+// 監聽下拉選單顯示狀態，更新位置
+watch(() => showSearchDropdown.value, (show) => {
+  if (show) {
+    updateDropdownPosition();
+    // 監聽滾動和調整大小事件
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    window.addEventListener('resize', updateDropdownPosition);
+  } else {
+    // 移除監聽器
+    window.removeEventListener('scroll', updateDropdownPosition, true);
+    window.removeEventListener('resize', updateDropdownPosition);
+  }
+});
+
+// 組件卸載時清理事件監聽器
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateDropdownPosition, true);
+  window.removeEventListener('resize', updateDropdownPosition);
+});
 
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
@@ -464,11 +514,8 @@ textarea.form-control {
 }
 
 .search-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  position: fixed;
+  z-index: 9999;
   background: white;
   border: 1px solid var(--secondary-300);
   border-radius: var(--border-radius);
