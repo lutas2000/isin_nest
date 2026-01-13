@@ -215,7 +215,7 @@ const handleShortcutClick = (shortcut: Shortcut) => {
   border: 1px solid var(--secondary-200);
   border-radius: var(--border-radius);
   padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   min-height: 60px;
   display: flex;
   align-items: center;

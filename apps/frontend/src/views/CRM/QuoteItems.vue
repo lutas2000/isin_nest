@@ -84,25 +84,42 @@
         </div>
       </div>
 
+      <!-- 快捷鍵提示 -->
+    <ShortcutHint 
+      :table-state="tableState" 
+      @shortcut-click="handleShortcutClick"
+    />
+
       <!-- 報價單工件列表 -->
       <div class="quote-items-card">
         <TableHeader title="報價單工件列表">
           <template #actions>
-            <button class="btn btn-primary" @click="openCreateModal">
+            <button class="btn btn-primary" @click="showNewRow = true">
               <span class="btn-icon">➕</span>
               新增工件
             </button>
           </template>
         </TableHeader>
-        <div v-if="quoteItems.length === 0" class="empty-message">
-          此報價單尚無工件項目
-        </div>
-        <DataTable
-          v-else
-          :columns="itemTableColumns"
+        <EditableDataTable
+          ref="editableTableRef"
+          :columns="editableColumns"
           :data="quoteItems"
           :show-actions="true"
+          :editable="true"
+          :show-new-row="showNewRow"
+          :new-row-template="newRowTemplate"
+          @field-change="handleFieldChange"
+          @save="handleSave"
+          @new-row-save="handleNewRowSave"
+          @new-row-cancel="showNewRow = false"
+          @new-row-show="showNewRow = true"
+          @row-delete="handleRowDelete"
+          @row-edit="handleRowEdit"
         >
+          <template #cell-id="{ value }">
+            {{ value || '待生成' }}
+          </template>
+
           <template #cell-customerFile="{ value }">
             {{ value || '-' }}
           </template>
@@ -124,114 +141,51 @@
           </template>
 
           <template #cell-unitPrice="{ value }">
-            NT$ {{ Number(value).toLocaleString('zh-TW') }}
+            NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
           </template>
 
           <template #cell-subtotal="{ row }">
             <span class="highlight">
-              NT$ {{ Number(row.unitPrice * row.quantity).toLocaleString('zh-TW') }}
+              NT$ {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
             </span>
           </template>
           
-          <template #actions="{ row }">
-            <button class="btn btn-sm btn-primary" @click="editItem(row)">編輯</button>
-            <button class="btn btn-sm btn-danger" @click="deleteItem(row.id)">刪除</button>
+          <template #actions="{ row, isEditing, save, cancel }">
+            <!-- 編輯模式：顯示保存和取消按鈕 -->
+            <template v-if="isEditing">
+              <button 
+                class="btn btn-sm btn-success" 
+                @click="save"
+              >
+                保存
+              </button>
+              <button 
+                class="btn btn-sm btn-outline" 
+                @click="cancel"
+              >
+                取消
+              </button>
+            </template>
+            <!-- 非編輯模式：顯示刪除按鈕 -->
+            <template v-else>
+              <button 
+                class="btn btn-sm btn-danger" 
+                @click="deleteItem(row.id)"
+              >
+                刪除
+              </button>
+            </template>
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
     </div>
-
-    <!-- 新增/編輯工件 Modal -->
-    <Modal 
-      :show="showItemModal" 
-      :title="editingItem ? '編輯工件' : '新增工件'"
-      @close="closeItemModal"
-    >
-      <div class="modal-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>客戶圖檔</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              v-model="itemForm.customerFile"
-              placeholder="請輸入客戶圖檔名稱"
-            />
-          </div>
-          <div class="form-group">
-            <label>材質</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              v-model="itemForm.material"
-              placeholder="請輸入材質"
-            />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>厚度</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              v-model="itemForm.thickness"
-              placeholder="例如：3mm"
-            />
-          </div>
-          <div class="form-group">
-            <label>加工</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              v-model="itemForm.processing"
-              placeholder="請輸入加工方式"
-            />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>數量 *</label>
-            <input 
-              type="number" 
-              class="form-control" 
-              v-model.number="itemForm.quantity"
-              placeholder="0"
-              min="0"
-            />
-          </div>
-          <div class="form-group">
-            <label>單價 *</label>
-            <input 
-              type="number" 
-              class="form-control" 
-              v-model.number="itemForm.unitPrice"
-              placeholder="0"
-              min="0"
-              step="0.01"
-            />
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <button class="btn btn-outline" @click="closeItemModal">取消</button>
-        <button 
-          class="btn btn-primary" 
-          @click="saveItem" 
-          :disabled="!isItemFormValid"
-        >
-          {{ editingItem ? '更新' : '建立' }}
-        </button>
-      </template>
-    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PageHeader, StatusBadge, TableHeader, Modal, DataTable } from '@/components';
+import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint } from '@/components';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 
@@ -243,31 +197,100 @@ const quoteItems = ref<QuoteItem[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-// Modal 控制
-const showItemModal = ref(false);
-const editingItem = ref<QuoteItem | null>(null);
+// EditableDataTable ref
+const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
-// 表單資料
-const itemForm = ref({
-  customerFile: '',
-  material: '',
-  thickness: '',
-  processing: '',
-  quantity: 0,
-  unitPrice: 0,
+// 表格狀態（用於 ShortcutHint）
+const tableState = computed(() => {
+  const tableRef = editableTableRef.value;
+  if (!tableRef) return null;
+  
+  return {
+    focusedRowIndex: tableRef.focusedRowIndex,
+    focusedFieldKey: tableRef.focusedFieldKey,
+    isNewRowFocused: tableRef.isNewRowFocused,
+    editingRowId: tableRef.editingRowId,
+    data: tableRef.data,
+  };
 });
 
-// 表格列定義
-const itemTableColumns = [
-  { key: 'id', label: '工件編號' },
-  { key: 'customerFile', label: '客戶圖檔' },
-  { key: 'material', label: '材質' },
-  { key: 'thickness', label: '厚度' },
-  { key: 'processing', label: '加工' },
-  { key: 'quantity', label: '數量' },
-  { key: 'unitPrice', label: '單價' },
-  { key: 'subtotal', label: '小計' },
-];
+// 新增行控制
+const showNewRow = ref(false);
+
+// 新增行模板
+const newRowTemplate = () => {
+  if (!quote.value) {
+    return {
+      customerFile: '',
+      material: '',
+      thickness: '',
+      processing: '',
+      quantity: 0,
+      unitPrice: 0,
+    };
+  }
+  return {
+    quoteId: quote.value.id,
+    customerFile: '',
+    material: '',
+    thickness: '',
+    processing: '',
+    quantity: 0,
+    unitPrice: 0,
+  };
+};
+
+// 可編輯表格列定義
+const editableColumns = computed<EditableColumn[]>(() => [
+  { 
+    key: 'id', 
+    label: '工件編號', 
+    editable: false 
+  },
+  { 
+    key: 'customerFile', 
+    label: '客戶圖檔', 
+    editable: true, 
+    type: 'text' 
+  },
+  { 
+    key: 'material', 
+    label: '材質', 
+    editable: true, 
+    type: 'text' 
+  },
+  { 
+    key: 'thickness', 
+    label: '厚度', 
+    editable: true, 
+    type: 'text' 
+  },
+  { 
+    key: 'processing', 
+    label: '加工', 
+    editable: true, 
+    type: 'text' 
+  },
+  { 
+    key: 'quantity', 
+    label: '數量', 
+    editable: true, 
+    required: true, 
+    type: 'number' 
+  },
+  { 
+    key: 'unitPrice', 
+    label: '單價', 
+    editable: true, 
+    required: true, 
+    type: 'number' 
+  },
+  { 
+    key: 'subtotal', 
+    label: '小計', 
+    editable: false 
+  },
+]);
 
 // 載入報價單資料
 const loadQuote = async () => {
@@ -292,46 +315,14 @@ const loadQuote = async () => {
   }
 };
 
-// 表單驗證
-const isItemFormValid = computed(() => {
-  return itemForm.value.quantity > 0 && itemForm.value.unitPrice >= 0;
-});
-
-// 打開新增 Modal
-const openCreateModal = () => {
-  editingItem.value = null;
-  itemForm.value = {
-    customerFile: '',
-    material: '',
-    thickness: '',
-    processing: '',
-    quantity: 0,
-    unitPrice: 0,
-  };
-  showItemModal.value = true;
+// 處理欄位變更（僅更新本地狀態，不自動保存）
+const handleFieldChange = (row: QuoteItem, field: string, value: any, isNew: boolean) => {
+  // 只更新本地狀態，不觸發自動保存
+  // 保存將在 Enter 或 blur 時觸發
 };
 
-// 編輯工件
-const editItem = (item: QuoteItem) => {
-  editingItem.value = item;
-  itemForm.value = {
-    customerFile: item.customerFile || '',
-    material: item.material || '',
-    thickness: item.thickness || '',
-    processing: item.processing || '',
-    quantity: item.quantity,
-    unitPrice: Number(item.unitPrice),
-  };
-  showItemModal.value = true;
-};
-
-// 儲存工件
-const saveItem = async () => {
-  if (!isItemFormValid.value) {
-    alert('請填寫必填欄位（數量和單價）');
-    return;
-  }
-
+// 處理手動保存
+const handleSave = async (row: QuoteItem, isNew: boolean) => {
   if (!quote.value) {
     alert('報價單資料不存在');
     return;
@@ -340,24 +331,48 @@ const saveItem = async () => {
   try {
     const data: Partial<QuoteItem> = {
       quoteId: quote.value.id,
-      customerFile: itemForm.value.customerFile || undefined,
-      material: itemForm.value.material || undefined,
-      thickness: itemForm.value.thickness || undefined,
-      processing: itemForm.value.processing || undefined,
-      quantity: itemForm.value.quantity,
-      unitPrice: itemForm.value.unitPrice,
+      customerFile: row.customerFile || undefined,
+      material: row.material || undefined,
+      thickness: row.thickness || undefined,
+      processing: row.processing || undefined,
+      quantity: row.quantity || 0,
+      unitPrice: row.unitPrice || 0,
     };
 
-    if (editingItem.value) {
-      await quoteItemService.update(editingItem.value.id, data);
-    } else {
+    if (isNew) {
       await quoteItemService.create(data);
+    } else {
+      await quoteItemService.update(row.id, data);
     }
 
-    closeItemModal();
     await loadQuote();
   } catch (err) {
     alert(err instanceof Error ? err.message : '儲存工件失敗');
+  }
+};
+
+// 處理新增行保存
+const handleNewRowSave = async (row: any) => {
+  if (!quote.value) {
+    alert('報價單資料不存在');
+    return;
+  }
+
+  try {
+    const data: Partial<QuoteItem> = {
+      quoteId: quote.value.id,
+      customerFile: row.customerFile || undefined,
+      material: row.material || undefined,
+      thickness: row.thickness || undefined,
+      processing: row.processing || undefined,
+      quantity: row.quantity || 0,
+      unitPrice: row.unitPrice || 0,
+    };
+    await quoteItemService.create(data);
+    showNewRow.value = false;
+    await loadQuote();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '建立工件失敗');
   }
 };
 
@@ -373,18 +388,80 @@ const deleteItem = async (id: string) => {
   }
 };
 
-// 關閉 Modal
-const closeItemModal = () => {
-  showItemModal.value = false;
-  editingItem.value = null;
-  itemForm.value = {
-    customerFile: '',
-    material: '',
-    thickness: '',
-    processing: '',
-    quantity: 0,
-    unitPrice: 0,
-  };
+// 處理 row-delete 事件（快捷鍵觸發）
+const handleRowDelete = async (row: QuoteItem) => {
+  if (!confirm('確定要刪除此工件嗎？此操作無法復原。')) return;
+  
+  try {
+    await quoteItemService.delete(row.id);
+    await loadQuote();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '刪除工件失敗');
+  }
+};
+
+// 處理 row-edit 事件（快捷鍵觸發，F2）
+const handleRowEdit = (row: QuoteItem, index: number) => {
+  // 編輯狀態會由 EditableDataTable 內部處理
+  // 這裡可以加入額外的邏輯，例如記錄編輯歷史等
+};
+
+// 處理快捷鍵點擊
+const handleShortcutClick = (action: string) => {
+  if (!editableTableRef.value || !tableState.value) return;
+
+  const state = tableState.value;
+  const data = state.data();
+  const currentRowIndex = state.focusedRowIndex;
+
+  switch (action) {
+    case 'arrow-up':
+      if (currentRowIndex !== null && currentRowIndex > 0) {
+        // 由表格內部處理
+        break;
+      }
+      break;
+
+    case 'arrow-down':
+      if (currentRowIndex !== null && currentRowIndex < data.length - 1) {
+        // 由表格內部處理
+        break;
+      }
+      break;
+
+    case 'row-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editableTableRef.value.startEdit(data[currentRowIndex], currentRowIndex);
+        handleRowEdit(data[currentRowIndex], currentRowIndex);
+      }
+      break;
+
+    case 'row-delete':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        handleRowDelete(data[currentRowIndex]);
+      }
+      break;
+
+    case 'cancel-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editableTableRef.value.cancelEdit(data[currentRowIndex], currentRowIndex);
+      }
+      break;
+
+    case 'new-row-show':
+      showNewRow.value = true;
+      break;
+
+    case 'save-and-next':
+    case 'next-field':
+    case 'prev-field':
+      // 這些操作由表格內部處理
+      break;
+
+    case 'cancel-new-row':
+      editableTableRef.value.cancelNewRow();
+      break;
+  }
 };
 
 // 返回上一頁
