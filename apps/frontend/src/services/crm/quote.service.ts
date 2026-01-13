@@ -8,7 +8,7 @@ export interface QuoteItem {
   customerFile?: string
   material?: string
   thickness?: string
-  processing?: string
+  notes?: string
   quantity: number
   unitPrice: number
   createdAt?: string

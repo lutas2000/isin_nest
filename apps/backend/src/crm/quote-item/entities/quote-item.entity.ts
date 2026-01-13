@@ -53,14 +53,6 @@ export class QuoteItem {
   })
   thickness?: string;
 
-  @ApiProperty({ description: '加工', example: '雷射切割' })
-  @Column({
-    type: 'varchar',
-    length: 200,
-    nullable: true,
-  })
-  processing?: string;
-
   @ApiProperty({ description: '數量', example: 100 })
   @Column({ type: 'int', default: 0 })
   quantity: number;
@@ -75,7 +67,7 @@ export class QuoteItem {
   })
   unitPrice: number;
 
-  @ApiProperty({ description: '備註', example: '一、以上報價有效期限 7 天。' })
+  @ApiProperty({ description: '備註' })
   @Column({
     type: 'text',
     nullable: true,

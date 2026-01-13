@@ -136,7 +136,7 @@
             {{ value || '-' }}
           </template>
 
-          <template #cell-processing="{ value }">
+          <template #cell-notes="{ value }">
             {{ value || '-' }}
           </template>
 
@@ -245,7 +245,7 @@
                 <th class="col-customer-file">客戶型號</th>
                 <th class="col-material">材質</th>
                 <th class="col-thickness">厚度</th>
-                <th class="col-summary">摘要</th>
+                <th class="col-summary">備註</th>
                 <th class="col-quantity">數量</th>
                 <th class="col-unit-price">單價</th>
                 <th class="col-amount">金額</th>
@@ -257,7 +257,7 @@
                 <td class="col-customer-file">{{ item.customerFile || '-' }}</td>
                 <td class="col-material">{{ item.material || '-' }}</td>
                 <td class="col-thickness">{{ item.thickness || '-' }}</td>
-                <td class="col-summary">{{ item.processing || '-' }}</td>
+                <td class="col-summary">{{ item.notes || '-' }}</td>
                 <td class="col-quantity text-right">{{ formatInteger(item.quantity) }}</td>
                 <td class="col-unit-price text-right">{{ formatNumber(item.unitPrice) }}</td>
                 <td class="col-amount text-right">{{ formatNumber((item.quantity || 0) * (item.unitPrice || 0)) }}</td>
@@ -324,7 +324,7 @@ const newRowTemplate = () => {
       customerFile: '',
       material: '',
       thickness: '',
-      processing: '',
+      notes: '',
       quantity: 0,
       unitPrice: 0,
     };
@@ -334,7 +334,7 @@ const newRowTemplate = () => {
     customerFile: '',
     material: '',
     thickness: '',
-    processing: '',
+    notes: '',
     quantity: 0,
     unitPrice: 0,
   };
@@ -366,8 +366,8 @@ const editableColumns = computed<EditableColumn[]>(() => [
     type: 'text' 
   },
   { 
-    key: 'processing', 
-    label: '加工', 
+    key: 'notes', 
+    label: '備註', 
     editable: true, 
     type: 'text' 
   },
@@ -434,7 +434,7 @@ const handleSave = async (row: QuoteItem, isNew: boolean) => {
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness || undefined,
-      processing: row.processing || undefined,
+      notes: row.notes || undefined,
       quantity: row.quantity || 0,
       unitPrice: row.unitPrice || 0,
     };
@@ -464,7 +464,7 @@ const handleNewRowSave = async (row: any) => {
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness || undefined,
-      processing: row.processing || undefined,
+      notes: row.notes || undefined,
       quantity: row.quantity || 0,
       unitPrice: row.unitPrice || 0,
     };

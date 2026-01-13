@@ -230,7 +230,7 @@
                   <div v-if="item.customerFile">客戶圖檔：{{ item.customerFile }}</div>
                   <div v-if="item.material">材質：{{ item.material }}</div>
                   <div v-if="item.thickness">厚度：{{ item.thickness }}</div>
-                  <div v-if="item.processing">加工：{{ item.processing }}</div>
+                  <div v-if="item.notes">備註：{{ item.notes }}</div>
                   <div>數量：{{ item.quantity }}</div>
                   <div>單價：NT$ {{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
                 </div>
