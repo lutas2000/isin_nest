@@ -3,7 +3,7 @@ import { API_CONFIG } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 
 export interface QuoteItem {
-  id: number
+  id: string
   quoteId: string
   customerFile?: string
   material?: string
@@ -102,7 +102,7 @@ export const quoteItemService = {
   },
 
   // 獲取單個報價單工件
-  getById: (id: number): Promise<QuoteItem> => {
+  getById: (id: string): Promise<QuoteItem> => {
     return apiGet<QuoteItem>(`${API_CONFIG.CRM.QUOTE_ITEMS}/${id}`)
   },
 
@@ -112,12 +112,12 @@ export const quoteItemService = {
   },
 
   // 更新報價單工件
-  update: (id: number, data: Partial<QuoteItem>): Promise<QuoteItem> => {
+  update: (id: string, data: Partial<QuoteItem>): Promise<QuoteItem> => {
     return apiPost<QuoteItem>(`${API_CONFIG.CRM.QUOTE_ITEMS}/${id}`, data)
   },
 
   // 刪除報價單工件
-  delete: (id: number): Promise<void> => {
+  delete: (id: string): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.QUOTE_ITEMS}/${id}`)
   },
 }

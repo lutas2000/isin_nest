@@ -362,7 +362,7 @@ const saveItem = async () => {
 };
 
 // 刪除工件
-const deleteItem = async (id: number) => {
+const deleteItem = async (id: string) => {
   if (!confirm('確定要刪除此工件嗎？此操作無法復原。')) return;
   
   try {

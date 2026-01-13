@@ -106,7 +106,47 @@ export class QuoteItemService {
   }
 
   async create(quoteItem: Partial<QuoteItem>): Promise<QuoteItem> {
-    const newQuoteItem = this.quoteItemRepository.create(quoteItem);
+    // 驗證 quoteId 是否存在
+    if (!quoteItem.quoteId) {
+      throw new Error('報價單 ID 為必填欄位');
+    }
+
+    // 自動生成 QuoteItem ID：格式為 {quoteId}_{序號}
+    // 查找該報價單的所有工件，找出最大序號
+    const existingItems = await this.quoteItemRepository.find({
+      where: { quoteId: quoteItem.quoteId },
+    });
+
+    // 從現有工件的 ID 中提取序號
+    let maxSequence = 0;
+    if (existingItems.length > 0) {
+      const sequences = existingItems
+        .map(item => {
+          // ID 格式為 {quoteId}_{序號}，例如 '00010301_1'
+          const parts = item.id.split('_');
+          if (parts.length === 2 && parts[0] === quoteItem.quoteId) {
+            const seq = parseInt(parts[1], 10);
+            return isNaN(seq) ? 0 : seq;
+          }
+          return 0;
+        })
+        .filter(seq => seq > 0);
+      
+      if (sequences.length > 0) {
+        maxSequence = Math.max(...sequences);
+      }
+    }
+
+    // 生成新的序號
+    const newSequence = maxSequence + 1;
+    const newId = `${quoteItem.quoteId}_${newSequence}`;
+
+    // 創建新的 QuoteItem
+    const newQuoteItem = this.quoteItemRepository.create({
+      ...quoteItem,
+      id: newId,
+    });
+    
     const savedItem = await this.quoteItemRepository.save(newQuoteItem);
     
     // 重新計算報價單總價
