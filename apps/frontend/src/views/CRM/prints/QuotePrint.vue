@@ -67,7 +67,7 @@
             <td class="col-customer-file">{{ item.customerFile || '-' }}</td>
             <td class="col-material">{{ item.material || '-' }}</td>
             <td class="col-thickness">{{ item.thickness || '-' }}</td>
-            <td class="col-summary">{{ item.processing || '-' }}</td>
+            <td class="col-summary">{{ item.notes || '-' }}</td>
             <td class="col-quantity text-right">{{ formatInteger(item.quantity) }}</td>
             <td class="col-unit-price text-right">{{ formatNumber(item.unitPrice) }}</td>
             <td class="col-amount text-right">
@@ -96,6 +96,7 @@
 import { ref, computed } from 'vue';
 import PrintContainer from '@/components/Print/PrintContainer.vue';
 import CompanyHeader from '@/components/Print/CompanyHeader.vue';
+import { getCompanyHeaderStyles } from '@/components/Print/CompanyHeader.vue';
 import { formatRocDate, formatNumber, formatInteger } from '@/utils/formatters';
 import type { Quote, QuoteItem } from '@/services/crm/quote.service';
 
@@ -136,6 +137,8 @@ const notes = computed(() => props.quote.notes);
 // 取得報價單列印樣式
 const getQuotePrintStyles = (): string => {
   return `
+    ${getCompanyHeaderStyles()}
+    
     .print-quote-info {
       display: flex;
       justify-content: space-between;
