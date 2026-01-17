@@ -361,11 +361,13 @@ async function migrateQuoteFromAccess() {
     const jtableIndex: Map<string, any> = new Map();
     if (!ONLY_MODE || ONLY_MODE === 'quote-item') {
       for (const jrow of jtableRows) {
-        const qno = jrow.QNO ? String(jrow.QNO).trim() : '';
-        const sn = jrow.SN ? String(jrow.SN).trim() : '';
+        // 轉換 Big5 編碼
+        const convertedJrow = convertObjectBig5ToUtf8(jrow);
+        const qno = convertedJrow.QNO ? String(convertedJrow.QNO).trim() : '';
+        const sn = convertedJrow.SN ? String(convertedJrow.SN).trim() : '';
         if (qno && sn) {
           const key = `${qno}_${sn}`;
-          jtableIndex.set(key, jrow);
+          jtableIndex.set(key, convertedJrow);
         }
       }
       console.log(`✅ 建立 jtable 索引，共 ${jtableIndex.size} 筆`);
