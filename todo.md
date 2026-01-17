@@ -13,16 +13,22 @@
 - [x] 連接 access (cust)
 - [x] api pagging
 - [x] 連接 access (quote)
-- [ ] 修復報價單、工作單等問題
+- [x] 修復報價單、工作單等問題
+- [x] 影印
+- [x] docker file
 - [ ] AutoCAD 預覽(dfx to image)
+- [ ] 圖片, pdf 預覽
 - [ ] 轉換 python api
 - [ ] Cutting
-- [ ] 影印
 - [ ] 計算薪資
-- [ ] docker file
-- [ ] 改用 supabase db?
 - [ ] Slack 通知功能
 
 ### 硬體相關
-- [ ] 添購 Mac mini 作為新server
+- [x] 添購 Mac mini 作為新server
 - [ ] 確認機台抓的檔案是否為 server
+
+### 資料相關
+- [ ] 銷管資料現在放哪台電腦？
+- [ ] 所有加工
+- [ ] 所有材料
+- [ ] 估價單新增欄位？：設計費(新舊圖)、運費(自取/運送)、付款方式、是否代料
