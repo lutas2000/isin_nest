@@ -204,10 +204,17 @@ function convertRocDateToDate(rocDateStr: string | null | undefined): Date | und
  * 轉換 Access gtable 資料為 Quote 實體資料
  */
 function convertGtableToQuote(gtableRow: any): Partial<Quote> {
+  // 輔助函數：將值轉換為字串，如果是空字串則返回 undefined
+  const toOptionalString = (value: any): string | undefined => {
+    if (!value) return undefined;
+    const str = String(value).trim();
+    return str === '' ? undefined : str;
+  };
+
   const quote: Partial<Quote> = {
-    id: gtableRow.QNO ? String(gtableRow.QNO).trim() : undefined,
-    staffId: gtableRow.ACTOR_NO ? String(gtableRow.ACTOR_NO).trim() : undefined,
-    customerId: gtableRow.FACTOR_NO ? String(gtableRow.FACTOR_NO).trim() : undefined,
+    id: toOptionalString(gtableRow.QNO),
+    staffId: toOptionalString(gtableRow.ACTOR_NO),
+    customerId: toOptionalString(gtableRow.FACTOR_NO),
     totalAmount: gtableRow.AMOUNT != null ? Number(gtableRow.AMOUNT) : 0,
     notes: cleanString(gtableRow.ATTEN),
     createdAt: convertRocDateToDate(gtableRow.DATE_R),
@@ -233,7 +240,6 @@ function convertItableJtableToQuoteItem(
     customerFile: cleanString(itableRow.DWG_REF),
     material: cleanString(itableRow.METAL),
     thickness: cleanString(itableRow.THICK),
-    processing: cleanString(itableRow.WORK),
     quantity: itableRow.QTY != null ? Math.round(Number(itableRow.QTY)) : 0,
     unitPrice: itableRow.PRICE != null ? Number(itableRow.PRICE) : 0,
     notes: jtableRow?.DWG_REF ? cleanString(jtableRow.DWG_REF) : undefined,
@@ -415,8 +421,8 @@ async function migrateQuoteFromAccess() {
           continue;
         }
 
-        // 檢查 Staff 是否存在，如果不存在則設為 null
-        if (quoteData.staffId) {
+        // 檢查 Staff 是否存在，如果不存在或為空字串則設為 null
+        if (quoteData.staffId && quoteData.staffId.trim() !== '') {
           const staffExists = await staffRepo.findOne({
             where: { id: quoteData.staffId },
           });
@@ -424,10 +430,13 @@ async function migrateQuoteFromAccess() {
             // Staff 不存在，將 staffId 設為 null（不顯示錯誤）
             quoteData.staffId = undefined;
           }
+        } else {
+          // 空字串或 undefined，設為 undefined（資料庫會存為 NULL）
+          quoteData.staffId = undefined;
         }
 
-        // 檢查 Customer 是否存在，如果不存在則設為 null
-        if (quoteData.customerId) {
+        // 檢查 Customer 是否存在，如果不存在或為空字串則設為 null
+        if (quoteData.customerId && quoteData.customerId.trim() !== '') {
           const customerExists = await customerRepo.findOne({
             where: { id: quoteData.customerId },
           });
@@ -435,6 +444,9 @@ async function migrateQuoteFromAccess() {
             // Customer 不存在，將 customerId 設為 null（不顯示錯誤）
             quoteData.customerId = undefined;
           }
+        } else {
+          // 空字串或 undefined，設為 undefined（資料庫會存為 NULL）
+          quoteData.customerId = undefined;
         }
 
         // 建立 Quote

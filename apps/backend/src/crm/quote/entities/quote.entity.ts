@@ -82,7 +82,7 @@ export class Quote {
 
   // 關聯到 Customer
   @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
-  @ManyToOne(() => Customer, (customer) => customer.quotes, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Customer, (customer) => customer.quotes, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
   customer?: Customer;
 
