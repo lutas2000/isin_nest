@@ -267,25 +267,40 @@ ACCESS_FILE_PATH=/path/to/cust.mdb npm run migrate-customer-from-access
 ### 使用方法
 
 ```bash
-npm run migrate-quote-from-access [access-file-path] [--skip=n]
+npm run migrate-quote-from-access [access-file-path] [--only=quote|quote-item] [--skip=n]
 ```
 
 範例：
 ```bash
-# 使用預設路徑 (legacy/quote.mdb)
+# 使用預設路徑 (legacy/quote.mdb)，執行全部轉換
 npm run migrate-quote-from-access
 
 # 指定 Access 檔案路徑
 npm run migrate-quote-from-access /path/to/quote.mdb
 
-# 跳過前 100 筆資料
+# 只執行報價單轉換 (convertGtableToQuote)
+npm run migrate-quote-from-access /path/to/quote.mdb --only=quote
+
+# 只執行報價單工件轉換 (convertItableJtableToQuoteItem)
+npm run migrate-quote-from-access /path/to/quote.mdb --only=quote-item
+
+# 跳過前 100 筆資料（僅適用於報價單）
 npm run migrate-quote-from-access /path/to/quote.mdb --skip=100
+
+# 結合參數使用：只執行報價單轉換並跳過前 100 筆
+npm run migrate-quote-from-access /path/to/quote.mdb --only=quote --skip=100
 ```
 
 或使用環境變數：
 
 ```bash
 ACCESS_FILE_PATH=/path/to/quote.mdb SKIP_COUNT=100 npm run migrate-quote-from-access
+
+# 只執行報價單轉換
+ONLY_MODE=quote ACCESS_FILE_PATH=/path/to/quote.mdb npm run migrate-quote-from-access
+
+# 只執行報價單工件轉換
+ONLY_MODE=quote-item ACCESS_FILE_PATH=/path/to/quote.mdb npm run migrate-quote-from-access
 ```
 
 ### 功能說明
@@ -296,7 +311,11 @@ ACCESS_FILE_PATH=/path/to/quote.mdb SKIP_COUNT=100 npm run migrate-quote-from-ac
   - 民國年日期轉換為西元年（如 "100.01.03" → 2011-01-03）
   - 合併 itable 和 jtable 資料（透過 QNO + SN 一對一關聯）
   - 組合主鍵：QuoteItem 的 id 格式為 `{QNO}_{SN}`
-- **Skip 功能**：支援跳過前 n 筆資料，方便從中斷處繼續執行
+- **選擇性執行**：使用 `--only` 參數可以選擇只執行特定轉換：
+  - `--only=quote`：只執行報價單轉換（convertGtableToQuote）
+  - `--only=quote-item`：只執行報價單工件轉換（convertItableJtableToQuoteItem）
+  - 未指定：執行全部轉換
+- **Skip 功能**：支援跳過前 n 筆資料，方便從中斷處繼續執行（僅適用於報價單轉換）
 - **錯誤處理**：發生錯誤時立即中斷，顯示錯誤訊息、堆疊追蹤和處理到第幾筆資料
 - **進度顯示**：即時顯示處理進度和統計資訊
 
@@ -348,9 +367,15 @@ ACCESS_FILE_PATH=/path/to/quote.mdb SKIP_COUNT=100 npm run migrate-quote-from-ac
 - 可以通過命令列參數提供：`npm run migrate-quote-from-access <path>`
 - 或通過環境變數：`ACCESS_FILE_PATH=<path>`
 
+**執行模式**：
+- 可以通過命令列參數提供：`--only=quote` 或 `--only=quote-item`
+- 或通過環境變數：`ONLY_MODE=quote` 或 `ONLY_MODE=quote-item`
+- 未指定時會執行全部轉換
+
 **Skip 功能**：
 - 可以通過命令列參數提供：`--skip=n`
 - 或通過環境變數：`SKIP_COUNT=n`
+- 僅適用於報價單轉換（`--only=quote` 或未指定 `--only` 時）
 
 ### 資料轉換說明
 
@@ -386,6 +411,14 @@ ACCESS_FILE_PATH=/path/to/quote.mdb SKIP_COUNT=100 npm run migrate-quote-from-ac
 3. **Big5 編碼**：所有文字欄位會自動從 Big5 轉換為 UTF-8
 4. **日期驗證**：無效的日期格式會被設為 NULL
 5. **錯誤處理**：發生錯誤時會立即中斷，顯示錯誤訊息、堆疊追蹤和處理到第幾筆資料
-6. **Skip 功能**：使用 `--skip=n` 可以跳過前 n 筆資料，方便從中斷處繼續執行
-7. **進度顯示**：每處理 50 筆 Quote 或 100 筆 QuoteItem 會顯示進度
+6. **選擇性執行**：
+   - 使用 `--only=quote` 時，只會處理報價單（gtable），不會處理報價單工件
+   - 使用 `--only=quote-item` 時，只會處理報價單工件（itable + jtable），不會處理報價單
+   - 未指定 `--only` 時，會依序執行報價單和報價單工件的轉換
+7. **Skip 功能**：使用 `--skip=n` 可以跳過前 n 筆資料，方便從中斷處繼續執行（僅適用於報價單轉換）
+8. **進度顯示**：每處理 50 筆 Quote 或 100 筆 QuoteItem 會顯示進度
+9. **資料表檢查**：腳本會根據執行模式自動檢查必要的資料表：
+   - `--only=quote`：只需要 `gtable`
+   - `--only=quote-item`：只需要 `itable` 和 `jtable`
+   - 未指定：需要 `gtable`、`itable`、`jtable` 三個資料表
 

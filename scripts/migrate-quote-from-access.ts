@@ -43,6 +43,13 @@ const SKIP_COUNT = parseInt(
   10,
 );
 
+// 從命令列參數或環境變數取得執行模式
+// 可選值: 'quote' (只執行 convertGtableToQuote), 'quote-item' (只執行 convertItableJtableToQuoteItem), 或 undefined (執行全部)
+const ONLY_MODE = 
+  process.argv.find((arg) => arg.startsWith('--only='))?.split('=')[1] ||
+  process.env.ONLY_MODE ||
+  undefined;
+
 /**
  * 清理字串，移除無效字符和控制字符
  * 保留常見的空白字符（空格、換行、Tab）
@@ -259,11 +266,21 @@ async function migrateQuoteFromAccess() {
     if (!ACCESS_FILE_PATH) {
       console.error('❌ 錯誤：請提供 Access 檔案路徑');
       console.log('使用方法：');
-      console.log('  npm run migrate-quote-from-access <access-file-path>');
+      console.log('  npm run migrate-quote-from-access <access-file-path> [--only=quote|quote-item] [--skip=N]');
       console.log('或設定環境變數：');
       console.log(
         '  ACCESS_FILE_PATH=/path/to/quote.mdb npm run migrate-quote-from-access',
       );
+      console.log('\n參數說明：');
+      console.log('  --only=quote       只執行報價單轉換 (convertGtableToQuote)');
+      console.log('  --only=quote-item  只執行報價單工件轉換 (convertItableJtableToQuoteItem)');
+      console.log('  --skip=N           跳過前 N 筆資料（僅適用於報價單）');
+      process.exit(1);
+    }
+
+    // 驗證 ONLY_MODE 參數
+    if (ONLY_MODE && ONLY_MODE !== 'quote' && ONLY_MODE !== 'quote-item') {
+      console.error('❌ 錯誤：--only 參數值必須是 "quote" 或 "quote-item"');
       process.exit(1);
     }
 
@@ -271,6 +288,11 @@ async function migrateQuoteFromAccess() {
     console.log(`📁 Access 檔案: ${ACCESS_FILE_PATH}`);
     console.log(`📊 目標資料庫: ${TARGET_DB}`);
     console.log(`🔌 資料庫主機: ${dbConfig.host}:${dbConfig.port}`);
+    if (ONLY_MODE) {
+      console.log(`🎯 執行模式: 僅執行 ${ONLY_MODE === 'quote' ? '報價單轉換' : '報價單工件轉換'}`);
+    } else {
+      console.log(`🎯 執行模式: 執行全部轉換`);
+    }
     if (SKIP_COUNT > 0) {
       console.log(`⏭️  將跳過前 ${SKIP_COUNT} 筆資料`);
     }
@@ -298,7 +320,14 @@ async function migrateQuoteFromAccess() {
 
     // 檢查是否有必要的資料表
     const tableNames = reader.getTableNames({ normalTables: true });
-    const requiredTables = ['gtable', 'itable', 'jtable'];
+    let requiredTables: string[];
+    if (ONLY_MODE === 'quote') {
+      requiredTables = ['gtable'];
+    } else if (ONLY_MODE === 'quote-item') {
+      requiredTables = ['itable', 'jtable'];
+    } else {
+      requiredTables = ['gtable', 'itable', 'jtable'];
+    }
     const missingTables = requiredTables.filter((table) => !tableNames.includes(table));
     
     if (missingTables.length > 0) {
@@ -309,29 +338,38 @@ async function migrateQuoteFromAccess() {
 
     // 讀取資料表
     console.log('\n📋 正在讀取資料表...');
-    const gtable = reader.getTable('gtable');
-    const itable = reader.getTable('itable');
-    const jtable = reader.getTable('jtable');
+    let gtableRows: any[] = [];
+    let itableRows: any[] = [];
+    let jtableRows: any[] = [];
     
-    const gtableRows = gtable.getData();
-    const itableRows = itable.getData();
-    const jtableRows = jtable.getData();
+    if (!ONLY_MODE || ONLY_MODE === 'quote') {
+      const gtable = reader.getTable('gtable');
+      gtableRows = gtable.getData();
+      console.log(`✅ 讀取到 ${gtableRows.length} 筆報價單資料 (gtable)`);
+    }
     
-    console.log(`✅ 讀取到 ${gtableRows.length} 筆報價單資料 (gtable)`);
-    console.log(`✅ 讀取到 ${itableRows.length} 筆報價單工件資料 (itable)`);
-    console.log(`✅ 讀取到 ${jtableRows.length} 筆備註資料 (jtable)`);
+    if (!ONLY_MODE || ONLY_MODE === 'quote-item') {
+      const itable = reader.getTable('itable');
+      const jtable = reader.getTable('jtable');
+      itableRows = itable.getData();
+      jtableRows = jtable.getData();
+      console.log(`✅ 讀取到 ${itableRows.length} 筆報價單工件資料 (itable)`);
+      console.log(`✅ 讀取到 ${jtableRows.length} 筆備註資料 (jtable)`);
+    }
 
     // 建立 jtable 的索引（QNO + SN 作為 key）
     const jtableIndex: Map<string, any> = new Map();
-    for (const jrow of jtableRows) {
-      const qno = jrow.QNO ? String(jrow.QNO).trim() : '';
-      const sn = jrow.SN ? String(jrow.SN).trim() : '';
-      if (qno && sn) {
-        const key = `${qno}_${sn}`;
-        jtableIndex.set(key, jrow);
+    if (!ONLY_MODE || ONLY_MODE === 'quote-item') {
+      for (const jrow of jtableRows) {
+        const qno = jrow.QNO ? String(jrow.QNO).trim() : '';
+        const sn = jrow.SN ? String(jrow.SN).trim() : '';
+        if (qno && sn) {
+          const key = `${qno}_${sn}`;
+          jtableIndex.set(key, jrow);
+        }
       }
+      console.log(`✅ 建立 jtable 索引，共 ${jtableIndex.size} 筆`);
     }
-    console.log(`✅ 建立 jtable 索引，共 ${jtableIndex.size} 筆`);
 
     // 連接目標資料庫
     console.log('\n🔌 正在連接目標資料庫...');
@@ -389,10 +427,11 @@ async function migrateQuoteFromAccess() {
     let currentIndex = 0;
 
     // 處理報價單 (gtable)
-    const gtableRowsToProcess = gtableRows.slice(SKIP_COUNT);
-    console.log(`\n📝 處理報價單資料 (共 ${gtableRowsToProcess.length} 筆，已跳過 ${SKIP_COUNT} 筆)...`);
+    if (!ONLY_MODE || ONLY_MODE === 'quote') {
+      const gtableRowsToProcess = gtableRows.slice(SKIP_COUNT);
+      console.log(`\n📝 處理報價單資料 (共 ${gtableRowsToProcess.length} 筆，已跳過 ${SKIP_COUNT} 筆)...`);
 
-    for (let i = 0; i < gtableRowsToProcess.length; i++) {
+      for (let i = 0; i < gtableRowsToProcess.length; i++) {
       currentIndex = SKIP_COUNT + i + 1;
       const gtableRow = gtableRowsToProcess[i];
 
@@ -485,24 +524,14 @@ async function migrateQuoteFromAccess() {
         }
         throw error; // 立即中斷
       }
-    }
-
-    // 處理報價單工件 (itable + jtable)
-    console.log(`\n📝 處理報價單工件資料 (共 ${itableRows.length} 筆)...`);
-    
-    // 建立 itable 的索引，按 QNO 分組
-    const itableByQno: Map<string, any[]> = new Map();
-    for (const irow of itableRows) {
-      const qno = irow.QNO ? String(irow.QNO).trim() : '';
-      if (qno) {
-        if (!itableByQno.has(qno)) {
-          itableByQno.set(qno, []);
-        }
-        itableByQno.get(qno)!.push(irow);
       }
     }
 
-    let processedItemCount = 0;
+    // 處理報價單工件 (itable + jtable)
+    if (!ONLY_MODE || ONLY_MODE === 'quote-item') {
+      console.log(`\n📝 處理報價單工件資料 (共 ${itableRows.length} 筆)...`);
+
+      let processedItemCount = 0;
     for (const itableRow of itableRows) {
       processedItemCount++;
       
@@ -572,26 +601,35 @@ async function migrateQuoteFromAccess() {
         }
         throw error; // 立即中斷
       }
+      }
     }
 
     // 完成
     console.log('\n' + '='.repeat(80));
     console.log('✅ 遷移完成！');
     console.log('='.repeat(80));
-    console.log(`📊 報價單處理統計:`);
-    console.log(`   總共: ${gtableRowsToProcess.length} 筆`);
-    console.log(`   ✅ 成功: ${quoteSuccessCount} 筆`);
-    console.log(`   ⏭️  跳過: ${quoteSkipCount} 筆`);
-    if (quoteErrorCount > 0) {
-      console.log(`   ⚠️  錯誤跳過: ${quoteErrorCount} 筆`);
+    
+    if (!ONLY_MODE || ONLY_MODE === 'quote') {
+      const gtableRowsToProcess = gtableRows.slice(SKIP_COUNT);
+      console.log(`📊 報價單處理統計:`);
+      console.log(`   總共: ${gtableRowsToProcess.length} 筆`);
+      console.log(`   ✅ 成功: ${quoteSuccessCount} 筆`);
+      console.log(`   ⏭️  跳過: ${quoteSkipCount} 筆`);
+      if (quoteErrorCount > 0) {
+        console.log(`   ⚠️  錯誤跳過: ${quoteErrorCount} 筆`);
+      }
     }
-    console.log(`\n📊 報價單工件處理統計:`);
-    console.log(`   總共: ${itableRows.length} 筆`);
-    console.log(`   ✅ 成功: ${quoteItemSuccessCount} 筆`);
-    console.log(`   ⏭️  跳過: ${quoteItemSkipCount} 筆`);
-    if (quoteItemErrorCount > 0) {
-      console.log(`   ⚠️  錯誤跳過: ${quoteItemErrorCount} 筆`);
+    
+    if (!ONLY_MODE || ONLY_MODE === 'quote-item') {
+      console.log(`${!ONLY_MODE || ONLY_MODE === 'quote' ? '\n' : ''}📊 報價單工件處理統計:`);
+      console.log(`   總共: ${itableRows.length} 筆`);
+      console.log(`   ✅ 成功: ${quoteItemSuccessCount} 筆`);
+      console.log(`   ⏭️  跳過: ${quoteItemSkipCount} 筆`);
+      if (quoteItemErrorCount > 0) {
+        console.log(`   ⚠️  錯誤跳過: ${quoteItemErrorCount} 筆`);
+      }
     }
+    
     console.log('='.repeat(80));
   } catch (error) {
     console.error('\n❌ 發生錯誤：');
