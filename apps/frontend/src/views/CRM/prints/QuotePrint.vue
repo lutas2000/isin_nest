@@ -96,7 +96,7 @@
 import { ref, computed } from 'vue';
 import PrintContainer from '@/components/Print/PrintContainer.vue';
 import CompanyHeader from '@/components/Print/CompanyHeader.vue';
-import { getCompanyHeaderStyles } from '@/components/Print/CompanyHeader.vue';
+import { getCompanyHeaderStyles } from '@/components/Print/printStyles';
 import { formatRocDate, formatNumber, formatInteger } from '@/utils/formatters';
 import type { Quote, QuoteItem } from '@/services/crm/quote.service';
 
