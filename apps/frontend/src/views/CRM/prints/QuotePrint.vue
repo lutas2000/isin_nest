@@ -69,16 +69,16 @@
             <td class="col-thickness">{{ item.thickness || '-' }}</td>
             <td class="col-summary">{{ item.notes || '-' }}</td>
             <td class="col-quantity text-right">{{ formatInteger(item.quantity) }}</td>
-            <td class="col-unit-price text-right">{{ formatNumber(item.unitPrice) }}</td>
+            <td class="col-unit-price text-right">{{ formatInteger(item.unitPrice) }}</td>
             <td class="col-amount text-right">
-              {{ formatNumber((item.quantity || 0) * (item.unitPrice || 0)) }}
+              {{ formatInteger((item.quantity || 0) * (item.unitPrice || 0)) }}
             </td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <td colspan="7" class="text-right total-label">合計</td>
-            <td class="text-right total-amount">{{ formatNumber(totalAmount) }}</td>
+            <td class="text-right total-amount">{{ formatInteger(totalAmount) }}</td>
           </tr>
         </tfoot>
       </table>
@@ -97,7 +97,7 @@ import { ref, computed } from 'vue';
 import PrintContainer from '@/components/Print/PrintContainer.vue';
 import CompanyHeader from '@/components/Print/CompanyHeader.vue';
 import { getCompanyHeaderStyles } from '@/components/Print/printStyles';
-import { formatRocDate, formatNumber, formatInteger } from '@/utils/formatters';
+import { formatRocDate, formatInteger } from '@/utils/formatters';
 import type { Quote, QuoteItem } from '@/services/crm/quote.service';
 
 interface Props {
@@ -195,7 +195,7 @@ const getQuotePrintStyles = (): string => {
     }
     
     .col-item {
-      width: 5%;
+      width: 7%;
     }
     
     .col-customer-file {
@@ -211,15 +211,15 @@ const getQuotePrintStyles = (): string => {
     }
     
     .col-summary {
-      width: 15%;
+      width: 19%;
     }
     
     .col-quantity {
-      width: 10%;
+      width: 8%;
     }
     
     .col-unit-price {
-      width: 12%;
+      width: 8%;
     }
     
     .col-amount {
@@ -325,9 +325,9 @@ defineExpose({ print });
 .col-customer-file { width: 15%; }
 .col-material { width: 12%; }
 .col-thickness { width: 8%; }
-.col-summary { width: 15%; }
-.col-quantity { width: 10%; }
-.col-unit-price { width: 12%; }
+.col-summary { width: 19%; }
+.col-quantity { width: 8%; }
+.col-unit-price { width: 10%; }
 .col-amount { width: 13%; }
 
 .total-label {
