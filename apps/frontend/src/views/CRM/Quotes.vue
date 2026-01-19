@@ -109,7 +109,7 @@
         </template>
         
         <template #actions="{ row, isEditing, save, cancel }">
-          <!-- 編輯模式：顯示保存和取消按鈕 -->
+          <!-- 編輯模式：顯示保存和取消按鈕（這些會直接顯示，不在下拉選單中） -->
           <template v-if="isEditing">
             <button 
               class="btn btn-sm btn-success" 
@@ -124,21 +124,21 @@
               取消
             </button>
           </template>
-          <!-- 非編輯模式：顯示原有按鈕 -->
+          <!-- 非編輯模式：顯示下拉選單項目（純文字） -->
           <template v-else>
-            <button 
+            <span 
               v-if="row.isSigned"
-              class="btn btn-sm btn-success" 
+              class="dropdown-item" 
               @click="convertToWorkOrder(row.id)"
             >
               轉工單
-            </button>
-            <button 
-              class="btn btn-sm btn-danger" 
+            </span>
+            <span 
+              class="dropdown-item" 
               @click="deleteQuote(row.id)"
             >
               刪除
-            </button>
+            </span>
           </template>
         </template>
       </EditableDataTable>

@@ -115,23 +115,17 @@
             </td>
             <td v-if="showActions">
               <div class="action-buttons">
-                <slot 
-                  name="actions" 
-                  :row="row" 
-                  :index="index" 
-                  :is-editing="isEditing(row, index)"
-                  :save="() => saveRow(row, index)"
-                  :cancel="() => cancelEdit(row, index)"
-                  :start-edit="() => startEdit(row, index)"
-                >
-                  <button 
-                    v-if="!isEditing(row, index)"
-                    class="btn btn-sm btn-primary" 
-                    @click="startEdit(row, index)"
+                <!-- 編輯模式：直接顯示 slot 內容或預設按鈕 -->
+                <template v-if="isEditing(row, index)">
+                  <slot 
+                    name="actions" 
+                    :row="row" 
+                    :index="index" 
+                    :is-editing="true"
+                    :save="() => saveRow(row, index)"
+                    :cancel="() => cancelEdit(row, index)"
+                    :start-edit="() => startEdit(row, index)"
                   >
-                    編輯
-                  </button>
-                  <template v-else>
                     <button 
                       class="btn btn-sm btn-success" 
                       @click="saveRow(row, index)"
@@ -144,8 +138,37 @@
                     >
                       取消
                     </button>
-                  </template>
-                </slot>
+                  </slot>
+                </template>
+                <!-- 非編輯模式：使用下拉選單，slot 內容放入下拉選單 -->
+                <div v-else class="actions-dropdown" :class="{ 'is-open': openDropdownIndex === index }">
+                  <button 
+                    class="btn btn-sm btn-primary actions-trigger"
+                    @click="toggleDropdown(index)"
+                    @blur="handleDropdownBlur"
+                  >
+                    操作
+                    <span class="dropdown-arrow">▼</span>
+                  </button>
+                  <div class="dropdown-menu" v-if="openDropdownIndex === index" @click="handleDropdownItemClick">
+                    <slot 
+                      name="actions" 
+                      :row="row" 
+                      :index="index" 
+                      :is-editing="false"
+                      :save="() => saveRow(row, index)"
+                      :cancel="() => cancelEdit(row, index)"
+                      :start-edit="() => { startEdit(row, index); closeDropdown(); }"
+                    >
+                      <span 
+                        class="dropdown-item"
+                        @click="startEdit(row, index)"
+                      >
+                        編輯
+                      </span>
+                    </slot>
+                  </div>
+                </div>
               </div>
             </td>
           </tr>
@@ -187,7 +210,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import EditableCell from './EditableCell.vue';
 
 interface Column {
@@ -254,6 +277,7 @@ const focusedRowIndex = ref<number | null>(null);
 const focusedFieldKey = ref<string | null>(null);
 const isNewRowFocused = ref(false);
 const tableRef = ref<HTMLDivElement | null>(null);
+const openDropdownIndex = ref<number | null>(null);
 
 const totalPages = computed(() => {
   return Math.ceil(props.total / props.pageSize);
@@ -700,6 +724,60 @@ watch(() => props.pageSize, (newSize) => {
   localPageSize.value = newSize;
 });
 
+// 下拉選單控制
+const toggleDropdown = (index: number) => {
+  if (openDropdownIndex.value === index) {
+    openDropdownIndex.value = null;
+  } else {
+    openDropdownIndex.value = index;
+  }
+};
+
+const closeDropdown = () => {
+  openDropdownIndex.value = null;
+};
+
+const handleDropdownBlur = (event: FocusEvent) => {
+  // 延遲關閉，以便點擊下拉選單項目時不會立即關閉
+  setTimeout(() => {
+    const relatedTarget = event.relatedTarget as HTMLElement;
+    if (relatedTarget && !tableRef.value?.contains(relatedTarget)) {
+      closeDropdown();
+    }
+  }, 200);
+};
+
+const handleDropdownItemClick = (event: MouseEvent) => {
+  // 點擊下拉選單項目時，延遲關閉下拉選單，確保點擊事件能夠執行
+  const target = event.target as HTMLElement;
+  if (target.classList.contains('dropdown-item') || target.closest('.dropdown-item')) {
+    // 延遲關閉，讓點擊事件先執行
+    setTimeout(() => {
+      closeDropdown();
+    }, 150);
+  }
+};
+
+// 點擊外部關閉下拉選單
+const handleClickOutside = (event: MouseEvent) => {
+  if (openDropdownIndex.value !== null) {
+    const target = event.target as HTMLElement;
+    if (!tableRef.value?.contains(target)) {
+      closeDropdown();
+    }
+  }
+};
+
+// 監聽點擊外部事件
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+// 清理事件監聽器
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
 // 暴露狀態和方法供外部組件使用
 defineExpose({
   focusedRowIndex,
@@ -786,6 +864,123 @@ defineExpose({
 .action-buttons {
   display: flex;
   gap: 0.5rem;
+  position: relative;
+}
+
+.actions-dropdown {
+  position: relative;
+}
+
+.actions-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dropdown-arrow {
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.actions-dropdown.is-open .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  background: white;
+  border: 1px solid var(--secondary-300);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0.25rem 0;
+}
+
+.dropdown-menu > * {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.dropdown-item {
+  display: block !important;
+  width: 100% !important;
+  padding: 0.625rem 1rem;
+  text-align: center;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--secondary-200);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--secondary-700);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  text-decoration: none;
+  user-select: none;
+}
+
+.dropdown-item:not(:last-child) {
+  border-bottom: 1px solid var(--secondary-200);
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background-color: var(--secondary-100);
+  color: var(--secondary-900);
+}
+
+.dropdown-item:active {
+  background-color: var(--secondary-200);
+}
+
+/* 確保 slot 中的按鈕也顯示為純文字樣式 */
+.dropdown-menu button {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--secondary-200) !important;
+  text-align: center !important;
+  justify-content: center !important;
+  padding: 0.625rem 1rem !important;
+  background: none !important;
+  cursor: pointer !important;
+  font-size: var(--font-size-sm) !important;
+  color: var(--secondary-700) !important;
+  font-weight: normal !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  user-select: none;
+}
+
+.dropdown-menu button:not(:last-child) {
+  border-bottom: 1px solid var(--secondary-200) !important;
+}
+
+.dropdown-menu button:last-child {
+  border-bottom: none !important;
+}
+
+.dropdown-menu button:hover {
+  background-color: var(--secondary-100) !important;
+  color: var(--secondary-900) !important;
+}
+
+.dropdown-menu button:active {
+  background-color: var(--secondary-200) !important;
 }
 
 .pagination-container {
@@ -844,6 +1039,17 @@ defineExpose({
   .action-buttons {
     flex-direction: column;
     gap: 0.25rem;
+  }
+  
+  .dropdown-menu {
+    right: auto;
+    left: 0;
+    min-width: 120px;
+  }
+  
+  .dropdown-item {
+    padding: 0.5rem 0.875rem;
+    font-size: var(--font-size-xs);
   }
   
   .pagination-container {
