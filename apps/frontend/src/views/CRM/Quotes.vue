@@ -97,6 +97,13 @@
           NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
         </template>
 
+        <template #cell-postProcessing="{ value }">
+          <span v-if="value && (typeof value === 'string' ? value : value.length > 0)">
+            {{ typeof value === 'string' ? value : value.join('、') }}
+          </span>
+          <span v-else class="text-muted">無</span>
+        </template>
+
         <template #cell-notes="{ value }">
           <span v-if="value && value.length > 50" :title="value">
             {{ value.substring(0, 50) }}...
@@ -188,6 +195,19 @@
                 <span class="details-label">總計金額：</span>
                 <span class="details-value">NT$ {{ Number(selectedQuote.totalAmount).toLocaleString('zh-TW') }}</span>
               </div>
+            </div>
+          </div>
+
+          <div class="details-section" v-if="selectedQuotePostProcessingList.length > 0">
+            <h4>後加工</h4>
+            <div class="post-processing-tags">
+              <span 
+                v-for="(process, index) in selectedQuotePostProcessingList" 
+                :key="index"
+                class="post-processing-tag"
+              >
+                {{ process }}
+              </span>
             </div>
           </div>
 
@@ -361,6 +381,7 @@ const newRowTemplate = () => ({
   customerId: '',
   totalAmount: 0,
   notes: '',
+  postProcessing: '',
   isSigned: false,
 });
 
@@ -439,6 +460,12 @@ const editableColumns = computed<EditableColumn[]>(() => [
     ]
   },
   { 
+    key: 'postProcessing', 
+    label: '後加工', 
+    editable: true, 
+    type: 'text'
+  },
+  { 
     key: 'notes', 
     label: '備註', 
     editable: true, 
@@ -476,11 +503,31 @@ const filteredQuotes = computed(() => {
   return filtered;
 });
 
+// 選中報價單的後加工列表（用於詳情 Modal）
+const selectedQuotePostProcessingList = computed((): string[] => {
+  if (!selectedQuote.value?.postProcessing) return [];
+  const pp = selectedQuote.value.postProcessing as unknown;
+  if (typeof pp === 'string') {
+    return (pp as string).split(/[,、，]/).map((s: string) => s.trim()).filter((s: string) => s);
+  }
+  return pp as string[];
+});
+
 // 處理篩選器更新
 const handleFilterUpdate = (key: string, value: string) => {
   if (key === 'status') {
     quoteStatusFilter.value = value;
   }
+};
+
+// 將 postProcessing 陣列轉換為逗號分隔字串（用於編輯）
+const transformQuoteForEdit = (quote: Quote): Quote => {
+  return {
+    ...quote,
+    postProcessing: Array.isArray(quote.postProcessing) 
+      ? quote.postProcessing.join('、') as unknown as string[]
+      : quote.postProcessing,
+  };
 };
 
 // 載入報價單資料
@@ -491,11 +538,11 @@ const loadQuotes = async () => {
     const response = await quoteService.getAll(currentPage.value, pageSize.value);
     // 檢查是否為分頁回應
     if (response && typeof response === 'object' && 'data' in response) {
-      quotes.value = response.data;
+      quotes.value = response.data.map(transformQuoteForEdit);
       total.value = response.total;
     } else {
       // 向後兼容：如果不是分頁回應，直接使用數組
-      quotes.value = response as Quote[];
+      quotes.value = (response as Quote[]).map(transformQuoteForEdit);
       total.value = quotes.value.length;
     }
   } catch (err) {
@@ -558,12 +605,23 @@ const handleFieldChange = (row: Quote, field: string, value: any, isNew: boolean
 // 處理手動保存
 const handleSave = async (row: Quote, isNew: boolean) => {
   try {
+    // 處理 postProcessing：如果是字串則轉換為陣列
+    const parsePostProcessing = (value: any): string[] => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        return value.split(/[,、，]/).map((s: string) => s.trim()).filter((s: string) => s);
+      }
+      return [];
+    };
+
     if (isNew) {
       const data: Partial<Quote> = {
         staffId: row.staffId,
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
         notes: row.notes || undefined,
+        postProcessing: parsePostProcessing(row.postProcessing),
         isSigned: row.isSigned || false,
       };
       await quoteService.create(data);
@@ -574,6 +632,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
         notes: row.notes || undefined,
+        postProcessing: parsePostProcessing(row.postProcessing),
         isSigned: row.isSigned || false,
       };
       await quoteService.update(row.id, data);
@@ -587,11 +646,22 @@ const handleSave = async (row: Quote, isNew: boolean) => {
 // 處理新增行保存
 const handleNewRowSave = async (row: any) => {
   try {
+    // 處理 postProcessing：如果是字串則轉換為陣列
+    const parsePostProcessing = (value: any): string[] => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        return value.split(/[,、，]/).map((s: string) => s.trim()).filter((s: string) => s);
+      }
+      return [];
+    };
+
     const data: Partial<Quote> = {
       staffId: row.staffId,
       customerId: row.customerId,
       totalAmount: row.totalAmount || 0,
       notes: row.notes || undefined,
+      postProcessing: parsePostProcessing(row.postProcessing),
       isSigned: row.isSigned || false,
     };
     await quoteService.create(data);
@@ -969,6 +1039,27 @@ textarea.form-control {
   gap: 0.25rem;
   font-size: var(--font-size-sm);
   color: var(--secondary-700);
+}
+
+/* 後加工標籤樣式 */
+.post-processing-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.post-processing-tag {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--primary-100);
+  color: var(--primary-700);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.text-muted {
+  color: var(--secondary-400);
 }
 
 /* 響應式設計 */

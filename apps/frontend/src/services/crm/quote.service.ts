@@ -21,6 +21,7 @@ export interface Quote {
   customerId: string
   totalAmount: number
   notes?: string
+  postProcessing?: string[]
   isSigned: boolean
   quoteItems?: QuoteItem[]
   staff?: any
