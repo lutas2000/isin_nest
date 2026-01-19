@@ -29,6 +29,9 @@ export const API_CONFIG = {
     WORK_ORDER_ITEMS: '/crm/work-order-items',
     CONFIGS: '/crm/configs', // 分頁端點
     CONFIGS_ALL: '/crm/configs/all', // 無分頁端點
+    VENDORS: '/crm/vendors',
+    VENDORS_ALL: '/crm/vendors/all',
+    PROCESSINGS: '/crm/processings',
   },
 }
 

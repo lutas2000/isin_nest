@@ -94,3 +94,19 @@ export const apiDelete = <T>(endpoint: string): Promise<T> => {
   return apiRequest<T>(endpoint, { method: 'DELETE' })
 }
 
+// PUT 請求
+export const apiPut = <T>(endpoint: string, data?: any): Promise<T> => {
+  return apiRequest<T>(endpoint, {
+    method: 'PUT',
+    body: data ? JSON.stringify(data) : undefined,
+  })
+}
+
+// PATCH 請求
+export const apiPatch = <T>(endpoint: string, data?: any): Promise<T> => {
+  return apiRequest<T>(endpoint, {
+    method: 'PATCH',
+    body: data ? JSON.stringify(data) : undefined,
+  })
+}
+

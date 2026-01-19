@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
@@ -10,6 +11,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { WorkOrder } from '../../work-order/entities/work-order.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
+import { Processing } from '../../processing/entities/processing.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('work_order_item')
@@ -143,5 +145,10 @@ export class WorkOrderItem {
   @ManyToOne(() => Staff, { nullable: true })
   @JoinColumn({ name: 'drawing_staff_id' })
   drawingStaff?: Staff;
+
+  // 關聯到 Processing（一對多：加工項目）
+  @ApiProperty({ description: '關聯的加工項目', type: () => [Processing] })
+  @OneToMany(() => Processing, (processing) => processing.workOrderItem)
+  processingItems?: Processing[];
 }
 
