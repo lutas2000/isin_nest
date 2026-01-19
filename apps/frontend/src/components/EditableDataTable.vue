@@ -141,33 +141,55 @@
                   </slot>
                 </template>
                 <!-- 非編輯模式：使用下拉選單，slot 內容放入下拉選單 -->
-                <div v-else class="actions-dropdown" :class="{ 'is-open': openDropdownIndex === index }">
+                <div 
+                  class="actions-dropdown" 
+                  :class="{ 'is-open': openDropdownIndex === index }"
+                  :ref="(el) => setDropdownTriggerRef(el as HTMLElement | null, index)"
+                >
                   <button 
-                    class="btn btn-sm btn-primary actions-trigger"
+                    class="actions-trigger"
                     @click="toggleDropdown(index)"
                     @blur="handleDropdownBlur"
                   >
-                    操作
-                    <span class="dropdown-arrow">▼</span>
+                    <svg class="actions-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="5" r="1.5"/>
+                      <circle cx="12" cy="12" r="1.5"/>
+                      <circle cx="12" cy="19" r="1.5"/>
+                    </svg>
                   </button>
-                  <div class="dropdown-menu" v-if="openDropdownIndex === index" @click="handleDropdownItemClick">
-                    <slot 
-                      name="actions" 
-                      :row="row" 
-                      :index="index" 
-                      :is-editing="false"
-                      :save="() => saveRow(row, index)"
-                      :cancel="() => cancelEdit(row, index)"
-                      :start-edit="() => { startEdit(row, index); closeDropdown(); }"
-                    >
-                      <span 
-                        class="dropdown-item"
-                        @click="startEdit(row, index)"
+                  <Teleport to="body">
+                    <Transition name="dropdown-fade">
+                      <div 
+                        v-if="openDropdownIndex === index" 
+                        class="dropdown-menu-portal"
+                        :style="getDropdownPosition(index)"
+                        @click="handleDropdownItemClick"
                       >
-                        編輯
-                      </span>
-                    </slot>
-                  </div>
+                        <div class="dropdown-menu-content">
+                          <slot 
+                            name="actions" 
+                            :row="row" 
+                            :index="index" 
+                            :is-editing="false"
+                            :save="() => saveRow(row, index)"
+                            :cancel="() => cancelEdit(row, index)"
+                            :start-edit="() => { startEdit(row, index); closeDropdown(); }"
+                          >
+                            <span 
+                              class="dropdown-item"
+                              @click="startEdit(row, index)"
+                            >
+                              <svg class="dropdown-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                              編輯
+                            </span>
+                          </slot>
+                        </div>
+                      </div>
+                    </Transition>
+                  </Teleport>
                 </div>
               </div>
             </td>
@@ -278,6 +300,47 @@ const focusedFieldKey = ref<string | null>(null);
 const isNewRowFocused = ref(false);
 const tableRef = ref<HTMLDivElement | null>(null);
 const openDropdownIndex = ref<number | null>(null);
+const dropdownTriggerRefs = ref<Map<number, HTMLElement>>(new Map());
+
+// 設定下拉選單觸發按鈕的 ref
+const setDropdownTriggerRef = (el: HTMLElement | null, index: number) => {
+  if (el) {
+    dropdownTriggerRefs.value.set(index, el);
+  } else {
+    dropdownTriggerRefs.value.delete(index);
+  }
+};
+
+// 計算下拉選單位置
+const getDropdownPosition = (index: number) => {
+  const triggerEl = dropdownTriggerRefs.value.get(index);
+  if (!triggerEl) {
+    return { top: '0px', left: '0px' };
+  }
+  
+  const rect = triggerEl.getBoundingClientRect();
+  const menuWidth = 180; // 預估選單寬度
+  const menuHeight = 200; // 預估選單高度
+  
+  // 計算位置，確保不會超出視窗
+  let top = rect.bottom + 4;
+  let left = rect.right - menuWidth;
+  
+  // 如果超出右邊界，往左調整
+  if (left < 8) {
+    left = rect.left;
+  }
+  
+  // 如果超出下邊界，顯示在上方
+  if (top + menuHeight > window.innerHeight - 8) {
+    top = rect.top - menuHeight - 4;
+  }
+  
+  return {
+    top: `${top}px`,
+    left: `${left}px`,
+  };
+};
 
 const totalPages = computed(() => {
   return Math.ceil(props.total / props.pageSize);
@@ -393,8 +456,8 @@ watch(() => props.showNewRow, (show) => {
   }
 }, { immediate: true });
 
-// 監聽資料變化，確保 focus row 有效
-watch(() => props.data, (newData, oldData) => {
+// 監聯資料變化，確保 focus row 有效
+watch(() => props.data, (newData) => {
   // 如果正在編輯某一行，保持 editingData 不變（避免資料更新時覆蓋編輯中的值）
   if (editingRowId.value) {
     // 找到正在編輯的行在新資料中的位置
@@ -509,7 +572,8 @@ const handleFieldChange = (row: any, field: string, value: any, index?: number) 
 };
 
 // 處理欄位失去 focus（不再自動保存，只有按下保存按鈕或最後一個欄位 Enter 才保存）
-const handleFieldBlur = (row: any, field: string, index?: number) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const handleFieldBlur = (_row: any, _field: string, _index?: number) => {
   // 移除自動保存邏輯，保持編輯狀態
   // 用戶需要明確按下保存按鈕或最後一個欄位 Enter 才會保存
 };
@@ -762,20 +826,35 @@ const handleDropdownItemClick = (event: MouseEvent) => {
 const handleClickOutside = (event: MouseEvent) => {
   if (openDropdownIndex.value !== null) {
     const target = event.target as HTMLElement;
-    if (!tableRef.value?.contains(target)) {
+    // 檢查是否點擊在下拉選單觸發按鈕或下拉選單內容上
+    const isInTrigger = dropdownTriggerRefs.value.get(openDropdownIndex.value)?.contains(target);
+    const isInPortal = target.closest('.dropdown-menu-portal');
+    
+    if (!isInTrigger && !isInPortal) {
       closeDropdown();
     }
   }
 };
 
-// 監聽點擊外部事件
+// 滾動或視窗大小改變時關閉下拉選單
+const handleScrollOrResize = () => {
+  if (openDropdownIndex.value !== null) {
+    closeDropdown();
+  }
+};
+
+// 監聯點擊外部事件
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  window.addEventListener('scroll', handleScrollOrResize, true);
+  window.addEventListener('resize', handleScrollOrResize);
 });
 
 // 清理事件監聽器
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScrollOrResize, true);
+  window.removeEventListener('resize', handleScrollOrResize);
 });
 
 // 暴露狀態和方法供外部組件使用
@@ -865,122 +944,48 @@ defineExpose({
   display: flex;
   gap: 0.5rem;
   position: relative;
+  justify-content: center;
 }
 
 .actions-dropdown {
   position: relative;
+  display: inline-flex;
 }
 
 .actions-trigger {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.dropdown-arrow {
-  font-size: 0.75rem;
-  transition: transform 0.2s;
-}
-
-.actions-dropdown.is-open .dropdown-arrow {
-  transform: rotate(180deg);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.25rem;
-  background: white;
-  border: 1px solid var(--secondary-300);
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  min-width: 140px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0.25rem 0;
-}
-
-.dropdown-menu > * {
-  display: block !important;
-  width: 100% !important;
-  margin: 0 !important;
-}
-
-.dropdown-item {
-  display: block !important;
-  width: 100% !important;
-  padding: 0.625rem 1rem;
-  text-align: center;
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--secondary-200);
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  color: var(--secondary-700);
+  color: var(--secondary-500);
   transition: all 0.2s ease;
-  white-space: nowrap;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  text-decoration: none;
-  user-select: none;
 }
 
-.dropdown-item:not(:last-child) {
-  border-bottom: 1px solid var(--secondary-200);
+.actions-trigger:hover {
+  background: var(--secondary-100);
+  color: var(--secondary-700);
+  border-color: var(--secondary-200);
 }
 
-.dropdown-item:last-child {
-  border-bottom: none;
+.actions-trigger:active {
+  background: var(--secondary-200);
 }
 
-.dropdown-item:hover {
-  background-color: var(--secondary-100);
-  color: var(--secondary-900);
+.actions-dropdown.is-open .actions-trigger {
+  background: var(--primary-50);
+  color: var(--primary-600);
+  border-color: var(--primary-200);
 }
 
-.dropdown-item:active {
-  background-color: var(--secondary-200);
-}
-
-/* 確保 slot 中的按鈕也顯示為純文字樣式 */
-.dropdown-menu button {
-  display: block !important;
-  width: 100% !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  border: none !important;
-  border-bottom: 1px solid var(--secondary-200) !important;
-  text-align: center !important;
-  justify-content: center !important;
-  padding: 0.625rem 1rem !important;
-  background: none !important;
-  cursor: pointer !important;
-  font-size: var(--font-size-sm) !important;
-  color: var(--secondary-700) !important;
-  font-weight: normal !important;
-  box-shadow: none !important;
-  text-decoration: none !important;
-  user-select: none;
-}
-
-.dropdown-menu button:not(:last-child) {
-  border-bottom: 1px solid var(--secondary-200) !important;
-}
-
-.dropdown-menu button:last-child {
-  border-bottom: none !important;
-}
-
-.dropdown-menu button:hover {
-  background-color: var(--secondary-100) !important;
-  color: var(--secondary-900) !important;
-}
-
-.dropdown-menu button:active {
-  background-color: var(--secondary-200) !important;
+.actions-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .pagination-container {
@@ -1041,17 +1046,6 @@ defineExpose({
     gap: 0.25rem;
   }
   
-  .dropdown-menu {
-    right: auto;
-    left: 0;
-    min-width: 120px;
-  }
-  
-  .dropdown-item {
-    padding: 0.5rem 0.875rem;
-    font-size: var(--font-size-xs);
-  }
-  
   .pagination-container {
     flex-direction: column;
     align-items: stretch;
@@ -1060,6 +1054,140 @@ defineExpose({
   .pagination-controls {
     justify-content: center;
     flex-wrap: wrap;
+  }
+}
+</style>
+
+<!-- 下拉選單樣式（非 scoped，因為使用 Teleport 渲染到 body） -->
+<style>
+/* 下拉選單 Portal 容器 */
+.dropdown-menu-portal {
+  position: fixed;
+  z-index: 9999;
+}
+
+/* 下拉選單內容 */
+.dropdown-menu-content {
+  background: white;
+  border: 1px solid var(--secondary-200, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  max-width: 240px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+/* 下拉選單項目 */
+.dropdown-menu-content .dropdown-item,
+.dropdown-menu-content button,
+.dropdown-menu-content > * {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  width: 100% !important;
+  padding: 10px 12px !important;
+  margin: 0 !important;
+  background: none !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--secondary-700, #374151) !important;
+  text-align: left !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.dropdown-menu-content .dropdown-item:hover,
+.dropdown-menu-content button:hover,
+.dropdown-menu-content > *:hover {
+  background: var(--secondary-100, #f3f4f6) !important;
+  color: var(--secondary-900, #111827) !important;
+}
+
+.dropdown-menu-content .dropdown-item:active,
+.dropdown-menu-content button:active,
+.dropdown-menu-content > *:active {
+  background: var(--secondary-200, #e5e7eb) !important;
+  transform: scale(0.98);
+}
+
+/* 下拉選單項目圖示 */
+.dropdown-item-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--secondary-500, #6b7280);
+}
+
+.dropdown-menu-content .dropdown-item:hover .dropdown-item-icon,
+.dropdown-menu-content button:hover .dropdown-item-icon {
+  color: var(--primary-600, #2563eb);
+}
+
+/* 危險操作樣式 */
+.dropdown-menu-content .dropdown-item.danger,
+.dropdown-menu-content button.danger,
+.dropdown-menu-content .btn-danger {
+  color: var(--danger-600, #dc2626) !important;
+}
+
+.dropdown-menu-content .dropdown-item.danger:hover,
+.dropdown-menu-content button.danger:hover,
+.dropdown-menu-content .btn-danger:hover {
+  background: var(--danger-50, #fef2f2) !important;
+  color: var(--danger-700, #b91c1c) !important;
+}
+
+.dropdown-menu-content .dropdown-item.danger .dropdown-item-icon,
+.dropdown-menu-content .btn-danger .dropdown-item-icon {
+  color: var(--danger-500, #ef4444);
+}
+
+/* 分隔線 */
+.dropdown-menu-content .dropdown-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--secondary-200, #e5e7eb);
+}
+
+/* 下拉選單動畫 */
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.95);
+}
+
+.dropdown-fade-enter-to,
+.dropdown-fade-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* 響應式設計 - 下拉選單 */
+@media (max-width: 768px) {
+  .dropdown-menu-content {
+    min-width: 140px;
+  }
+  
+  .dropdown-menu-content .dropdown-item,
+  .dropdown-menu-content button,
+  .dropdown-menu-content > * {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
   }
 }
 </style>
