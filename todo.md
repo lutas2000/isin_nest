@@ -16,6 +16,9 @@
 - [x] 修復報價單、工作單等問題
 - [x] 影印
 - [x] docker file
+- [ ] 報價單轉換工作單
+- [ ] 工作單進度管理
+- [ ] 報價單可選擇印 A4 or A5
 - [ ] AutoCAD 預覽(dfx to image)
 - [ ] 圖片, pdf 預覽
 - [ ] 轉換 python api

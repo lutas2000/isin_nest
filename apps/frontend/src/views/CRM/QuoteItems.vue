@@ -58,7 +58,7 @@
             <div class="details-grid">
               <div class="details-item">
                 <span class="details-label">總計金額：</span>
-                <span class="details-value highlight">NT$ {{ Number(quote.totalAmount).toLocaleString('zh-TW') }}</span>
+                <span class="details-value highlight">{{ Number(quote.totalAmount).toLocaleString('zh-TW') }}</span>
               </div>
             </div>
           </div>
@@ -145,12 +145,12 @@
           </template>
 
           <template #cell-unitPrice="{ value }">
-            NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+            {{ Number(value || 0).toLocaleString('zh-TW') }}
           </template>
 
           <template #cell-subtotal="{ row }">
             <span class="highlight">
-              NT$ {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
+              {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
             </span>
           </template>
           

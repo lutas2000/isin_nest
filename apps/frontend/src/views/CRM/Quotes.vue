@@ -94,7 +94,7 @@
         </template>
         
         <template #cell-totalAmount="{ value }">
-          NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+          {{ Number(value || 0).toLocaleString('zh-TW') }}
         </template>
 
         <template #cell-postProcessing="{ value }">
@@ -193,7 +193,7 @@
             <div class="details-grid">
               <div class="details-item">
                 <span class="details-label">總計金額：</span>
-                <span class="details-value">NT$ {{ Number(selectedQuote.totalAmount).toLocaleString('zh-TW') }}</span>
+                <span class="details-value">{{ Number(selectedQuote.totalAmount).toLocaleString('zh-TW') }}</span>
               </div>
             </div>
           </div>
@@ -244,7 +244,7 @@
               >
                 <div class="quote-item-header">
                   <span class="quote-item-title">工件 #{{ item.id }}</span>
-                  <span class="quote-item-amount">NT$ {{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}</span>
+                  <span class="quote-item-amount">{{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}</span>
                 </div>
                 <div class="quote-item-details">
                   <div v-if="item.customerFile">客戶圖檔：{{ item.customerFile }}</div>
@@ -252,7 +252,7 @@
                   <div v-if="item.thickness">厚度：{{ item.thickness }}</div>
                   <div v-if="item.notes">備註：{{ item.notes }}</div>
                   <div>數量：{{ item.quantity }}</div>
-                  <div>單價：NT$ {{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
+                  <div>單價：{{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
                 </div>
               </div>
             </div>
