@@ -2,36 +2,20 @@
   <div class="orders-page">
     <PageHeader 
       title="工作單管理"
+      description="管理工作單、追蹤工單狀態和處理工作流程"
     >
-      <template #actions>
-        <button class="btn btn-primary" @click="showCreateModal = true">
-          <span class="btn-icon">📋</span>
-          新增工作單
-        </button>
-      </template>
     </PageHeader>
 
-    <!-- 工單統計 -->
-    <div class="orders-overview">
-      <OverviewCard 
-        icon="📋"
-        :value="ordersStats.totalOrders"
-        label="總工作單數"
-        variant="primary"
-      />
-      
-      <OverviewCard 
-        icon="⏳"
-        :value="ordersStats.pendingOrders"
-        label="進行中"
-        variant="warning"
-      />
-    </div>
+    <!-- 快捷鍵提示 -->
+    <ShortcutHint 
+      :table-state="tableState" 
+      @shortcut-click="handleShortcutClick"
+    />
 
     <!-- 工單列表 -->
     <div class="orders-content">
       <SearchFilters
-        title="工作單列表"
+        title=""
         :show-search="true"
         search-placeholder="搜尋工單編號或客戶..."
         :filters="[
@@ -51,167 +35,224 @@
 
       <div v-if="loading" class="loading-message">載入中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <DataTable
+      <EditableDataTable
         v-else
-        :columns="tableColumns"
+        ref="editableTableRef"
+        :columns="editableColumns"
         :data="filteredOrders"
         :show-actions="true"
         :pagination="true"
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
+        :editable="true"
+        :show-new-row="showNewRow"
+        :new-row-template="newRowTemplate"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
+        @field-change="handleFieldChange"
+        @save="handleSave"
+        @new-row-save="handleNewRowSave"
+        @new-row-cancel="showNewRow = false"
+        @new-row-show="showNewRow = true"
+        @row-delete="handleRowDelete"
+        @row-view="handleRowView"
+        @row-edit="handleRowEdit"
       >
-        <template #cell-customer="{ row }">
-          {{ row.customer?.companyName || row.customer?.companyShortName || '未知' }}
+        <template #cell-id="{ row, value }">
+          <button 
+            v-if="value" 
+            class="link-button" 
+            type="button" 
+            @click="viewDetails(row)"
+          >
+            {{ value }}
+          </button>
+          <span v-else class="text-muted">待生成</span>
         </template>
 
-        <template #cell-staff="{ row }">
-          {{ row.staff?.name || '未知' }}
+        <template #cell-customerId="{ row, value }">
+          <span v-if="!row.customerId">未指定</span>
+          <span 
+            v-else 
+            :title="row.customer?.companyName || row.customer?.companyShortName || value"
+          >
+            {{ value }}
+          </span>
         </template>
 
-        <template #cell-status="{ row }">
+        <template #cell-staffId="{ row, value }">
+          <span v-if="!row.staffId">未知</span>
+          <span v-else>{{ row.staff?.name || value }}</span>
+        </template>
+
+        <template #cell-isCompleted="{ value }">
           <StatusBadge 
-            :text="row.isCompleted ? '已完成' : '進行中'" 
-            :variant="row.isCompleted ? 'success' : 'info'"
+            :text="value ? '已完成' : '進行中'" 
+            :variant="value ? 'success' : 'info'"
           />
         </template>
         
         <template #cell-amount="{ value }">
-          NT$ {{ Number(value).toLocaleString('zh-TW') }}
+          NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+        </template>
+
+        <template #cell-notes="{ value }">
+          <span v-if="value && value.length > 50" :title="value">
+            {{ value.substring(0, 50) }}...
+          </span>
+          <span v-else>{{ value || '' }}</span>
         </template>
 
         <template #cell-createdAt="{ value }">
           {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
         </template>
         
-        <template #actions="{ row }">
-          <button class="btn btn-sm btn-outline" @click="viewDetails(row)">查看</button>
-          <button class="btn btn-sm btn-primary" @click="editOrder(row)">編輯</button>
-          <button 
-            class="btn btn-sm btn-success" 
-            v-if="!row.isCompleted"
-            @click="completeOrder(row.id)"
-          >
-            完成
-          </button>
-          <button class="btn btn-sm btn-danger" @click="deleteOrder(row.id)">刪除</button>
+        <template #actions="{ row, isEditing, save, cancel }">
+          <!-- 編輯模式：顯示保存和取消按鈕 -->
+          <template v-if="isEditing">
+            <button 
+              class="btn btn-sm btn-success" 
+              @click="save"
+            >
+              保存
+            </button>
+            <button 
+              class="btn btn-sm btn-outline" 
+              @click="cancel"
+            >
+              取消
+            </button>
+          </template>
+          <!-- 非編輯模式：顯示下拉選單項目 -->
+          <template v-else>
+            <span 
+              v-if="!row.isCompleted"
+              class="dropdown-item" 
+              @click="completeOrder(row.id)"
+            >
+              完成
+            </span>
+            <span 
+              class="dropdown-item" 
+              @click="deleteOrder(row.id)"
+            >
+              刪除
+            </span>
+          </template>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
 
-    <!-- 創建/編輯工單 Modal -->
+    <!-- 查看詳情 Modal -->
     <Modal 
-      :show="showCreateModal" 
-      :title="editingOrder ? '編輯工單' : '新增工單'"
-      @close="closeModal"
+      v-if="selectedOrder"
+      :show="showDetailsModal" 
+      :title="`工單詳情 #${selectedOrder.id}`"
+      @close="showDetailsModal = false"
     >
-        <div class="modal-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label>工單ID *</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                v-model="orderForm.id" 
-                :disabled="!!editingOrder"
-                placeholder="例如：WO001"
-              />
+      <div class="details-content">
+        <div class="details-section">
+          <h4>基本資訊</h4>
+          <div class="details-grid">
+            <div class="details-item">
+              <span class="details-label">工單編號：</span>
+              <span class="details-value">{{ selectedOrder.id }}</span>
             </div>
-            <div class="form-group">
-              <label>業務員 *</label>
-              <select 
-                class="form-control" 
-                v-model="orderForm.staffId"
-              >
-                <option value="">請選擇業務員</option>
-                <option 
-                  v-for="staff in staffList" 
-                  :key="staff.id" 
-                  :value="staff.id"
-                >
-                  {{ staff.name }}
-                </option>
-              </select>
+            <div class="details-item">
+              <span class="details-label">業務員：</span>
+              <span class="details-value">{{ selectedOrder.staff?.name || '未知' }}</span>
             </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>客戶 *</label>
-              <select 
-                class="form-control" 
-                v-model="orderForm.customerId"
-              >
-                <option value="">請選擇客戶</option>
-                <option 
-                  v-for="customer in customers" 
-                  :key="customer.id" 
-                  :value="customer.id"
-                >
-                  {{ customer.companyName }}
-                </option>
-              </select>
+            <div class="details-item">
+              <span class="details-label">客戶：</span>
+              <span class="details-value">
+                {{ selectedOrder.customer?.companyShortName || selectedOrder.customer?.companyName || '未指定' }}
+              </span>
             </div>
-            <div class="form-group">
-              <label>金額</label>
-              <input 
-                type="number" 
-                class="form-control" 
-                v-model="orderForm.amount"
-                placeholder="0"
-              />
+            <div class="details-item">
+              <span class="details-label">狀態：</span>
+              <span class="details-value">
+                <StatusBadge 
+                  :text="selectedOrder.isCompleted ? '已完成' : '進行中'" 
+                  :variant="selectedOrder.isCompleted ? 'success' : 'info'"
+                />
+              </span>
             </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>運送方式 *</label>
-              <select 
-                class="form-control" 
-                v-model="orderForm.shippingMethod"
-              >
-                <option value="">請選擇運送方式</option>
-                <option value="自取">自取</option>
-                <option value="快遞">快遞</option>
-                <option value="貨運">貨運</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>付款方式 *</label>
-              <select 
-                class="form-control" 
-                v-model="orderForm.paymentMethod"
-              >
-                <option value="">請選擇付款方式</option>
-                <option value="現金">現金</option>
-                <option value="轉帳">轉帳</option>
-                <option value="月結">月結</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>備註</label>
-            <textarea 
-              class="form-control" 
-              v-model="orderForm.notes"
-              rows="3"
-              placeholder="請輸入備註"
-            ></textarea>
           </div>
         </div>
-      <template #footer>
-        <button class="btn btn-outline" @click="closeModal">取消</button>
-        <button 
-          class="btn btn-primary" 
-          @click="saveOrder" 
-          :disabled="!isFormValid"
-        >
-          {{ editingOrder ? '更新' : '建立' }}
-        </button>
-      </template>
+
+        <div class="details-section">
+          <h4>訂單資訊</h4>
+          <div class="details-grid">
+            <div class="details-item">
+              <span class="details-label">運送方式：</span>
+              <span class="details-value">{{ selectedOrder.shippingMethod }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">付款方式：</span>
+              <span class="details-value">{{ selectedOrder.paymentMethod }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">金額：</span>
+              <span class="details-value">NT$ {{ Number(selectedOrder.amount).toLocaleString('zh-TW') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="details-section" v-if="selectedOrder.notes">
+          <h4>備註</h4>
+          <p>{{ selectedOrder.notes }}</p>
+        </div>
+
+        <div class="details-section">
+          <h4>時間資訊</h4>
+          <div class="details-grid">
+            <div class="details-item">
+              <span class="details-label">建立時間：</span>
+              <span class="details-value">
+                {{ selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString('zh-TW') : '未知' }}
+              </span>
+            </div>
+            <div class="details-item" v-if="selectedOrder.updatedAt">
+              <span class="details-label">更新時間：</span>
+              <span class="details-value">
+                {{ new Date(selectedOrder.updatedAt).toLocaleString('zh-TW') }}
+              </span>
+            </div>
+            <div class="details-item" v-if="selectedOrder.endedAt">
+              <span class="details-label">完成時間：</span>
+              <span class="details-value">
+                {{ new Date(selectedOrder.endedAt).toLocaleString('zh-TW') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="details-section" v-if="selectedOrder.workOrderItems && selectedOrder.workOrderItems.length > 0">
+          <h4>工單工件</h4>
+          <div class="work-order-items-list">
+            <div 
+              class="work-order-item-card" 
+              v-for="item in selectedOrder.workOrderItems" 
+              :key="item.id"
+            >
+              <div class="work-order-item-header">
+                <span class="work-order-item-title">工件 #{{ item.id }}</span>
+                <span class="work-order-item-amount">NT$ {{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}</span>
+              </div>
+              <div class="work-order-item-details">
+                <div v-if="item.customerFile">客戶圖檔：{{ item.customerFile }}</div>
+                <div v-if="item.material">材質：{{ item.material }}</div>
+                <div v-if="item.thickness">厚度：{{ item.thickness }}</div>
+                <div v-if="item.processing">加工方式：{{ item.processing }}</div>
+                <div>數量：{{ item.quantity }}</div>
+                <div>單價：NT$ {{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
+                <div>狀態：{{ item.status }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </Modal>
   </div>
 </template>
@@ -219,11 +260,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, OverviewCard, DataTable, SearchFilters, StatusBadge, Modal } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
-
-const router = useRouter();
+import { apiGet } from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 
 // 工單資料
 const orders = ref<WorkOrder[]>([]);
@@ -239,49 +280,163 @@ const orderStatusFilter = ref('');
 
 // 客戶和員工資料（用於下拉選單）
 const customers = ref<Customer[]>([]);
-const staffList = ref<any[]>([]); // 需要從 HR 模組獲取員工資料
+
+// 員工類型定義
+interface Staff {
+  id: string;
+  name: string;
+  department?: string;
+  [key: string]: any;
+}
+
+const staffList = ref<Staff[]>([]);
+
+// 認證 store
+const authStore = useAuthStore();
+
+// 路由
+const router = useRouter();
 
 // Modal 控制
-const showCreateModal = ref(false);
-const editingOrder = ref<WorkOrder | null>(null);
+const showDetailsModal = ref(false);
+const selectedOrder = ref<WorkOrder | null>(null);
+const showNewRow = ref(false);
 
-// 表單資料
-const orderForm = ref({
+// EditableDataTable ref
+const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+
+// 表格狀態（用於 ShortcutHint）
+const tableState = computed(() => {
+  const tableRef = editableTableRef.value;
+  if (!tableRef) return null;
+  
+  return {
+    focusedRowIndex: tableRef.focusedRowIndex,
+    focusedFieldKey: tableRef.focusedFieldKey,
+    isNewRowFocused: tableRef.isNewRowFocused,
+    editingRowId: tableRef.editingRowId,
+    data: tableRef.data,
+  };
+});
+
+// 新增行模板
+const newRowTemplate = () => ({
   id: '',
-  staffId: '',
+  staffId: authStore.staffId || '',
   customerId: '',
   shippingMethod: '',
   paymentMethod: '',
   notes: '',
   amount: 0,
+  isCompleted: false,
 });
 
-// 工單統計
-const ordersStats = computed(() => {
-  const total = orders.value.length;
-  const totalAmount = orders.value.reduce((sum, o) => sum + Number(o.amount), 0);
-  const pendingOrders = orders.value.filter(o => !o.isCompleted).length;
-  const completedOrders = orders.value.filter(o => o.isCompleted).length;
-  
-  return {
-    totalOrders: total,
-    totalAmount: totalAmount.toLocaleString('zh-TW'),
-    pendingOrders,
-    completedOrders,
-  };
-});
-
-// 表格列定義
-const tableColumns = [
-  { key: 'id', label: '工單編號' },
-  { key: 'customer', label: '客戶' },
-  { key: 'staff', label: '業務員' },
-  { key: 'shippingMethod', label: '運送方式' },
-  { key: 'paymentMethod', label: '付款方式' },
-  { key: 'amount', label: '金額' },
-  { key: 'status', label: '狀態' },
-  { key: 'createdAt', label: '建立日期' },
-];
+// 可編輯表格列定義
+const editableColumns = computed<EditableColumn[]>(() => [
+  { 
+    key: 'id', 
+    label: '工單編號', 
+    editable: true,
+    required: true,
+    type: 'text'
+  },
+  { 
+    key: 'customerId', 
+    label: '客戶', 
+    editable: true, 
+    required: true, 
+    type: 'search-select',
+    searchFunction: async (searchTerm: string) => {
+      try {
+        const response = await customerService.getAll(undefined, undefined, searchTerm);
+        const customerList = Array.isArray(response) ? response : (response as any).data || [];
+        return customerList.map((c: Customer) => {
+          const shortName = c.companyShortName || '';
+          const label = shortName ? `${c.id}(${shortName})` : c.id;
+          return {
+            value: c.id,
+            label: label
+          };
+        });
+      } catch (err) {
+        console.error('Failed to search customers:', err);
+        return [];
+      }
+    }
+  },
+  { 
+    key: 'staffId', 
+    label: '業務員', 
+    editable: true, 
+    required: true, 
+    type: 'search-select',
+    searchFunction: async (searchTerm: string) => {
+      try {
+        const params: Record<string, any> = { department: '銷管部' };
+        if (searchTerm.trim()) {
+          params.search = searchTerm.trim();
+        }
+        const staffResult = await apiGet<Staff[]>('/staffs/all', params);
+        return staffResult.map(s => ({ value: s.id, label: s.name }));
+      } catch (err) {
+        console.error('Failed to search staff:', err);
+        return [];
+      }
+    }
+  },
+  { 
+    key: 'shippingMethod', 
+    label: '運送方式', 
+    editable: true,
+    required: true,
+    type: 'select',
+    options: [
+      { value: '自取', label: '自取' },
+      { value: '快遞', label: '快遞' },
+      { value: '貨運', label: '貨運' }
+    ]
+  },
+  { 
+    key: 'paymentMethod', 
+    label: '付款方式', 
+    editable: true,
+    required: true,
+    type: 'select',
+    options: [
+      { value: '現金', label: '現金' },
+      { value: '轉帳', label: '轉帳' },
+      { value: '月結', label: '月結' }
+    ]
+  },
+  { 
+    key: 'amount', 
+    label: '金額', 
+    editable: true, 
+    type: 'number' 
+  },
+  { 
+    key: 'isCompleted', 
+    label: '狀態', 
+    editable: true, 
+    type: 'select',
+    options: [
+      { value: false, label: '進行中' },
+      { value: true, label: '已完成' }
+    ]
+  },
+  { 
+    key: 'notes', 
+    label: '備註', 
+    editable: true, 
+    type: 'text',
+    truncate: true
+  },
+  { 
+    key: 'createdAt', 
+    label: '建立日期', 
+    editable: false 
+  },
+]);
 
 // 篩選後的工單
 const filteredOrders = computed(() => {
@@ -308,15 +463,6 @@ const filteredOrders = computed(() => {
   return filtered;
 });
 
-// 表單驗證
-const isFormValid = computed(() => {
-  return orderForm.value.id && 
-         orderForm.value.staffId && 
-         orderForm.value.customerId &&
-         orderForm.value.shippingMethod &&
-         orderForm.value.paymentMethod;
-});
-
 // 處理篩選器更新
 const handleFilterUpdate = (key: string, value: string) => {
   if (key === 'status') {
@@ -330,12 +476,10 @@ const loadOrders = async () => {
   error.value = null;
   try {
     const response = await workOrderService.getAll(currentPage.value, pageSize.value);
-    // 檢查是否為分頁回應
     if (response && typeof response === 'object' && 'data' in response) {
       orders.value = response.data;
       total.value = response.total;
     } else {
-      // 向後兼容：如果不是分頁回應，直接使用數組
       orders.value = response as WorkOrder[];
       total.value = orders.value.length;
     }
@@ -363,7 +507,6 @@ const handlePageSizeChange = (newSize: number) => {
 const loadCustomers = async () => {
   try {
     const response = await customerService.getAll();
-    // 處理分頁回應或直接數組
     if (response && typeof response === 'object' && 'data' in response) {
       customers.value = response.data;
     } else {
@@ -374,14 +517,14 @@ const loadCustomers = async () => {
   }
 };
 
-// 載入員工資料（暫時使用空陣列，需要實作 HR API）
+// 載入員工資料
 const loadStaff = async () => {
   try {
-    // TODO: 實作從 HR 模組獲取員工資料
-    // staffList.value = await staffService.getAll();
-    staffList.value = [];
+    const salesStaff = await apiGet<Staff[]>('/staffs/all?department=銷管部');
+    staffList.value = salesStaff;
   } catch (err) {
     console.error('Failed to load staff:', err);
+    staffList.value = [];
   }
 };
 
@@ -390,49 +533,62 @@ const viewDetails = (order: WorkOrder) => {
   router.push(`/crm/orders/${order.id}/items`);
 };
 
-// 編輯工單
-const editOrder = (order: WorkOrder) => {
-  editingOrder.value = order;
-  orderForm.value = {
-    id: order.id,
-    staffId: order.staffId,
-    customerId: order.customerId,
-    shippingMethod: order.shippingMethod,
-    paymentMethod: order.paymentMethod,
-    notes: order.notes || '',
-    amount: Number(order.amount),
-  };
-  showCreateModal.value = true;
+// 處理欄位變更（僅更新本地狀態，不自動保存）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const handleFieldChange = (_row: WorkOrder, _field: string, _value: any, _isNew: boolean) => {
+  // 只更新本地狀態，不觸發自動保存
 };
 
-// 儲存工單
-const saveOrder = async () => {
-  if (!isFormValid.value) {
-    alert('請填寫所有必填欄位');
-    return;
-  }
-
+// 處理手動保存
+const handleSave = async (row: WorkOrder, isNew: boolean) => {
   try {
-    const data: Partial<WorkOrder> = {
-      id: orderForm.value.id,
-      staffId: orderForm.value.staffId,
-      customerId: orderForm.value.customerId,
-      shippingMethod: orderForm.value.shippingMethod,
-      paymentMethod: orderForm.value.paymentMethod,
-      notes: orderForm.value.notes || undefined,
-      amount: orderForm.value.amount,
-    };
-
-    if (editingOrder.value) {
-      await workOrderService.update(editingOrder.value.id, data);
-    } else {
+    if (isNew) {
+      const data: Partial<WorkOrder> = {
+        id: row.id,
+        staffId: row.staffId,
+        customerId: row.customerId,
+        shippingMethod: row.shippingMethod,
+        paymentMethod: row.paymentMethod,
+        notes: row.notes || undefined,
+        amount: row.amount || 0,
+      };
       await workOrderService.create(data);
+      await loadOrders();
+    } else {
+      const data: Partial<WorkOrder> = {
+        staffId: row.staffId,
+        customerId: row.customerId,
+        shippingMethod: row.shippingMethod,
+        paymentMethod: row.paymentMethod,
+        notes: row.notes || undefined,
+        amount: row.amount || 0,
+        isCompleted: row.isCompleted,
+      };
+      await workOrderService.update(row.id, data);
+      await loadOrders();
     }
-
-    closeModal();
-    await loadOrders();
   } catch (err) {
     alert(err instanceof Error ? err.message : '儲存工單失敗');
+  }
+};
+
+// 處理新增行保存
+const handleNewRowSave = async (row: any) => {
+  try {
+    const data: Partial<WorkOrder> = {
+      id: row.id,
+      staffId: row.staffId,
+      customerId: row.customerId,
+      shippingMethod: row.shippingMethod,
+      paymentMethod: row.paymentMethod,
+      notes: row.notes || undefined,
+      amount: row.amount || 0,
+    };
+    await workOrderService.create(data);
+    showNewRow.value = false;
+    await loadOrders();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '建立工單失敗');
   }
 };
 
@@ -460,19 +616,80 @@ const deleteOrder = async (id: string) => {
   }
 };
 
-// 關閉 Modal
-const closeModal = () => {
-  showCreateModal.value = false;
-  editingOrder.value = null;
-  orderForm.value = {
-    id: '',
-    staffId: '',
-    customerId: '',
-    shippingMethod: '',
-    paymentMethod: '',
-    notes: '',
-    amount: 0,
-  };
+// 處理 row-delete 事件（快捷鍵觸發）
+const handleRowDelete = async (row: WorkOrder) => {
+  if (!confirm('確定要刪除此工單嗎？此操作無法復原。')) return;
+  
+  try {
+    await workOrderService.delete(row.id);
+    await loadOrders();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '刪除工單失敗');
+  }
+};
+
+// 處理 row-view 事件（快捷鍵觸發）
+const handleRowView = (row: WorkOrder) => {
+  viewDetails(row);
+};
+
+// 處理 row-edit 事件（快捷鍵觸發，F2）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const handleRowEdit = (_row: WorkOrder, _index: number) => {
+  // 編輯狀態會由 EditableDataTable 內部處理
+};
+
+// 處理快捷鍵點擊
+const handleShortcutClick = (action: string) => {
+  if (!editableTableRef.value || !tableState.value) return;
+
+  const state = tableState.value;
+  const data = state.data();
+  const currentRowIndex = state.focusedRowIndex;
+
+  switch (action) {
+    case 'arrow-up':
+    case 'arrow-down':
+      break;
+
+    case 'row-view':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        handleRowView(data[currentRowIndex]);
+      }
+      break;
+
+    case 'row-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editableTableRef.value.startEdit(data[currentRowIndex], currentRowIndex);
+        handleRowEdit(data[currentRowIndex], currentRowIndex);
+      }
+      break;
+
+    case 'row-delete':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        handleRowDelete(data[currentRowIndex]);
+      }
+      break;
+
+    case 'cancel-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editableTableRef.value.cancelEdit(data[currentRowIndex], currentRowIndex);
+      }
+      break;
+
+    case 'new-row-show':
+      showNewRow.value = true;
+      break;
+
+    case 'save-and-next':
+    case 'next-field':
+    case 'prev-field':
+      break;
+
+    case 'cancel-new-row':
+      editableTableRef.value.cancelNewRow();
+      break;
+  }
 };
 
 // 初始化
@@ -516,6 +733,21 @@ onMounted(() => {
 
 .btn-icon {
   margin-right: 0.5rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--primary-600);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-button:hover {
+  color: var(--primary-700);
 }
 
 /* Modal 表單樣式 */
@@ -656,6 +888,10 @@ textarea.form-control {
   gap: 0.25rem;
   font-size: var(--font-size-sm);
   color: var(--secondary-700);
+}
+
+.text-muted {
+  color: var(--secondary-400);
 }
 
 /* 響應式設計 */
