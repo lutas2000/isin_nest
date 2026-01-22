@@ -2,6 +2,8 @@ import { apiGet, apiPost, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 
+import type { Processing } from './processing.service'
+
 export interface WorkOrderItem {
   id: number
   workOrderId: string
@@ -19,6 +21,7 @@ export interface WorkOrderItem {
   status: string
   workOrder?: WorkOrder
   drawingStaff?: any
+  processingItems?: Processing[]
   createdAt?: string
   updatedAt?: string
 }

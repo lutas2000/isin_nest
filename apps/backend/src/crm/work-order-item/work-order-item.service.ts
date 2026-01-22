@@ -24,7 +24,7 @@ export class WorkOrderItemService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.workOrderItemRepository.findAndCount({
-      relations: ['workOrder', 'drawingStaff'],
+      relations: ['workOrder', 'drawingStaff', 'processingItems', 'processingItems.vendor'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip: skip,
@@ -36,7 +36,7 @@ export class WorkOrderItemService {
   findOne(id: number): Promise<WorkOrderItem | null> {
     return this.workOrderItemRepository.findOne({
       where: { id },
-      relations: ['workOrder', 'drawingStaff'],
+      relations: ['workOrder', 'drawingStaff', 'processingItems', 'processingItems.vendor'],
     });
   }
 
@@ -55,7 +55,7 @@ export class WorkOrderItemService {
 
     const [data, total] = await this.workOrderItemRepository.findAndCount({
       where: { workOrderId },
-      relations: ['workOrder', 'drawingStaff'],
+      relations: ['workOrder', 'drawingStaff', 'processingItems', 'processingItems.vendor'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip: skip,

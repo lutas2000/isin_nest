@@ -127,6 +127,7 @@
             <option value="shipping_method">運送方式</option>
             <option value="payment_method">付款方式</option>
             <option value="source_type">來源類型</option>
+            <option value="processing_type">加工類型</option>
           </select>
         </div>
 
@@ -284,13 +285,14 @@ const crmForm = ref({
   label: '',
 });
 
-const crmCategories = ['shipping_method', 'payment_method', 'source_type'];
+const crmCategories = ['shipping_method', 'payment_method', 'source_type', 'processing_type'];
 
 const getCategoryLabel = (category: string) => {
   const labels: Record<string, string> = {
     shipping_method: '運送方式',
     payment_method: '付款方式',
     source_type: '來源類型',
+    processing_type: '加工類型',
   };
   return labels[category] || category;
 };

@@ -150,8 +150,16 @@
             {{ value || '-' }}
           </template>
 
-          <template #cell-processing="{ value }">
-            {{ value || '-' }}
+          <template #cell-processing="{ row }">
+            <button 
+              class="processing-btn"
+              @click.stop="openProcessingModal(row)"
+            >
+              <span v-if="getProcessingSummary(row)" class="processing-progress">
+                {{ getProcessingSummary(row)?.completed }}/{{ getProcessingSummary(row)?.total }}
+              </span>
+              <span v-else class="processing-empty">管理加工</span>
+            </button>
           </template>
 
           <template #cell-unit="{ value }">
@@ -205,14 +213,177 @@
         </EditableDataTable>
       </div>
     </div>
+
+    <!-- 加工管理 Modal -->
+    <Modal
+      :show="showProcessingModal"
+      :title="`加工管理 - 工件 #${selectedWorkOrderItem?.id || ''}`"
+      size="lg"
+      @close="closeProcessingModal"
+    >
+      <div class="processing-modal-content">
+        <!-- 新增加工表單 -->
+        <div class="add-processing-form">
+          <h4>新增加工</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>加工類型 *</label>
+              <select v-model="newProcessingForm.processingCode" class="form-control">
+                <option value="">選擇加工類型</option>
+                <option 
+                  v-for="type in processingTypes" 
+                  :key="type.code" 
+                  :value="type.code"
+                >
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>委外加工</label>
+              <div class="checkbox-wrapper">
+                <input 
+                  type="checkbox" 
+                  id="isOutsourced"
+                  v-model="newProcessingForm.isOutsourced"
+                />
+                <label for="isOutsourced">是</label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row" v-if="newProcessingForm.isOutsourced">
+            <div class="form-group">
+              <label>委外廠商</label>
+              <select v-model="newProcessingForm.vendorId" class="form-control">
+                <option :value="undefined">選擇廠商</option>
+                <option 
+                  v-for="vendor in vendors" 
+                  :key="vendor.id" 
+                  :value="vendor.id"
+                >
+                  {{ vendor.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label>備註</label>
+              <input 
+                type="text" 
+                v-model="newProcessingForm.notes" 
+                class="form-control"
+                placeholder="備註說明"
+              />
+            </div>
+          </div>
+          <button 
+            class="btn btn-primary" 
+            @click="addProcessing"
+            :disabled="!newProcessingForm.processingCode"
+          >
+            新增加工
+          </button>
+        </div>
+
+        <!-- 加工項目列表 -->
+        <div class="processing-list">
+          <h4>加工項目</h4>
+          <div v-if="processingLoading" class="loading-message">載入中...</div>
+          <div v-else-if="processingItems.length === 0" class="empty-message">
+            尚無加工項目
+          </div>
+          <div v-else class="processing-items">
+            <div 
+              v-for="processing in processingItems" 
+              :key="processing.id"
+              class="processing-item"
+              :class="`status-${processing.status}`"
+            >
+              <div class="processing-item-header">
+                <div class="processing-item-type">
+                  {{ getProcessingTypeLabel(processing.processingCode) }}
+                  <span v-if="processing.isOutsourced" class="outsourced-badge">委外</span>
+                </div>
+                <StatusBadge 
+                  :text="getStatusLabel(processing.status)" 
+                  :variant="getStatusVariant(processing.status)"
+                  size="sm"
+                />
+              </div>
+              
+              <div class="processing-item-details">
+                <div v-if="processing.vendor" class="detail-row">
+                  <span class="detail-label">廠商：</span>
+                  <span>{{ processing.vendor.name }}</span>
+                </div>
+                <div v-if="processing.notes" class="detail-row">
+                  <span class="detail-label">備註：</span>
+                  <span>{{ processing.notes }}</span>
+                </div>
+                <div v-if="processing.startedAt" class="detail-row">
+                  <span class="detail-label">開始：</span>
+                  <span>{{ new Date(processing.startedAt).toLocaleString('zh-TW') }}</span>
+                </div>
+                <div v-if="processing.completedAt" class="detail-row">
+                  <span class="detail-label">完成：</span>
+                  <span>{{ new Date(processing.completedAt).toLocaleString('zh-TW') }}</span>
+                </div>
+              </div>
+
+              <div class="processing-item-actions">
+                <button 
+                  v-if="processing.status === 'pending'"
+                  class="btn btn-sm btn-warning"
+                  @click="updateProcessingStatus(processing, ProcessingStatus.IN_PROGRESS)"
+                >
+                  開始加工
+                </button>
+                <button 
+                  v-if="processing.status === 'in_progress'"
+                  class="btn btn-sm btn-success"
+                  @click="updateProcessingStatus(processing, ProcessingStatus.COMPLETED)"
+                >
+                  完成加工
+                </button>
+                <button 
+                  v-if="processing.status !== 'pending'"
+                  class="btn btn-sm btn-outline"
+                  @click="updateProcessingStatus(processing, ProcessingStatus.PENDING)"
+                >
+                  重置
+                </button>
+                <button 
+                  class="btn btn-sm btn-danger"
+                  @click="deleteProcessing(processing)"
+                >
+                  刪除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint } from '@/components';
+import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint, Modal } from '@/components';
 import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderItem } from '@/services/crm/work-order.service';
+import { processingService, ProcessingStatus, type Processing, type CreateProcessingDto } from '@/services/crm/processing.service';
+import { vendorService, type Vendor } from '@/services/crm/vendor.service';
+import { apiGet } from '@/services/api';
+
+interface CrmConfig {
+  id: number;
+  category: string;
+  code: string;
+  label: string;
+  displayOrder: number;
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -224,6 +395,22 @@ const error = ref<string | null>(null);
 
 // EditableDataTable ref
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+
+// Processing Modal 相關
+const showProcessingModal = ref(false);
+const selectedWorkOrderItem = ref<WorkOrderItem | null>(null);
+const processingItems = ref<Processing[]>([]);
+const processingLoading = ref(false);
+const processingTypes = ref<CrmConfig[]>([]);
+const vendors = ref<Vendor[]>([]);
+
+// 新增加工表單
+const newProcessingForm = ref({
+  processingCode: '',
+  isOutsourced: false,
+  vendorId: undefined as number | undefined,
+  notes: '',
+});
 
 // 表格狀態（用於 ShortcutHint）
 const tableState = computed(() => {
@@ -542,9 +729,150 @@ const goBack = () => {
   router.push('/crm/orders');
 };
 
+// 載入加工類型設定
+const loadProcessingTypes = async () => {
+  try {
+    const configs = await apiGet<CrmConfig[]>('/crm/configs/all');
+    processingTypes.value = configs.filter(c => c.category === 'processing_type');
+  } catch (err) {
+    console.error('載入加工類型失敗:', err);
+  }
+};
+
+// 載入廠商列表
+const loadVendors = async () => {
+  try {
+    vendors.value = await vendorService.getAllWithoutPagination();
+  } catch (err) {
+    console.error('載入廠商列表失敗:', err);
+  }
+};
+
+// 開啟加工管理 Modal
+const openProcessingModal = async (item: WorkOrderItem) => {
+  selectedWorkOrderItem.value = item;
+  showProcessingModal.value = true;
+  await loadProcessingItems(item.id);
+};
+
+// 載入加工項目
+const loadProcessingItems = async (workOrderItemId: number) => {
+  processingLoading.value = true;
+  try {
+    processingItems.value = await processingService.getByWorkOrderItemId(workOrderItemId);
+  } catch (err) {
+    console.error('載入加工項目失敗:', err);
+    processingItems.value = [];
+  } finally {
+    processingLoading.value = false;
+  }
+};
+
+// 新增加工項目
+const addProcessing = async () => {
+  if (!selectedWorkOrderItem.value || !newProcessingForm.value.processingCode) return;
+
+  try {
+    const data: CreateProcessingDto = {
+      workOrderItemId: selectedWorkOrderItem.value.id,
+      processingCode: newProcessingForm.value.processingCode,
+      isOutsourced: newProcessingForm.value.isOutsourced,
+      vendorId: newProcessingForm.value.isOutsourced ? newProcessingForm.value.vendorId : undefined,
+      notes: newProcessingForm.value.notes || undefined,
+    };
+    await processingService.create(data);
+    await loadProcessingItems(selectedWorkOrderItem.value.id);
+    resetProcessingForm();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '新增加工失敗');
+  }
+};
+
+// 更新加工狀態
+const updateProcessingStatus = async (processing: Processing, status: ProcessingStatus) => {
+  try {
+    await processingService.updateStatus(processing.id, status);
+    if (selectedWorkOrderItem.value) {
+      await loadProcessingItems(selectedWorkOrderItem.value.id);
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '更新狀態失敗');
+  }
+};
+
+// 刪除加工項目
+const deleteProcessing = async (processing: Processing) => {
+  if (!confirm('確定要刪除此加工項目嗎？')) return;
+
+  try {
+    await processingService.delete(processing.id);
+    if (selectedWorkOrderItem.value) {
+      await loadProcessingItems(selectedWorkOrderItem.value.id);
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '刪除加工失敗');
+  }
+};
+
+// 重置新增加工表單
+const resetProcessingForm = () => {
+  newProcessingForm.value = {
+    processingCode: '',
+    isOutsourced: false,
+    vendorId: undefined,
+    notes: '',
+  };
+};
+
+// 關閉加工管理 Modal
+const closeProcessingModal = () => {
+  showProcessingModal.value = false;
+  selectedWorkOrderItem.value = null;
+  processingItems.value = [];
+  resetProcessingForm();
+};
+
+// 取得加工類型標籤
+const getProcessingTypeLabel = (code: string) => {
+  const type = processingTypes.value.find(t => t.code === code);
+  return type ? type.label : code;
+};
+
+// 取得狀態標籤
+const getStatusLabel = (status: ProcessingStatus) => {
+  const labels: Record<ProcessingStatus, string> = {
+    [ProcessingStatus.PENDING]: '待處理',
+    [ProcessingStatus.IN_PROGRESS]: '進行中',
+    [ProcessingStatus.COMPLETED]: '已完成',
+  };
+  return labels[status] || status;
+};
+
+// 取得狀態樣式
+const getStatusVariant = (status: ProcessingStatus) => {
+  const variants: Record<ProcessingStatus, string> = {
+    [ProcessingStatus.PENDING]: 'secondary',
+    [ProcessingStatus.IN_PROGRESS]: 'warning',
+    [ProcessingStatus.COMPLETED]: 'success',
+  };
+  return variants[status] || 'secondary';
+};
+
+// 計算工件的加工進度摘要
+const getProcessingSummary = (item: WorkOrderItem) => {
+  const items = (item as any).processingItems as Processing[] | undefined;
+  if (!items || items.length === 0) return null;
+  
+  const completed = items.filter(p => p.status === ProcessingStatus.COMPLETED).length;
+  const total = items.length;
+  return { completed, total };
+};
+
 // 初始化
 onMounted(() => {
   loadWorkOrder();
+  loadProcessingTypes();
+  loadVendors();
 });
 </script>
 
@@ -690,6 +1018,141 @@ onMounted(() => {
   border-color: var(--primary-500);
 }
 
+/* 加工按鈕 */
+.processing-btn {
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  border-radius: var(--border-radius);
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--primary-700);
+  transition: all 0.2s ease;
+}
+
+.processing-btn:hover {
+  background: var(--primary-100);
+  border-color: var(--primary-300);
+}
+
+.processing-progress {
+  font-weight: 600;
+}
+
+.processing-empty {
+  color: var(--secondary-500);
+}
+
+/* 加工管理 Modal */
+.processing-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.add-processing-form {
+  background: var(--secondary-50);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+}
+
+.add-processing-form h4,
+.processing-list h4 {
+  margin: 0 0 1rem 0;
+  font-size: var(--font-size-base);
+  color: var(--secondary-800);
+  font-weight: 600;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* 加工項目列表 */
+.processing-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.processing-item {
+  background: white;
+  border: 1px solid var(--secondary-200);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  border-left: 4px solid var(--secondary-400);
+}
+
+.processing-item.status-pending {
+  border-left-color: var(--secondary-400);
+}
+
+.processing-item.status-in_progress {
+  border-left-color: var(--warning-500);
+}
+
+.processing-item.status-completed {
+  border-left-color: var(--success-500);
+}
+
+.processing-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.processing-item-type {
+  font-weight: 600;
+  color: var(--secondary-800);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.outsourced-badge {
+  background: var(--info-100);
+  color: var(--info-700);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.processing-item-details {
+  margin-bottom: 0.75rem;
+}
+
+.detail-row {
+  display: flex;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--secondary-600);
+  margin-bottom: 0.25rem;
+}
+
+.detail-label {
+  color: var(--secondary-500);
+}
+
+.processing-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
   .details-grid {
@@ -698,6 +1161,16 @@ onMounted(() => {
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .processing-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .processing-item-actions {
+    flex-direction: column;
   }
 }
 </style>
