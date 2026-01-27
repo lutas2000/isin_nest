@@ -529,7 +529,12 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'source', 
     label: '來源', 
     editable: true, 
-    type: 'text' 
+    type: 'select',
+    options: [
+      { value: '新圖', label: '新圖' },
+      { value: '舊圖', label: '舊圖' },
+      { value: '修改', label: '修改' },
+    ]
   },
   { 
     key: 'status', 

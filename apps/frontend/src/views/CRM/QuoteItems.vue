@@ -153,6 +153,10 @@
               {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
             </span>
           </template>
+
+          <template #cell-source="{ value }">
+            {{ value || '-' }}
+          </template>
           
           <template #actions="{ row, isEditing, save, cancel }">
             <!-- 編輯模式：顯示保存和取消按鈕（這些會直接顯示，不在下拉選單中） -->
@@ -240,6 +244,7 @@ const newRowTemplate = () => {
       notes: '',
       quantity: 0,
       unitPrice: 0,
+      source: '',
     };
   }
   return {
@@ -250,6 +255,7 @@ const newRowTemplate = () => {
     notes: '',
     quantity: 0,
     unitPrice: 0,
+    source: '',
   };
 };
 
@@ -303,6 +309,17 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '小計', 
     editable: false 
   },
+  { 
+    key: 'source', 
+    label: '來源', 
+    editable: true, 
+    type: 'select',
+    options: [
+      { value: '新圖', label: '新圖' },
+      { value: '舊圖', label: '舊圖' },
+      { value: '修改', label: '修改' },
+    ]
+  },
 ]);
 
 // 載入報價單資料
@@ -350,6 +367,7 @@ const handleSave = async (row: QuoteItem, isNew: boolean) => {
       notes: row.notes || undefined,
       quantity: row.quantity || 0,
       unitPrice: row.unitPrice || 0,
+      source: row.source || undefined,
     };
 
     if (isNew) {
@@ -380,6 +398,7 @@ const handleNewRowSave = async (row: any) => {
       notes: row.notes || undefined,
       quantity: row.quantity || 0,
       unitPrice: row.unitPrice || 0,
+      source: row.source || undefined,
     };
     await quoteItemService.create(data);
     showNewRow.value = false;

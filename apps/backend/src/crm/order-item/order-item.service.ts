@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderItem } from './entities/order-item.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { DesignWorkOrderService } from '../design-work-order/design-work-order.service';
 
 @Injectable()
 export class OrderItemService {
   constructor(
     @InjectRepository(OrderItem)
     private orderItemRepository: Repository<OrderItem>,
+    @Inject(forwardRef(() => DesignWorkOrderService))
+    private designWorkOrderService: DesignWorkOrderService,
   ) {}
 
   async findAll(
@@ -63,7 +66,18 @@ export class OrderItemService {
       ...orderItem,
       isNested: orderItem.isNested ?? false,
     });
-    return this.orderItemRepository.save(newOrderItem);
+    const savedOrderItem = await this.orderItemRepository.save(newOrderItem);
+
+    // 如果來源為「新圖」，自動建立設計工作單
+    if (savedOrderItem.source === '新圖' && savedOrderItem.orderId) {
+      await this.designWorkOrderService.create({
+        orderId: savedOrderItem.orderId,
+        orderItemId: savedOrderItem.id,
+        customerFile: savedOrderItem.customerFile,
+      });
+    }
+
+    return savedOrderItem;
   }
 
   async createMany(orderItems: Partial<OrderItem>[]): Promise<OrderItem[]> {
