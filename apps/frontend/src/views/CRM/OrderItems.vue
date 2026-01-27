@@ -180,6 +180,10 @@
             </span>
           </template>
 
+          <template #cell-source="{ value }">
+            {{ value || '-' }}
+          </template>
+
           <template #cell-status="{ value }">
             <StatusBadge :text="value || '-'" variant="secondary" size="sm" />
           </template>
@@ -520,6 +524,12 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'subtotal', 
     label: '小計', 
     editable: false 
+  },
+  { 
+    key: 'source', 
+    label: '來源', 
+    editable: true, 
+    type: 'text' 
   },
   { 
     key: 'status', 
