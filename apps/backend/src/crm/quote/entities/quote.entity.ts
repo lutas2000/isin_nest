@@ -76,6 +76,32 @@ export class Quote {
   @Column({ type: 'boolean', default: false, name: 'is_signed' })
   isSigned: boolean;
 
+  @ApiProperty({ description: '設計費', example: 5000 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'design_fee',
+    transformer: numericTransformer,
+  })
+  designFee: number;
+
+  @ApiProperty({ description: '運費', example: 1000 })
+  @Column({
+    type: 'numeric',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'shipping_fee',
+    transformer: numericTransformer,
+  })
+  shippingFee: number;
+
+  @ApiProperty({ description: '是否代料', example: false })
+  @Column({ type: 'boolean', default: false, name: 'is_supply_material' })
+  isSupplyMaterial: boolean;
+
   @CreateDateColumn({
     type: 'timestamptz',
     name: 'created_at',

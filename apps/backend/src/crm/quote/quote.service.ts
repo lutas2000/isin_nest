@@ -2,19 +2,36 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quote } from './entities/quote.entity';
-import { WorkOrderService } from '../work-order/work-order.service';
-import { WorkOrder } from '../work-order/entities/work-order.entity';
+import { OrderService } from '../order/order.service';
+import { Order, OrderStatus } from '../order/entities/order.entity';
+import { OrderItemService } from '../order-item/order-item.service';
+import { OrderItem } from '../order-item/entities/order-item.entity';
+import { DesignWorkOrderService } from '../design-work-order/design-work-order.service';
+import { CuttingWorkOrderService } from '../cutting-work-order/cutting-work-order.service';
+import { ProcessingWorkOrderService } from '../processing-work-order/processing-work-order.service';
+import { DeliveryWorkOrderService } from '../delivery-work-order/delivery-work-order.service';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { SourceType } from '../enums/source-type.enum';
 
 @Injectable()
 export class QuoteService {
   constructor(
     @InjectRepository(Quote)
     private quoteRepository: Repository<Quote>,
-    @InjectRepository(WorkOrder)
-    private workOrderRepository: Repository<WorkOrder>,
-    @Inject(forwardRef(() => WorkOrderService))
-    private workOrderService: WorkOrderService,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
+    @Inject(forwardRef(() => OrderService))
+    private orderService: OrderService,
+    @Inject(forwardRef(() => OrderItemService))
+    private orderItemService: OrderItemService,
+    @Inject(forwardRef(() => DesignWorkOrderService))
+    private designWorkOrderService: DesignWorkOrderService,
+    @Inject(forwardRef(() => CuttingWorkOrderService))
+    private cuttingWorkOrderService: CuttingWorkOrderService,
+    @Inject(forwardRef(() => ProcessingWorkOrderService))
+    private processingWorkOrderService: ProcessingWorkOrderService,
+    @Inject(forwardRef(() => DeliveryWorkOrderService))
+    private deliveryWorkOrderService: DeliveryWorkOrderService,
   ) {}
 
   async findAll(
@@ -114,11 +131,11 @@ export class QuoteService {
     return null;
   }
 
-  async convertToWorkOrder(
+  async convertToOrder(
     quoteId: string,
     shippingMethod: string,
     paymentMethod: string,
-  ): Promise<WorkOrder | null> {
+  ): Promise<Order | null> {
     const quote = await this.findOne(quoteId);
     if (!quote || !quote.isSigned) {
       return null; // 報價單不存在或未簽名
@@ -129,24 +146,107 @@ export class QuoteService {
       throw new Error('運送方式和付款方式為必填欄位');
     }
 
-    // 檢查工單 ID 是否已存在
-    const existingWorkOrder = await this.workOrderRepository.findOneBy({ id: quote.id });
-    if (existingWorkOrder) {
-      throw new Error(`工單 ID ${quote.id} 已存在`);
+    // 檢查訂貨單 ID 是否已存在
+    const existingOrder = await this.orderRepository.findOneBy({ id: quote.id });
+    if (existingOrder) {
+      throw new Error(`訂貨單 ID ${quote.id} 已存在`);
     }
 
-    // 建立工單，直接使用報價單 ID
-    const workOrderData: Partial<WorkOrder> = {
+    // 建立訂貨單，直接使用報價單 ID
+    const orderData: Partial<Order> = {
       id: quote.id,
+      quoteId: quote.id,
       customerId: quote.customerId,
       staffId: quote.staffId,
       amount: quote.totalAmount,
       shippingMethod,
       paymentMethod,
+      status: OrderStatus.PENDING,
       notes: `由報價單 #${quote.id} 轉換`,
     };
 
-    return this.workOrderService.create(workOrderData);
+    const order = await this.orderService.create(orderData);
+
+    // 自動複製 QuoteItem 到 OrderItem 並產生對應工作單
+    if (quote.quoteItems && quote.quoteItems.length > 0) {
+      for (const quoteItem of quote.quoteItems) {
+        // 複製 QuoteItem 到 OrderItem
+        const orderItem = await this.orderItemService.create({
+          orderId: order.id,
+          customerFile: quoteItem.customerFile,
+          material: quoteItem.material,
+          thickness: quoteItem.thickness,
+          quantity: quoteItem.quantity,
+          unitPrice: quoteItem.unitPrice,
+          source: quoteItem.source || '報價單轉換',
+          processing: quoteItem.processing,
+          status: 'TODO',
+          isNested: false,
+        });
+
+        // 根據來源判斷產生對應工作單
+        await this.generateWorkOrdersForItem(order, orderItem, quoteItem.source, quoteItem.processing);
+      }
+    }
+
+    // 若運送方式為「送貨」，產生送貨工作單
+    if (shippingMethod === '送貨' || shippingMethod === '快遞' || shippingMethod === '貨運') {
+      await this.deliveryWorkOrderService.create({
+        orderId: order.id,
+        deliveryAddress: quote.customer?.deliveryAddress || quote.customer?.address,
+        status: 'pending' as any,
+      });
+    }
+
+    return order;
+  }
+
+  // 根據工件來源和加工需求產生對應工作單
+  private async generateWorkOrdersForItem(
+    order: Order,
+    orderItem: OrderItem,
+    source?: string,
+    processing?: string,
+  ): Promise<void> {
+    // 根據來源判斷是否需要設計工作單
+    const needsDesign = source === SourceType.NEW || 
+                        source === SourceType.MODIFIED ||
+                        source === '新圖' ||
+                        source === '修改';
+
+    if (needsDesign) {
+      // 新圖或修改 → 產生設計工作單
+      await this.designWorkOrderService.create({
+        orderId: order.id,
+        orderItemId: orderItem.id,
+        customerFile: orderItem.customerFile,
+        status: 'pending' as any,
+      });
+    } else {
+      // 舊圖 → 直接產生切割工作單
+      await this.cuttingWorkOrderService.create({
+        orderId: order.id,
+        material: orderItem.material,
+        thickness: orderItem.thickness,
+        status: 'pending' as any,
+      });
+    }
+
+    // 根據後加工需求判斷是否需要加工工作單
+    if (processing && processing.trim()) {
+      // 解析後加工需求（可能是逗號分隔的多個加工類型）
+      const processingTypes = processing.split(/[,、，]/).map(p => p.trim()).filter(p => p);
+      
+      for (const processingType of processingTypes) {
+        // 產生加工工作單
+        await this.processingWorkOrderService.create({
+          orderId: order.id,
+          orderItemId: orderItem.id,
+          processingType,
+          status: 'pending' as any,
+        });
+      }
+    }
   }
 }
 

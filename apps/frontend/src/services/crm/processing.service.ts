@@ -11,7 +11,7 @@ export enum ProcessingStatus {
 
 export interface Processing {
   id: number
-  workOrderItemId: number
+  orderItemId: number
   processingCode: string
   isOutsourced: boolean
   status: ProcessingStatus
@@ -25,7 +25,7 @@ export interface Processing {
 }
 
 export interface CreateProcessingDto {
-  workOrderItemId: number
+  orderItemId: number
   processingCode: string
   isOutsourced?: boolean
   status?: ProcessingStatus
@@ -50,9 +50,14 @@ export const processingService = {
     return apiGet<PaginatedResponse<Processing>>(API_CONFIG.CRM.PROCESSINGS, params)
   },
 
-  // 根據工單工件 ID 獲取加工紀錄
-  getByWorkOrderItemId: (workOrderItemId: number): Promise<Processing[]> => {
-    return apiGet<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/by-work-order-item/${workOrderItemId}`)
+  // 根據訂貨單工件 ID 獲取加工紀錄
+  getByOrderItemId: (orderItemId: number): Promise<Processing[]> => {
+    return apiGet<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/by-order-item/${orderItemId}`)
+  },
+
+  // 向後兼容別名
+  getByWorkOrderItemId: (orderItemId: number): Promise<Processing[]> => {
+    return apiGet<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/by-order-item/${orderItemId}`)
   },
 
   // 獲取單個加工紀錄
@@ -66,9 +71,9 @@ export const processingService = {
   },
 
   // 批次建立加工紀錄
-  bulkCreate: (workOrderItemId: number, processingCodes: string[]): Promise<Processing[]> => {
+  bulkCreate: (orderItemId: number, processingCodes: string[]): Promise<Processing[]> => {
     return apiPost<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/bulk`, {
-      workOrderItemId,
+      orderItemId,
       processingCodes,
     })
   },

@@ -1,7 +1,7 @@
 <template>
   <div class="work-order-items-page">
     <PageHeader
-      title="工作單詳情"
+      title="訂貨單詳情"
       :description="workOrder ? `` : '載入中...'"
     >
       <template #actions>
@@ -18,13 +18,13 @@
     <div v-else-if="workOrder" class="work-order-items-content">
       <!-- 工作單詳細資訊 -->
       <div class="work-order-details-card">
-        <TableHeader title="工作單資訊" />
+        <TableHeader title="訂貨單資訊" />
         <div class="details-content">
           <div class="details-section">
             <h4>基本資訊</h4>
             <div class="details-grid">
               <div class="details-item">
-                <span class="details-label">工單編號：</span>
+                <span class="details-label">訂貨單編號：</span>
                 <span class="details-value">{{ workOrder.id }}</span>
               </div>
               <div class="details-item">
@@ -104,9 +104,9 @@
         @shortcut-click="handleShortcutClick"
       />
 
-      <!-- 工單工件列表 -->
+      <!-- 訂貨單工件列表 -->
       <div class="work-order-items-card">
-        <TableHeader title="工單工件列表">
+        <TableHeader title="訂貨單工件列表">
           <template #actions>
             <button class="btn btn-primary" @click="showNewRow = true">
               <span class="btn-icon">➕</span>
@@ -454,7 +454,7 @@ const newRowTemplate = () => {
     quantity: 0,
     unit: '',
     unitPrice: 0,
-    source: '工單新增',
+    source: '訂貨單新增',
     status: '待處理',
   };
 };
@@ -534,11 +534,11 @@ const editableColumns = computed<EditableColumn[]>(() => [
   },
 ]);
 
-// 載入工作單資料
+// 載入訂貨單資料
 const loadWorkOrder = async () => {
   const workOrderId = route.params.id as string;
   if (!workOrderId) {
-    error.value = '無效的工作單編號';
+    error.value = '無效的訂貨單編號';
     return;
   }
 
@@ -549,8 +549,10 @@ const loadWorkOrder = async () => {
     workOrder.value = await workOrderService.getById(workOrderId);
 
     // 優先使用後端關聯資料；若沒帶則另外查工件列表
-    if (Array.isArray(workOrder.value.workOrderItems)) {
-      workOrderItems.value = workOrder.value.workOrderItems;
+    if (Array.isArray((workOrder.value as any).workOrderItems)) {
+      workOrderItems.value = (workOrder.value as any).workOrderItems;
+    } else if (Array.isArray(workOrder.value.orderItems)) {
+      workOrderItems.value = workOrder.value.orderItems as any;
     } else {
       const response = await workOrderItemService.getAll(workOrderId);
       if (response && typeof response === 'object' && 'data' in response) {
@@ -560,8 +562,8 @@ const loadWorkOrder = async () => {
       }
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '載入工作單資料失敗';
-    console.error('Failed to load work order:', err);
+    error.value = err instanceof Error ? err.message : '載入訂貨單資料失敗';
+    console.error('Failed to load order:', err);
   } finally {
     loading.value = false;
   }
@@ -576,7 +578,7 @@ const handleFieldChange = (_row: WorkOrderItem, _field: string, _value: any, _is
 // 處理手動保存
 const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
   if (!workOrder.value) {
-    alert('工作單資料不存在');
+    alert('訂貨單資料不存在');
     return;
   }
 
@@ -591,7 +593,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
       quantity: row.quantity || 0,
       unit: row.unit || undefined,
       unitPrice: row.unitPrice || 0,
-      source: row.source || '工單新增',
+      source: row.source || '訂貨單新增',
       status: row.status || '待處理',
     };
 
@@ -610,7 +612,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
 // 處理新增行保存
 const handleNewRowSave = async (row: any) => {
   if (!workOrder.value) {
-    alert('工作單資料不存在');
+    alert('訂貨單資料不存在');
     return;
   }
 
@@ -625,7 +627,7 @@ const handleNewRowSave = async (row: any) => {
       quantity: row.quantity || 0,
       unit: row.unit || undefined,
       unitPrice: row.unitPrice || 0,
-      source: row.source || '工單新增',
+      source: row.source || '訂貨單新增',
       status: row.status || '待處理',
     };
     await workOrderItemService.create(data);
@@ -963,7 +965,7 @@ onMounted(() => {
   margin: 0;
 }
 
-/* 工單工件列表 */
+/* 訂貨單工件列表 */
 .empty-message {
   padding: 3rem;
   text-align: center;

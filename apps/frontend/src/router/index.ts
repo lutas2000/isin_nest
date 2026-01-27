@@ -10,7 +10,12 @@ import HRStaffVacation from '../views/HR/StaffVacation.vue'
 import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
-import CRMWorkOrderItems from '../views/CRM/WorkOrderItem.vue'
+import CRMOrderItems from '../views/CRM/OrderItems.vue'
+import CRMDesignWorkOrders from '../views/CRM/DesignWorkOrders.vue'
+import CRMCuttingWorkOrders from '../views/CRM/CuttingWorkOrders.vue'
+import CRMProcessingWorkOrders from '../views/CRM/ProcessingWorkOrders.vue'
+import CRMDeliveryWorkOrders from '../views/CRM/DeliveryWorkOrders.vue'
+import CRMNestingManagement from '../views/CRM/NestingManagement.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
 import Settings from '../views/Settings.vue'
@@ -101,13 +106,43 @@ const routes = [
     path: '/crm/orders',
     name: 'CRMOrders',
     component: CRMOrders,
-    meta: { title: '訂單管理', icon: '📋', requiresAuth: true }
+    meta: { title: '訂貨單管理', icon: '📋', requiresAuth: true }
   },
   {
     path: '/crm/orders/:id/items',
-    name: 'CRMWorkOrderItems',
-    component: CRMWorkOrderItems,
-    meta: { title: '工作單詳情', icon: '📋', requiresAuth: true }
+    name: 'CRMOrderItems',
+    component: CRMOrderItems,
+    meta: { title: '訂貨單詳情', icon: '📋', requiresAuth: true }
+  },
+  {
+    path: '/crm/design-work-orders',
+    name: 'CRMDesignWorkOrders',
+    component: CRMDesignWorkOrders,
+    meta: { title: '設計工作單', icon: '✏️', requiresAuth: true }
+  },
+  {
+    path: '/crm/cutting-work-orders',
+    name: 'CRMCuttingWorkOrders',
+    component: CRMCuttingWorkOrders,
+    meta: { title: '切割工作單', icon: '✂️', requiresAuth: true }
+  },
+  {
+    path: '/crm/processing-work-orders',
+    name: 'CRMProcessingWorkOrders',
+    component: CRMProcessingWorkOrders,
+    meta: { title: '加工工作單', icon: '🔧', requiresAuth: true }
+  },
+  {
+    path: '/crm/delivery-work-orders',
+    name: 'CRMDeliveryWorkOrders',
+    component: CRMDeliveryWorkOrders,
+    meta: { title: '送貨工作單', icon: '🚚', requiresAuth: true }
+  },
+  {
+    path: '/crm/nestings',
+    name: 'CRMNestingManagement',
+    component: CRMNestingManagement,
+    meta: { title: '排版管理', icon: '📐', requiresAuth: true }
   },
   {
     path: '/crm/quotes',

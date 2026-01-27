@@ -39,14 +39,14 @@ export class ProcessingController {
     return this.processingService.findAll(page, limit);
   }
 
-  @ApiOperation({ summary: '根據工單工件 ID 獲取加工紀錄' })
-  @ApiParam({ name: 'workOrderItemId', description: '工單工件 ID', example: 1 })
+  @ApiOperation({ summary: '根據訂貨單工件 ID 獲取加工紀錄' })
+  @ApiParam({ name: 'orderItemId', description: '訂貨單工件 ID', example: 1 })
   @ApiResponse({ status: 200, description: '成功返回加工紀錄列表', type: [Processing] })
-  @Get('by-work-order-item/:workOrderItemId')
-  findByWorkOrderItemId(
-    @Param('workOrderItemId', ParseIntPipe) workOrderItemId: number,
+  @Get('by-order-item/:orderItemId')
+  findByOrderItemId(
+    @Param('orderItemId', ParseIntPipe) orderItemId: number,
   ) {
-    return this.processingService.findByWorkOrderItemId(workOrderItemId);
+    return this.processingService.findByOrderItemId(orderItemId);
   }
 
   @ApiOperation({ summary: '根據 ID 獲取單個加工紀錄' })
@@ -70,10 +70,10 @@ export class ProcessingController {
   @ApiResponse({ status: 201, description: '成功建立加工紀錄', type: [Processing] })
   @Post('bulk')
   bulkCreate(
-    @Body() body: { workOrderItemId: number; processingCodes: string[] },
+    @Body() body: { orderItemId: number; processingCodes: string[] },
   ) {
     return this.processingService.bulkCreate(
-      body.workOrderItemId,
+      body.orderItemId,
       body.processingCodes,
     );
   }

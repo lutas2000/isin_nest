@@ -4,14 +4,24 @@ import { QuoteService } from './quote.service';
 import { QuoteController } from './quote.controller';
 import { Quote } from './entities/quote.entity';
 import { QuoteItemModule } from '../quote-item/quote-item.module';
-import { WorkOrderModule } from '../work-order/work-order.module';
-import { WorkOrder } from '../work-order/entities/work-order.entity';
+import { OrderModule } from '../order/order.module';
+import { OrderItemModule } from '../order-item/order-item.module';
+import { DesignWorkOrderModule } from '../design-work-order/design-work-order.module';
+import { CuttingWorkOrderModule } from '../cutting-work-order/cutting-work-order.module';
+import { ProcessingWorkOrderModule } from '../processing-work-order/processing-work-order.module';
+import { DeliveryWorkOrderModule } from '../delivery-work-order/delivery-work-order.module';
+import { Order } from '../order/entities/order.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Quote, WorkOrder]),
+    TypeOrmModule.forFeature([Quote, Order]),
     QuoteItemModule,
-    forwardRef(() => WorkOrderModule),
+    forwardRef(() => OrderModule),
+    forwardRef(() => OrderItemModule),
+    forwardRef(() => DesignWorkOrderModule),
+    forwardRef(() => CuttingWorkOrderModule),
+    forwardRef(() => ProcessingWorkOrderModule),
+    forwardRef(() => DeliveryWorkOrderModule),
   ],
   providers: [QuoteService],
   controllers: [QuoteController],

@@ -3,9 +3,9 @@ import { IsString, IsOptional, IsBoolean, IsInt, IsEnum, MaxLength } from 'class
 import { ProcessingStatus } from '../entities/processing.entity';
 
 export class CreateProcessingDto {
-  @ApiProperty({ description: '工單工件 ID', example: 1 })
+  @ApiProperty({ description: '訂貨單工件 ID', example: 1 })
   @IsInt()
-  workOrderItemId: number;
+  orderItemId: number;
 
   @ApiProperty({ description: '加工類型代碼', example: 'LASER_CUT' })
   @IsString()

@@ -9,24 +9,24 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { WorkOrder } from '../../work-order/entities/work-order.entity';
+import { Order } from '../../order/entities/order.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { Processing } from '../../processing/entities/processing.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
-@Entity('work_order_item')
-export class WorkOrderItem {
-  @ApiProperty({ description: '工單工件ID', example: 1 })
+@Entity('work_order_item') // 保持資料庫表名不變以避免遷移
+export class OrderItem {
+  @ApiProperty({ description: '訂貨單工件ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '工單ID', example: 'WO001' })
+  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
   @Column({
     type: 'varchar',
     length: 50,
-    name: 'work_order_id',
+    name: 'work_order_id', // 保持資料庫欄位名稱不變
   })
-  workOrderId: string;
+  orderId: string;
 
   @ApiProperty({ description: 'CAD 檔案（檔案名稱）', example: 'design.dxf' })
   @Column({
@@ -74,7 +74,7 @@ export class WorkOrderItem {
   })
   unit?: string;
 
-  @ApiProperty({ description: '來源', example: 'NEW' })
+  @ApiProperty({ description: '來源', example: '新圖' })
   @Column({
     type: 'varchar',
     length: 50,
@@ -113,6 +113,31 @@ export class WorkOrderItem {
   })
   drawingStaffId?: string;
 
+  @ApiProperty({ description: '圖號', example: 'DWG-2024-001', required: false })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    name: 'drawing_number',
+  })
+  drawingNumber?: string;
+
+  @ApiProperty({ description: '是否已排版', example: false })
+  @Column({
+    type: 'boolean',
+    default: false,
+    name: 'is_nested',
+  })
+  isNested: boolean;
+
+  @ApiProperty({ description: '排版ID', example: 1, required: false })
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'nesting_id',
+  })
+  nestingId: number | null;
+
   @ApiProperty({ description: '狀態', example: 'TODO', required: false })
   @Column({
     type: 'varchar',
@@ -134,11 +159,11 @@ export class WorkOrderItem {
   })
   updatedAt: Date;
 
-  // 關聯到 WorkOrder（多對一）
-  @ApiProperty({ description: '關聯的工單資料', type: () => WorkOrder })
-  @ManyToOne(() => WorkOrder, (workOrder) => workOrder.workOrderItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'work_order_id' })
-  workOrder: WorkOrder;
+  // 關聯到 Order（多對一）
+  @ApiProperty({ description: '關聯的訂貨單資料', type: () => Order })
+  @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'work_order_id' }) // 保持資料庫欄位名稱不變
+  order: Order;
 
   // 關聯到 Staff（繪圖負責人，可為 null）
   @ApiProperty({ description: '關聯的繪圖負責人員工資料', type: () => Staff, required: false })
@@ -148,7 +173,6 @@ export class WorkOrderItem {
 
   // 關聯到 Processing（一對多：加工項目）
   @ApiProperty({ description: '關聯的加工項目', type: () => [Processing] })
-  @OneToMany(() => Processing, (processing) => processing.workOrderItem)
+  @OneToMany(() => Processing, (processing) => processing.orderItem)
   processingItems?: Processing[];
 }
-

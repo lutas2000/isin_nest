@@ -1,8 +1,8 @@
 <template>
   <div class="orders-page">
     <PageHeader 
-      title="工作單管理"
-      description="管理工作單、追蹤工單狀態和處理工作流程"
+      title="訂貨單管理"
+      description="管理訂貨單、追蹤訂單狀態和處理工作流程"
     >
     </PageHeader>
 
@@ -12,12 +12,12 @@
       @shortcut-click="handleShortcutClick"
     />
 
-    <!-- 工單列表 -->
+    <!-- 訂貨單列表 -->
     <div class="orders-content">
       <SearchFilters
         title=""
         :show-search="true"
-        search-placeholder="搜尋工單編號或客戶..."
+        search-placeholder="搜尋訂貨單編號或客戶..."
         :filters="[
           {
             key: 'status',
@@ -33,7 +33,7 @@
         @update:filter="handleFilterUpdate"
       />
 
-      <div v-if="loading" class="loading-message">載入中...</div>
+      <div v-if="loading" class="loading-message">載入訂貨單中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
       <EditableDataTable
         v-else
@@ -148,7 +148,7 @@
     <Modal 
       v-if="selectedOrder"
       :show="showDetailsModal" 
-      :title="`工單詳情 #${selectedOrder.id}`"
+      :title="`訂貨單詳情 #${selectedOrder.id}`"
       @close="showDetailsModal = false"
     >
       <div class="details-content">
@@ -156,7 +156,7 @@
           <h4>基本資訊</h4>
           <div class="details-grid">
             <div class="details-item">
-              <span class="details-label">工單編號：</span>
+              <span class="details-label">訂貨單編號：</span>
               <span class="details-value">{{ selectedOrder.id }}</span>
             </div>
             <div class="details-item">
@@ -228,12 +228,12 @@
           </div>
         </div>
 
-        <div class="details-section" v-if="selectedOrder.workOrderItems && selectedOrder.workOrderItems.length > 0">
-          <h4>工單工件</h4>
+        <div class="details-section" v-if="selectedOrder.orderItems && selectedOrder.orderItems.length > 0">
+          <h4>訂貨單工件</h4>
           <div class="work-order-items-list">
             <div 
               class="work-order-item-card" 
-              v-for="item in selectedOrder.workOrderItems" 
+              v-for="item in selectedOrder.orderItems" 
               :key="item.id"
             >
               <div class="work-order-item-header">
@@ -266,7 +266,7 @@ import { customerService, type Customer } from '@/services/crm/customer.service'
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 
-// 工單資料
+// 訂貨單資料
 const orders = ref<WorkOrder[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -335,7 +335,7 @@ const newRowTemplate = () => ({
 const editableColumns = computed<EditableColumn[]>(() => [
   { 
     key: 'id', 
-    label: '工單編號', 
+    label: '訂貨單編號', 
     editable: true,
     required: true,
     type: 'text'
@@ -438,7 +438,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
   },
 ]);
 
-// 篩選後的工單
+// 篩選後的訂貨單
 const filteredOrders = computed(() => {
   let filtered = orders.value;
 
@@ -470,7 +470,7 @@ const handleFilterUpdate = (key: string, value: string) => {
   }
 };
 
-// 載入工單資料
+// 載入訂貨單資料
 const loadOrders = async () => {
   loading.value = true;
   error.value = null;
@@ -484,7 +484,7 @@ const loadOrders = async () => {
       total.value = orders.value.length;
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '載入工單失敗';
+    error.value = err instanceof Error ? err.message : '載入訂貨單失敗';
     console.error('Failed to load work orders:', err);
   } finally {
     loading.value = false;
@@ -568,7 +568,7 @@ const handleSave = async (row: WorkOrder, isNew: boolean) => {
       await loadOrders();
     }
   } catch (err) {
-    alert(err instanceof Error ? err.message : '儲存工單失敗');
+    alert(err instanceof Error ? err.message : '儲存訂貨單失敗');
   }
 };
 
@@ -588,43 +588,43 @@ const handleNewRowSave = async (row: any) => {
     showNewRow.value = false;
     await loadOrders();
   } catch (err) {
-    alert(err instanceof Error ? err.message : '建立工單失敗');
+    alert(err instanceof Error ? err.message : '建立訂貨單失敗');
   }
 };
 
-// 完成工單
+// 完成訂貨單
 const completeOrder = async (id: string) => {
-  if (!confirm('確定要完成此工單嗎？')) return;
+  if (!confirm('確定要完成此訂貨單嗎？')) return;
   
   try {
     await workOrderService.complete(id);
     await loadOrders();
   } catch (err) {
-    alert(err instanceof Error ? err.message : '完成工單失敗');
+    alert(err instanceof Error ? err.message : '完成訂貨單失敗');
   }
 };
 
-// 刪除工單
+// 刪除訂貨單
 const deleteOrder = async (id: string) => {
-  if (!confirm('確定要刪除此工單嗎？此操作無法復原。')) return;
+  if (!confirm('確定要刪除此訂貨單嗎？此操作無法復原。')) return;
   
   try {
     await workOrderService.delete(id);
     await loadOrders();
   } catch (err) {
-    alert(err instanceof Error ? err.message : '刪除工單失敗');
+    alert(err instanceof Error ? err.message : '刪除訂貨單失敗');
   }
 };
 
 // 處理 row-delete 事件（快捷鍵觸發）
 const handleRowDelete = async (row: WorkOrder) => {
-  if (!confirm('確定要刪除此工單嗎？此操作無法復原。')) return;
+  if (!confirm('確定要刪除此訂貨單嗎？此操作無法復原。')) return;
   
   try {
     await workOrderService.delete(row.id);
     await loadOrders();
   } catch (err) {
-    alert(err instanceof Error ? err.message : '刪除工單失敗');
+    alert(err instanceof Error ? err.message : '刪除訂貨單失敗');
   }
 };
 
@@ -851,7 +851,7 @@ textarea.form-control {
   line-height: 1.6;
 }
 
-/* 工單工件列表 */
+/* 訂貨單工件列表 */
 .work-order-items-list {
   display: flex;
   flex-direction: column;

@@ -11,14 +11,34 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Customer } from '../../customer/entities/customer.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
-import { WorkOrderItem } from '../../work-order-item/entities/work-order-item.entity';
+import { OrderItem } from '../../order-item/entities/order-item.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
-@Entity('work_order')
-export class WorkOrder {
-  @ApiProperty({ description: '工單ID', example: 'WO001' })
+// 訂貨單狀態
+export enum OrderStatus {
+  PENDING = 'pending',           // 待處理
+  DESIGN = 'design',             // 設計中
+  CUTTING = 'cutting',           // 切割中
+  PROCESSING = 'processing',     // 加工中
+  READY_FOR_DELIVERY = 'ready_for_delivery', // 等待配送
+  DELIVERED = 'delivered',       // 已送達
+  COMPLETED = 'completed',       // 已完成
+}
+
+@Entity('work_order') // 保持資料庫表名不變以避免遷移
+export class Order {
+  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
   @PrimaryColumn({ type: 'varchar', length: 50 })
   id: string;
+
+  @ApiProperty({ description: '來源報價單ID', example: 'Q001', required: false })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'quote_id',
+    nullable: true,
+  })
+  quoteId?: string;
 
   @ApiProperty({ description: '業務員員工編號', example: 'STAFF001' })
   @Column({
@@ -36,7 +56,7 @@ export class WorkOrder {
   })
   customerId: string;
 
-  @ApiProperty({ description: '運送方式', example: 'EXPRESS' })
+  @ApiProperty({ description: '運送方式', example: '快遞' })
   @Column({
     type: 'varchar',
     length: 50,
@@ -44,7 +64,7 @@ export class WorkOrder {
   })
   shippingMethod: string;
 
-  @ApiProperty({ description: '付款方式', example: 'TRANSFER' })
+  @ApiProperty({ description: '付款方式', example: '轉帳' })
   @Column({
     type: 'varchar',
     length: 50,
@@ -68,6 +88,14 @@ export class WorkOrder {
     transformer: numericTransformer,
   })
   amount: number;
+
+  @ApiProperty({ description: '訂單狀態', enum: OrderStatus, example: OrderStatus.PENDING })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: OrderStatus.PENDING,
+  })
+  status: OrderStatus;
 
   @ApiProperty({ description: '是否完成', example: false })
   @Column({ type: 'boolean', default: false, name: 'is_completed' })
@@ -100,12 +128,11 @@ export class WorkOrder {
 
   // 關聯到 Customer
   @ApiProperty({ description: '關聯的客戶資料', type: () => Customer })
-  @ManyToOne(() => Customer, (customer) => customer.workOrders, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Customer, (customer) => customer.orders, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  // 關聯到 WorkOrderItem（一對多）
-  @OneToMany(() => WorkOrderItem, (workOrderItem) => workOrderItem.workOrder)
-  workOrderItems?: WorkOrderItem[];
+  // 關聯到 OrderItem（一對多）
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.order)
+  orderItems?: OrderItem[];
 }
-

@@ -23,6 +23,9 @@ export interface Quote {
   notes?: string
   postProcessing?: string[]
   isSigned: boolean
+  designFee: number
+  shippingFee: number
+  isSupplyMaterial: boolean
   quoteItems?: QuoteItem[]
   staff?: any
   customer?: any
@@ -30,22 +33,9 @@ export interface Quote {
   updatedAt?: string
 }
 
-export interface WorkOrder {
-  id: string
-  staffId: string
-  customerId: string
-  shippingMethod: string
-  paymentMethod: string
-  notes?: string
-  amount: number
-  isCompleted: boolean
-  staff?: any
-  customer?: any
-  workOrderItems?: any[]
-  createdAt?: string
-  endedAt?: string
-  updatedAt?: string
-}
+// 使用 Order 類型（從 order.service.ts 重新導出）
+import type { Order } from './order.service'
+export type { Order }
 
 export const quoteService = {
   // 獲取所有報價單（支援分頁）
@@ -76,9 +66,17 @@ export const quoteService = {
     return apiDelete<void>(`${API_CONFIG.CRM.QUOTES}/${id}`)
   },
 
-  // 將報價單轉換為工單
-  convertToWorkOrder: (id: string, shippingMethod: string, paymentMethod: string): Promise<WorkOrder> => {
-    return apiPost<WorkOrder>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-work-order`, {
+  // 將報價單轉換為訂貨單
+  convertToOrder: (id: string, shippingMethod: string, paymentMethod: string): Promise<Order> => {
+    return apiPost<Order>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-order`, {
+      shippingMethod,
+      paymentMethod,
+    })
+  },
+
+  // 向後兼容別名
+  convertToWorkOrder: (id: string, shippingMethod: string, paymentMethod: string): Promise<Order> => {
+    return apiPost<Order>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-order`, {
       shippingMethod,
       paymentMethod,
     })

@@ -23,7 +23,7 @@ export class ProcessingService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.processingRepository.findAndCount({
-      relations: ['workOrderItem', 'vendor'],
+      relations: ['orderItem', 'vendor'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip,
@@ -32,9 +32,9 @@ export class ProcessingService {
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
-  async findByWorkOrderItemId(workOrderItemId: number): Promise<Processing[]> {
+  async findByOrderItemId(orderItemId: number): Promise<Processing[]> {
     return this.processingRepository.find({
-      where: { workOrderItemId },
+      where: { orderItemId },
       relations: ['vendor'],
       order: { createdAt: 'ASC' },
     });
@@ -43,7 +43,7 @@ export class ProcessingService {
   async findOne(id: number): Promise<Processing> {
     const processing = await this.processingRepository.findOne({
       where: { id },
-      relations: ['workOrderItem', 'vendor'],
+      relations: ['orderItem', 'vendor'],
     });
 
     if (!processing) {
@@ -94,10 +94,10 @@ export class ProcessingService {
     await this.processingRepository.remove(processing);
   }
 
-  async bulkCreate(workOrderItemId: number, processingCodes: string[]): Promise<Processing[]> {
+  async bulkCreate(orderItemId: number, processingCodes: string[]): Promise<Processing[]> {
     const processings = processingCodes.map((code) =>
       this.processingRepository.create({
-        workOrderItemId,
+        orderItemId,
         processingCode: code,
         isOutsourced: false,
         status: ProcessingStatus.PENDING,

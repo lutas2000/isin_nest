@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from 
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { QuoteService } from './quote.service';
 import { Quote } from './entities/quote.entity';
-import { WorkOrder } from '../work-order/entities/work-order.entity';
+import { Order } from '../order/entities/order.entity';
 
 @ApiTags('報價單管理')
 @Controller('crm/quotes')
@@ -59,16 +59,16 @@ export class QuoteController {
     return this.quoteService.update(id, data);
   }
 
-  @ApiOperation({ summary: '將報價單轉換為工單' })
+  @ApiOperation({ summary: '將報價單轉換為訂貨單' })
   @ApiParam({ name: 'id', description: '報價單ID', example: '00010301' })
-  @ApiResponse({ status: 200, description: '成功轉換為工單', type: WorkOrder })
+  @ApiResponse({ status: 200, description: '成功轉換為訂貨單', type: Order })
   @ApiResponse({ status: 400, description: '報價單未簽名或不存在' })
-  @Post(':id/convert-to-work-order')
-  convertToWorkOrder(
+  @Post(':id/convert-to-order')
+  convertToOrder(
     @Param('id') id: string,
     @Body() body: { shippingMethod: string; paymentMethod: string },
-  ): Promise<WorkOrder | null> {
-    return this.quoteService.convertToWorkOrder(id, body.shippingMethod, body.paymentMethod);
+  ): Promise<Order | null> {
+    return this.quoteService.convertToOrder(id, body.shippingMethod, body.paymentMethod);
   }
 }
 

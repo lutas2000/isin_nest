@@ -138,7 +138,7 @@
               class="dropdown-item" 
               @click="convertToWorkOrder(row.id)"
             >
-              轉工單
+              轉訂貨單
             </span>
             <span 
               class="dropdown-item" 
@@ -260,10 +260,10 @@
         </div>
     </Modal>
 
-    <!-- 轉工單 Modal -->
+    <!-- 轉訂貨單 Modal -->
     <Modal 
       :show="showConvertModal" 
-      title="轉換為工單"
+      title="轉換為訂貨單"
       @close="closeConvertModal"
     >
       <div class="modal-form">
@@ -385,7 +385,7 @@ const newRowTemplate = () => ({
   isSigned: false,
 });
 
-// 轉工單表單資料
+// 轉訂貨單表單資料
 const convertForm = ref({
   shippingMethod: '',
   paymentMethod: '',
@@ -707,7 +707,7 @@ const handleRowEdit = (row: Quote, index: number) => {
   // 這裡可以加入額外的邏輯，例如記錄編輯歷史等
 };
 
-// 轉換為工單 - 打開 modal
+// 轉換為訂貨單 - 打開 modal
 const convertToWorkOrder = (id: string) => {
   convertingQuoteId.value = id;
   convertForm.value = {
@@ -717,7 +717,7 @@ const convertToWorkOrder = (id: string) => {
   showConvertModal.value = true;
 };
 
-// 確認轉換為工單
+// 確認轉換為訂貨單
 const confirmConvertToWorkOrder = async () => {
   if (!isConvertFormValid.value || !convertingQuoteId.value) {
     alert('請選擇運送方式和付款方式');
@@ -730,7 +730,7 @@ const confirmConvertToWorkOrder = async () => {
       convertForm.value.shippingMethod,
       convertForm.value.paymentMethod
     );
-    alert('成功轉換為工單！');
+    alert('成功轉換為訂貨單！');
     closeConvertModal();
     await loadQuotes();
   } catch (err) {
@@ -738,7 +738,7 @@ const confirmConvertToWorkOrder = async () => {
   }
 };
 
-// 關閉轉工單 Modal
+// 關閉轉訂貨單 Modal
 const closeConvertModal = () => {
   showConvertModal.value = false;
   convertingQuoteId.value = null;
@@ -748,7 +748,7 @@ const closeConvertModal = () => {
   };
 };
 
-// 轉工單表單驗證
+// 轉訂貨單表單驗證
 const isConvertFormValid = computed(() => {
   return convertForm.value.shippingMethod !== '' && convertForm.value.paymentMethod !== '';
 });

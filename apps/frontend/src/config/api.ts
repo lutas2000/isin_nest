@@ -25,8 +25,22 @@ export const API_CONFIG = {
     CONTACTS: '/crm/contacts',
     QUOTES: '/crm/quotes',
     QUOTE_ITEMS: '/crm/quote-items',
-    WORK_ORDERS: '/crm/work-orders',
-    WORK_ORDER_ITEMS: '/crm/work-order-items',
+    ORDERS: '/crm/orders',
+    ORDER_ITEMS: '/crm/order-items',
+    // 舊端點（保持向後兼容）
+    WORK_ORDERS: '/crm/orders',
+    WORK_ORDER_ITEMS: '/crm/order-items',
+    // 各類工作單
+    DESIGN_WORK_ORDERS: '/crm/design-work-orders',
+    CUTTING_WORK_ORDERS: '/crm/cutting-work-orders',
+    PROCESSING_WORK_ORDERS: '/crm/processing-work-orders',
+    OUTSOURCING_WORK_ORDERS: '/crm/outsourcing-work-orders',
+    DELIVERY_WORK_ORDERS: '/crm/delivery-work-orders',
+    // 排版
+    NESTINGS: '/crm/nestings',
+    // 委外成本
+    OUTSOURCING_COSTS: '/crm/outsourcing-costs',
+    // 配置
     CONFIGS: '/crm/configs', // 分頁端點
     CONFIGS_ALL: '/crm/configs/all', // 無分頁端點
     VENDORS: '/crm/vendors',

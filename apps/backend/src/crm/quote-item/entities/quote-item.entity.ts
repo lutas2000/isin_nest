@@ -67,6 +67,22 @@ export class QuoteItem {
   })
   unitPrice: number;
 
+  @ApiProperty({ description: '來源', example: '新圖' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
+  source?: string;
+
+  @ApiProperty({ description: '後加工需求', example: '折床、攻牙' })
+  @Column({
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  processing?: string;
+
   @ApiProperty({ description: '備註' })
   @Column({
     type: 'text',

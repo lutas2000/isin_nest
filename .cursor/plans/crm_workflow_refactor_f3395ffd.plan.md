@@ -4,31 +4,31 @@ overview: 重構 CRM 系統以支援完整的報價單到訂貨單工作流程�
 todos:
   - id: rename-entities
     content: "Phase 1: 重新命名 WorkOrder/WorkOrderItem 為 Order/OrderItem，包含後端實體、服務、控制器及前端服務"
-    status: in_progress
+    status: completed
   - id: create-work-order-entities
     content: "Phase 2: 建立五種工作單實體 (Design/Cutting/Processing/Outsourcing/Delivery WorkOrder) 及其 CRUD"
-    status: pending
+    status: completed
   - id: create-nesting-entity
     content: "Phase 2: 建立 Nesting 和 NestingItem 實體及 CRUD"
-    status: pending
+    status: completed
   - id: create-outsourcing-cost
     content: "Phase 2: 建立 OutsourcingCost 實體及 CRUD"
-    status: pending
+    status: completed
   - id: quote-conversion-logic
     content: "Phase 3: 修改報價單轉訂貨單邏輯，自動複製工件並產生對應工作單"
-    status: pending
+    status: completed
   - id: frontend-order-pages
     content: "Phase 4: 調整前端 Orders.vue 為訂貨單管理，重新命名 WorkOrderItem.vue"
-    status: pending
+    status: completed
   - id: frontend-work-order-pages
     content: "Phase 4: 建立各類工作單前端管理頁面"
-    status: pending
+    status: completed
   - id: nesting-management-page
     content: "Phase 5: 建立排版管理前端頁面"
-    status: pending
+    status: completed
   - id: work-order-status-flow
     content: "Phase 6-7: 實作工作單狀態流轉邏輯與委外成本追蹤"
-    status: pending
+    status: completed
 ---
 
 # CRM 工作流程重構計畫

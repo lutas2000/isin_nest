@@ -104,7 +104,51 @@
               active-class="active"
             >
               <div class="nav-icon">📋</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">工作單</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">訂貨單</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <h3 v-if="!sidebarCollapsed" class="nav-section-title">生產管理</h3>
+            <router-link
+              to="/crm/design-work-orders"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">✏️</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">設計工作單</span>
+            </router-link>
+            <router-link
+              to="/crm/cutting-work-orders"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">✂️</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">切割工作單</span>
+            </router-link>
+            <router-link
+              to="/crm/processing-work-orders"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">🔧</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">加工工作單</span>
+            </router-link>
+            <router-link
+              to="/crm/delivery-work-orders"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">🚚</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">送貨工作單</span>
+            </router-link>
+            <router-link
+              to="/crm/nestings"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">📐</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">排版管理</span>
             </router-link>
           </div>
 

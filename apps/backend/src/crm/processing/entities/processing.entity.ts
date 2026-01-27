@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { WorkOrderItem } from '../../work-order-item/entities/work-order-item.entity';
+import { OrderItem } from '../../order-item/entities/order-item.entity';
 import { Vendor } from '../../vendor/entities/vendor.entity';
 
 export enum ProcessingStatus {
@@ -23,12 +23,12 @@ export class Processing {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '工單工件 ID', example: 1 })
+  @ApiProperty({ description: '訂貨單工件 ID', example: 1 })
   @Column({
     type: 'int',
-    name: 'work_order_item_id',
+    name: 'work_order_item_id', // 保持資料庫欄位名稱不變
   })
-  workOrderItemId: number;
+  orderItemId: number;
 
   @ApiProperty({ description: '加工類型代碼', example: 'LASER_CUT' })
   @Column({
@@ -101,11 +101,11 @@ export class Processing {
   })
   updatedAt: Date;
 
-  // 關聯到 WorkOrderItem（多對一）
-  @ApiProperty({ description: '關聯的工單工件', type: () => WorkOrderItem })
-  @ManyToOne(() => WorkOrderItem, (item) => item.processingItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'work_order_item_id' })
-  workOrderItem: WorkOrderItem;
+  // 關聯到 OrderItem（多對一）
+  @ApiProperty({ description: '關聯的訂貨單工件', type: () => OrderItem })
+  @ManyToOne(() => OrderItem, (item) => item.processingItems, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'work_order_item_id' }) // 保持資料庫欄位名稱不變
+  orderItem: OrderItem;
 
   // 關聯到 Vendor（多對一，可為 null）
   @ApiProperty({ description: '關聯的委外廠商', type: () => Vendor, required: false })
