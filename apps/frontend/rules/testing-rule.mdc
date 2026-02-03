@@ -1,0 +1,8 @@
+---
+description: Vue.js 前端測試規則
+alwaysApply: false
+---
+# Testing account
+在開發環境測試時帳號密碼如下：
+帳號: lutas
+密碼: a123456
