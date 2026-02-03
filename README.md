@@ -9,7 +9,7 @@
 - **Monorepo 管理**: Nx 21.4.1
 - **後端框架**: NestJS 11 + TypeScript
 - **前端框架**: Vue.js 3 + TypeScript
-- **資料庫**: Postgress + TypeORM
+- **資料庫**: PostgreSQL + TypeORM
 - **認證**: JWT + Passport
 - **API 文件**: Swagger/OpenAPI
 - **排程**: @nestjs/schedule
@@ -68,7 +68,7 @@ isin_nest/
 ### 前置需求
 
 - Node.js >= 18
-- MySQL 8.0+
+- PostgreSQL 14+
 - npm 或 yarn
 
 ### 1. 安裝依賴
@@ -90,10 +90,14 @@ npm install -g nx
 ```env
 # 資料庫配置
 DB_HOST=localhost
-DB_PORT=5004
+DB_PORT=5432
 DB_USER=your_username
 DB_PASS=your_password
 DB_NAME=isin_db
+
+# 資料庫同步設定（僅開發環境使用）
+DB_SYNC=false              # 設為 true 可自動同步 entity 到資料庫（不建議生產環境使用）
+DB_MIGRATIONS_RUN=false    # 設為 true 時啟動自動執行 migration
 
 # JWT 配置
 JWT_SECRET=your_jwt_secret
@@ -103,7 +107,7 @@ JWT_EXPIRES_IN=24h
 PORT=3000
 
 # Node 配置
-NODE_ENV=development/production
+NODE_ENV=development
 ```
 
 ### 3. 啟動應用
@@ -317,6 +321,60 @@ npx nx show project backend --verbose
 - **StaffLeave**: 請假記錄
 - **StaffSegment**: 部門資訊
 
+### 資料庫遷移 (Migration)
+
+本專案使用 TypeORM Migration 管理資料庫結構變更，確保變更可追蹤、可回滾，適合團隊協作和生產環境。
+
+#### 環境變數設定
+
+```env
+# 開發環境可設定 DB_SYNC=true 快速同步（不建議用於生產）
+DB_SYNC=false
+
+# 設定為 true 時，應用啟動會自動執行未執行的 migration
+DB_MIGRATIONS_RUN=false
+```
+
+#### Migration 指令
+
+```bash
+# 根據 entity 變更自動產生 migration 檔案
+npm run migration:generate --name=YourMigrationName
+
+# 手動建立空白 migration 檔案
+npm run migration:create --name=YourMigrationName
+
+# 執行所有未執行的 migration
+npm run migration:run
+
+# 回滾最近一次 migration
+npm run migration:revert
+
+# 查看 migration 狀態
+npm run migration:show
+
+# 直接同步 schema（開發用，會覆蓋資料）
+npm run schema:sync
+
+# 刪除所有資料表（危險！僅開發用）
+npm run schema:drop
+```
+
+#### 開發流程
+
+1. **修改 Entity**：在 `apps/backend/src/**/*.entity.ts` 中修改實體定義
+2. **產生 Migration**：執行 `npm run migration:generate --name=DescriptiveName`
+3. **檢查 Migration**：查看 `apps/backend/src/migrations/` 中產生的檔案，確認 SQL 正確
+4. **執行 Migration**：執行 `npm run migration:run` 套用變更
+5. **提交程式碼**：將 entity 和 migration 檔案一起提交到版本控制
+
+#### 注意事項
+
+- **生產環境**：務必使用 migration，不要啟用 `DB_SYNC=true`
+- **資料備份**：執行 migration 前建議先備份資料庫
+- **回滾準備**：確保 migration 的 `down()` 方法正確實作，以便需要時回滾
+- **團隊協作**：migration 檔案應提交到版本控制，確保所有人使用相同的資料庫結構
+
 ## 🚀 部署
 
 ### 生產構建
@@ -385,9 +443,14 @@ npm run test:e2e
    - 檢查 `nx.json` 配置
 
 4. **資料庫連接錯誤**
-   - 確保 MySQL 服務正在運行
+   - 確保 PostgreSQL 服務正在運行
    - 檢查 `.env` 檔案中的資料庫配置
    - TypeORM 會自動重試連接，這是正常行為
+
+5. **Migration 錯誤**
+   - 外鍵約束衝突：先執行 `npm run migration:show` 查看狀態
+   - 確保 migration 檔案按正確順序執行
+   - 若需重置，可用 `npm run schema:drop` 後重新執行 migration
 
 ### 重置專案
 

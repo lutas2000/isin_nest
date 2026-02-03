@@ -35,7 +35,15 @@
     "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts",
     "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
     "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts",
-    "migrate-quote-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-quote-from-access.ts"
+    "migrate-quote-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-quote-from-access.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./apps/backend/src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate ./apps/backend/src/migrations/$npm_config_name",
+    "migration:create": "npm run typeorm -- migration:create ./apps/backend/src/migrations/$npm_config_name",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "migration:show": "npm run typeorm -- migration:show",
+    "schema:sync": "npm run typeorm -- schema:sync",
+    "schema:drop": "npm run typeorm -- schema:drop"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

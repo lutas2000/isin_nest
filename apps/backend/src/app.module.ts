@@ -38,14 +38,15 @@ function parseBool(value: string | undefined): boolean | undefined {
         // 避免 Nx webpack bundle 情境下 __dirname glob 掃描失效
         autoLoadEntities: true,
         entities: [],
-        // Docker/本機快速啟動可用 DB_SYNC=true 自動建表；正式環境建議關閉並改用 migration
-        synchronize:
-          parseBool(configService.get<string>('DB_SYNC')) ??
-          process.env.NODE_ENV === 'development', // 只在開發環境預設啟用同步
+        // Migration 設定
+        migrationsRun: parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false, // 啟動時是否自動執行 migration
+        migrationsTableName: 'typeorm_migrations',
+        // 開發環境可用 DB_SYNC=true 快速同步；正式環境建議關閉並使用 migration
+        synchronize: parseBool(configService.get<string>('DB_SYNC')) ?? false,
         extra: {
           max: 10,
         },
-        // logging: ['error', 'schema'], // debug db 用
+        // logging: ['error', 'schema', 'migration'], // debug db 用
       }),
     }),
     HrModule,
