@@ -89,6 +89,7 @@
     "@nx/js": "^21.4.1",
     "@nx/vite": "^21.4.1",
     "@nx/webpack": "^21.4.1",
+    "@playwright/test": "^1.58.1",
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.10.7",
     "@types/bcrypt": "^5.0.2",
