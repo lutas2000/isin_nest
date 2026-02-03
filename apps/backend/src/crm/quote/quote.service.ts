@@ -170,7 +170,7 @@ export class QuoteService {
     // 自動複製 QuoteItem 到 OrderItem 並產生對應工作單
     if (quote.quoteItems && quote.quoteItems.length > 0) {
       for (const quoteItem of quote.quoteItems) {
-        // 複製 QuoteItem 到 OrderItem
+        // 複製 QuoteItem 到 OrderItem（直接複製備注）
         const orderItem = await this.orderItemService.create({
           orderId: order.id,
           customerFile: quoteItem.customerFile,
@@ -180,6 +180,7 @@ export class QuoteService {
           unitPrice: quoteItem.unitPrice,
           source: quoteItem.source || '報價單轉換',
           processing: quoteItem.processing,
+          notes: quoteItem.notes,
           status: 'TODO',
           isNested: false,
         });

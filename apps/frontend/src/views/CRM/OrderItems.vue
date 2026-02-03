@@ -187,6 +187,10 @@
           <template #cell-status="{ value }">
             <StatusBadge :text="value || '-'" variant="secondary" size="sm" />
           </template>
+
+          <template #cell-notes="{ value }">
+            {{ value || '-' }}
+          </template>
           
           <template #actions="{ row, isEditing, save, cancel }">
             <!-- 編輯模式：顯示保存和取消按鈕 -->
@@ -446,6 +450,7 @@ const newRowTemplate = () => {
       unit: '',
       unitPrice: 0,
       status: '待處理',
+      notes: '',
     };
   }
   return {
@@ -460,6 +465,7 @@ const newRowTemplate = () => {
     unitPrice: 0,
     source: '訂貨單新增',
     status: '待處理',
+    notes: '',
   };
 };
 
@@ -547,6 +553,12 @@ const editableColumns = computed<EditableColumn[]>(() => [
       { value: '已完成', label: '已完成' },
     ]
   },
+  { 
+    key: 'notes', 
+    label: '備註', 
+    editable: true, 
+    type: 'text' 
+  },
 ]);
 
 // 載入訂貨單資料
@@ -599,7 +611,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
 
   try {
     const data: Partial<WorkOrderItem> = {
-      workOrderId: workOrder.value.id,
+      orderId: workOrder.value.id,
       cadFile: row.cadFile || undefined,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
@@ -610,6 +622,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
       unitPrice: row.unitPrice || 0,
       source: row.source || '訂貨單新增',
       status: row.status || '待處理',
+      notes: row.notes || undefined,
     };
 
     if (isNew) {
@@ -633,7 +646,7 @@ const handleNewRowSave = async (row: any) => {
 
   try {
     const data: Partial<WorkOrderItem> = {
-      workOrderId: workOrder.value.id,
+      orderId: workOrder.value.id,
       cadFile: row.cadFile || undefined,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
@@ -644,6 +657,7 @@ const handleNewRowSave = async (row: any) => {
       unitPrice: row.unitPrice || 0,
       source: row.source || '訂貨單新增',
       status: row.status || '待處理',
+      notes: row.notes || undefined,
     };
     await workOrderItemService.create(data);
     showNewRow.value = false;
@@ -791,7 +805,7 @@ const addProcessing = async () => {
 
   try {
     const data: CreateProcessingDto = {
-      workOrderItemId: selectedWorkOrderItem.value.id,
+      orderItemId: selectedWorkOrderItem.value.id,
       processingCode: newProcessingForm.value.processingCode,
       isOutsourced: newProcessingForm.value.isOutsourced,
       vendorId: newProcessingForm.value.isOutsourced ? newProcessingForm.value.vendorId : undefined,

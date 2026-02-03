@@ -25,7 +25,7 @@ export enum OrderStatus {
   COMPLETED = 'completed',       // 已完成
 }
 
-@Entity('work_order') // 保持資料庫表名不變以避免遷移
+@Entity('order')
 export class Order {
   @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
   @PrimaryColumn({ type: 'varchar', length: 50 })

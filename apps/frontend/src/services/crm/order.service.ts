@@ -33,6 +33,7 @@ export interface OrderItem {
   isNested: boolean
   nestingId?: number
   status: string
+  notes?: string
   order?: Order
   drawingStaff?: any
   processingItems?: Processing[]

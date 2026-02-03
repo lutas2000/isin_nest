@@ -14,7 +14,7 @@ import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { Processing } from '../../processing/entities/processing.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
-@Entity('work_order_item') // 保持資料庫表名不變以避免遷移
+@Entity('order_item')
 export class OrderItem {
   @ApiProperty({ description: '訂貨單工件ID', example: 1 })
   @PrimaryGeneratedColumn()
@@ -24,7 +24,7 @@ export class OrderItem {
   @Column({
     type: 'varchar',
     length: 50,
-    name: 'work_order_id', // 保持資料庫欄位名稱不變
+    name: 'order_id',
   })
   orderId: string;
 
@@ -147,6 +147,13 @@ export class OrderItem {
   })
   status: string;
 
+  @ApiProperty({ description: '備註' })
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  notes?: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
     name: 'created_at',
@@ -162,7 +169,7 @@ export class OrderItem {
   // 關聯到 Order（多對一）
   @ApiProperty({ description: '關聯的訂貨單資料', type: () => Order })
   @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'work_order_id' }) // 保持資料庫欄位名稱不變
+  @JoinColumn({ name: 'order_id' })
   order: Order;
 
   // 關聯到 Staff（繪圖負責人，可為 null）
