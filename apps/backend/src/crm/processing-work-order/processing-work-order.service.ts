@@ -22,7 +22,7 @@ export class ProcessingWorkOrderService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.processingWorkOrderRepository.findAndCount({
-      relations: ['order', 'orderItem', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip,
@@ -34,23 +34,44 @@ export class ProcessingWorkOrderService {
   async findByOrderId(orderId: string): Promise<ProcessingWorkOrder[]> {
     return this.processingWorkOrderRepository.find({
       where: { orderId },
-      relations: ['order', 'orderItem', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByOrderItemId(orderItemId: number): Promise<ProcessingWorkOrder[]> {
+    return this.processingWorkOrderRepository.find({
+      where: { orderItemId },
+      relations: ['processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      order: { createdAt: 'ASC' },
     });
   }
 
   async findByStatus(status: ProcessingWorkOrderStatus): Promise<ProcessingWorkOrder[]> {
     return this.processingWorkOrderRepository.find({
       where: { status },
-      relations: ['order', 'orderItem', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /**
+   * 查詢委外加工工單（有指定廠商或 Processing 有預設廠商的）
+   */
+  async findOutsourcedWorkOrders(): Promise<ProcessingWorkOrder[]> {
+    const workOrders = await this.processingWorkOrderRepository.find({
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      order: { createdAt: 'DESC' },
+    });
+
+    // 篩選有廠商的工單（自己設定的 vendorId 或 Processing 預設的 vendor）
+    return workOrders.filter((wo) => wo.vendorId || wo.processing?.vendorId);
   }
 
   async findOne(id: number): Promise<ProcessingWorkOrder> {
     const processingWorkOrder = await this.processingWorkOrderRepository.findOne({
       where: { id },
-      relations: ['order', 'orderItem', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
     });
 
     if (!processingWorkOrder) {
@@ -91,6 +112,29 @@ export class ProcessingWorkOrderService {
     if (processingWorkOrder.status === ProcessingWorkOrderStatus.PENDING) {
       processingWorkOrder.status = ProcessingWorkOrderStatus.IN_PROGRESS;
     }
+    return this.processingWorkOrderRepository.save(processingWorkOrder);
+  }
+
+  /**
+   * 記錄送出日期（委外加工）
+   */
+  async ship(id: number): Promise<ProcessingWorkOrder> {
+    const processingWorkOrder = await this.findOne(id);
+    processingWorkOrder.shippedAt = new Date();
+    if (processingWorkOrder.status === ProcessingWorkOrderStatus.PENDING) {
+      processingWorkOrder.status = ProcessingWorkOrderStatus.IN_PROGRESS;
+    }
+    return this.processingWorkOrderRepository.save(processingWorkOrder);
+  }
+
+  /**
+   * 記錄取回日期（委外加工）
+   */
+  async return(id: number): Promise<ProcessingWorkOrder> {
+    const processingWorkOrder = await this.findOne(id);
+    processingWorkOrder.returnedAt = new Date();
+    processingWorkOrder.status = ProcessingWorkOrderStatus.COMPLETED;
+    processingWorkOrder.completedAt = new Date();
     return this.processingWorkOrderRepository.save(processingWorkOrder);
   }
 

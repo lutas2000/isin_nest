@@ -34,7 +34,6 @@ export const API_CONFIG = {
     DESIGN_WORK_ORDERS: '/crm/design-work-orders',
     CUTTING_WORK_ORDERS: '/crm/cutting-work-orders',
     PROCESSING_WORK_ORDERS: '/crm/processing-work-orders',
-    OUTSOURCING_WORK_ORDERS: '/crm/outsourcing-work-orders',
     DELIVERY_WORK_ORDERS: '/crm/delivery-work-orders',
     // 排版
     NESTINGS: '/crm/nestings',

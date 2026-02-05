@@ -14,6 +14,7 @@ import CRMOrderItems from '../views/CRM/OrderItems.vue'
 import CRMDesignWorkOrders from '../views/CRM/DesignWorkOrders.vue'
 import CRMCuttingWorkOrders from '../views/CRM/CuttingWorkOrders.vue'
 import CRMProcessingWorkOrders from '../views/CRM/ProcessingWorkOrders.vue'
+import CRMProcessingList from '../views/CRM/ProcessingList.vue'
 import CRMDeliveryWorkOrders from '../views/CRM/DeliveryWorkOrders.vue'
 import CRMNestingManagement from '../views/CRM/NestingManagement.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
@@ -131,6 +132,12 @@ const routes = [
     name: 'CRMProcessingWorkOrders',
     component: CRMProcessingWorkOrders,
     meta: { title: '加工工作單', icon: '🔧', requiresAuth: true }
+  },
+  {
+    path: '/crm/processings',
+    name: 'CRMProcessingList',
+    component: CRMProcessingList,
+    meta: { title: '加工項目管理', icon: '⚙️', requiresAuth: true }
   },
   {
     path: '/crm/delivery-work-orders',

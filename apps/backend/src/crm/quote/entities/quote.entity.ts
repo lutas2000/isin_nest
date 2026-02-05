@@ -59,18 +59,17 @@ export class Quote {
   notes?: string;
 
   @ApiProperty({
-    description: '後加工',
-    type: [String],
+    description: '後加工項目 ID 陣列',
+    type: [Number],
     required: false,
-    example: ['裁切', '包邊'],
+    example: [1, 2, 3],
   })
   @Column({
-    type: 'text',
-    array: true,
-    name: 'post_processing',
+    type: 'jsonb',
+    name: 'processing_ids',
     nullable: true,
   })
-  postProcessing?: string[];
+  processingIds?: number[];
 
   @ApiProperty({ description: '客戶是否簽名', example: false })
   @Column({ type: 'boolean', default: false, name: 'is_signed' })

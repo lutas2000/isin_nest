@@ -154,6 +154,10 @@
 
           <div class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">系統管理</h3>
+            <router-link to="/crm/processings" class="nav-item" active-class="active">
+              <div class="nav-icon">🔩</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">加工項目</span>
+            </router-link>
             <router-link to="/settings" class="nav-item" active-class="active">
               <div class="nav-icon">⚙️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">系統設定</span>

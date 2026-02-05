@@ -21,7 +21,7 @@ export class OutsourcingCostService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.outsourcingCostRepository.findAndCount({
-      relations: ['outsourcingWorkOrder', 'outsourcingWorkOrder.vendor'],
+      relations: ['processingWorkOrder', 'processingWorkOrder.vendor', 'processingWorkOrder.processing'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip,
@@ -30,10 +30,10 @@ export class OutsourcingCostService {
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
-  async findByOutsourcingWorkOrderId(outsourcingWorkOrderId: number): Promise<OutsourcingCost[]> {
+  async findByProcessingWorkOrderId(processingWorkOrderId: number): Promise<OutsourcingCost[]> {
     return this.outsourcingCostRepository.find({
-      where: { outsourcingWorkOrderId },
-      relations: ['outsourcingWorkOrder'],
+      where: { processingWorkOrderId },
+      relations: ['processingWorkOrder'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -41,7 +41,7 @@ export class OutsourcingCostService {
   async findOne(id: number): Promise<OutsourcingCost> {
     const outsourcingCost = await this.outsourcingCostRepository.findOne({
       where: { id },
-      relations: ['outsourcingWorkOrder', 'outsourcingWorkOrder.vendor'],
+      relations: ['processingWorkOrder', 'processingWorkOrder.vendor', 'processingWorkOrder.processing'],
     });
 
     if (!outsourcingCost) {
@@ -67,9 +67,9 @@ export class OutsourcingCostService {
     await this.outsourcingCostRepository.remove(outsourcingCost);
   }
 
-  // 計算某個委外工作單的總成本
-  async getTotalCostByWorkOrder(outsourcingWorkOrderId: number): Promise<number> {
-    const costs = await this.findByOutsourcingWorkOrderId(outsourcingWorkOrderId);
+  // 計算某個加工工作單的總成本
+  async getTotalCostByWorkOrder(processingWorkOrderId: number): Promise<number> {
+    const costs = await this.findByProcessingWorkOrderId(processingWorkOrderId);
     return costs.reduce((sum, cost) => sum + Number(cost.amount), 0);
   }
 }

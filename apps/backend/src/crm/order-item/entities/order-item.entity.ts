@@ -3,7 +3,6 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
@@ -11,7 +10,6 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from '../../order/entities/order.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
-import { Processing } from '../../processing/entities/processing.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('order_item')
@@ -81,13 +79,13 @@ export class OrderItem {
   })
   source: string;
 
-  @ApiProperty({ description: '加工', example: '雷射切割、折彎' })
+  @ApiProperty({ description: '加工項目 ID 陣列', example: [1, 2, 3], type: [Number] })
   @Column({
-    type: 'varchar',
-    length: 500,
+    type: 'jsonb',
     nullable: true,
+    name: 'processing_ids',
   })
-  processing?: string;
+  processingIds?: number[];
 
   @ApiProperty({ description: '單價', example: 1000 })
   @Column({
@@ -177,9 +175,4 @@ export class OrderItem {
   @ManyToOne(() => Staff, { nullable: true })
   @JoinColumn({ name: 'drawing_staff_id' })
   drawingStaff?: Staff;
-
-  // 關聯到 Processing（一對多：加工項目）
-  @ApiProperty({ description: '關聯的加工項目', type: () => [Processing] })
-  @OneToMany(() => Processing, (processing) => processing.orderItem)
-  processingItems?: Processing[];
 }

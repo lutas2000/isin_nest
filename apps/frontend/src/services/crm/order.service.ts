@@ -2,8 +2,6 @@ import { apiGet, apiPost, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 
-import type { Processing } from './processing.service'
-
 // 訂貨單狀態
 export enum OrderStatus {
   PENDING = 'pending',
@@ -25,7 +23,7 @@ export interface OrderItem {
   quantity: number
   unit?: string
   source: string
-  processing?: string
+  processingIds?: number[]
   unitPrice: number
   estimatedCuttingTime?: number
   drawingStaffId?: string
@@ -36,7 +34,6 @@ export interface OrderItem {
   notes?: string
   order?: Order
   drawingStaff?: any
-  processingItems?: Processing[]
   createdAt?: string
   updatedAt?: string
 }

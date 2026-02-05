@@ -37,12 +37,27 @@ export class ProcessingWorkOrderController {
     return this.processingWorkOrderService.findAll(page, limit);
   }
 
+  @ApiOperation({ summary: '獲取所有委外加工工作單' })
+  @ApiResponse({ status: 200, description: '成功返回委外加工工作單列表', type: [ProcessingWorkOrder] })
+  @Get('outsourced')
+  findOutsourced() {
+    return this.processingWorkOrderService.findOutsourcedWorkOrders();
+  }
+
   @ApiOperation({ summary: '根據訂貨單ID獲取加工工作單' })
   @ApiParam({ name: 'orderId', description: '訂貨單ID', example: 'ORD001' })
   @ApiResponse({ status: 200, description: '成功返回加工工作單列表', type: [ProcessingWorkOrder] })
   @Get('by-order/:orderId')
   findByOrderId(@Param('orderId') orderId: string) {
     return this.processingWorkOrderService.findByOrderId(orderId);
+  }
+
+  @ApiOperation({ summary: '根據訂貨單工件ID獲取加工工作單' })
+  @ApiParam({ name: 'orderItemId', description: '訂貨單工件ID', example: 1 })
+  @ApiResponse({ status: 200, description: '成功返回加工工作單列表', type: [ProcessingWorkOrder] })
+  @Get('by-order-item/:orderItemId')
+  findByOrderItemId(@Param('orderItemId', ParseIntPipe) orderItemId: number) {
+    return this.processingWorkOrderService.findByOrderItemId(orderItemId);
   }
 
   @ApiOperation({ summary: '根據狀態獲取加工工作單' })
@@ -104,6 +119,24 @@ export class ProcessingWorkOrderController {
     @Body('staffId') staffId: string,
   ) {
     return this.processingWorkOrderService.assign(id, staffId);
+  }
+
+  @ApiOperation({ summary: '記錄送出日期（委外加工）' })
+  @ApiParam({ name: 'id', description: '加工工作單ID', example: 1 })
+  @ApiResponse({ status: 200, description: '成功記錄送出日期', type: ProcessingWorkOrder })
+  @ApiResponse({ status: 404, description: '加工工作單不存在' })
+  @Patch(':id/ship')
+  ship(@Param('id', ParseIntPipe) id: number) {
+    return this.processingWorkOrderService.ship(id);
+  }
+
+  @ApiOperation({ summary: '記錄取回日期（委外加工）' })
+  @ApiParam({ name: 'id', description: '加工工作單ID', example: 1 })
+  @ApiResponse({ status: 200, description: '成功記錄取回日期', type: ProcessingWorkOrder })
+  @ApiResponse({ status: 404, description: '加工工作單不存在' })
+  @Patch(':id/return')
+  return(@Param('id', ParseIntPipe) id: number) {
+    return this.processingWorkOrderService.return(id);
   }
 
   @ApiOperation({ summary: '刪除加工工作單' })

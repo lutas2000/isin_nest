@@ -8,9 +8,11 @@ export interface QuoteItem {
   customerFile?: string
   material?: string
   thickness?: string
+  processingIds?: number[]
   notes?: string
   quantity: number
   unitPrice: number
+  source?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -21,7 +23,7 @@ export interface Quote {
   customerId: string
   totalAmount: number
   notes?: string
-  postProcessing?: string[]
+  processingIds?: number[]
   isSigned: boolean
   designFee: number
   shippingFee: number

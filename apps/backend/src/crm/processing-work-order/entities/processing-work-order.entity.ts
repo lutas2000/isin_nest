@@ -11,6 +11,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Order } from '../../order/entities/order.entity';
 import { OrderItem } from '../../order-item/entities/order-item.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
+import { Vendor } from '../../vendor/entities/vendor.entity';
+import { Processing } from '../../processing/entities/processing.entity';
 import { ProcessingWorkOrderStatus } from '../../enums/work-order-status.enum';
 
 @Entity('processing_work_order')
@@ -34,13 +36,20 @@ export class ProcessingWorkOrder {
   })
   orderItemId: number;
 
-  @ApiProperty({ description: '加工類型', example: '折床' })
+  @ApiProperty({ description: '加工項目ID', example: 1 })
   @Column({
-    type: 'varchar',
-    length: 100,
-    name: 'processing_type',
+    type: 'int',
+    name: 'processing_id',
   })
-  processingType: string;
+  processingId: number;
+
+  @ApiProperty({ description: '廠商ID（可覆蓋 Processing 預設廠商）', example: 1, required: false })
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'vendor_id',
+  })
+  vendorId?: number;
 
   @ApiProperty({ description: '指派人員員工編號', example: 'STAFF001', required: false })
   @Column({
@@ -65,6 +74,22 @@ export class ProcessingWorkOrder {
     nullable: true,
   })
   notes?: string;
+
+  @ApiProperty({ description: '送出日期（委外加工時使用）', required: false })
+  @Column({
+    type: 'timestamptz',
+    name: 'shipped_at',
+    nullable: true,
+  })
+  shippedAt?: Date;
+
+  @ApiProperty({ description: '取回日期（委外加工時使用）', required: false })
+  @Column({
+    type: 'timestamptz',
+    name: 'returned_at',
+    nullable: true,
+  })
+  returnedAt?: Date;
 
   @CreateDateColumn({
     type: 'timestamptz',
@@ -94,6 +119,18 @@ export class ProcessingWorkOrder {
   @ManyToOne(() => OrderItem, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_item_id' })
   orderItem: OrderItem;
+
+  // 關聯到 Processing
+  @ApiProperty({ description: '關聯的加工項目', type: () => Processing })
+  @ManyToOne(() => Processing)
+  @JoinColumn({ name: 'processing_id' })
+  processing: Processing;
+
+  // 關聯到 Vendor（可覆蓋 Processing 預設廠商）
+  @ApiProperty({ description: '關聯的廠商', type: () => Vendor, required: false })
+  @ManyToOne(() => Vendor, { nullable: true })
+  @JoinColumn({ name: 'vendor_id' })
+  vendor?: Vendor;
 
   // 關聯到 Staff (指派人員)
   @ManyToOne(() => Staff, { nullable: true })

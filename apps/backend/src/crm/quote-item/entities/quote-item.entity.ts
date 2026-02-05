@@ -75,13 +75,13 @@ export class QuoteItem {
   })
   source?: string;
 
-  @ApiProperty({ description: '後加工需求', example: '折床、攻牙' })
+  @ApiProperty({ description: '加工項目 ID 陣列', example: [1, 2, 3], type: [Number] })
   @Column({
-    type: 'varchar',
-    length: 500,
+    type: 'jsonb',
     nullable: true,
+    name: 'processing_ids',
   })
-  processing?: string;
+  processingIds?: number[];
 
   @ApiProperty({ description: '備註' })
   @Column({

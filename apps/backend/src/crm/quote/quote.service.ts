@@ -170,7 +170,7 @@ export class QuoteService {
     // 自動複製 QuoteItem 到 OrderItem 並產生對應工作單
     if (quote.quoteItems && quote.quoteItems.length > 0) {
       for (const quoteItem of quote.quoteItems) {
-        // 複製 QuoteItem 到 OrderItem（直接複製備注）
+        // 複製 QuoteItem 到 OrderItem（直接複製備注與加工 IDs）
         const orderItem = await this.orderItemService.create({
           orderId: order.id,
           customerFile: quoteItem.customerFile,
@@ -179,14 +179,14 @@ export class QuoteService {
           quantity: quoteItem.quantity,
           unitPrice: quoteItem.unitPrice,
           source: quoteItem.source || '報價單轉換',
-          processing: quoteItem.processing,
+          processingIds: quoteItem.processingIds,
           notes: quoteItem.notes,
           status: 'TODO',
           isNested: false,
         });
 
-        // 根據來源判斷產生對應工作單
-        await this.generateWorkOrdersForItem(order, orderItem, quoteItem.source, quoteItem.processing);
+        // 根據來源與加工 IDs 產生對應工作單
+        await this.generateWorkOrdersForItem(order, orderItem, quoteItem.source, quoteItem.processingIds);
       }
     }
 
@@ -207,7 +207,7 @@ export class QuoteService {
     order: Order,
     orderItem: OrderItem,
     source?: string,
-    processing?: string,
+    processingIds?: number[],
   ): Promise<void> {
     // 根據來源判斷是否需要設計工作單
     const needsDesign = source === SourceType.NEW || 
@@ -234,17 +234,13 @@ export class QuoteService {
     }
 
     // 根據後加工需求判斷是否需要加工工作單
-    if (processing && processing.trim()) {
-      // 解析後加工需求（可能是逗號分隔的多個加工類型）
-      const processingTypes = processing.split(/[,、，]/).map(p => p.trim()).filter(p => p);
-      
-      for (const processingType of processingTypes) {
-        // 產生加工工作單
+    if (processingIds && processingIds.length > 0) {
+      for (const processingId of processingIds) {
+        // 產生加工工作單（連結到 Processing 主檔）
         await this.processingWorkOrderService.create({
           orderId: order.id,
           orderItemId: orderItem.id,
-          processingType,
-          status: 'pending' as any,
+          processingId,
         });
       }
     }

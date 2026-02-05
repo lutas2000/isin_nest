@@ -97,11 +97,16 @@
           {{ Number(value || 0).toLocaleString('zh-TW') }}
         </template>
 
-        <template #cell-postProcessing="{ value }">
-          <span v-if="value && (typeof value === 'string' ? value : value.length > 0)">
-            {{ typeof value === 'string' ? value : value.join('、') }}
-          </span>
-          <span v-else class="text-muted">無</span>
+        <template #cell-processing="{ row }">
+          <button 
+            class="processing-btn"
+            @click.stop="openProcessingSelectModal(row)"
+          >
+            <span v-if="row.processingIds && row.processingIds.length > 0" class="processing-tags">
+              {{ getProcessingNames(row.processingIds) }}
+            </span>
+            <span v-else class="processing-empty">選擇後加工</span>
+          </button>
         </template>
 
         <template #cell-notes="{ value }">
@@ -198,15 +203,15 @@
             </div>
           </div>
 
-          <div class="details-section" v-if="selectedQuotePostProcessingList.length > 0">
+          <div class="details-section" v-if="selectedQuote.processingIds && selectedQuote.processingIds.length > 0">
             <h4>後加工</h4>
             <div class="post-processing-tags">
               <span 
-                v-for="(process, index) in selectedQuotePostProcessingList" 
-                :key="index"
+                v-for="id in selectedQuote.processingIds" 
+                :key="id"
                 class="post-processing-tag"
               >
-                {{ process }}
+                {{ getProcessingName(id) }}
               </span>
             </div>
           </div>
@@ -305,6 +310,14 @@
         </button>
       </template>
     </Modal>
+
+    <!-- 加工選擇 Modal -->
+    <ProcessingSelectModal
+      :show="showProcessingSelectModal"
+      :model-value="selectedQuoteForProcessing?.processingIds || []"
+      @close="showProcessingSelectModal = false"
+      @confirm="handleProcessingConfirm"
+    />
   </div>
 </template>
 
@@ -312,8 +325,10 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
+import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
+import { processingService, type Processing } from '@/services/crm/processing.service';
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -351,9 +366,14 @@ const router = useRouter();
 // Modal 控制
 const showDetailsModal = ref(false);
 const showConvertModal = ref(false);
+const showProcessingSelectModal = ref(false);
 const selectedQuote = ref<Quote | null>(null);
+const selectedQuoteForProcessing = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
 const showNewRow = ref(false);
+
+// 加工項目相關
+const allProcessings = ref<Processing[]>([]);
 
 // EditableDataTable ref
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
@@ -381,7 +401,7 @@ const newRowTemplate = () => ({
   customerId: '',
   totalAmount: 0,
   notes: '',
-  postProcessing: '',
+  processingIds: [] as number[],
   isSigned: false,
 });
 
@@ -460,10 +480,9 @@ const editableColumns = computed<EditableColumn[]>(() => [
     ]
   },
   { 
-    key: 'postProcessing', 
+    key: 'processing', 
     label: '後加工', 
-    editable: true, 
-    type: 'text'
+    editable: false, // 使用 Modal 選擇
   },
   { 
     key: 'notes', 
@@ -503,31 +522,24 @@ const filteredQuotes = computed(() => {
   return filtered;
 });
 
-// 選中報價單的後加工列表（用於詳情 Modal）
-const selectedQuotePostProcessingList = computed((): string[] => {
-  if (!selectedQuote.value?.postProcessing) return [];
-  const pp = selectedQuote.value.postProcessing as unknown;
-  if (typeof pp === 'string') {
-    return (pp as string).split(/[,、，]/).map((s: string) => s.trim()).filter((s: string) => s);
-  }
-  return pp as string[];
-});
+// 取得單一加工名稱
+const getProcessingName = (id: number) => {
+  return allProcessings.value.find(p => p.id === id)?.name || `ID:${id}`;
+};
+
+// 取得加工名稱列表
+const getProcessingNames = (processingIds?: number[]) => {
+  if (!processingIds || processingIds.length === 0) return '-';
+  return processingIds
+    .map(id => allProcessings.value.find(p => p.id === id)?.name || `ID:${id}`)
+    .join('、');
+};
 
 // 處理篩選器更新
 const handleFilterUpdate = (key: string, value: string) => {
   if (key === 'status') {
     quoteStatusFilter.value = value;
   }
-};
-
-// 將 postProcessing 陣列轉換為逗號分隔字串（用於編輯）
-const transformQuoteForEdit = (quote: Quote): Quote => {
-  return {
-    ...quote,
-    postProcessing: Array.isArray(quote.postProcessing) 
-      ? quote.postProcessing.join('、') as unknown as string[]
-      : quote.postProcessing,
-  };
 };
 
 // 載入報價單資料
@@ -538,11 +550,11 @@ const loadQuotes = async () => {
     const response = await quoteService.getAll(currentPage.value, pageSize.value);
     // 檢查是否為分頁回應
     if (response && typeof response === 'object' && 'data' in response) {
-      quotes.value = response.data.map(transformQuoteForEdit);
+      quotes.value = response.data;
       total.value = response.total;
     } else {
       // 向後兼容：如果不是分頁回應，直接使用數組
-      quotes.value = (response as Quote[]).map(transformQuoteForEdit);
+      quotes.value = response as Quote[];
       total.value = quotes.value.length;
     }
   } catch (err) {
@@ -605,23 +617,13 @@ const handleFieldChange = (row: Quote, field: string, value: any, isNew: boolean
 // 處理手動保存
 const handleSave = async (row: Quote, isNew: boolean) => {
   try {
-    // 處理 postProcessing：如果是字串則轉換為陣列
-    const parsePostProcessing = (value: any): string[] => {
-      if (!value) return [];
-      if (Array.isArray(value)) return value;
-      if (typeof value === 'string') {
-        return value.split(/[,、，]/).map((s: string) => s.trim()).filter((s: string) => s);
-      }
-      return [];
-    };
-
     if (isNew) {
       const data: Partial<Quote> = {
         staffId: row.staffId,
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
         notes: row.notes || undefined,
-        postProcessing: parsePostProcessing(row.postProcessing),
+        processingIds: row.processingIds || [],
         isSigned: row.isSigned || false,
       };
       await quoteService.create(data);
@@ -632,7 +634,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
         notes: row.notes || undefined,
-        postProcessing: parsePostProcessing(row.postProcessing),
+        processingIds: row.processingIds || [],
         isSigned: row.isSigned || false,
       };
       await quoteService.update(row.id, data);
@@ -646,22 +648,12 @@ const handleSave = async (row: Quote, isNew: boolean) => {
 // 處理新增行保存
 const handleNewRowSave = async (row: any) => {
   try {
-    // 處理 postProcessing：如果是字串則轉換為陣列
-    const parsePostProcessing = (value: any): string[] => {
-      if (!value) return [];
-      if (Array.isArray(value)) return value;
-      if (typeof value === 'string') {
-        return value.split(/[,、，]/).map((s: string) => s.trim()).filter((s: string) => s);
-      }
-      return [];
-    };
-
     const data: Partial<Quote> = {
       staffId: row.staffId,
       customerId: row.customerId,
       totalAmount: row.totalAmount || 0,
       notes: row.notes || undefined,
-      postProcessing: parsePostProcessing(row.postProcessing),
+      processingIds: row.processingIds || [],
       isSigned: row.isSigned || false,
     };
     await quoteService.create(data);
@@ -821,11 +813,44 @@ const handleShortcutClick = (action: string) => {
   }
 };
 
+// 載入所有加工項目（主檔）
+const loadAllProcessings = async () => {
+  try {
+    const response = await processingService.getAllActive();
+    allProcessings.value = response;
+  } catch (err) {
+    console.error('載入加工項目失敗:', err);
+  }
+};
+
+// 開啟加工選擇 Modal
+const openProcessingSelectModal = (quote: Quote) => {
+  selectedQuoteForProcessing.value = quote;
+  showProcessingSelectModal.value = true;
+};
+
+// 確認加工選擇
+const handleProcessingConfirm = async (value: { ids: number[]; processings: Processing[] }) => {
+  if (!selectedQuoteForProcessing.value) return;
+
+  try {
+    await quoteService.update(selectedQuoteForProcessing.value.id, {
+      processingIds: value.ids,
+    });
+    await loadQuotes();
+    showProcessingSelectModal.value = false;
+    selectedQuoteForProcessing.value = null;
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '更新後加工失敗');
+  }
+};
+
 // 初始化
 onMounted(() => {
   loadCustomers();
   loadStaff();
   loadQuotes();
+  loadAllProcessings();
 });
 </script>
 
@@ -1056,6 +1081,35 @@ textarea.form-control {
   border-radius: var(--border-radius);
   font-size: var(--font-size-sm);
   font-weight: 500;
+}
+
+/* 加工按鈕樣式 */
+.processing-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--secondary-50, #f8f9fa);
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.processing-btn:hover {
+  background: var(--secondary-100, #e9ecef);
+  border-color: var(--primary-300, #90caf9);
+}
+
+.processing-tags {
+  color: var(--text-primary);
+}
+
+.processing-empty {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .text-muted {

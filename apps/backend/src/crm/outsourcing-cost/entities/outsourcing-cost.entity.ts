@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { OutsourcingWorkOrder } from '../../outsourcing-work-order/entities/outsourcing-work-order.entity';
+import { ProcessingWorkOrder } from '../../processing-work-order/entities/processing-work-order.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('outsourcing_cost')
@@ -17,12 +17,12 @@ export class OutsourcingCost {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '委外加工工作單ID', example: 1 })
+  @ApiProperty({ description: '加工工作單ID（委外加工）', example: 1 })
   @Column({
     type: 'int',
-    name: 'outsourcing_work_order_id',
+    name: 'processing_work_order_id',
   })
-  outsourcingWorkOrderId: number;
+  processingWorkOrderId: number;
 
   @ApiProperty({ description: '成本類型', example: '加工費' })
   @Column({
@@ -78,8 +78,8 @@ export class OutsourcingCost {
   })
   updatedAt: Date;
 
-  // 關聯到 OutsourcingWorkOrder
-  @ManyToOne(() => OutsourcingWorkOrder, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'outsourcing_work_order_id' })
-  outsourcingWorkOrder: OutsourcingWorkOrder;
+  // 關聯到 ProcessingWorkOrder
+  @ManyToOne(() => ProcessingWorkOrder, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'processing_work_order_id' })
+  processingWorkOrder: ProcessingWorkOrder;
 }

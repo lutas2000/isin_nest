@@ -1,6 +1,4 @@
-import { PartialType, OmitType } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/swagger';
 import { CreateProcessingDto } from './create-processing.dto';
 
-export class UpdateProcessingDto extends PartialType(
-  OmitType(CreateProcessingDto, ['orderItemId'] as const),
-) {}
+export class UpdateProcessingDto extends PartialType(CreateProcessingDto) {}

@@ -35,12 +35,12 @@ export class OutsourcingCostController {
     return this.outsourcingCostService.findAll(page, limit);
   }
 
-  @ApiOperation({ summary: '根據委外加工工作單ID獲取成本' })
-  @ApiParam({ name: 'workOrderId', description: '委外加工工作單ID', example: 1 })
+  @ApiOperation({ summary: '根據加工工作單ID獲取成本' })
+  @ApiParam({ name: 'workOrderId', description: '加工工作單ID', example: 1 })
   @ApiResponse({ status: 200, description: '成功返回委外成本列表', type: [OutsourcingCost] })
   @Get('by-work-order/:workOrderId')
   findByWorkOrderId(@Param('workOrderId', ParseIntPipe) workOrderId: number) {
-    return this.outsourcingCostService.findByOutsourcingWorkOrderId(workOrderId);
+    return this.outsourcingCostService.findByProcessingWorkOrderId(workOrderId);
   }
 
   @ApiOperation({ summary: '獲取委外工作單的總成本' })

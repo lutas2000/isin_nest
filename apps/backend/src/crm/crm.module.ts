@@ -11,7 +11,6 @@ import { ProcessingModule } from './processing/processing.module';
 import { DesignWorkOrderModule } from './design-work-order/design-work-order.module';
 import { CuttingWorkOrderModule } from './cutting-work-order/cutting-work-order.module';
 import { ProcessingWorkOrderModule } from './processing-work-order/processing-work-order.module';
-import { OutsourcingWorkOrderModule } from './outsourcing-work-order/outsourcing-work-order.module';
 import { DeliveryWorkOrderModule } from './delivery-work-order/delivery-work-order.module';
 import { NestingModule } from './nesting/nesting.module';
 import { OutsourcingCostModule } from './outsourcing-cost/outsourcing-cost.module';
@@ -30,7 +29,6 @@ import { OutsourcingCostModule } from './outsourcing-cost/outsourcing-cost.modul
     DesignWorkOrderModule,
     CuttingWorkOrderModule,
     ProcessingWorkOrderModule,
-    OutsourcingWorkOrderModule,
     DeliveryWorkOrderModule,
     NestingModule,
     OutsourcingCostModule,
@@ -48,7 +46,6 @@ import { OutsourcingCostModule } from './outsourcing-cost/outsourcing-cost.modul
     DesignWorkOrderModule,
     CuttingWorkOrderModule,
     ProcessingWorkOrderModule,
-    OutsourcingWorkOrderModule,
     DeliveryWorkOrderModule,
     NestingModule,
     OutsourcingCostModule,

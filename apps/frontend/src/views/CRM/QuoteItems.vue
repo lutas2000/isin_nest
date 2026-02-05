@@ -136,6 +136,18 @@
             {{ value || '-' }}
           </template>
 
+          <template #cell-processing="{ row }">
+            <button 
+              class="processing-btn"
+              @click.stop="openProcessingSelectModal(row)"
+            >
+              <span v-if="row.processingIds && row.processingIds.length > 0" class="processing-tags">
+                {{ getProcessingNames(row.processingIds) }}
+              </span>
+              <span v-else class="processing-empty">選擇加工</span>
+            </button>
+          </template>
+
           <template #cell-notes="{ value }">
             {{ value || '-' }}
           </template>
@@ -195,6 +207,14 @@
       :quote="quote"
       :items="quoteItems"
     />
+
+    <!-- 加工選擇 Modal -->
+    <ProcessingSelectModal
+      :show="showProcessingSelectModal"
+      :model-value="selectedQuoteItem?.processingIds || []"
+      @close="showProcessingSelectModal = false"
+      @confirm="handleProcessingConfirm"
+    />
   </div>
 </template>
 
@@ -202,8 +222,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint } from '@/components';
+import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
+import { processingService, type Processing } from '@/services/crm/processing.service';
 import QuotePrint from './prints/QuotePrint.vue';
 
 const route = useRoute();
@@ -216,6 +238,11 @@ const error = ref<string | null>(null);
 
 // EditableDataTable ref
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+
+// Processing Modal 相關
+const showProcessingSelectModal = ref(false);
+const selectedQuoteItem = ref<QuoteItem | null>(null);
+const allProcessings = ref<Processing[]>([]);
 
 // 表格狀態（用於 ShortcutHint）
 const tableState = computed(() => {
@@ -241,6 +268,7 @@ const newRowTemplate = () => {
       customerFile: '',
       material: '',
       thickness: '',
+      processingIds: [] as number[],
       notes: '',
       quantity: 0,
       unitPrice: 0,
@@ -252,6 +280,7 @@ const newRowTemplate = () => {
     customerFile: '',
     material: '',
     thickness: '',
+    processingIds: [] as number[],
     notes: '',
     quantity: 0,
     unitPrice: 0,
@@ -283,6 +312,11 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '厚度', 
     editable: true, 
     type: 'text' 
+  },
+  { 
+    key: 'processing', 
+    label: '加工', 
+    editable: false, // 使用 Modal 選擇
   },
   { 
     key: 'notes', 
@@ -364,6 +398,7 @@ const handleSave = async (row: QuoteItem, isNew: boolean) => {
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness || undefined,
+      processingIds: row.processingIds || undefined,
       notes: row.notes || undefined,
       quantity: row.quantity || 0,
       unitPrice: row.unitPrice || 0,
@@ -395,6 +430,7 @@ const handleNewRowSave = async (row: any) => {
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness || undefined,
+      processingIds: row.processingIds || undefined,
       notes: row.notes || undefined,
       quantity: row.quantity || 0,
       unitPrice: row.unitPrice || 0,
@@ -509,9 +545,50 @@ const handlePrint = () => {
   quotePrintRef.value?.print();
 };
 
+// 載入所有加工項目（主檔）
+const loadAllProcessings = async () => {
+  try {
+    const response = await processingService.getAllActive();
+    allProcessings.value = response;
+  } catch (err) {
+    console.error('載入加工項目失敗:', err);
+  }
+};
+
+// 開啟加工選擇 Modal
+const openProcessingSelectModal = (item: QuoteItem) => {
+  selectedQuoteItem.value = item;
+  showProcessingSelectModal.value = true;
+};
+
+// 確認加工選擇
+const handleProcessingConfirm = async (value: { ids: number[]; processings: Processing[] }) => {
+  if (!selectedQuoteItem.value) return;
+
+  try {
+    await quoteItemService.update(selectedQuoteItem.value.id, {
+      processingIds: value.ids,
+    });
+    await loadQuote();
+    showProcessingSelectModal.value = false;
+    selectedQuoteItem.value = null;
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '更新加工項目失敗');
+  }
+};
+
+// 取得加工名稱列表
+const getProcessingNames = (processingIds?: number[]) => {
+  if (!processingIds || processingIds.length === 0) return '-';
+  return processingIds
+    .map(id => allProcessings.value.find(p => p.id === id)?.name || `ID:${id}`)
+    .join('、');
+};
+
 // 初始化
 onMounted(() => {
   loadQuote();
+  loadAllProcessings();
 });
 </script>
 
@@ -655,6 +732,35 @@ onMounted(() => {
 .form-control:focus {
   outline: none;
   border-color: var(--primary-500);
+}
+
+/* 加工按鈕樣式 */
+.processing-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--secondary-50, #f8f9fa);
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.processing-btn:hover {
+  background: var(--secondary-100, #e9ecef);
+  border-color: var(--primary-300, #90caf9);
+}
+
+.processing-tags {
+  color: var(--text-primary);
+}
+
+.processing-empty {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* 響應式設計 */

@@ -3,92 +3,83 @@ import { API_CONFIG } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 import type { Vendor } from './vendor.service'
 
-export enum ProcessingStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-}
-
+/**
+ * Processing 主檔（加工項目定義）
+ */
 export interface Processing {
   id: number
-  orderItemId: number
-  processingCode: string
-  isOutsourced: boolean
-  status: ProcessingStatus
+  name: string
   vendorId?: number
   vendor?: Vendor
-  startedAt?: string
-  completedAt?: string
   notes?: string
+  displayOrder: number
+  isActive: boolean
   createdAt?: string
   updatedAt?: string
 }
 
 export interface CreateProcessingDto {
-  orderItemId: number
-  processingCode: string
-  isOutsourced?: boolean
-  status?: ProcessingStatus
+  name: string
   vendorId?: number
   notes?: string
+  displayOrder?: number
+  isActive?: boolean
 }
 
 export interface UpdateProcessingDto {
-  processingCode?: string
-  isOutsourced?: boolean
-  status?: ProcessingStatus
+  name?: string
   vendorId?: number
   notes?: string
+  displayOrder?: number
+  isActive?: boolean
 }
 
 export const processingService = {
-  // 獲取所有加工紀錄（支援分頁）
-  getAll: (page?: number, limit?: number): Promise<PaginatedResponse<Processing>> => {
+  // 獲取所有加工項目（支援分頁）
+  getAll: (page?: number, limit?: number, includeInactive?: boolean): Promise<PaginatedResponse<Processing>> => {
     const params: Record<string, any> = {}
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
+    if (includeInactive !== undefined) params.includeInactive = includeInactive
     return apiGet<PaginatedResponse<Processing>>(API_CONFIG.CRM.PROCESSINGS, params)
   },
 
-  // 根據訂貨單工件 ID 獲取加工紀錄
-  getByOrderItemId: (orderItemId: number): Promise<Processing[]> => {
-    return apiGet<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/by-order-item/${orderItemId}`)
+  // 獲取所有啟用的加工項目（不分頁，用於下拉選單）
+  getAllActive: (): Promise<Processing[]> => {
+    return apiGet<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/active`)
   },
 
-  // 向後兼容別名
-  getByWorkOrderItemId: (orderItemId: number): Promise<Processing[]> => {
-    return apiGet<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/by-order-item/${orderItemId}`)
+  // 根據多個 ID 獲取加工項目
+  getByIds: (ids: number[]): Promise<Processing[]> => {
+    return apiPost<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/by-ids`, { ids })
   },
 
-  // 獲取單個加工紀錄
+  // 獲取單個加工項目
   getById: (id: number): Promise<Processing> => {
     return apiGet<Processing>(`${API_CONFIG.CRM.PROCESSINGS}/${id}`)
   },
 
-  // 建立加工紀錄
+  // 建立加工項目
   create: (data: CreateProcessingDto): Promise<Processing> => {
     return apiPost<Processing>(API_CONFIG.CRM.PROCESSINGS, data)
   },
 
-  // 批次建立加工紀錄
-  bulkCreate: (orderItemId: number, processingCodes: string[]): Promise<Processing[]> => {
-    return apiPost<Processing[]>(`${API_CONFIG.CRM.PROCESSINGS}/bulk`, {
-      orderItemId,
-      processingCodes,
-    })
-  },
-
-  // 更新加工紀錄
+  // 更新加工項目
   update: (id: number, data: UpdateProcessingDto): Promise<Processing> => {
     return apiPut<Processing>(`${API_CONFIG.CRM.PROCESSINGS}/${id}`, data)
   },
 
-  // 更新加工狀態
-  updateStatus: (id: number, status: ProcessingStatus): Promise<Processing> => {
-    return apiPatch<Processing>(`${API_CONFIG.CRM.PROCESSINGS}/${id}/status`, { status })
+  // 停用加工項目
+  deactivate: (id: number): Promise<Processing> => {
+    return apiPatch<Processing>(`${API_CONFIG.CRM.PROCESSINGS}/${id}/deactivate`, {})
   },
 
-  // 刪除加工紀錄
+  // 啟用加工項目
+  activate: (id: number): Promise<Processing> => {
+    return apiPatch<Processing>(`${API_CONFIG.CRM.PROCESSINGS}/${id}/activate`, {})
+  },
+
+  // 刪除加工項目
   delete: (id: number): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.PROCESSINGS}/${id}`)
   },
