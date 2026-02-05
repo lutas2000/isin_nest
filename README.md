@@ -56,6 +56,10 @@ isin_nest/
 │       ├── index.html     # HTML 模板
 │       ├── project.json   # Nx 專案配置
 │       └── webpack.config.js
+├── tests/                  # E2E 測試 (Playwright)
+│   ├── helpers/           # 測試輔助工具
+│   └── crm/               # CRM 模組測試
+├── playwright.config.ts    # Playwright 測試配置
 ├── nx.json                 # Nx 工作區配置
 ├── package.json            # 根依賴管理
 ├── jest.preset.js          # Jest 測試配置
@@ -412,16 +416,70 @@ docker run -p 3000:3000 isin-nest
 
 ## 🧪 測試
 
+本專案包含多種測試類型，確保程式碼品質與功能正確性。
+
+### 單元測試
+
 ```bash
-# 單元測試
+# 執行所有單元測試
 npm run test
 
-# 測試覆蓋率
-npm run test:cov
+# 測試特定專案
+npm run test:backend
+npm run test:frontend
 
-# E2E 測試
-npm run test:e2e
+# 測試覆蓋率報告
+npm run test:cov
 ```
+
+### E2E 測試 (Playwright)
+
+前端使用 [Playwright](https://playwright.dev/) 進行端到端測試，測試檔案位於 `tests/` 目錄。
+
+#### 測試涵蓋範圍
+
+| 模組 | 測試檔案 | 說明 |
+|------|---------|------|
+| 登入 | `login.spec.ts` | 登入頁面、表單驗證、登入/登出流程 |
+| 客戶 | `customers.spec.ts` | 客戶 CRUD、搜尋、分頁 |
+| 聯絡人 | `contacts.spec.ts` | 聯絡人列表、搜尋 |
+| 報價單 | `quotes.spec.ts` | 報價單管理、轉訂貨單 |
+| 訂貨單 | `orders.spec.ts` | 訂貨單管理、狀態更新 |
+| 導航 | `navigation.spec.ts` | 頁面導航、響應式設計、效能 |
+
+#### 執行 E2E 測試
+
+```bash
+# 安裝 Playwright 瀏覽器（首次執行）
+npx playwright install
+
+# 啟動前後端服務（測試前必須）
+npm run dev:full
+
+# 執行所有 E2E 測試
+npx playwright test
+
+# 以 UI 模式執行（可視化介面）
+npx playwright test --ui
+
+# 執行特定測試
+npx playwright test tests/crm/login.spec.ts
+
+# 只執行 Chromium
+npx playwright test --project=chromium
+
+# 產生並查看測試報告
+npx playwright test --reporter=html
+npx playwright show-report
+```
+
+#### 測試帳號
+
+E2E 測試使用以下測試帳號：
+- **用戶名**: `admin`
+- **密碼**: `a123456`
+
+詳細測試說明請參考 [tests/README.md](./tests/README.md)。
 
 ## 🔧 故障排除
 
