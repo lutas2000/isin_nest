@@ -52,7 +52,7 @@ export class CustomerService {
   findOne(id: string): Promise<Customer | null> {
     return this.customerRepository.findOne({
       where: { id },
-      relations: ['contacts', 'quotes', 'workOrders'],
+      relations: ['contacts', 'quotes', 'orders'],
     });
   }
 
