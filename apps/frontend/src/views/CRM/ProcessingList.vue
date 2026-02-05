@@ -18,16 +18,7 @@
         :show-search="true"
         search-placeholder="搜尋加工名稱..."
         v-model:search="processingSearch"
-      >
-        <template #filters>
-          <div class="filter-group">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="showInactive" />
-              <span>顯示停用項目</span>
-            </label>
-          </div>
-        </template>
-      </SearchFilters>
+      />
 
       <div v-if="loading" class="loading-message">載入中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
@@ -43,8 +34,8 @@
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
       >
-        <template #cell-name="{ row, value }">
-          <span :class="{ 'inactive-text': !row.isActive }">{{ value }}</span>
+        <template #cell-name="{ value }">
+          <span>{{ value }}</span>
         </template>
 
         <template #cell-vendor="{ row }">
@@ -54,28 +45,8 @@
           <span v-else class="internal-badge">內部加工</span>
         </template>
 
-        <template #cell-isActive="{ row }">
-          <span :class="row.isActive ? 'status-active' : 'status-inactive'">
-            {{ row.isActive ? '啟用' : '停用' }}
-          </span>
-        </template>
-
         <template #actions="{ row }">
           <button class="btn btn-sm btn-primary" @click="editProcessing(row)">編輯</button>
-          <button 
-            v-if="row.isActive"
-            class="btn btn-sm btn-warning" 
-            @click="deactivateProcessing(row)"
-          >
-            停用
-          </button>
-          <button 
-            v-else
-            class="btn btn-sm btn-success" 
-            @click="activateProcessing(row)"
-          >
-            啟用
-          </button>
           <button class="btn btn-sm btn-danger" @click="deleteProcessing(row)">刪除</button>
         </template>
       </DataTable>
@@ -129,12 +100,6 @@
           ></textarea>
         </div>
 
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="processingForm.isActive" />
-            <span>啟用</span>
-          </label>
-        </div>
       </div>
 
       <template #footer>
@@ -163,7 +128,6 @@ const error = ref<string | null>(null)
 const processings = ref<Processing[]>([])
 const vendors = ref<Vendor[]>([])
 const processingSearch = ref('')
-const showInactive = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
@@ -171,12 +135,11 @@ const total = ref(0)
 // Modal 狀態
 const showCreateModal = ref(false)
 const editingProcessing = ref<Processing | null>(null)
-const processingForm = ref<CreateProcessingDto & { isActive: boolean }>({
+const processingForm = ref<CreateProcessingDto>({
   name: '',
   vendorId: null as number | undefined,
   notes: '',
   displayOrder: 0,
-  isActive: true,
 })
 
 // 表格欄位定義
@@ -185,7 +148,6 @@ const tableColumns = [
   { key: 'name', label: '加工名稱' },
   { key: 'vendor', label: '執行廠商' },
   { key: 'displayOrder', label: '順序', width: '80px' },
-  { key: 'isActive', label: '狀態', width: '100px' },
   { key: 'notes', label: '備註' },
 ]
 
@@ -202,11 +164,6 @@ const filteredProcessings = computed(() => {
     )
   }
 
-  // 啟用/停用過濾
-  if (!showInactive.value) {
-    result = result.filter(p => p.isActive)
-  }
-
   return result
 })
 
@@ -215,7 +172,7 @@ const loadData = async () => {
   loading.value = true
   error.value = null
   try {
-    const response = await processingService.getAll(currentPage.value, pageSize.value, showInactive.value)
+    const response = await processingService.getAll(currentPage.value, pageSize.value)
     processings.value = response.data
     total.value = response.total
   } catch (err: any) {
@@ -255,7 +212,6 @@ const editProcessing = (processing: Processing) => {
     vendorId: processing.vendorId || null as any,
     notes: processing.notes || '',
     displayOrder: processing.displayOrder,
-    isActive: processing.isActive,
   }
   showCreateModal.value = true
 }
@@ -331,7 +287,6 @@ const closeModal = () => {
     vendorId: null as any,
     notes: '',
     displayOrder: 0,
-    isActive: true,
   }
 }
 

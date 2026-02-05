@@ -45,7 +45,6 @@ export class ProcessingService implements OnModuleInit {
         name: item.name,
         displayOrder: item.displayOrder,
         // 不指定 vendorId，預設為內部加工（資料庫層會存成 NULL）
-        isActive: true,
       }),
     );
 
@@ -55,17 +54,14 @@ export class ProcessingService implements OnModuleInit {
   async findAll(
     page?: number,
     limit?: number,
-    includeInactive?: boolean,
+    includeInactive?: boolean, // 保留參數以相容舊 API，但已不再使用
   ): Promise<PaginatedResponseDto<Processing>> {
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
     const maxLimit = Math.min(limitNum, 100);
     const skip = (pageNum - 1) * maxLimit;
 
-    const where = includeInactive ? {} : { isActive: true };
-
     const [data, total] = await this.processingRepository.findAndCount({
-      where,
       order: { displayOrder: 'ASC', name: 'ASC' },
       take: maxLimit,
       skip,
@@ -78,8 +74,8 @@ export class ProcessingService implements OnModuleInit {
    * 取得所有加工類型（不分頁，用於下拉選單）
    */
   async findAllActive(): Promise<Processing[]> {
+    // 已無啟用/停用概念，直接回傳全部
     return this.processingRepository.find({
-      where: { isActive: true },
       relations: ['vendor'],
       order: { displayOrder: 'ASC', name: 'ASC' },
     });
@@ -129,20 +125,18 @@ export class ProcessingService implements OnModuleInit {
   }
 
   /**
-   * 軟刪除（設為非啟用）
+   * 軟刪除（舊：設為非啟用）— 目前改為直接刪除
    */
   async deactivate(id: number): Promise<Processing> {
     const processing = await this.findOne(id);
-    processing.isActive = false;
-    return this.processingRepository.save(processing);
+    await this.processingRepository.remove(processing);
+    return processing;
   }
 
   /**
-   * 重新啟用
+   * 重新啟用（保留介面，實際直接回傳現有資料）
    */
   async activate(id: number): Promise<Processing> {
-    const processing = await this.findOne(id);
-    processing.isActive = true;
-    return this.processingRepository.save(processing);
+    return this.findOne(id);
   }
 }

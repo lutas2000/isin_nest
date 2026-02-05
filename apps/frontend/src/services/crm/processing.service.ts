@@ -13,9 +13,6 @@ export interface Processing {
   vendor?: Vendor
   notes?: string
   displayOrder: number
-  isActive: boolean
-  createdAt?: string
-  updatedAt?: string
 }
 
 export interface CreateProcessingDto {
@@ -23,7 +20,6 @@ export interface CreateProcessingDto {
   vendorId?: number
   notes?: string
   displayOrder?: number
-  isActive?: boolean
 }
 
 export interface UpdateProcessingDto {
@@ -31,7 +27,6 @@ export interface UpdateProcessingDto {
   vendorId?: number
   notes?: string
   displayOrder?: number
-  isActive?: boolean
 }
 
 export const processingService = {

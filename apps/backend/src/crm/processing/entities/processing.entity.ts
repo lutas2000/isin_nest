@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Vendor } from '../../vendor/entities/vendor.entity';
 
@@ -51,26 +43,6 @@ export class Processing {
     name: 'display_order',
   })
   displayOrder: number;
-
-  @ApiProperty({ description: '是否啟用', example: true })
-  @Column({
-    type: 'boolean',
-    default: true,
-    name: 'is_active',
-  })
-  isActive: boolean;
-
-  @CreateDateColumn({
-    type: 'timestamptz',
-    name: 'created_at',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    type: 'timestamptz',
-    name: 'updated_at',
-  })
-  updatedAt: Date;
 
   // 關聯到 Vendor（多對一，可為 null）
   @ApiProperty({ description: '關聯的廠商', type: () => Vendor, required: false })
