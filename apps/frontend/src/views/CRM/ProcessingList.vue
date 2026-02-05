@@ -11,7 +11,7 @@
       </template>
     </PageHeader>
 
-    <!-- 加工項目列表 -->
+    <!-- 快捷鍵提示 + 加工項目列表 -->
     <div class="processing-content">
       <SearchFilters
         title="加工項目列表"
@@ -20,24 +20,27 @@
         v-model:search="processingSearch"
       />
 
+      <ShortcutHint
+        :table-state="editableTableState"
+        @shortcut-click="handleShortcutClick"
+      />
+
       <div v-if="loading" class="loading-message">載入中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <DataTable
+      <EditableDataTable
         v-else
-        :columns="tableColumns"
+        ref="editableTableRef"
+        :columns="editableColumns"
         :data="filteredProcessings"
         :show-actions="true"
         :pagination="true"
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
+        :editable="false"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
       >
-        <template #cell-name="{ value }">
-          <span>{{ value }}</span>
-        </template>
-
         <template #cell-vendor="{ row }">
           <span v-if="row.vendor" class="vendor-badge">
             {{ row.vendor.name }}
@@ -49,7 +52,7 @@
           <button class="btn btn-sm btn-primary" @click="editProcessing(row)">編輯</button>
           <button class="btn btn-sm btn-danger" @click="deleteProcessing(row)">刪除</button>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
 
     <!-- 創建/編輯加工項目 Modal -->
@@ -116,7 +119,8 @@
 import { ref, computed, onMounted } from 'vue'
 import PageHeader from '../../components/PageHeader.vue'
 import SearchFilters from '../../components/SearchFilters.vue'
-import DataTable from '../../components/DataTable.vue'
+import EditableDataTable, { type EditableColumn } from '../../components/EditableDataTable.vue'
+import ShortcutHint from '../../components/ShortcutHint.vue'
 import Modal from '../../components/Modal.vue'
 import { processingService, type Processing, type CreateProcessingDto } from '../../services/crm/processing.service'
 import { vendorService, type Vendor } from '../../services/crm/vendor.service'
@@ -132,24 +136,53 @@ const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
 
+const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null)
+
 // Modal 狀態
 const showCreateModal = ref(false)
 const editingProcessing = ref<Processing | null>(null)
 const processingForm = ref<CreateProcessingDto>({
   name: '',
-  vendorId: null as number | undefined,
+  vendorId: undefined,
   notes: '',
   displayOrder: 0,
 })
 
-// 表格欄位定義
-const tableColumns = [
-  { key: 'id', label: 'ID', width: '80px' },
-  { key: 'name', label: '加工名稱' },
-  { key: 'vendor', label: '執行廠商' },
-  { key: 'displayOrder', label: '順序', width: '80px' },
-  { key: 'notes', label: '備註' },
+// 表格欄位定義（此頁僅瀏覽，不開放直接 inline 編輯，且不顯示 ID / 順序）
+const editableColumns: EditableColumn[] = [
+  { key: 'name', label: '加工名稱', editable: false },
+  { key: 'vendor', label: '執行廠商', editable: false },
+  { key: 'notes', label: '備註', truncate: true },
 ]
+
+// 提供給 ShortcutHint 使用的表格狀態
+const editableTableState = computed(() => {
+  if (!editableTableRef.value) return null
+  const exposed: any = editableTableRef.value
+  return {
+    focusedRowIndex: exposed.focusedRowIndex?.value ?? null,
+    focusedFieldKey: exposed.focusedFieldKey?.value ?? null,
+    isNewRowFocused: exposed.isNewRowFocused?.value ?? false,
+    editingRowId: exposed.editingRowId?.value ?? null,
+    data: () => processings.value,
+  }
+})
+
+// 處理 ShortcutHint 觸發的快捷操作（此頁僅支援查看/刪除）
+const handleShortcutClick = (action: string) => {
+  const state = editableTableState.value
+  if (!state) return
+  const rows = state.data()
+  const index = state.focusedRowIndex ?? 0
+  const current = rows[index]
+  if (!current) return
+
+  if (action === 'row-view') {
+    editProcessing(current)
+  } else if (action === 'row-delete') {
+    deleteProcessing(current)
+  }
+}
 
 // 過濾後的資料
 const filteredProcessings = computed(() => {
@@ -185,7 +218,7 @@ const loadData = async () => {
 // 載入廠商
 const loadVendors = async () => {
   try {
-    const response = await vendorService.getAllVendors()
+    const response = await vendorService.getAllWithoutPagination()
     vendors.value = response
   } catch (err: any) {
     console.error('載入廠商失敗:', err)
@@ -209,7 +242,7 @@ const editProcessing = (processing: Processing) => {
   editingProcessing.value = processing
   processingForm.value = {
     name: processing.name,
-    vendorId: processing.vendorId || null as any,
+    vendorId: processing.vendorId,
     notes: processing.notes || '',
     displayOrder: processing.displayOrder,
   }
@@ -244,28 +277,6 @@ const saveProcessing = async () => {
   }
 }
 
-// 停用加工項目
-const deactivateProcessing = async (processing: Processing) => {
-  if (!confirm(`確定要停用「${processing.name}」嗎？`)) return
-  
-  try {
-    await processingService.deactivate(processing.id)
-    loadData()
-  } catch (err: any) {
-    alert(err.message || '停用失敗')
-  }
-}
-
-// 啟用加工項目
-const activateProcessing = async (processing: Processing) => {
-  try {
-    await processingService.activate(processing.id)
-    loadData()
-  } catch (err: any) {
-    alert(err.message || '啟用失敗')
-  }
-}
-
 // 刪除加工項目
 const deleteProcessing = async (processing: Processing) => {
   if (!confirm(`確定要刪除「${processing.name}」嗎？此操作無法復原！`)) return
@@ -284,7 +295,7 @@ const closeModal = () => {
   editingProcessing.value = null
   processingForm.value = {
     name: '',
-    vendorId: null as any,
+    vendorId: undefined,
     notes: '',
     displayOrder: 0,
   }
