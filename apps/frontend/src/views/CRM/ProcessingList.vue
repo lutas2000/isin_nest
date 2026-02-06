@@ -2,27 +2,29 @@
   <div class="processing-list-page">
     <PageHeader 
       title="加工項目管理"
+      description="管理加工項目、執行廠商與顯示順序"
     >
       <template #actions>
-        <button class="btn btn-primary" @click="showCreateModal = true">
+        <button class="btn btn-primary" @click="showNewRow = true">
           <span class="btn-icon">+</span>
           新增加工項目
         </button>
       </template>
     </PageHeader>
 
-    <!-- 快捷鍵提示 + 加工項目列表 -->
+    <!-- 快捷鍵提示 -->
+    <ShortcutHint
+      :table-state="editableTableState"
+      @shortcut-click="handleShortcutClick"
+    />
+
+    <!-- 加工項目列表 -->
     <div class="processing-content">
       <SearchFilters
-        title="加工項目列表"
+        title=""
         :show-search="true"
         search-placeholder="搜尋加工名稱..."
         v-model:search="processingSearch"
-      />
-
-      <ShortcutHint
-        :table-state="editableTableState"
-        @shortcut-click="handleShortcutClick"
       />
 
       <div v-if="loading" class="loading-message">載入中...</div>
@@ -37,87 +39,55 @@
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
-        :editable="false"
+        :editable="true"
+        :show-new-row="showNewRow"
+        :new-row-template="newRowTemplate"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
+        @field-change="handleFieldChange"
+        @save="handleSave"
+        @new-row-save="handleNewRowSave"
+        @new-row-cancel="showNewRow = false"
+        @new-row-show="showNewRow = true"
+        @row-delete="handleRowDelete"
+        @row-view="handleRowView"
+        @row-edit="handleRowEdit"
       >
-        <template #cell-vendor="{ row }">
+        <template #cell-vendorId="{ row }">
           <span v-if="row.vendor" class="vendor-badge">
             {{ row.vendor.name }}
           </span>
           <span v-else class="internal-badge">內部加工</span>
         </template>
 
-        <template #actions="{ row }">
-          <button class="btn btn-sm btn-primary" @click="editProcessing(row)">編輯</button>
-          <button class="btn btn-sm btn-danger" @click="deleteProcessing(row)">刪除</button>
+        <template #actions="{ row, isEditing, save, cancel, startEdit }">
+          <template v-if="isEditing">
+            <button class="btn btn-sm btn-success" @click="save">保存</button>
+            <button class="btn btn-sm btn-outline" @click="cancel">取消</button>
+          </template>
+          <template v-else>
+            <span class="dropdown-item" @click="startEdit">編輯</span>
+            <span 
+              class="dropdown-item danger" 
+              @click="deleteProcessing(row)"
+            >
+              刪除
+            </span>
+          </template>
         </template>
       </EditableDataTable>
     </div>
-
-    <!-- 創建/編輯加工項目 Modal -->
-    <Modal
-      :show="showCreateModal"
-      :title="editingProcessing ? '編輯加工項目' : '新增加工項目'"
-      @close="closeModal"
-    >
-      <div class="modal-form">
-        <div class="form-group">
-          <label>加工名稱 *</label>
-          <input 
-            type="text" 
-            class="form-control" 
-            v-model="processingForm.name"
-            placeholder="例如：折彎、烤漆"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>執行廠商</label>
-          <select class="form-control" v-model="processingForm.vendorId">
-            <option :value="null">內部加工（無外包廠商）</option>
-            <option v-for="vendor in vendors" :key="vendor.id" :value="vendor.id">
-              {{ vendor.name }}
-            </option>
-          </select>
-          <small class="form-hint">選擇「內部加工」代表由公司自行處理</small>
-        </div>
-
-        <div class="form-group">
-          <label>顯示順序</label>
-          <input 
-            type="number" 
-            class="form-control" 
-            v-model.number="processingForm.displayOrder"
-            placeholder="數字越小越前面"
-          />
-        </div>
-
-      </div>
-
-      <template #footer>
-        <button class="btn btn-secondary" @click="closeModal">取消</button>
-        <button class="btn btn-primary" @click="saveProcessing" :disabled="saving">
-          {{ saving ? '儲存中...' : '儲存' }}
-        </button>
-      </template>
-    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import PageHeader from '../../components/PageHeader.vue'
-import SearchFilters from '../../components/SearchFilters.vue'
-import EditableDataTable, { type EditableColumn } from '../../components/EditableDataTable.vue'
-import ShortcutHint from '../../components/ShortcutHint.vue'
-import Modal from '../../components/Modal.vue'
-import { processingService, type Processing, type CreateProcessingDto } from '../../services/crm/processing.service'
-import { vendorService, type Vendor } from '../../services/crm/vendor.service'
+import { PageHeader, SearchFilters, EditableDataTable, ShortcutHint, type EditableColumn } from '@/components'
+import { processingService, type Processing } from '@/services/crm/processing.service'
+import { vendorService, type Vendor } from '@/services/crm/vendor.service'
 
 // 狀態
 const loading = ref(false)
-const saving = ref(false)
 const error = ref<string | null>(null)
 const processings = ref<Processing[]>([])
 const vendors = ref<Vendor[]>([])
@@ -125,50 +95,65 @@ const processingSearch = ref('')
 const currentPage = ref(1)
 const pageSize = ref(50)
 const total = ref(0)
+const showNewRow = ref(false)
 
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null)
 
-// Modal 狀態
-const showCreateModal = ref(false)
-const editingProcessing = ref<Processing | null>(null)
-const processingForm = ref<CreateProcessingDto>({
+// 新增行模板
+const newRowTemplate = () => ({
   name: '',
-  vendorId: undefined,
+  vendorId: undefined as number | undefined,
   displayOrder: 0,
 })
 
-// 表格欄位定義（此頁僅瀏覽，不開放直接 inline 編輯，且不顯示 ID / 順序）
-const editableColumns: EditableColumn[] = [
-  { key: 'name', label: '加工名稱', editable: false },
-  { key: 'vendor', label: '執行廠商', editable: false },
-]
+// 表格欄位定義（支援 inline 編輯）
+const editableColumns = computed<EditableColumn[]>(() => [
+  { key: 'name', label: '加工名稱', editable: true, required: true, type: 'text' },
+  { 
+    key: 'vendorId', 
+    label: '執行廠商', 
+    editable: true, 
+    type: 'select',
+    options: [
+      { value: '', label: '內部加工' },
+      ...vendors.value.map(v => ({ value: v.id, label: v.name })),
+    ],
+  },
+  { key: 'displayOrder', label: '顯示順序', editable: true, type: 'number' },
+])
 
 // 提供給 ShortcutHint 使用的表格狀態
 const editableTableState = computed(() => {
-  if (!editableTableRef.value) return null
-  const exposed: any = editableTableRef.value
+  const tableRef = editableTableRef.value
+  if (!tableRef) return null
   return {
-    focusedRowIndex: exposed.focusedRowIndex?.value ?? null,
-    focusedFieldKey: exposed.focusedFieldKey?.value ?? null,
-    isNewRowFocused: exposed.isNewRowFocused?.value ?? false,
-    editingRowId: exposed.editingRowId?.value ?? null,
-    data: () => processings.value,
+    focusedRowIndex: tableRef.focusedRowIndex,
+    focusedFieldKey: tableRef.focusedFieldKey,
+    isNewRowFocused: tableRef.isNewRowFocused,
+    editingRowId: tableRef.editingRowId,
+    data: () => filteredProcessings.value,
   }
 })
 
-// 處理 ShortcutHint 觸發的快捷操作（此頁僅支援查看/刪除）
+// 處理 ShortcutHint 觸發的快捷操作
 const handleShortcutClick = (action: string) => {
   const state = editableTableState.value
-  if (!state) return
+  if (!state || !editableTableRef.value) return
   const rows = state.data()
   const index = state.focusedRowIndex ?? 0
   const current = rows[index]
   if (!current) return
 
   if (action === 'row-view') {
-    editProcessing(current)
+    editableTableRef.value.startEdit(current, index)
+  } else if (action === 'row-edit') {
+    editableTableRef.value.startEdit(current, index)
   } else if (action === 'row-delete') {
     deleteProcessing(current)
+  } else if (action === 'new-row-show') {
+    showNewRow.value = true
+  } else if (action === 'cancel-new-row') {
+    editableTableRef.value.cancelNewRow()
   }
 }
 
@@ -225,42 +210,44 @@ const handlePageSizeChange = (size: number) => {
   loadData()
 }
 
-// 編輯加工項目
-const editProcessing = (processing: Processing) => {
-  editingProcessing.value = processing
-  processingForm.value = {
-    name: processing.name,
-    vendorId: processing.vendorId,
-    displayOrder: processing.displayOrder,
-  }
-  showCreateModal.value = true
-}
+// 處理欄位變更（僅更新本地狀態）
+const handleFieldChange = () => {}
 
-// 儲存加工項目
-const saveProcessing = async () => {
-  if (!processingForm.value.name) {
-    alert('請輸入加工名稱')
-    return
-  }
-
-  saving.value = true
+// 處理保存（編輯既有項目）
+const handleSave = async (row: Processing, isNew: boolean) => {
   try {
+    const rawVendorId = row.vendorId as string | number | null | undefined
+    const vendorId = (rawVendorId === '' || rawVendorId == null) ? undefined : Number(rawVendorId)
     const data = {
-      ...processingForm.value,
-      vendorId: processingForm.value.vendorId || undefined,
+      name: row.name,
+      vendorId: vendorId || undefined,
+      displayOrder: row.displayOrder ?? 0,
     }
-
-    if (editingProcessing.value) {
-      await processingService.update(editingProcessing.value.id, data)
-    } else {
+    if (isNew) {
       await processingService.create(data)
+    } else {
+      await processingService.update(row.id, data)
     }
-    closeModal()
-    loadData()
+    await loadData()
   } catch (err: any) {
     alert(err.message || '儲存失敗')
-  } finally {
-    saving.value = false
+  }
+}
+
+// 處理新增行保存
+const handleNewRowSave = async (row: any) => {
+  try {
+    const rawVendorId = row.vendorId as string | number | null | undefined
+    const vendorId = (rawVendorId === '' || rawVendorId == null) ? undefined : Number(rawVendorId)
+    await processingService.create({
+      name: row.name,
+      vendorId: vendorId || undefined,
+      displayOrder: row.displayOrder ?? 0,
+    })
+    showNewRow.value = false
+    await loadData()
+  } catch (err: any) {
+    alert(err.message || '建立失敗')
   }
 }
 
@@ -276,16 +263,19 @@ const deleteProcessing = async (processing: Processing) => {
   }
 }
 
-// 關閉 Modal
-const closeModal = () => {
-  showCreateModal.value = false
-  editingProcessing.value = null
-  processingForm.value = {
-    name: '',
-    vendorId: undefined,
-    displayOrder: 0,
-  }
+// 處理 row-delete 事件（快捷鍵觸發）
+const handleRowDelete = (row: Processing) => {
+  deleteProcessing(row)
 }
+
+// 處理 row-view 事件（快捷鍵觸發，進入編輯模式）
+const handleRowView = (row: Processing) => {
+  const index = filteredProcessings.value.findIndex(p => p.id === row.id)
+  if (index >= 0) editableTableRef.value?.startEdit(row, index)
+}
+
+// 處理 row-edit 事件（快捷鍵觸發）
+const handleRowEdit = () => {}
 
 // 初始化
 onMounted(() => {
@@ -296,152 +286,48 @@ onMounted(() => {
 
 <style scoped>
 .processing-list-page {
-  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .processing-content {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .loading-message,
 .error-message {
   padding: 2rem;
   text-align: center;
-  color: var(--text-muted);
 }
 
 .error-message {
-  color: var(--danger-color);
+  color: var(--danger-600);
+  background: var(--danger-50);
 }
 
 .vendor-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: var(--info-bg, #e3f2fd);
-  color: var(--info-color, #1976d2);
-  border-radius: 4px;
-  font-size: 0.85rem;
+  background: var(--primary-100);
+  color: var(--primary-700);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
 }
 
 .internal-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: var(--success-bg, #e8f5e9);
-  color: var(--success-color, #388e3c);
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.status-active {
-  color: var(--success-color, #388e3c);
-  font-weight: 500;
-}
-
-.status-inactive {
-  color: var(--text-muted);
-}
-
-.inactive-text {
-  color: var(--text-muted);
-  text-decoration: line-through;
-}
-
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.form-control {
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
-.form-hint {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-}
-
-.btn-secondary {
-  background: var(--secondary-bg);
-  color: var(--text-primary);
-}
-
-.btn-success {
-  background: var(--success-color, #388e3c);
-  color: white;
-}
-
-.btn-warning {
-  background: var(--warning-color, #f57c00);
-  color: white;
-}
-
-.btn-danger {
-  background: var(--danger-color, #d32f2f);
-  color: white;
-}
-
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
+  background: var(--secondary-100);
+  color: var(--secondary-700);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
 }
 
 .btn-icon {
   margin-right: 0.5rem;
 }
+
 </style>
