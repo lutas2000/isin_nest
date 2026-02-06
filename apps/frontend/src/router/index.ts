@@ -17,6 +17,7 @@ import CRMProcessingWorkOrders from '../views/CRM/ProcessingWorkOrders.vue'
 import CRMProcessingList from '../views/CRM/ProcessingList.vue'
 import CRMDeliveryWorkOrders from '../views/CRM/DeliveryWorkOrders.vue'
 import CRMNestingManagement from '../views/CRM/NestingManagement.vue'
+import CRMNestingItems from '../views/CRM/NestingItems.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
 import CRMVendors from '../views/CRM/Vendors.vue'
@@ -151,6 +152,12 @@ const routes = [
     name: 'CRMNestingManagement',
     component: CRMNestingManagement,
     meta: { title: '排版管理', icon: '📐', requiresAuth: true }
+  },
+  {
+    path: '/crm/nestings/:id/items',
+    name: 'CRMNestingItems',
+    component: CRMNestingItems,
+    meta: { title: '排版工件', icon: '📐', requiresAuth: true }
   },
   {
     path: '/crm/vendors',

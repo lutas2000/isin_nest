@@ -5,6 +5,10 @@
       description="管理排版、追蹤排版進度"
     >
       <template #actions>
+        <button class="btn btn-outline" @click="handleImportClick">
+          <span class="btn-icon">📄</span>
+          匯入排版
+        </button>
         <button class="btn btn-primary" @click="showNewRow = true">
           <span class="btn-icon">➕</span>
           新增排版
@@ -14,9 +18,7 @@
 
     <SearchFilters
       v-model:searchValue="searchQuery"
-      v-model:filterStatus="filterStatus"
       search-placeholder="搜尋排版編號或訂貨單..."
-      :status-options="statusOptions"
     />
 
     <div class="table-card">
@@ -37,28 +39,18 @@
         @row-delete="handleRowDelete"
         @row-view="handleRowView"
       >
+        <template #cell-id="{ value }">
+          <router-link :to="`/crm/nestings/${value}/items`" class="link">
+            {{ value }}
+          </router-link>
+        </template>
+
         <template #cell-nestingNumber="{ value }">
           <span class="nesting-number">{{ value || '待生成' }}</span>
         </template>
 
         <template #cell-orderId="{ value }">
           <router-link :to="`/crm/orders/${value}/items`" class="link">{{ value }}</router-link>
-        </template>
-
-        <template #cell-status="{ value }">
-          <StatusBadge 
-            :text="getStatusLabel(value)" 
-            :variant="getStatusVariant(value)"
-            size="sm"
-          />
-        </template>
-
-        <template #cell-nestingItems="{ row }">
-          <span class="items-count">{{ row.nestingItems?.length || 0 }} 個工件</span>
-        </template>
-
-        <template #cell-createdAt="{ value }">
-          {{ value ? new Date(value).toLocaleDateString('zh-TW') : '-' }}
         </template>
 
         <template #actions="{ row, isEditing, save, cancel }">
@@ -68,7 +60,6 @@
           </template>
           <template v-else>
             <span class="dropdown-item" @click="handleRowView(row)">查看詳情</span>
-            <span class="dropdown-item" @click="finalizeNesting(row.id)" v-if="row.status === 'draft'">定案</span>
             <span class="dropdown-item" @click="handleRowDelete(row)">刪除</span>
           </template>
         </template>
@@ -107,10 +98,36 @@
               <span class="detail-value">{{ selectedNesting.quantity }} 張</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">狀態：</span>
-              <span class="detail-value">
-                <StatusBadge :text="getStatusLabel(selectedNesting.status)" :variant="getStatusVariant(selectedNesting.status)" />
-              </span>
+              <span class="detail-label">X：</span>
+              <span class="detail-value">{{ selectedNesting.x ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Y：</span>
+              <span class="detail-value">{{ selectedNesting.y ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">切削長度：</span>
+              <span class="detail-value">{{ selectedNesting.cutLength ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">劃線長度：</span>
+              <span class="detail-value">{{ selectedNesting.lineLength ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">加工時間（秒）：</span>
+              <span class="detail-value">{{ selectedNesting.processingTime ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">使用率 (%)：</span>
+              <span class="detail-value">{{ selectedNesting.utilization ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">重量：</span>
+              <span class="detail-value">{{ selectedNesting.weight ?? '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">廢料 (%)：</span>
+              <span class="detail-value">{{ selectedNesting.scrap ?? '-' }}</span>
             </div>
           </div>
         </div>
@@ -119,42 +136,39 @@
           <h4>排版工件</h4>
           <div v-if="selectedNesting.nestingItems && selectedNesting.nestingItems.length > 0" class="nesting-items-list">
             <div v-for="item in selectedNesting.nestingItems" :key="item.id" class="nesting-item">
-              <span class="item-order-item">工件 #{{ item.orderItemId }}</span>
+              <span class="item-order-item">工件 #{{ item.id }}</span>
               <span class="item-quantity">數量：{{ item.quantity }}</span>
             </div>
           </div>
           <div v-else class="empty-message">尚無排版工件</div>
         </div>
 
-        <div class="detail-section" v-if="selectedNesting.notes">
-          <h4>備註</h4>
-          <p>{{ selectedNesting.notes }}</p>
-        </div>
       </div>
     </Modal>
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".docx"
+      class="hidden-input"
+      @change="handleFileChange"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, StatusBadge, EditableDataTable, SearchFilters, Modal, type EditableColumn } from '@/components';
-import { nestingService, type Nesting, NestingStatus } from '@/services/crm/nesting.service';
+import { nestingService, type Nesting } from '@/services/crm/nesting.service';
 
 const loading = ref(false);
 const error = ref<string | null>(null);
 const nestings = ref<Nesting[]>([]);
 const searchQuery = ref('');
-const filterStatus = ref('');
 const showNewRow = ref(false);
 const showDetailModal = ref(false);
 const selectedNesting = ref<Nesting | null>(null);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
-
-const statusOptions = [
-  { value: '', label: '所有狀態' },
-  { value: 'draft', label: '草稿' },
-  { value: 'finalized', label: '已定案' },
-];
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
@@ -163,9 +177,6 @@ const columns: EditableColumn[] = [
   { key: 'material', label: '材料', editable: true, required: true, type: 'text' },
   { key: 'thickness', label: '厚度', editable: true, required: true, type: 'text' },
   { key: 'quantity', label: '張數', editable: true, type: 'number' },
-  { key: 'nestingItems', label: '工件數', editable: false },
-  { key: 'status', label: '狀態', editable: false },
-  { key: 'createdAt', label: '建立日期', editable: false },
 ];
 
 const newRowTemplate = () => ({
@@ -173,8 +184,6 @@ const newRowTemplate = () => ({
   material: '',
   thickness: '',
   quantity: 1,
-  status: 'draft',
-  notes: '',
 });
 
 const filteredData = computed(() => {
@@ -188,29 +197,9 @@ const filteredData = computed(() => {
       item.material?.toLowerCase().includes(query)
     );
   }
-  
-  if (filterStatus.value) {
-    data = data.filter(item => item.status === filterStatus.value);
-  }
-  
+
   return data;
 });
-
-const getStatusLabel = (status: NestingStatus) => {
-  const labels: Record<string, string> = {
-    [NestingStatus.DRAFT]: '草稿',
-    [NestingStatus.FINALIZED]: '已定案',
-  };
-  return labels[status] || status;
-};
-
-const getStatusVariant = (status: NestingStatus) => {
-  const variants: Record<string, string> = {
-    [NestingStatus.DRAFT]: 'secondary',
-    [NestingStatus.FINALIZED]: 'success',
-  };
-  return variants[status] || 'secondary';
-};
 
 const loadData = async () => {
   loading.value = true;
@@ -268,13 +257,27 @@ const closeDetailModal = () => {
   selectedNesting.value = null;
 };
 
-const finalizeNesting = async (id: number) => {
-  if (!confirm('確定要定案此排版嗎？定案後將無法修改。')) return;
+const handleImportClick = () => {
+  fileInput.value?.click();
+};
+
+const handleFileChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files || input.files.length === 0) return;
+
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+
   try {
-    await nestingService.finalize(id);
+    loading.value = true;
+    await nestingService.importFromDocx(formData);
     await loadData();
+    input.value = '';
   } catch (err) {
-    alert(err instanceof Error ? err.message : '定案排版失敗');
+    alert(err instanceof Error ? err.message : '匯入排版失敗');
+  } finally {
+    loading.value = false;
   }
 };
 

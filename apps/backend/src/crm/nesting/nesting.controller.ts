@@ -6,8 +6,6 @@ import {
   Param,
   Delete,
   Query,
-  ParseIntPipe,
-  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +14,8 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { NestingService } from './nesting.service';
 import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
@@ -50,7 +50,7 @@ export class NestingController {
   @ApiResponse({ status: 200, description: '成功返回排版', type: Nesting })
   @ApiResponse({ status: 404, description: '排版不存在' })
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.nestingService.findOne(id);
   }
 
@@ -68,19 +68,10 @@ export class NestingController {
   @ApiResponse({ status: 404, description: '排版不存在' })
   @Post(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() data: Partial<Nesting>,
   ) {
     return this.nestingService.update(id, data);
-  }
-
-  @ApiOperation({ summary: '定案排版' })
-  @ApiParam({ name: 'id', description: '排版ID', example: 1 })
-  @ApiResponse({ status: 200, description: '成功定案排版', type: Nesting })
-  @ApiResponse({ status: 404, description: '排版不存在' })
-  @Patch(':id/finalize')
-  finalize(@Param('id', ParseIntPipe) id: number) {
-    return this.nestingService.finalize(id);
   }
 
   @ApiOperation({ summary: '刪除排版' })
@@ -88,7 +79,7 @@ export class NestingController {
   @ApiResponse({ status: 200, description: '成功刪除排版' })
   @ApiResponse({ status: 404, description: '排版不存在' })
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.nestingService.remove(id);
   }
 
@@ -98,19 +89,19 @@ export class NestingController {
   @ApiResponse({ status: 201, description: '成功新增排版工件', type: NestingItem })
   @Post(':id/items')
   addItem(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { orderItemId: number; quantity?: number },
+    @Param('id') id: string,
+    @Body() body: Partial<NestingItem>,
   ) {
-    return this.nestingService.addItem(id, body.orderItemId, body.quantity);
+    return this.nestingService.addItem(id, body);
   }
 
   @ApiOperation({ summary: '更新排版工件數量' })
   @ApiParam({ name: 'id', description: '排版ID', example: 1 })
   @ApiParam({ name: 'itemId', description: '排版工件ID', example: 1 })
   @ApiResponse({ status: 200, description: '成功更新排版工件', type: NestingItem })
-  @Patch(':id/items/:itemId')
+  @Post(':id/items/:itemId')
   updateItem(
-    @Param('itemId', ParseIntPipe) itemId: number,
+    @Param('itemId') itemId: string,
     @Body('quantity') quantity: number,
   ) {
     return this.nestingService.updateItem(itemId, quantity);
@@ -121,7 +112,15 @@ export class NestingController {
   @ApiParam({ name: 'itemId', description: '排版工件ID', example: 1 })
   @ApiResponse({ status: 200, description: '成功移除排版工件' })
   @Delete(':id/items/:itemId')
-  removeItem(@Param('itemId', ParseIntPipe) itemId: number) {
+  removeItem(@Param('itemId') itemId: string) {
     return this.nestingService.removeItem(itemId);
+  }
+
+  @ApiOperation({ summary: '從 DOCX 報表匯入排版與工件' })
+  @ApiResponse({ status: 201, description: '成功匯入排版', type: Nesting })
+  @Post('import-docx')
+  @UseInterceptors(FileInterceptor('file'))
+  importFromDocx(@UploadedFile() file: Express.Multer.File) {
+    return this.nestingService.importFromDocx(file);
   }
 }

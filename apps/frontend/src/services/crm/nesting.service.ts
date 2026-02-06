@@ -2,23 +2,18 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 
-export enum NestingStatus {
-  DRAFT = 'draft',
-  FINALIZED = 'finalized',
-}
-
 export interface NestingItem {
-  id: number
-  nestingId: number
-  orderItemId: number
+  id: string
   quantity: number
-  orderItem?: any
+  processingTime?: number
+  x?: number
+  y?: number
   createdAt?: string
   updatedAt?: string
 }
 
 export interface Nesting {
-  id: number
+  id: string
   nestingNumber: string
   orderId: string
   designWorkOrderId?: number
@@ -27,8 +22,14 @@ export interface Nesting {
   quantity: number
   nestingImageFile?: string
   cncFile?: string
-  status: NestingStatus
-  notes?: string
+  x?: number
+  y?: number
+  cutLength?: number
+  lineLength?: number
+  processingTime?: number
+  utilization?: number
+  weight?: number
+  scrap?: number
   order?: any
   designWorkOrder?: any
   nestingItems?: NestingItem[]
@@ -48,7 +49,7 @@ export const nestingService = {
     return apiGet<Nesting[]>(`${API_CONFIG.CRM.NESTINGS}/by-order/${orderId}`)
   },
 
-  getById: (id: number): Promise<Nesting> => {
+  getById: (id: string): Promise<Nesting> => {
     return apiGet<Nesting>(`${API_CONFIG.CRM.NESTINGS}/${id}`)
   },
 
@@ -56,28 +57,30 @@ export const nestingService = {
     return apiPost<Nesting>(API_CONFIG.CRM.NESTINGS, data)
   },
 
-  update: (id: number, data: Partial<Nesting>): Promise<Nesting> => {
+  update: (id: string, data: Partial<Nesting>): Promise<Nesting> => {
     return apiPost<Nesting>(`${API_CONFIG.CRM.NESTINGS}/${id}`, data)
   },
 
-  finalize: (id: number): Promise<Nesting> => {
-    return apiPatch<Nesting>(`${API_CONFIG.CRM.NESTINGS}/${id}/finalize`)
-  },
-
-  delete: (id: number): Promise<void> => {
+  delete: (id: string): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.NESTINGS}/${id}`)
   },
 
-  // 排版工件管理
-  addItem: (nestingId: number, orderItemId: number, quantity?: number): Promise<NestingItem> => {
-    return apiPost<NestingItem>(`${API_CONFIG.CRM.NESTINGS}/${nestingId}/items`, { orderItemId, quantity })
+  // 排版工件管理（若未來需要手動維護可擴充）
+  addItem: (nestingId: string, data: Partial<NestingItem>): Promise<NestingItem> => {
+    return apiPost<NestingItem>(`${API_CONFIG.CRM.NESTINGS}/${nestingId}/items`, data)
   },
 
-  updateItem: (nestingId: number, itemId: number, quantity: number): Promise<NestingItem> => {
+  updateItem: (nestingId: string, itemId: string, quantity: number): Promise<NestingItem> => {
     return apiPatch<NestingItem>(`${API_CONFIG.CRM.NESTINGS}/${nestingId}/items/${itemId}`, { quantity })
   },
 
-  removeItem: (nestingId: number, itemId: number): Promise<void> => {
+  removeItem: (nestingId: string, itemId: string): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.NESTINGS}/${nestingId}/items/${itemId}`)
+  },
+
+  importFromDocx: (formData: FormData): Promise<Nesting> => {
+    return apiPost<Nesting>(`${API_CONFIG.CRM.NESTINGS}/import-docx`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
   },
 }

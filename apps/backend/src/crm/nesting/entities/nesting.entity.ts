@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
   OneToMany,
@@ -13,17 +13,13 @@ import { Order } from '../../order/entities/order.entity';
 import { DesignWorkOrder } from '../../design-work-order/entities/design-work-order.entity';
 import { NestingItem } from './nesting-item.entity';
 
-// 排版狀態
-export enum NestingStatus {
-  DRAFT = 'draft',           // 草稿
-  FINALIZED = 'finalized',   // 已定案
-}
-
 @Entity('nesting')
 export class Nesting {
-  @ApiProperty({ description: '排版ID', example: 1 })
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ApiProperty({ description: '排版ID', example: 'NST-20260206-A01' })
+  @PrimaryColumn({
+    type: 'text',
+  })
+  id: string;
 
   @ApiProperty({ description: '排版圖號', example: 'ABC2401150101' })
   @Column({
@@ -34,7 +30,7 @@ export class Nesting {
   })
   nestingNumber: string;
 
-  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
+  @ApiProperty({ description: '訂單ID', example: 'ORD001' })
   @Column({
     type: 'varchar',
     length: 50,
@@ -89,20 +85,90 @@ export class Nesting {
   })
   cncFile?: string;
 
-  @ApiProperty({ description: '狀態', enum: NestingStatus, example: NestingStatus.DRAFT })
+  @ApiProperty({ description: '排版 X 尺寸', example: 2415.6, required: false })
   @Column({
-    type: 'varchar',
-    length: 50,
-    default: NestingStatus.DRAFT,
-  })
-  status: NestingStatus;
-
-  @ApiProperty({ description: '備註', required: false })
-  @Column({
-    type: 'text',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
     nullable: true,
   })
-  notes?: string;
+  x?: number;
+
+  @ApiProperty({ description: '排版 Y 尺寸', example: 1194.3, required: false })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  y?: number;
+
+  @ApiProperty({ description: '切割長度', example: 51288.1, required: false })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 4,
+    nullable: true,
+    name: 'cut_length',
+  })
+  cutLength?: number;
+
+  @ApiProperty({ description: '劃線長度', example: 23152, required: false })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 4,
+    nullable: true,
+    name: 'line_length',
+  })
+  lineLength?: number;
+
+  @ApiProperty({
+    description: '加工時間（秒）',
+    example: 1166,
+    required: false,
+  })
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'processing_time_seconds',
+  })
+  processingTime?: number;
+
+  @ApiProperty({
+    description: '使用率（百分比，例如 71.59）',
+    example: 71.59,
+    required: false,
+  })
+  @Column({
+    type: 'decimal',
+    precision: 6,
+    scale: 3,
+    nullable: true,
+  })
+  utilization?: number;
+
+  @ApiProperty({ description: '重量', example: 46.438, required: false })
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 4,
+    nullable: true,
+  })
+  weight?: number;
+
+  @ApiProperty({
+    description: '廢料（百分比，例如 28.411）',
+    example: 28.411,
+    required: false,
+  })
+  @Column({
+    type: 'decimal',
+    precision: 6,
+    scale: 3,
+    nullable: true,
+  })
+  scrap?: number;
 
   @CreateDateColumn({
     type: 'timestamptz',

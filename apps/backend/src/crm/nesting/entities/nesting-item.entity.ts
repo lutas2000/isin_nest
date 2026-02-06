@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
   JoinColumn,
@@ -9,27 +9,14 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Nesting } from './nesting.entity';
-import { OrderItem } from '../../order-item/entities/order-item.entity';
 
 @Entity('nesting_item')
 export class NestingItem {
-  @ApiProperty({ description: '排版工件ID', example: 1 })
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @ApiProperty({ description: '排版ID', example: 1 })
-  @Column({
-    type: 'int',
-    name: 'nesting_id',
+  @ApiProperty({ description: '排版工件ID（文字）', example: 'NSTI-20260206-001' })
+  @PrimaryColumn({
+    type: 'text',
   })
-  nestingId: number;
-
-  @ApiProperty({ description: '訂貨單工件ID', example: 1 })
-  @Column({
-    type: 'int',
-    name: 'order_item_id',
-  })
-  orderItemId: number;
+  id: string;
 
   @ApiProperty({ description: '此排版中的數量', example: 5 })
   @Column({
@@ -37,6 +24,36 @@ export class NestingItem {
     default: 1,
   })
   quantity: number;
+
+  @ApiProperty({
+    description: '單一工件加工時間（秒）',
+    example: 122,
+    required: false,
+  })
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'processing_time_seconds',
+  })
+  processingTime?: number;
+
+  @ApiProperty({ description: '工件 X 尺寸', example: 470, required: false })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  x?: number;
+
+  @ApiProperty({ description: '工件 Y 尺寸', example: 495, required: false })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  y?: number;
 
   @CreateDateColumn({
     type: 'timestamptz',
@@ -54,9 +71,4 @@ export class NestingItem {
   @ManyToOne(() => Nesting, (nesting) => nesting.nestingItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'nesting_id' })
   nesting: Nesting;
-
-  // 關聯到 OrderItem
-  @ManyToOne(() => OrderItem, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'order_item_id' })
-  orderItem: OrderItem;
 }

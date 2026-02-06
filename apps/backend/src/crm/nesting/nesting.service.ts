@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Nesting, NestingStatus } from './entities/nesting.entity';
+import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
-import { OrderItem } from '../order-item/entities/order-item.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import * as mammoth from 'mammoth';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class NestingService {
@@ -13,8 +14,6 @@ export class NestingService {
     private nestingRepository: Repository<Nesting>,
     @InjectRepository(NestingItem)
     private nestingItemRepository: Repository<NestingItem>,
-    @InjectRepository(OrderItem)
-    private orderItemRepository: Repository<OrderItem>,
   ) {}
 
   async findAll(
@@ -27,7 +26,7 @@ export class NestingService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.nestingRepository.findAndCount({
-      relations: ['order', 'designWorkOrder', 'nestingItems', 'nestingItems.orderItem'],
+      relations: ['order', 'designWorkOrder', 'nestingItems'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip,
@@ -39,15 +38,15 @@ export class NestingService {
   async findByOrderId(orderId: string): Promise<Nesting[]> {
     return this.nestingRepository.find({
       where: { orderId },
-      relations: ['order', 'designWorkOrder', 'nestingItems', 'nestingItems.orderItem'],
+      relations: ['order', 'designWorkOrder', 'nestingItems'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: number): Promise<Nesting> {
+  async findOne(id: string): Promise<Nesting> {
     const nesting = await this.nestingRepository.findOne({
       where: { id },
-      relations: ['order', 'designWorkOrder', 'nestingItems', 'nestingItems.orderItem'],
+      relations: ['order', 'designWorkOrder', 'nestingItems'],
     });
 
     if (!nesting) {
@@ -65,63 +64,36 @@ export class NestingService {
 
     const nesting = this.nestingRepository.create({
       ...data,
-      status: data.status || NestingStatus.DRAFT,
+      id: data.id || randomUUID(),
     });
     return this.nestingRepository.save(nesting);
   }
 
-  async update(id: number, data: Partial<Nesting>): Promise<Nesting> {
+  async update(id: string, data: Partial<Nesting>): Promise<Nesting> {
     const nesting = await this.findOne(id);
     Object.assign(nesting, data);
     return this.nestingRepository.save(nesting);
   }
 
-  async finalize(id: number): Promise<Nesting> {
+  async remove(id: string): Promise<void> {
     const nesting = await this.findOne(id);
-    nesting.status = NestingStatus.FINALIZED;
-
-    // 更新關聯的 OrderItem 為已排版狀態
-    if (nesting.nestingItems && nesting.nestingItems.length > 0) {
-      for (const item of nesting.nestingItems) {
-        await this.orderItemRepository.update(item.orderItemId, {
-          isNested: true,
-          nestingId: nesting.id,
-        });
-      }
-    }
-
-    return this.nestingRepository.save(nesting);
-  }
-
-  async remove(id: number): Promise<void> {
-    const nesting = await this.findOne(id);
-
-    // 如果排版已定案，需要更新關聯的 OrderItem
-    if (nesting.status === NestingStatus.FINALIZED && nesting.nestingItems) {
-      for (const item of nesting.nestingItems) {
-        await this.orderItemRepository.update(item.orderItemId, {
-          isNested: false,
-          nestingId: null,
-        });
-      }
-    }
-
     await this.nestingRepository.remove(nesting);
   }
 
   // 排版工件管理
-  async addItem(nestingId: number, orderItemId: number, quantity: number = 1): Promise<NestingItem> {
-    await this.findOne(nestingId); // 確認排版存在
+  async addItem(nestingId: string, payload: Partial<NestingItem>): Promise<NestingItem> {
+    const nesting = await this.findOne(nestingId); // 確認排版存在
 
     const nestingItem = this.nestingItemRepository.create({
-      nestingId,
-      orderItemId,
-      quantity,
+      ...payload,
+      id: payload.id || randomUUID(),
+      nesting,
+      quantity: payload.quantity ?? 1,
     });
     return this.nestingItemRepository.save(nestingItem);
   }
 
-  async updateItem(id: number, quantity: number): Promise<NestingItem> {
+  async updateItem(id: string, quantity: number): Promise<NestingItem> {
     const nestingItem = await this.nestingItemRepository.findOneBy({ id });
     if (!nestingItem) {
       throw new NotFoundException(`排版工件 ID ${id} 不存在`);
@@ -130,12 +102,135 @@ export class NestingService {
     return this.nestingItemRepository.save(nestingItem);
   }
 
-  async removeItem(id: number): Promise<void> {
+  async removeItem(id: string): Promise<void> {
     const nestingItem = await this.nestingItemRepository.findOneBy({ id });
     if (!nestingItem) {
       throw new NotFoundException(`排版工件 ID ${id} 不存在`);
     }
     await this.nestingItemRepository.remove(nestingItem);
+  }
+
+  async importFromDocx(file: Express.Multer.File): Promise<Nesting> {
+    if (!file || !file.buffer) {
+      throw new NotFoundException('未收到上傳的 DOCX 檔案');
+    }
+
+    const result = await mammoth.extractRawText({ buffer: file.buffer });
+    const text = result.value || '';
+
+    const {
+      nestingData,
+      items,
+    } = this.parseDocxToNestingData(text);
+
+    const nesting = this.nestingRepository.create({
+      id: randomUUID(),
+      ...nestingData,
+    });
+    const savedNesting = await this.nestingRepository.save(nesting);
+
+    if (items.length > 0) {
+      const nestingItems = items.map((item) =>
+        this.nestingItemRepository.create({
+          id: randomUUID(),
+          nesting: savedNesting,
+          quantity: item.quantity ?? 1,
+          processingTime: item.processingTime,
+          x: item.x,
+          y: item.y,
+        }),
+      );
+      await this.nestingItemRepository.save(nestingItems);
+      savedNesting.nestingItems = nestingItems;
+    }
+
+    return savedNesting;
+  }
+
+  private parseDocxToNestingData(text: string): {
+    nestingData: Partial<Nesting>;
+    items: Array<{
+      processingTime?: number;
+      x?: number;
+      y?: number;
+      quantity?: number;
+    }>;
+  } {
+    const clean = text.replace(/\r/g, '');
+    const lines = clean.split('\n').map((l) => l.trim()).filter(Boolean);
+
+    const asNumber = (value?: string | null): number | undefined => {
+      if (!value) return undefined;
+      const num = Number(value.replace(/[, ]/g, ''));
+      return Number.isNaN(num) ? undefined : num;
+    };
+
+    const timeToSeconds = (value?: string | null): number | undefined => {
+      if (!value) return undefined;
+      const match = value.match(/(\d{1,2}):(\d{2}):(\d{2})/);
+      if (!match) return undefined;
+      const [, h, m, s] = match;
+      return Number(h) * 3600 + Number(m) * 60 + Number(s);
+    };
+
+    const findMatch = (regex: RegExp): RegExpExecArray | null => {
+      for (const line of lines) {
+        const m = regex.exec(line);
+        if (m) return m;
+      }
+      return null;
+    };
+
+    const cutMatch = findMatch(/切削長度[:：]?\s*([\d.,]+)/);
+    const lineMatch = findMatch(/劃線長度[:：]?\s*([\d.,]+)/);
+    const processMatch = findMatch(/加工時\s*([0-9:]+)/);
+    const utilMatch = findMatch(/使用率\(%\)\s*([\d.]+)/);
+    const weightMatch = findMatch(/重量\s*([\d.]+)/);
+    const scrapMatch = findMatch(/廢料\(%\)\s*([\d.]+)/);
+
+    const xMatch = findMatch(/X\s*([\d.,]+)/);
+    const yMatch = findMatch(/Y\s*([\d.,]+)/);
+
+    const nestingData: Partial<Nesting> = {
+      x: asNumber(xMatch?.[1]),
+      y: asNumber(yMatch?.[1]),
+      cutLength: asNumber(cutMatch?.[1]),
+      lineLength: asNumber(lineMatch?.[1]),
+      processingTime: timeToSeconds(processMatch?.[1]),
+      utilization: asNumber(utilMatch?.[1]),
+      weight: asNumber(weightMatch?.[1]),
+      scrap: asNumber(scrapMatch?.[1]),
+    };
+
+    const itemRows: Array<{
+      processingTime?: number;
+      x?: number;
+      y?: number;
+      quantity?: number;
+    }> = [];
+
+    const rowRegex =
+      /^(\d+)\s+\S+\.DFT\s+(\d{1,2}:\d{2}:\d{2})\s+(\d+)\s+([\d.]+)\s+([\d.]+)/i;
+
+    for (const line of lines) {
+      const m = rowRegex.exec(line);
+      if (!m) continue;
+      const processingTime = timeToSeconds(m[2]);
+      const quantity = asNumber(m[3]);
+      const x = asNumber(m[4]);
+      const y = asNumber(m[5]);
+      itemRows.push({
+        processingTime,
+        quantity,
+        x,
+        y,
+      });
+    }
+
+    return {
+      nestingData,
+      items: itemRows,
+    };
   }
 
   // 生成排版圖號
