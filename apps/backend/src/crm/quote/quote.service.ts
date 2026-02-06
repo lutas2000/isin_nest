@@ -162,7 +162,7 @@ export class QuoteService {
       shippingMethod,
       paymentMethod,
       status: OrderStatus.PENDING,
-      notes: `由報價單 #${quote.id} 轉換`,
+      notes: quote.notes,
     };
 
     const order = await this.orderService.create(orderData);
@@ -178,7 +178,7 @@ export class QuoteService {
           thickness: quoteItem.thickness,
           quantity: quoteItem.quantity,
           unitPrice: quoteItem.unitPrice,
-          source: quoteItem.source || '報價單轉換',
+          source: quoteItem.source,
           processingIds: quoteItem.processingIds,
           notes: quoteItem.notes,
           status: 'TODO',
