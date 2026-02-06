@@ -6,6 +6,9 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,7 +18,6 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { NestingService } from './nesting.service';
 import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
@@ -120,7 +122,8 @@ export class NestingController {
   @ApiResponse({ status: 201, description: '成功匯入排版', type: Nesting })
   @Post('import-docx')
   @UseInterceptors(FileInterceptor('file'))
-  importFromDocx(@UploadedFile() file: Express.Multer.File) {
+  importFromDocx(@UploadedFile() file: any) {
     return this.nestingService.importFromDocx(file);
   }
 }
+

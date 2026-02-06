@@ -57,14 +57,14 @@ export class NestingService {
   }
 
   async create(data: Partial<Nesting>): Promise<Nesting> {
-    // 如果沒有提供排版圖號，自動生成
-    if (!data.nestingNumber) {
-      data.nestingNumber = await this.generateNestingNumber(data.orderId!);
-    }
+    // 如果沒有提供排版 ID，根據訂單 ID 產生排版圖號；否則使用既有 ID
+    const id =
+      data.id ||
+      (data.orderId ? await this.generateNestingNumber(data.orderId) : randomUUID());
 
     const nesting = this.nestingRepository.create({
       ...data,
-      id: data.id || randomUUID(),
+      id,
     });
     return this.nestingRepository.save(nesting);
   }
@@ -110,7 +110,7 @@ export class NestingService {
     await this.nestingItemRepository.remove(nestingItem);
   }
 
-  async importFromDocx(file: Express.Multer.File): Promise<Nesting> {
+  async importFromDocx(file: any): Promise<Nesting> {
     if (!file || !file.buffer) {
       throw new NotFoundException('未收到上傳的 DOCX 檔案');
     }
@@ -262,3 +262,4 @@ export class NestingService {
     return `${prefix}${dateCode}${sequence}${version}`;
   }
 }
+

@@ -11,7 +11,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Order } from '../../order/entities/order.entity';
 import { OrderItem } from '../../order-item/entities/order-item.entity';
 import { Staff } from '../../../hr/staff/entities/staff.entity';
-import { Vendor } from '../../vendor/entities/vendor.entity';
 import { Processing } from '../../processing/entities/processing.entity';
 import { ProcessingWorkOrderStatus } from '../../enums/work-order-status.enum';
 
@@ -42,14 +41,6 @@ export class ProcessingWorkOrder {
     name: 'processing_id',
   })
   processingId: number;
-
-  @ApiProperty({ description: '廠商ID（可覆蓋 Processing 預設廠商）', example: 1, required: false })
-  @Column({
-    type: 'int',
-    nullable: true,
-    name: 'vendor_id',
-  })
-  vendorId?: number;
 
   @ApiProperty({ description: '指派人員員工編號', example: 'STAFF001', required: false })
   @Column({
@@ -125,12 +116,6 @@ export class ProcessingWorkOrder {
   @ManyToOne(() => Processing)
   @JoinColumn({ name: 'processing_id' })
   processing: Processing;
-
-  // 關聯到 Vendor（可覆蓋 Processing 預設廠商）
-  @ApiProperty({ description: '關聯的廠商', type: () => Vendor, required: false })
-  @ManyToOne(() => Vendor, { nullable: true })
-  @JoinColumn({ name: 'vendor_id' })
-  vendor?: Vendor;
 
   // 關聯到 Staff (指派人員)
   @ManyToOne(() => Staff, { nullable: true })

@@ -22,7 +22,7 @@ export class ProcessingWorkOrderService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.processingWorkOrderRepository.findAndCount({
-      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip,
@@ -34,7 +34,7 @@ export class ProcessingWorkOrderService {
   async findByOrderId(orderId: string): Promise<ProcessingWorkOrder[]> {
     return this.processingWorkOrderRepository.find({
       where: { orderId },
-      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -42,7 +42,7 @@ export class ProcessingWorkOrderService {
   async findByOrderItemId(orderItemId: number): Promise<ProcessingWorkOrder[]> {
     return this.processingWorkOrderRepository.find({
       where: { orderItemId },
-      relations: ['processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      relations: ['processing', 'processing.vendor', 'assignedStaff'],
       order: { createdAt: 'ASC' },
     });
   }
@@ -50,7 +50,7 @@ export class ProcessingWorkOrderService {
   async findByStatus(status: ProcessingWorkOrderStatus): Promise<ProcessingWorkOrder[]> {
     return this.processingWorkOrderRepository.find({
       where: { status },
-      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -60,18 +60,18 @@ export class ProcessingWorkOrderService {
    */
   async findOutsourcedWorkOrders(): Promise<ProcessingWorkOrder[]> {
     const workOrders = await this.processingWorkOrderRepository.find({
-      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'assignedStaff'],
       order: { createdAt: 'DESC' },
     });
 
-    // 篩選有廠商的工單（自己設定的 vendorId 或 Processing 預設的 vendor）
-    return workOrders.filter((wo) => wo.vendorId || wo.processing?.vendorId);
+    // 篩選有廠商的工單（Processing 預設的 vendor）
+    return workOrders.filter((wo) => wo.processing?.vendor);
   }
 
   async findOne(id: number): Promise<ProcessingWorkOrder> {
     const processingWorkOrder = await this.processingWorkOrderRepository.findOne({
       where: { id },
-      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'vendor', 'assignedStaff'],
+      relations: ['order', 'orderItem', 'processing', 'processing.vendor', 'assignedStaff'],
     });
 
     if (!processingWorkOrder) {
