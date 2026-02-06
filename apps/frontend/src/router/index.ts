@@ -19,6 +19,7 @@ import CRMDeliveryWorkOrders from '../views/CRM/DeliveryWorkOrders.vue'
 import CRMNestingManagement from '../views/CRM/NestingManagement.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
+import CRMVendors from '../views/CRM/Vendors.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 import ResetPassword from '../views/ResetPassword.vue'
@@ -150,6 +151,12 @@ const routes = [
     name: 'CRMNestingManagement',
     component: CRMNestingManagement,
     meta: { title: '排版管理', icon: '📐', requiresAuth: true }
+  },
+  {
+    path: '/crm/vendors',
+    name: 'CRMVendors',
+    component: CRMVendors,
+    meta: { title: '廠商管理', icon: '🏭', requiresAuth: true }
   },
   {
     path: '/crm/quotes',

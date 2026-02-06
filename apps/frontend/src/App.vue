@@ -158,6 +158,10 @@
               <div class="nav-icon">🔩</div>
               <span v-if="!sidebarCollapsed" class="nav-text">加工項目</span>
             </router-link>
+            <router-link to="/crm/vendors" class="nav-item" active-class="active">
+              <div class="nav-icon">🏭</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">廠商</span>
+            </router-link>
             <router-link to="/settings" class="nav-item" active-class="active">
               <div class="nav-icon">⚙️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">系統設定</span>
@@ -276,6 +280,7 @@ const pageTitles: Record<string, string> = {
   '/crm/contacts': '聯絡人',
   '/crm/orders': '工作單',
   '/crm/quotes': '報價單',
+  '/crm/vendors': '廠商管理',
   '/settings': '系統設定',
   '/profile': '個人資料',
 };
