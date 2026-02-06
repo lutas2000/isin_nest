@@ -75,6 +75,13 @@
 
     <template #footer>
       <button class="btn btn-secondary" @click="handleClose">取消</button>
+      <button
+        v-if="selectedProcessings.length > 0"
+        class="btn btn-outline"
+        @click="handleClear"
+      >
+        清除
+      </button>
       <button class="btn btn-primary" @click="handleConfirm">
         確定（{{ selectedProcessings.length }}）
       </button>
@@ -162,6 +169,11 @@ const handleClose = () => {
   emit('close')
 }
 
+// 清除所有已選
+const handleClear = () => {
+  selectedIds.value = []
+}
+
 // 確認選擇
 const handleConfirm = () => {
   emit('update:modelValue', [...selectedIds.value])
@@ -222,7 +234,7 @@ onMounted(() => {
 
 .form-control:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--primary-600);
 }
 
 .processing-list {
@@ -329,7 +341,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  background: var(--primary-color, #1976d2);
+  background: var(--primary-600);
   color: white;
   border-radius: 4px;
   font-size: 0.85rem;
@@ -361,12 +373,14 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: var(--primary-color);
+  background-color: var(--primary-600);
+  border-color: var(--primary-600);
   color: white;
 }
 
 .btn-secondary {
-  background: var(--secondary-bg);
-  color: var(--text-primary);
+  background-color: var(--secondary-100);
+  border-color: var(--secondary-300);
+  color: var(--secondary-700);
 }
 </style>
