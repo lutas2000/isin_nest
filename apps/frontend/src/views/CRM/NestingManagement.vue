@@ -45,10 +45,6 @@
           </router-link>
         </template>
 
-        <template #cell-nestingNumber="{ value }">
-          <span class="nesting-number">{{ value || '待生成' }}</span>
-        </template>
-
         <template #cell-orderId="{ value }">
           <router-link :to="`/crm/orders/${value}/items`" class="link">{{ value }}</router-link>
         </template>
@@ -69,7 +65,7 @@
     <!-- 排版詳情 Modal -->
     <Modal
       :show="showDetailModal"
-      :title="`排版詳情 #${selectedNesting?.nestingNumber || ''}`"
+      :title="`排版詳情 #${selectedNesting?.id || ''}`"
       size="lg"
       @close="closeDetailModal"
     >
@@ -78,8 +74,8 @@
           <h4>基本資訊</h4>
           <div class="detail-grid">
             <div class="detail-item">
-              <span class="detail-label">排版編號：</span>
-              <span class="detail-value">{{ selectedNesting.nestingNumber }}</span>
+              <span class="detail-label">排版 ID：</span>
+              <span class="detail-value">{{ selectedNesting.id }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">訂貨單編號：</span>
@@ -172,7 +168,6 @@ const fileInput = ref<HTMLInputElement | null>(null);
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
-  { key: 'nestingNumber', label: '排版編號', editable: false },
   { key: 'orderId', label: '訂貨單編號', editable: true, required: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, required: true, type: 'text' },
   { key: 'thickness', label: '厚度', editable: true, required: true, type: 'text' },
@@ -191,8 +186,8 @@ const filteredData = computed(() => {
   
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    data = data.filter(item => 
-      item.nestingNumber?.toLowerCase().includes(query) ||
+    data = data.filter(item =>
+      item.id?.toLowerCase().includes(query) ||
       item.orderId?.toLowerCase().includes(query) ||
       item.material?.toLowerCase().includes(query)
     );
@@ -322,11 +317,6 @@ onMounted(() => {
 
 .btn-icon {
   margin-right: 0.5rem;
-}
-
-.nesting-number {
-  font-weight: 600;
-  color: var(--primary-700);
 }
 
 .items-count {

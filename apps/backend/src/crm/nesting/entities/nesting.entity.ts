@@ -21,15 +21,6 @@ export class Nesting {
   })
   id: string;
 
-  @ApiProperty({ description: '排版圖號', example: 'ABC2401150101' })
-  @Column({
-    type: 'varchar',
-    length: 100,
-    name: 'nesting_number',
-    unique: true,
-  })
-  nestingNumber: string;
-
   @ApiProperty({ description: '訂單ID', example: 'ORD001' })
   @Column({
     type: 'varchar',
