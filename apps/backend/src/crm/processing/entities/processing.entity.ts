@@ -29,13 +29,6 @@ export class Processing {
   })
   vendorId?: number;
 
-  @ApiProperty({ description: '備註', example: '需要特殊設備', required: false })
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
-  notes?: string;
-
   @ApiProperty({ description: '顯示順序', example: 1 })
   @Column({
     type: 'int',

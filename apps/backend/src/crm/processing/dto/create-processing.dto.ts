@@ -12,11 +12,6 @@ export class CreateProcessingDto {
   @IsOptional()
   vendorId?: number;
 
-  @ApiProperty({ description: '備註', example: '需要特殊設備', required: false })
-  @IsString()
-  @IsOptional()
-  notes?: string;
-
   @ApiProperty({ description: '顯示順序', example: 1, required: false })
   @IsInt()
   @IsOptional()

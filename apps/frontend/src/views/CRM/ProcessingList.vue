@@ -93,16 +93,6 @@
           />
         </div>
 
-        <div class="form-group">
-          <label>備註</label>
-          <textarea 
-            class="form-control" 
-            v-model="processingForm.notes"
-            rows="3"
-            placeholder="請輸入備註"
-          ></textarea>
-        </div>
-
       </div>
 
       <template #footer>
@@ -144,7 +134,6 @@ const editingProcessing = ref<Processing | null>(null)
 const processingForm = ref<CreateProcessingDto>({
   name: '',
   vendorId: undefined,
-  notes: '',
   displayOrder: 0,
 })
 
@@ -152,7 +141,6 @@ const processingForm = ref<CreateProcessingDto>({
 const editableColumns: EditableColumn[] = [
   { key: 'name', label: '加工名稱', editable: false },
   { key: 'vendor', label: '執行廠商', editable: false },
-  { key: 'notes', label: '備註', truncate: true },
 ]
 
 // 提供給 ShortcutHint 使用的表格狀態
@@ -243,7 +231,6 @@ const editProcessing = (processing: Processing) => {
   processingForm.value = {
     name: processing.name,
     vendorId: processing.vendorId,
-    notes: processing.notes || '',
     displayOrder: processing.displayOrder,
   }
   showCreateModal.value = true
@@ -296,7 +283,6 @@ const closeModal = () => {
   processingForm.value = {
     name: '',
     vendorId: undefined,
-    notes: '',
     displayOrder: 0,
   }
 }

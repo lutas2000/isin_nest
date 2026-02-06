@@ -11,21 +11,18 @@ export interface Processing {
   name: string
   vendorId?: number
   vendor?: Vendor
-  notes?: string
   displayOrder: number
 }
 
 export interface CreateProcessingDto {
   name: string
   vendorId?: number
-  notes?: string
   displayOrder?: number
 }
 
 export interface UpdateProcessingDto {
   name?: string
   vendorId?: number
-  notes?: string
   displayOrder?: number
 }
 
