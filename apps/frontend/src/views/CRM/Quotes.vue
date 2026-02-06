@@ -326,7 +326,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
-import { quoteService, type Quote } from '@/services/crm/quote.service';
+import { quoteService, quoteItemService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { apiGet } from '@/services/api';
@@ -834,12 +834,19 @@ const handleProcessingConfirm = async (value: { ids: number[]; processings: Proc
   if (!selectedQuoteForProcessing.value) return;
 
   try {
-    await quoteService.update(selectedQuoteForProcessing.value.id, {
+    const quoteId = selectedQuoteForProcessing.value.id;
+    await quoteService.update(quoteId, {
       processingIds: value.ids,
     });
+    // 複寫到所有 quoteItems
+    const items = await quoteItemService.getAll(quoteId);
+    for (const item of items) {
+      await quoteItemService.update(item.id, { processingIds: value.ids });
+    }
     await loadQuotes();
     showProcessingSelectModal.value = false;
     selectedQuoteForProcessing.value = null;
+    alert(`已更新報價單及 ${items.length} 個工件的後加工項目`);
   } catch (err) {
     alert(err instanceof Error ? err.message : '更新後加工失敗');
   }

@@ -280,7 +280,7 @@ const newRowTemplate = () => {
     customerFile: '',
     material: '',
     thickness: '',
-    processingIds: [] as number[],
+    processingIds: [...(quote.value.processingIds || [])] as number[],
     notes: '',
     quantity: 0,
     unitPrice: 0,
