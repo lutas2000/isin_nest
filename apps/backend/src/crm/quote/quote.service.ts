@@ -170,6 +170,9 @@ export class QuoteService {
     // 自動複製 QuoteItem 到 OrderItem 並產生對應工作單
     if (quote.quoteItems && quote.quoteItems.length > 0) {
       for (const quoteItem of quote.quoteItems) {
+        // 若報價單工件未設定來源，預設為新圖
+        const itemSource = quoteItem.source || SourceType.NEW;
+
         // 複製 QuoteItem 到 OrderItem（直接複製備注與加工 IDs）
         const orderItem = await this.orderItemService.create({
           orderId: order.id,
@@ -178,7 +181,7 @@ export class QuoteService {
           thickness: quoteItem.thickness,
           quantity: quoteItem.quantity,
           unitPrice: quoteItem.unitPrice,
-          source: quoteItem.source,
+          source: itemSource,
           processingIds: quoteItem.processingIds,
           notes: quoteItem.notes,
           status: 'TODO',
@@ -186,7 +189,7 @@ export class QuoteService {
         });
 
         // 根據來源與加工 IDs 產生對應工作單
-        await this.generateWorkOrdersForItem(order, orderItem, quoteItem.source, quoteItem.processingIds);
+        await this.generateWorkOrdersForItem(order, orderItem, itemSource, quoteItem.processingIds);
       }
     }
 
