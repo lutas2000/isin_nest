@@ -154,7 +154,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, StatusBadge, EditableDataTable, SearchFilters, Modal, type EditableColumn } from '@/components';
+import { PageHeader, EditableDataTable, SearchFilters, Modal, type EditableColumn } from '@/components';
 import { nestingService, type Nesting } from '@/services/crm/nesting.service';
 
 const loading = ref(false);
@@ -164,7 +164,6 @@ const searchQuery = ref('');
 const showNewRow = ref(false);
 const showDetailModal = ref(false);
 const selectedNesting = ref<Nesting | null>(null);
-const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const columns: EditableColumn[] = [
@@ -283,6 +282,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.hidden-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .nesting-management-page {
   max-width: 1400px;
   margin: 0 auto;
