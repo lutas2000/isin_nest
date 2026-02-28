@@ -64,6 +64,19 @@ export class NestingController {
     return this.nestingService.create(data);
   }
 
+  @ApiOperation({ summary: '從 DOCX 報表匯入排版與工件' })
+  @ApiResponse({ status: 201, description: '成功匯入排版', type: Nesting })
+  @Post('import-docx')
+  @UseInterceptors(FileInterceptor('file'))
+  importFromDocx(
+    @UploadedFile() file: any,
+    @Body('orderId') orderId: string,
+    @Body('material') material: string,
+    @Body('thickness') thickness: string,
+  ) {
+    return this.nestingService.importFromDocx(file, { orderId, material, thickness });
+  }
+
   @ApiOperation({ summary: '更新排版' })
   @ApiParam({ name: 'id', description: '排版ID', example: 1 })
   @ApiResponse({ status: 200, description: '成功更新排版', type: Nesting })
@@ -116,14 +129,6 @@ export class NestingController {
   @Delete(':id/items/:itemId')
   removeItem(@Param('itemId') itemId: string) {
     return this.nestingService.removeItem(itemId);
-  }
-
-  @ApiOperation({ summary: '從 DOCX 報表匯入排版與工件' })
-  @ApiResponse({ status: 201, description: '成功匯入排版', type: Nesting })
-  @Post('import-docx')
-  @UseInterceptors(FileInterceptor('file'))
-  importFromDocx(@UploadedFile() file: any) {
-    return this.nestingService.importFromDocx(file);
   }
 }
 

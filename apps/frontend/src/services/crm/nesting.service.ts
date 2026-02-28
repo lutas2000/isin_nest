@@ -79,8 +79,6 @@ export const nestingService = {
   },
 
   importFromDocx: (formData: FormData): Promise<Nesting> => {
-    return apiPost<Nesting>(`${API_CONFIG.CRM.NESTINGS}/import-docx`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    return apiPost<Nesting>(`${API_CONFIG.CRM.NESTINGS}/import-docx`, formData)
   },
 }

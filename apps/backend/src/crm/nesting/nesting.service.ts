@@ -110,7 +110,10 @@ export class NestingService {
     await this.nestingItemRepository.remove(nestingItem);
   }
 
-  async importFromDocx(file: any): Promise<Nesting> {
+  async importFromDocx(
+    file: any,
+    meta: { orderId: string; material: string; thickness: string },
+  ): Promise<Nesting> {
     if (!file || !file.buffer) {
       throw new NotFoundException('未收到上傳的 DOCX 檔案');
     }
@@ -123,9 +126,14 @@ export class NestingService {
       items,
     } = this.parseDocxToNestingData(text);
 
+    const id = await this.generateNestingNumber(meta.orderId);
+
     const nesting = this.nestingRepository.create({
-      id: randomUUID(),
+      id,
       ...nestingData,
+      orderId: meta.orderId,
+      material: meta.material,
+      thickness: meta.thickness,
     });
     const savedNesting = await this.nestingRepository.save(nesting);
 

@@ -142,13 +142,53 @@
 
       </div>
     </Modal>
-    <input
-      ref="fileInput"
-      type="file"
-      accept=".docx"
-      class="hidden-input"
-      @change="handleFileChange"
-    />
+    <!-- 匯入排版 Modal -->
+    <Modal
+      :show="showImportModal"
+      title="匯入排版"
+      size="md"
+      @close="closeImportModal"
+    >
+      <div class="import-form">
+        <div class="form-group">
+          <label class="form-label">訂貨單 <span class="required">*</span></label>
+          <select v-model="importForm.orderId" class="form-select" :disabled="ordersLoading">
+            <option value="">請選擇訂貨單</option>
+            <option v-for="order in orders" :key="order.id" :value="order.id">
+              {{ order.id }} — {{ order.customer?.name || order.customerId }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">材料 <span class="required">*</span></label>
+          <input v-model="importForm.material" type="text" class="form-input" placeholder="例如：不鏽鋼" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">厚度 <span class="required">*</span></label>
+          <input v-model="importForm.thickness" type="text" class="form-input" placeholder="例如：3mm" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">DOCX 檔案 <span class="required">*</span></label>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".docx"
+            class="form-input"
+            @change="handleFileSelect"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <button class="btn btn-outline" @click="closeImportModal">取消</button>
+        <button
+          class="btn btn-primary"
+          :disabled="!importFormValid || importLoading"
+          @click="handleImportSubmit"
+        >
+          {{ importLoading ? '匯入中...' : '確認匯入' }}
+        </button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -156,6 +196,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { PageHeader, EditableDataTable, SearchFilters, Modal, type EditableColumn } from '@/components';
 import { nestingService, type Nesting } from '@/services/crm/nesting.service';
+import { orderService, type Order } from '@/services/crm/order.service';
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -165,6 +206,17 @@ const showNewRow = ref(false);
 const showDetailModal = ref(false);
 const selectedNesting = ref<Nesting | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+
+const showImportModal = ref(false);
+const importLoading = ref(false);
+const ordersLoading = ref(false);
+const orders = ref<Order[]>([]);
+const importForm = ref({ orderId: '', material: '', thickness: '' });
+const importFile = ref<File | null>(null);
+
+const importFormValid = computed(() =>
+  importForm.value.orderId && importForm.value.material && importForm.value.thickness && importFile.value,
+);
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
@@ -252,27 +304,58 @@ const closeDetailModal = () => {
   selectedNesting.value = null;
 };
 
-const handleImportClick = () => {
-  fileInput.value?.click();
+const loadOrders = async () => {
+  ordersLoading.value = true;
+  try {
+    const response = await orderService.getAll();
+    if (response && typeof response === 'object' && 'data' in response) {
+      orders.value = (response as any).data;
+    } else {
+      orders.value = response as Order[];
+    }
+  } catch {
+    orders.value = [];
+  } finally {
+    ordersLoading.value = false;
+  }
 };
 
-const handleFileChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
+const handleImportClick = () => {
+  importForm.value = { orderId: '', material: '', thickness: '' };
+  importFile.value = null;
+  showImportModal.value = true;
+  loadOrders();
+};
 
-  const file = input.files[0];
+const handleFileSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  importFile.value = input.files?.[0] ?? null;
+};
+
+const closeImportModal = () => {
+  showImportModal.value = false;
+  importFile.value = null;
+  if (fileInput.value) fileInput.value.value = '';
+};
+
+const handleImportSubmit = async () => {
+  if (!importFile.value) return;
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', importFile.value);
+  formData.append('orderId', importForm.value.orderId);
+  formData.append('material', importForm.value.material);
+  formData.append('thickness', importForm.value.thickness);
 
   try {
-    loading.value = true;
+    importLoading.value = true;
     await nestingService.importFromDocx(formData);
+    closeImportModal();
     await loadData();
-    input.value = '';
   } catch (err) {
     alert(err instanceof Error ? err.message : '匯入排版失敗');
   } finally {
-    loading.value = false;
+    importLoading.value = false;
   }
 };
 
@@ -403,6 +486,45 @@ onMounted(() => {
   margin: 0;
   color: var(--secondary-700);
   line-height: 1.6;
+}
+
+/* 匯入表單 */
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--secondary-700);
+}
+
+.form-label .required {
+  color: var(--danger-600);
+}
+
+.form-select,
+.form-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--secondary-300);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  background: white;
+}
+
+.form-select:focus,
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-100);
 }
 
 @media (max-width: 768px) {

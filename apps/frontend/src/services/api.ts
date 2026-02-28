@@ -14,8 +14,10 @@ export const apiRequest = async <T>(
   const token = getAuthToken()
   const errorStore = useErrorStore()
   
+  const isFormData = options.body instanceof FormData
+  
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>),
   }
   
@@ -83,9 +85,10 @@ export const apiGet = <T>(endpoint: string, params?: Record<string, any>): Promi
 
 // POST 請求
 export const apiPost = <T>(endpoint: string, data?: any): Promise<T> => {
+  const isFormData = data instanceof FormData
   return apiRequest<T>(endpoint, {
     method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 
