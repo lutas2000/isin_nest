@@ -9,7 +9,9 @@ import {
   ParseIntPipe,
   UploadedFile,
   UseInterceptors,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -45,6 +47,19 @@ export class NestingController {
   @Get('by-order/:orderId')
   findByOrderId(@Param('orderId') orderId: string) {
     return this.nestingService.findByOrderId(orderId);
+  }
+
+  @ApiOperation({ summary: '取得排版預覽 DOCX（NESTING_PATH 下 {id}.docx）' })
+  @ApiParam({ name: 'id', description: '排版ID' })
+  @ApiResponse({ status: 200, description: 'DOCX 檔案' })
+  @ApiResponse({ status: 404, description: '無預覽檔案' })
+  @Get(':id/preview')
+  async getPreview(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.nestingService.getPreviewDocx(id);
+    if (!buffer) return res.status(404).send();
+    return res
+      .type('application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+      .send(buffer);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個排版' })

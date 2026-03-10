@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from '../api'
-import { API_CONFIG } from '../../config/api'
+import { API_CONFIG, buildApiUrl } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 
 export interface NestingItem {
@@ -80,5 +80,15 @@ export const nestingService = {
 
   importFromDocx: (formData: FormData): Promise<Nesting> => {
     return apiPost<Nesting>(`${API_CONFIG.CRM.NESTINGS}/import-docx`, formData)
+  },
+
+  /** 取得排版預覽 DOCX（若 NESTING_PATH 下有 {id}.docx 則回傳 Blob，否則 null） */
+  getPreviewDocx: async (id: string): Promise<Blob | null> => {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null
+    const res = await fetch(buildApiUrl(`${API_CONFIG.CRM.NESTINGS}/${id}/preview`), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (!res.ok) return null
+    return res.blob()
   },
 }

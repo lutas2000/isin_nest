@@ -143,8 +143,8 @@ export class NestingService {
     }
 
     await fs.mkdir(nestingPath, { recursive: true });
-    const htmlFilePath = `${nestingPath}/${id}.html`;
-    await fs.writeFile(htmlFilePath, html, 'utf8');
+    const docxFilePath = `${nestingPath}/${id}.docx`;
+    await fs.writeFile(docxFilePath, file.buffer);
 
     const nesting = this.nestingRepository.create({
       id,
@@ -292,6 +292,18 @@ export class NestingService {
     const version = '01'; // 版次
     
     return `${prefix}${dateCode}${sequence}${version}`;
+  }
+
+  /** 讀取 NESTING_PATH 下 {id}.docx 的 buffer，若不存在或未設定則回傳 null */
+  async getPreviewDocx(id: string): Promise<Buffer | null> {
+    const nestingPath = process.env.NESTING_PATH;
+    if (!nestingPath) return null;
+    const filePath = `${nestingPath}/${id}.docx`;
+    try {
+      return await fs.readFile(filePath);
+    } catch {
+      return null;
+    }
   }
 }
 
