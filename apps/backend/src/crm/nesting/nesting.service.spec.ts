@@ -2,7 +2,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { existsSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
+import { promises as fs } from 'fs';
 import { resolve } from 'path';
 import { NestingService } from './nesting.service';
 import { Nesting } from './entities/nesting.entity';
@@ -59,7 +60,6 @@ describe('NestingService', () => {
     const meta = {
       orderId: 'ORD001',
       material: 'SUS304',
-      thickness: '3mm',
     };
 
     it('should throw NotFoundException when DOCX file buffer is missing', async () => {
@@ -74,8 +74,17 @@ describe('NestingService', () => {
     const testWithRealDocx = it;
 
     testWithRealDocx('should import data from a real DOCX file', async () => {
+      const writeFileSpy = jest.spyOn(fs, 'writeFile').mockResolvedValue();
+      const mkdirSpy = jest.spyOn(fs, 'mkdir').mockResolvedValue(undefined as any);
+
+      const originalEnv = process.env.NESTING_PATH;
+      process.env.NESTING_PATH = '/tmp/nesting-test';
+
       const fileBuffer = readFileSync(fixturePath);
-      const result = await service.importFromDocx({ buffer: fileBuffer }, meta);
+      const result = await service.importFromDocx(
+        { buffer: fileBuffer, originalname: 'DAQ8206E01.docx' },
+        meta,
+      );
 
       const now = new Date();
       const dateCode = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1)
@@ -84,10 +93,9 @@ describe('NestingService', () => {
 
       expect(result).toEqual(
         expect.objectContaining({
-          id: `ORD${dateCode}A01`,
+          id: 'DAQ8206E01',
           orderId: meta.orderId,
           material: meta.material,
-          thickness: meta.thickness,
         }),
       );
       expect(result.x).toBe(2415.6);
@@ -96,7 +104,7 @@ describe('NestingService', () => {
       const savedPayload = nestingRepository.save.mock.calls[0][0] as Partial<Nesting>;
       expect(savedPayload.orderId).toBe(meta.orderId);
       expect(savedPayload.material).toBe(meta.material);
-      expect(savedPayload.thickness).toBe(meta.thickness);
+      expect(savedPayload.thickness).toBe(2);
 
       const hasParsedSummaryField = [
         result.x,
@@ -110,6 +118,17 @@ describe('NestingService', () => {
       ].some((value) => value !== undefined);
 
       expect(hasParsedSummaryField).toBe(true);
+
+      expect(mkdirSpy).toHaveBeenCalledWith('/tmp/nesting-test', { recursive: true });
+      expect(writeFileSpy).toHaveBeenCalledWith(
+        '/tmp/nesting-test/DAQ8206E01.html',
+        expect.any(String),
+        'utf8',
+      );
+
+      writeFileSpy.mockRestore();
+      mkdirSpy.mockRestore();
+      process.env.NESTING_PATH = originalEnv;
     });
   });
 });

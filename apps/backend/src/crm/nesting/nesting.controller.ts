@@ -72,9 +72,8 @@ export class NestingController {
     @UploadedFile() file: any,
     @Body('orderId') orderId: string,
     @Body('material') material: string,
-    @Body('thickness') thickness: string,
   ) {
-    return this.nestingService.importFromDocx(file, { orderId, material, thickness });
+    return this.nestingService.importFromDocx(file, { orderId, material });
   }
 
   @ApiOperation({ summary: '更新排版' })

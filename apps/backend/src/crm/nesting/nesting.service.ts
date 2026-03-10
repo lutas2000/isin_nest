@@ -7,6 +7,8 @@ import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import * as mammoth from 'mammoth';
 import * as cheerio from 'cheerio';
 import { randomUUID } from 'crypto';
+import { extname } from 'path';
+import { promises as fs } from 'fs';
 
 @Injectable()
 export class NestingService {
@@ -113,7 +115,7 @@ export class NestingService {
 
   async importFromDocx(
     file: any,
-    meta: { orderId: string; material: string; thickness: string },
+    meta: { orderId: string; material: string },
   ): Promise<Nesting> {
     if (!file || !file.buffer) {
       throw new NotFoundException('未收到上傳的 DOCX 檔案');
@@ -127,21 +129,36 @@ export class NestingService {
       items,
     } = this.parseHtmlToNestingData(html);
 
-    const id = await this.generateNestingNumber(meta.orderId);
+    const originalName: string | undefined = file.originalname;
+    const fileBaseName =
+      typeof originalName === 'string'
+        ? originalName.replace(extname(originalName), '')
+        : undefined;
+
+    const id = fileBaseName || (await this.generateNestingNumber(meta.orderId));
+
+    const nestingPath = process.env.NESTING_PATH;
+    if (!nestingPath) {
+      throw new NotFoundException('NESTING_PATH 未設定');
+    }
+
+    await fs.mkdir(nestingPath, { recursive: true });
+    const htmlFilePath = `${nestingPath}/${id}.html`;
+    await fs.writeFile(htmlFilePath, html, 'utf8');
 
     const nesting = this.nestingRepository.create({
       id,
       ...nestingData,
       orderId: meta.orderId,
       material: meta.material,
-      thickness: meta.thickness,
+      thickness: nestingData.thickness,
     });
     const savedNesting = await this.nestingRepository.save(nesting);
 
     if (items.length > 0) {
       const nestingItems = items.map((item) =>
         this.nestingItemRepository.create({
-          id: randomUUID(),
+          id: item.id || randomUUID(),
           nesting: savedNesting,
           quantity: item.quantity ?? 1,
           processingTime: item.processingTime,
@@ -159,6 +176,7 @@ export class NestingService {
   private parseHtmlToNestingData(html: string): {
     nestingData: Partial<Nesting>;
     items: Array<{
+      id?: string;
       processingTime?: number;
       x?: number;
       y?: number;
@@ -187,8 +205,11 @@ export class NestingService {
     const allTableText = $('table').text();
     const cutMatch = allTableText.match(/切割長度[:：]?\s*([\d.,]+)/);
     const lineMatch = allTableText.match(/劃線長度\s*[:：]?\s*([\d.,]+)/);
+    const sizeMatch = allTableText.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i);
+
     if (cutMatch) nestingData.cutLength = asNumber(cutMatch[1]);
     if (lineMatch) nestingData.lineLength = asNumber(lineMatch[1]);
+    if (sizeMatch) nestingData.thickness = asNumber(sizeMatch[3]);
 
     $('tr').each((_, tr) => {
       const cells: string[] = [];
@@ -210,6 +231,7 @@ export class NestingService {
     });
 
     const items: Array<{
+      id?: string;
       processingTime?: number;
       x?: number;
       y?: number;
@@ -226,7 +248,12 @@ export class NestingService {
       });
 
       if (cells.length >= 6) {
+        const partCell = cells[1];
+        const partIdMatch = partCell.match(/^(.+?)\.DFT$/i);
+        const partId = partIdMatch ? partIdMatch[1] : undefined;
+
         items.push({
+          id: partId,
           processingTime: timeToSeconds(cells[2]),
           quantity: asNumber(cells[3]),
           x: asNumber(cells[4]),

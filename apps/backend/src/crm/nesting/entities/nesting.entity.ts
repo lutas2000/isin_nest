@@ -44,12 +44,13 @@ export class Nesting {
   })
   material: string;
 
-  @ApiProperty({ description: '厚度', example: '3mm' })
+  @ApiProperty({ description: '厚度（mm）', example: 3 })
   @Column({
-    type: 'varchar',
-    length: 50,
+    type: 'decimal',
+    precision: 6,
+    scale: 2,
   })
-  thickness: string;
+  thickness: number;
 
   @ApiProperty({ description: '數量（張數）', example: 1 })
   @Column({
