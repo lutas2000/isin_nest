@@ -5,6 +5,7 @@ import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import * as mammoth from 'mammoth';
+import * as cheerio from 'cheerio';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -118,13 +119,13 @@ export class NestingService {
       throw new NotFoundException('未收到上傳的 DOCX 檔案');
     }
 
-    const result = await mammoth.extractRawText({ buffer: file.buffer });
-    const text = result.value || '';
+    const result = await mammoth.convertToHtml({ buffer: file.buffer });
+    const html = result.value || '';
 
     const {
       nestingData,
       items,
-    } = this.parseDocxToNestingData(text);
+    } = this.parseHtmlToNestingData(html);
 
     const id = await this.generateNestingNumber(meta.orderId);
 
@@ -155,7 +156,7 @@ export class NestingService {
     return savedNesting;
   }
 
-  private parseDocxToNestingData(text: string): {
+  private parseHtmlToNestingData(html: string): {
     nestingData: Partial<Nesting>;
     items: Array<{
       processingTime?: number;
@@ -164,12 +165,13 @@ export class NestingService {
       quantity?: number;
     }>;
   } {
-    const clean = text.replace(/\r/g, '');
-    const lines = clean.split('\n').map((l) => l.trim()).filter(Boolean);
+    const $ = cheerio.load(html);
 
     const asNumber = (value?: string | null): number | undefined => {
       if (!value) return undefined;
-      const num = Number(value.replace(/[, ]/g, ''));
+      const cleaned = value.replace(/[,%\s]/g, '');
+      if (!cleaned) return undefined;
+      const num = Number(cleaned);
       return Number.isNaN(num) ? undefined : num;
     };
 
@@ -177,68 +179,63 @@ export class NestingService {
       if (!value) return undefined;
       const match = value.match(/(\d{1,2}):(\d{2}):(\d{2})/);
       if (!match) return undefined;
-      const [, h, m, s] = match;
-      return Number(h) * 3600 + Number(m) * 60 + Number(s);
+      return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
     };
 
-    const findMatch = (regex: RegExp): RegExpExecArray | null => {
-      for (const line of lines) {
-        const m = regex.exec(line);
-        if (m) return m;
+    const nestingData: Partial<Nesting> = {};
+
+    const allTableText = $('table').text();
+    const cutMatch = allTableText.match(/切割長度[:：]?\s*([\d.,]+)/);
+    const lineMatch = allTableText.match(/劃線長度\s*[:：]?\s*([\d.,]+)/);
+    if (cutMatch) nestingData.cutLength = asNumber(cutMatch[1]);
+    if (lineMatch) nestingData.lineLength = asNumber(lineMatch[1]);
+
+    $('tr').each((_, tr) => {
+      const cells: string[] = [];
+      $(tr).find('td').each((__, td) => {
+        cells.push($(td).text().trim());
+      });
+
+      for (let i = 0; i < cells.length - 1; i++) {
+        const label = cells[i];
+        const value = cells[i + 1];
+
+        if (label === 'X') nestingData.x = asNumber(value);
+        if (label === 'Y') nestingData.y = asNumber(value);
+        if (label === '加工時間') nestingData.processingTime = timeToSeconds(value);
+        if (label.includes('使用率')) nestingData.utilization = asNumber(value);
+        if (label === '重量') nestingData.weight = asNumber(value);
+        if (label.includes('廢料')) nestingData.scrap = asNumber(value);
       }
-      return null;
-    };
+    });
 
-    const cutMatch = findMatch(/切削長度[:：]?\s*([\d.,]+)/);
-    const lineMatch = findMatch(/劃線長度[:：]?\s*([\d.,]+)/);
-    const processMatch = findMatch(/加工時\s*([0-9:]+)/);
-    const utilMatch = findMatch(/使用率\(%\)\s*([\d.]+)/);
-    const weightMatch = findMatch(/重量\s*([\d.]+)/);
-    const scrapMatch = findMatch(/廢料\(%\)\s*([\d.]+)/);
-
-    const xMatch = findMatch(/X\s*([\d.,]+)/);
-    const yMatch = findMatch(/Y\s*([\d.,]+)/);
-
-    const nestingData: Partial<Nesting> = {
-      x: asNumber(xMatch?.[1]),
-      y: asNumber(yMatch?.[1]),
-      cutLength: asNumber(cutMatch?.[1]),
-      lineLength: asNumber(lineMatch?.[1]),
-      processingTime: timeToSeconds(processMatch?.[1]),
-      utilization: asNumber(utilMatch?.[1]),
-      weight: asNumber(weightMatch?.[1]),
-      scrap: asNumber(scrapMatch?.[1]),
-    };
-
-    const itemRows: Array<{
+    const items: Array<{
       processingTime?: number;
       x?: number;
       y?: number;
       quantity?: number;
     }> = [];
 
-    const rowRegex =
-      /^(\d+)\s+\S+\.DFT\s+(\d{1,2}:\d{2}:\d{2})\s+(\d+)\s+([\d.]+)\s+([\d.]+)/i;
+    $('tr').each((_, tr) => {
+      const rowText = $(tr).text();
+      if (!rowText.includes('.DFT')) return;
 
-    for (const line of lines) {
-      const m = rowRegex.exec(line);
-      if (!m) continue;
-      const processingTime = timeToSeconds(m[2]);
-      const quantity = asNumber(m[3]);
-      const x = asNumber(m[4]);
-      const y = asNumber(m[5]);
-      itemRows.push({
-        processingTime,
-        quantity,
-        x,
-        y,
+      const cells: string[] = [];
+      $(tr).find('td').each((__, td) => {
+        cells.push($(td).text().trim());
       });
-    }
 
-    return {
-      nestingData,
-      items: itemRows,
-    };
+      if (cells.length >= 6) {
+        items.push({
+          processingTime: timeToSeconds(cells[2]),
+          quantity: asNumber(cells[3]),
+          x: asNumber(cells[4]),
+          y: asNumber(cells[5]),
+        });
+      }
+    });
+
+    return { nestingData, items };
   }
 
   // 生成排版圖號
