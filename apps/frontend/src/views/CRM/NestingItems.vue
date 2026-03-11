@@ -1,7 +1,7 @@
 <template>
   <div class="nesting-items-page" v-if="nesting">
     <PageHeader
-      :title="`排版工件 - ${nesting.nestingNumber}`"
+      :title="`排版詳情 - ${nesting.id}`"
       description="查看此排版中的所有工件"
     >
       <template #actions>
@@ -11,11 +11,34 @@
       </template>
     </PageHeader>
 
+    <div class="preview-card">
+      <button
+        type="button"
+        class="preview-toggle"
+        :aria-expanded="previewExpanded"
+        @click="previewExpanded = !previewExpanded"
+      >
+        <span class="preview-title">Preview</span>
+        <span class="preview-chevron">{{ previewExpanded ? '▼' : '▶' }}</span>
+      </button>
+      <div v-show="previewExpanded" class="preview-body">
+        <div
+          v-if="previewDocxBlob"
+          ref="previewContainerRef"
+          class="preview-docx-wrap"
+        />
+        <p v-else-if="previewLoaded && !previewDocxBlob" class="preview-empty">
+          無預覽檔案
+        </p>
+        <p v-else class="preview-loading">載入預覽中…</p>
+      </div>
+    </div>
+
     <div class="summary-card">
       <div class="summary-grid">
         <div class="summary-item">
           <span class="label">排版編號</span>
-          <span class="value">{{ nesting.nestingNumber }}</span>
+          <span class="value">{{ nesting.id }}</span>
         </div>
         <div class="summary-item">
           <span class="label">訂貨單編號</span>
@@ -72,18 +95,48 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { renderAsync } from 'docx-preview'
 import { PageHeader } from '@/components'
 import { nestingService, type Nesting } from '@/services/crm/nesting.service'
 
 const route = useRoute()
 const nesting = ref<Nesting | null>(null)
+const previewExpanded = ref(true)
+const previewDocxBlob = ref<Blob | null>(null)
+const previewLoaded = ref(false)
+const previewContainerRef = ref<HTMLElement | null>(null)
+
+const loadPreview = async (nestingId: string) => {
+  previewLoaded.value = false
+  previewDocxBlob.value = null
+  const blob = await nestingService.getPreviewDocx(nestingId)
+  previewDocxBlob.value = blob
+  previewLoaded.value = true
+}
+
+watch(previewDocxBlob, (blob) => {
+  if (!blob) return
+  nextTick(() => {
+    const el = previewContainerRef.value
+    if (!el) return
+    el.innerHTML = ''
+    // useBase64URL: true 讓圖片以 data URL 內嵌，避免 blob URL 在 CSP/iframe 下無法顯示
+    renderAsync(blob, el, undefined, { useBase64URL: true }).catch(() => {
+      el.innerHTML = '<p class="preview-empty">預覽渲染失敗</p>'
+    })
+  })
+})
 
 const loadData = async () => {
   const id = route.params.id as string
   nesting.value = await nestingService.getById(id)
 }
+
+watch(nesting, (n) => {
+  if (n?.id) loadPreview(n.id)
+}, { immediate: true })
 
 const formatSeconds = (seconds?: number) => {
   if (!seconds && seconds !== 0) return '-'
@@ -103,6 +156,69 @@ onMounted(() => {
 .nesting-items-page {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.preview-card {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.preview-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--secondary-50);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--secondary-800);
+  text-align: left;
+}
+
+.preview-toggle:hover {
+  background: var(--secondary-100);
+}
+
+.preview-title {
+  flex: 1;
+}
+
+.preview-chevron {
+  color: var(--secondary-500);
+}
+
+.preview-body {
+  padding: 0.5rem;
+  border-top: 1px solid var(--secondary-200);
+}
+
+.preview-docx-wrap {
+  width: 100%;
+  min-height: 320px;
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--secondary-200);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  background: #fff;
+}
+
+.preview-docx-wrap :deep(.docx-wrapper) {
+  background: #fff;
+}
+
+.preview-empty,
+.preview-loading {
+  padding: 1rem;
+  color: var(--secondary-600);
+  margin: 0;
 }
 
 .summary-card {

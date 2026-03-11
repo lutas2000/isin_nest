@@ -122,7 +122,7 @@ describe('NestingService', () => {
       expect(mkdirSpy).toHaveBeenCalledWith('/tmp/nesting-test', { recursive: true });
       expect(writeFileSpy).toHaveBeenCalledWith(
         '/tmp/nesting-test/DAQ8206E01.docx',
-        fileBuffer,
+        expect.any(Buffer),
       );
 
       writeFileSpy.mockRestore();

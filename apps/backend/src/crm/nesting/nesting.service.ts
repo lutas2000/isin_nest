@@ -7,8 +7,11 @@ import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import * as mammoth from 'mammoth';
 import * as cheerio from 'cheerio';
 import { randomUUID } from 'crypto';
-import { extname } from 'path';
+import { extname, join as pathJoin, basename } from 'path';
 import { promises as fs } from 'fs';
+import { execSync } from 'child_process';
+import { tmpdir } from 'os';
+import * as JSZip from 'jszip';
 
 @Injectable()
 export class NestingService {
@@ -144,7 +147,13 @@ export class NestingService {
 
     await fs.mkdir(nestingPath, { recursive: true });
     const docxFilePath = `${nestingPath}/${id}.docx`;
-    await fs.writeFile(docxFilePath, file.buffer);
+    let bufferToSave = file.buffer as Buffer;
+    try {
+      bufferToSave = await this.convertEmfToPngInDocx(bufferToSave);
+    } catch {
+      // LibreOffice 未安裝或轉換失敗時仍儲存原始 docx
+    }
+    await fs.writeFile(docxFilePath, bufferToSave);
 
     const nesting = this.nestingRepository.create({
       id,
@@ -292,6 +301,68 @@ export class NestingService {
     const version = '01'; // 版次
     
     return `${prefix}${dateCode}${sequence}${version}`;
+  }
+
+  /**
+   * 將 DOCX 內 word/media 的 EMF/WMF 轉成 PNG，使瀏覽器可顯示。
+   * 需安裝 ImageMagick（convert 指令）。若轉換失敗會拋錯，呼叫方應 fallback 儲存原始 buffer。
+   */
+  private async convertEmfToPngInDocx(docxBuffer: Buffer): Promise<Buffer> {
+    const zip = await JSZip.loadAsync(docxBuffer);
+    const emfWmfNames: string[] = [];
+    zip.forEach((relativePath) => {
+      if (/^word\/media\/[^/]+\.(emf|wmf)$/i.test(relativePath)) {
+        emfWmfNames.push(relativePath);
+      }
+    });
+    if (emfWmfNames.length === 0) return docxBuffer;
+
+    const tempDir = pathJoin(tmpdir(), `nesting-emf-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    await fs.mkdir(tempDir, { recursive: true });
+    try {
+      for (const name of emfWmfNames) {
+        const ext = name.endsWith('.wmf') ? '.wmf' : '.emf';
+        const baseName = basename(name, ext);
+        const emfPath = pathJoin(tempDir, basename(name));
+        const pngPath = pathJoin(tempDir, `${baseName}.png`);
+        const emfBuf = await zip.file(name)?.async('nodebuffer');
+        if (!emfBuf) continue;
+        await fs.writeFile(emfPath, emfBuf);
+        try {
+          // 使用 LibreOffice headless 將單一 EMF/WMF 轉成 PNG，輸出到 tempDir。
+          // 優先使用環境變數 LIBREOFFICE_PATH，否則 fallback 到 macOS 預設安裝路徑。
+          const libreofficeCmd =
+            process.env.LIBREOFFICE_PATH || '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+          execSync(
+            `"${libreofficeCmd}" --headless --convert-to png --outdir "${tempDir}" "${emfPath}"`,
+            { stdio: 'pipe' },
+          );
+        } catch (error: any) {
+          throw error;
+        }
+        const pngBuf = await fs.readFile(pngPath);
+        const pngZipPath = `word/media/${baseName}.png`;
+        zip.file(pngZipPath, pngBuf);
+        zip.remove(name);
+      }
+      const relsPath = 'word/_rels/document.xml.rels';
+      const relsFile = zip.file(relsPath);
+      if (relsFile) {
+        let relsContent = await relsFile.async('string');
+        for (const name of emfWmfNames) {
+          const baseName = basename(name, name.endsWith('.wmf') ? '.wmf' : '.emf');
+          const mediaOld = `media/${baseName}.emf`;
+          const mediaWmf = `media/${baseName}.wmf`;
+          const mediaNew = `media/${baseName}.png`;
+          relsContent = relsContent.replace(new RegExp(mediaOld.replace(/\./g, '\\.'), 'g'), mediaNew);
+          relsContent = relsContent.replace(new RegExp(mediaWmf.replace(/\./g, '\\.'), 'g'), mediaNew);
+        }
+        zip.file(relsPath, relsContent);
+      }
+      return (await zip.generateAsync({ type: 'nodebuffer' })) as Buffer;
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }
   }
 
   /** 讀取 NESTING_PATH 下 {id}.docx 的 buffer，若不存在或未設定則回傳 null */

@@ -141,3 +141,6 @@ frontend/.vite
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Path
+apps/backend/path
