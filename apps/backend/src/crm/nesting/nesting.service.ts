@@ -332,7 +332,7 @@ export class NestingService {
           // 使用 LibreOffice headless 將單一 EMF/WMF 轉成 PNG，輸出到 tempDir。
           // 優先使用環境變數 LIBREOFFICE_PATH，否則 fallback 到 macOS 預設安裝路徑。
           const libreofficeCmd =
-            process.env.LIBREOFFICE_PATH || '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+            process.env.LIBREOFFICE_PATH || '/usr/bin/soffice';
           execSync(
             `"${libreofficeCmd}" --headless --convert-to png --outdir "${tempDir}" "${emfPath}"`,
             { stdio: 'pipe' },
