@@ -214,6 +214,11 @@ onMounted(() => {
   background: #fff;
 }
 
+.preview-docx-wrap :deep(img) {
+  max-width: 100% !important;
+  object-fit: cover;
+}
+
 .preview-empty,
 .preview-loading {
   padding: 1rem;
