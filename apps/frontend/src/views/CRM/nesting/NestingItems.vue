@@ -5,6 +5,10 @@
       description="查看此排版中的所有工件"
     >
       <template #actions>
+        <button v-if="nesting" class="btn btn-primary" @click="handlePrint">
+          <span class="btn-icon">🖨️</span>
+          列印
+        </button>
         <router-link to="/crm/nestings" class="btn btn-outline">
           返回排版列表
         </router-link>
@@ -88,6 +92,7 @@
         </tbody>
       </table>
     </div>
+
   </div>
   <div v-else class="loading-message">
     載入中...
@@ -144,6 +149,101 @@ const formatSeconds = (seconds?: number) => {
   const s = seconds % 60
   const pad = (v: number) => v.toString().padStart(2, '0')
   return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
+const getHeadStyles = () => {
+  return Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    .map((node) => node.outerHTML)
+    .join('\n')
+}
+
+const handlePrint = () => {
+  const previewEl = previewContainerRef.value
+  if (!previewEl || !previewDocxBlob.value) {
+    alert('目前沒有可列印的預覽內容')
+    return
+  }
+
+  const previewContent = previewEl.innerHTML
+  if (!previewContent.trim()) {
+    alert('預覽尚未完成，請稍後再試')
+    return
+  }
+
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    alert('無法開啟列印視窗，請檢查瀏覽器彈出視窗設定')
+    return
+  }
+
+  const title = `排版預覽 - ${nesting.value?.id || ''}`
+  const styles = getHeadStyles()
+  const printOnlyStyles = `
+    <style>
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
+      /* Preview 容器原本是可捲動區塊，列印時要展開完整內容 */
+      .preview-docx-wrap {
+        max-height: none !important;
+        min-height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* 避免外框與 padding 壓縮可列印寬度，導致右側表格超出 */
+      .preview-docx-wrap,
+      .preview-docx-wrap.docx-wrapper {
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .preview-docx-wrap .docx-wrapper {
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
+      .preview-docx-wrap .docx {
+        box-shadow: none !important;
+        margin: 0 auto !important;
+        max-width: 100% !important;
+      }
+    </style>
+  `
+
+  const previewHtml = previewEl.outerHTML
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>${title}</title>
+        ${styles}
+        ${printOnlyStyles}
+      </head>
+      <body>
+        ${previewHtml}
+      </body>
+    </html>
+  `)
+  printWindow.document.close()
+
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.print()
+      printWindow.close()
+    }, 250)
+  }
 }
 
 onMounted(() => {
@@ -289,6 +389,10 @@ onMounted(() => {
 .loading-message {
   padding: 2rem;
   text-align: center;
+}
+
+.btn-icon {
+  margin-right: 0.5rem;
 }
 
 @media (max-width: 768px) {
