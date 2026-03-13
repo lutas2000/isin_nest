@@ -5,10 +5,6 @@
       description="管理排版、追蹤排版進度"
     >
       <template #actions>
-        <button class="btn btn-secondary" @click="handleHeaderPrint">
-          <span class="btn-icon">🖨️</span>
-          列印選取排版
-        </button>
         <button class="btn btn-outline" @click="showImportModal = true">
           <span class="btn-icon">📄</span>
           匯入排版
@@ -61,7 +57,7 @@
           </template>
           <template v-else>
             <span class="dropdown-item" @click="handleRowView(row)">查看詳情</span>
-            <span class="dropdown-item" @click="handleRowPrint(row)">列印預覽</span>
+            <span class="dropdown-item" @click="handleRowPrint(row)">列印</span>
             <span class="dropdown-item" @click="handleRowDelete(row)">刪除</span>
           </template>
         </template>
@@ -185,14 +181,6 @@ const handleRowView = (row: Nesting) => {
 const handleRowPrint = async (row: Nesting) => {
   printTargetNestingId.value = row.id
   await printNestingById(row.id)
-}
-
-const handleHeaderPrint = async () => {
-  if (!printTargetNestingId.value) {
-    alert('請先在列表中點「查看詳情」或「列印預覽」選取排版')
-    return
-  }
-  await printNestingById(printTargetNestingId.value)
 }
 
 const closeDetailModal = () => {

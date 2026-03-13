@@ -1,5 +1,6 @@
 import { renderAsync } from 'docx-preview'
 import { nestingService } from '@/services/crm/nesting.service'
+import nestingPreviewStyles from '../styles/nestingPreview.css?raw'
 
 const getHeadStyles = () => {
   return Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
@@ -10,6 +11,8 @@ const getHeadStyles = () => {
 const getPrintOnlyStyles = () => {
   return `
     <style>
+      ${nestingPreviewStyles}
+
       @page {
         size: A4 portrait;
         margin: 0;
@@ -104,7 +107,10 @@ export const printNestingBlob = async (blob: Blob, title: string) => {
 
   try {
     await renderAsync(blob, tempContainer, undefined, { useBase64URL: true })
-    openPrintWindow(tempContainer.outerHTML, title)
+    const printableContainer = document.createElement('div')
+    printableContainer.className = 'preview-docx-wrap'
+    printableContainer.innerHTML = tempContainer.innerHTML
+    openPrintWindow(printableContainer.outerHTML, title)
   } catch (error) {
     console.error('列印預覽渲染失敗:', error)
     alert('列印預覽渲染失敗')
