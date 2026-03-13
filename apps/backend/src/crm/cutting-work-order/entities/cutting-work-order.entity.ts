@@ -83,6 +83,15 @@ export class CuttingWorkOrder {
   })
   notes?: string;
 
+  @ApiProperty({ description: 'CNC檔案名稱', required: false })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'cnc_file_name',
+    nullable: true,
+  })
+  cncFileName?: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
     name: 'created_at',
