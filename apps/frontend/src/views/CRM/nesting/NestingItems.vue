@@ -122,7 +122,6 @@ watch(previewDocxBlob, (blob) => {
     const el = previewContainerRef.value
     if (!el) return
     el.innerHTML = ''
-    // useBase64URL: true 讓圖片以 data URL 內嵌，避免 blob URL 在 CSP/iframe 下無法顯示
     renderAsync(blob, el, undefined, { useBase64URL: true }).catch(() => {
       el.innerHTML = '<p class="preview-empty">預覽渲染失敗</p>'
     })
@@ -298,4 +297,3 @@ onMounted(() => {
   }
 }
 </style>
-
