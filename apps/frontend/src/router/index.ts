@@ -109,13 +109,13 @@ const routes = [
     path: '/crm/orders',
     name: 'CRMOrders',
     component: CRMOrders,
-    meta: { title: '訂貨單管理', icon: '📋', requiresAuth: true }
+    meta: { title: '訂單管理', icon: '📋', requiresAuth: true }
   },
   {
     path: '/crm/orders/:id/items',
     name: 'CRMOrderItems',
     component: CRMOrderItems,
-    meta: { title: '訂貨單詳情', icon: '📋', requiresAuth: true }
+    meta: { title: '訂單詳情', icon: '📋', requiresAuth: true }
   },
   {
     path: '/crm/design-work-orders',

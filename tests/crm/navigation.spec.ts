@@ -34,8 +34,8 @@ test.describe('CRM 導航功能', () => {
       await expect(page).toHaveURL(/\/crm\/quotes/);
     }
 
-    // 導航到訂貨單管理
-    const ordersLink = page.getByRole('link', { name: /訂貨單|Orders/ });
+    // 導航到訂單管理
+    const ordersLink = page.getByRole('link', { name: /訂單|Orders/ });
     if (await ordersLink.isVisible()) {
       await ordersLink.click();
       await expect(page).toHaveURL(/\/crm\/orders/);
@@ -80,9 +80,9 @@ test.describe('CRM 導航功能', () => {
     await page.goto('/crm/quotes');
     await expect(page).toHaveTitle(/報價/);
 
-    // 訂貨單管理頁面
+    // 訂單管理頁面
     await page.goto('/crm/orders');
-    await expect(page).toHaveTitle(/訂貨單/);
+    await expect(page).toHaveTitle(/訂單/);
   });
 });
 
@@ -212,7 +212,7 @@ test.describe('錯誤處理', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('應該處理不存在的訂貨單 ID', async ({ page }) => {
+  test('應該處理不存在的訂單 ID', async ({ page }) => {
     await page.goto('/crm/orders/NONEXISTENT/items');
     
     // 頁面應該正常載入
@@ -263,7 +263,7 @@ test.describe('效能相關', () => {
     expect(loadTime).toBeLessThan(5000);
   });
 
-  test('訂貨單頁面應該在合理時間內載入', async ({ page }) => {
+  test('訂單頁面應該在合理時間內載入', async ({ page }) => {
     const startTime = Date.now();
     
     await page.goto('/crm/orders');

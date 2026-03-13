@@ -16,7 +16,7 @@
     <SearchFilters
       v-model:searchValue="searchQuery"
       v-model:filterStatus="filterStatus"
-      search-placeholder="搜尋訂貨單編號或設計師..."
+      search-placeholder="搜尋訂單編號或設計師..."
       :status-options="statusOptions"
     />
 
@@ -111,7 +111,7 @@ const statusOptions = [
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
-  { key: 'orderId', label: '訂貨單編號', editable: true, required: true, type: 'text' },
+  { key: 'orderId', label: '訂單編號', editable: true, required: true, type: 'text' },
   { key: 'orderItemId', label: '工件ID', editable: true, required: true, type: 'number' },
   { key: 'drawingNumber', label: '圖號', editable: true, type: 'text' },
   { key: 'assignedStaff', label: '設計師', editable: false },

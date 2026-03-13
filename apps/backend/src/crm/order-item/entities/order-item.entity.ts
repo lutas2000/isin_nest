@@ -14,11 +14,11 @@ import { numericTransformer } from '../../../common/transformers/numeric.transfo
 
 @Entity('order_item')
 export class OrderItem {
-  @ApiProperty({ description: '訂貨單工件ID', example: 1 })
+  @ApiProperty({ description: '訂單工件ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
+  @ApiProperty({ description: '訂單ID', example: 'ORD001' })
   @Column({
     type: 'varchar',
     length: 50,
@@ -165,7 +165,7 @@ export class OrderItem {
   updatedAt: Date;
 
   // 關聯到 Order（多對一）
-  @ApiProperty({ description: '關聯的訂貨單資料', type: () => Order })
+  @ApiProperty({ description: '關聯的訂單資料', type: () => Order })
   @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: Order;

@@ -1,7 +1,7 @@
 <template>
   <div class="work-order-items-page">
     <PageHeader
-      title="訂貨單詳情"
+      title="訂單詳情"
       :description="workOrder ? `` : '載入中...'"
     >
       <template #actions>
@@ -18,13 +18,13 @@
     <div v-else-if="workOrder" class="work-order-items-content">
       <!-- 工作單詳細資訊 -->
       <div class="work-order-details-card">
-        <TableHeader title="訂貨單資訊" />
+        <TableHeader title="訂單資訊" />
         <div class="details-content">
           <div class="details-section">
             <h4>基本資訊</h4>
             <div class="details-grid">
               <div class="details-item">
-                <span class="details-label">訂貨單編號：</span>
+                <span class="details-label">訂單編號：</span>
                 <span class="details-value">{{ workOrder.id }}</span>
               </div>
               <div class="details-item">
@@ -104,9 +104,9 @@
         @shortcut-click="handleShortcutClick"
       />
 
-      <!-- 訂貨單工件列表 -->
+      <!-- 訂單工件列表 -->
       <div class="work-order-items-card">
-        <TableHeader title="訂貨單工件列表">
+        <TableHeader title="訂單工件列表">
           <template #actions>
             <button class="btn btn-primary" @click="showNewRow = true">
               <span class="btn-icon">➕</span>
@@ -301,7 +301,7 @@ const newRowTemplate = () => {
     quantity: 0,
     unit: '',
     unitPrice: 0,
-    source: '訂貨單新增',
+    source: '訂單新增',
     status: '待處理',
     notes: '',
   };
@@ -398,11 +398,11 @@ const editableColumns = computed<EditableColumn[]>(() => [
   },
 ]);
 
-// 載入訂貨單資料
+// 載入訂單資料
 const loadWorkOrder = async () => {
   const workOrderId = route.params.id as string;
   if (!workOrderId) {
-    error.value = '無效的訂貨單編號';
+    error.value = '無效的訂單編號';
     return;
   }
 
@@ -426,7 +426,7 @@ const loadWorkOrder = async () => {
       }
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '載入訂貨單資料失敗';
+    error.value = err instanceof Error ? err.message : '載入訂單資料失敗';
     console.error('Failed to load order:', err);
   } finally {
     loading.value = false;
@@ -442,7 +442,7 @@ const handleFieldChange = (_row: WorkOrderItem, _field: string, _value: any, _is
 // 處理手動保存
 const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
   if (!workOrder.value) {
-    alert('訂貨單資料不存在');
+    alert('訂單資料不存在');
     return;
   }
 
@@ -457,7 +457,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
       quantity: row.quantity || 0,
       unit: row.unit || undefined,
       unitPrice: row.unitPrice || 0,
-      source: row.source || '訂貨單新增',
+      source: row.source || '訂單新增',
       status: row.status || '待處理',
       notes: row.notes || undefined,
     };
@@ -477,7 +477,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
 // 處理新增行保存
 const handleNewRowSave = async (row: any) => {
   if (!workOrder.value) {
-    alert('訂貨單資料不存在');
+    alert('訂單資料不存在');
     return;
   }
 
@@ -492,7 +492,7 @@ const handleNewRowSave = async (row: any) => {
       quantity: row.quantity || 0,
       unit: row.unit || undefined,
       unitPrice: row.unitPrice || 0,
-      source: row.source || '訂貨單新增',
+      source: row.source || '訂單新增',
       status: row.status || '待處理',
       notes: row.notes || undefined,
     };
@@ -741,7 +741,7 @@ onMounted(() => {
   margin: 0;
 }
 
-/* 訂貨單工件列表 */
+/* 訂單工件列表 */
 .empty-message {
   padding: 3rem;
   text-align: center;

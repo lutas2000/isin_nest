@@ -18,7 +18,7 @@ export class DeliveryWorkOrder {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
+  @ApiProperty({ description: '訂單ID', example: 'ORD001' })
   @Column({
     type: 'varchar',
     length: 50,

@@ -37,8 +37,8 @@ export class DeliveryWorkOrderController {
     return this.deliveryWorkOrderService.findAll(page, limit);
   }
 
-  @ApiOperation({ summary: '根據訂貨單ID獲取送貨工作單' })
-  @ApiParam({ name: 'orderId', description: '訂貨單ID', example: 'ORD001' })
+  @ApiOperation({ summary: '根據訂單ID獲取送貨工作單' })
+  @ApiParam({ name: 'orderId', description: '訂單ID', example: 'ORD001' })
   @ApiResponse({ status: 200, description: '成功返回送貨工作單列表', type: [DeliveryWorkOrder] })
   @Get('by-order/:orderId')
   findByOrderId(@Param('orderId') orderId: string) {

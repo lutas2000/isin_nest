@@ -41,8 +41,8 @@ export class NestingController {
     return this.nestingService.findAll(page, limit);
   }
 
-  @ApiOperation({ summary: '根據訂貨單ID獲取排版' })
-  @ApiParam({ name: 'orderId', description: '訂貨單ID', example: 'ORD001' })
+  @ApiOperation({ summary: '根據訂單ID獲取排版' })
+  @ApiParam({ name: 'orderId', description: '訂單ID', example: 'ORD001' })
   @ApiResponse({ status: 200, description: '成功返回排版列表', type: [Nesting] })
   @Get('by-order/:orderId')
   findByOrderId(@Param('orderId') orderId: string) {

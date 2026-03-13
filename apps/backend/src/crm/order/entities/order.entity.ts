@@ -14,7 +14,7 @@ import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { OrderItem } from '../../order-item/entities/order-item.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
-// 訂貨單狀態
+// 訂單狀態
 export enum OrderStatus {
   PENDING = 'pending',           // 待處理
   DESIGN = 'design',             // 設計中
@@ -27,7 +27,7 @@ export enum OrderStatus {
 
 @Entity('order')
 export class Order {
-  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
+  @ApiProperty({ description: '訂單ID', example: 'ORD001' })
   @PrimaryColumn({ type: 'varchar', length: 50 })
   id: string;
 

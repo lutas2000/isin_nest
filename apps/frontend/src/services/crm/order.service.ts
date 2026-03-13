@@ -2,7 +2,7 @@ import { apiGet, apiPost, apiDelete } from '../api'
 import { API_CONFIG } from '../../config/api'
 import { PaginatedResponse } from '../../types/pagination'
 
-// 訂貨單狀態
+// 訂單狀態
 export enum OrderStatus {
   PENDING = 'pending',
   DESIGN = 'design',
@@ -62,7 +62,7 @@ export type WorkOrder = Order
 export type WorkOrderItem = OrderItem
 
 export const orderService = {
-  // 獲取所有訂貨單（支援分頁）
+  // 獲取所有訂單（支援分頁）
   getAll: (page?: number, limit?: number): Promise<Order[] | PaginatedResponse<Order>> => {
     const params: Record<string, any> = {}
     if (page !== undefined) params.page = page
@@ -70,39 +70,39 @@ export const orderService = {
     return apiGet<Order[] | PaginatedResponse<Order>>(API_CONFIG.CRM.ORDERS, params)
   },
 
-  // 獲取單個訂貨單
+  // 獲取單個訂單
   getById: (id: string): Promise<Order> => {
     return apiGet<Order>(`${API_CONFIG.CRM.ORDERS}/${id}`)
   },
 
-  // 建立訂貨單
+  // 建立訂單
   create: (data: Partial<Order>): Promise<Order> => {
     return apiPost<Order>(API_CONFIG.CRM.ORDERS, data)
   },
 
-  // 更新訂貨單
+  // 更新訂單
   update: (id: string, data: Partial<Order>): Promise<Order> => {
     return apiPost<Order>(`${API_CONFIG.CRM.ORDERS}/${id}`, data)
   },
 
-  // 刪除訂貨單
+  // 刪除訂單
   delete: (id: string): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.ORDERS}/${id}`)
   },
 
-  // 更新訂貨單狀態
+  // 更新訂單狀態
   updateStatus: (id: string, status: OrderStatus): Promise<Order> => {
     return apiPost<Order>(`${API_CONFIG.CRM.ORDERS}/${id}/status`, { status })
   },
 
-  // 完成訂貨單
+  // 完成訂單
   complete: (id: string): Promise<Order> => {
     return apiPost<Order>(`${API_CONFIG.CRM.ORDERS}/${id}/complete`)
   },
 }
 
 export const orderItemService = {
-  // 獲取所有訂貨單工件（支援分頁）
+  // 獲取所有訂單工件（支援分頁）
   getAll: (orderId?: string, page?: number, limit?: number): Promise<OrderItem[] | PaginatedResponse<OrderItem>> => {
     const params: Record<string, any> = {}
     if (orderId) params.orderId = orderId
@@ -111,22 +111,22 @@ export const orderItemService = {
     return apiGet<OrderItem[] | PaginatedResponse<OrderItem>>(API_CONFIG.CRM.ORDER_ITEMS, params)
   },
 
-  // 獲取單個訂貨單工件
+  // 獲取單個訂單工件
   getById: (id: number): Promise<OrderItem> => {
     return apiGet<OrderItem>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}`)
   },
 
-  // 建立訂貨單工件
+  // 建立訂單工件
   create: (data: Partial<OrderItem>): Promise<OrderItem> => {
     return apiPost<OrderItem>(API_CONFIG.CRM.ORDER_ITEMS, data)
   },
 
-  // 更新訂貨單工件
+  // 更新訂單工件
   update: (id: number, data: Partial<OrderItem>): Promise<OrderItem> => {
     return apiPost<OrderItem>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}`, data)
   },
 
-  // 刪除訂貨單工件
+  // 刪除訂單工件
   delete: (id: number): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}`)
   },

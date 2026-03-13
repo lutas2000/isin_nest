@@ -59,9 +59,9 @@ export class QuoteController {
     return this.quoteService.update(id, data);
   }
 
-  @ApiOperation({ summary: '將報價單轉換為訂貨單' })
+  @ApiOperation({ summary: '將報價單轉換為訂單' })
   @ApiParam({ name: 'id', description: '報價單ID', example: '00010301' })
-  @ApiResponse({ status: 200, description: '成功轉換為訂貨單', type: Order })
+  @ApiResponse({ status: 200, description: '成功轉換為訂單', type: Order })
   @ApiResponse({ status: 400, description: '報價單未簽名或不存在' })
   @Post(':id/convert-to-order')
   convertToOrder(

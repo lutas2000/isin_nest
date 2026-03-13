@@ -14,7 +14,7 @@
             <span class="detail-value">{{ nesting.id }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">訂貨單編號：</span>
+            <span class="detail-label">訂單編號：</span>
             <span class="detail-value">{{ nesting.orderId }}</span>
           </div>
           <div class="detail-item">

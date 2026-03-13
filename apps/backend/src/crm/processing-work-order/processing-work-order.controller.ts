@@ -44,16 +44,16 @@ export class ProcessingWorkOrderController {
     return this.processingWorkOrderService.findOutsourcedWorkOrders();
   }
 
-  @ApiOperation({ summary: '根據訂貨單ID獲取加工工作單' })
-  @ApiParam({ name: 'orderId', description: '訂貨單ID', example: 'ORD001' })
+  @ApiOperation({ summary: '根據訂單ID獲取加工工作單' })
+  @ApiParam({ name: 'orderId', description: '訂單ID', example: 'ORD001' })
   @ApiResponse({ status: 200, description: '成功返回加工工作單列表', type: [ProcessingWorkOrder] })
   @Get('by-order/:orderId')
   findByOrderId(@Param('orderId') orderId: string) {
     return this.processingWorkOrderService.findByOrderId(orderId);
   }
 
-  @ApiOperation({ summary: '根據訂貨單工件ID獲取加工工作單' })
-  @ApiParam({ name: 'orderItemId', description: '訂貨單工件ID', example: 1 })
+  @ApiOperation({ summary: '根據訂單工件ID獲取加工工作單' })
+  @ApiParam({ name: 'orderItemId', description: '訂單工件ID', example: 1 })
   @ApiResponse({ status: 200, description: '成功返回加工工作單列表', type: [ProcessingWorkOrder] })
   @Get('by-order-item/:orderItemId')
   findByOrderItemId(@Param('orderItemId', ParseIntPipe) orderItemId: number) {

@@ -6,7 +6,7 @@
       </template>
     </PageHeader>
 
-    <SearchFilters v-model:searchValue="searchQuery" v-model:filterStatus="filterStatus" search-placeholder="搜尋訂貨單編號或地址..." :status-options="statusOptions" />
+    <SearchFilters v-model:searchValue="searchQuery" v-model:filterStatus="filterStatus" search-placeholder="搜尋訂單編號或地址..." :status-options="statusOptions" />
 
     <div class="table-card">
       <div v-if="loading" class="loading-message">載入中...</div>
@@ -46,7 +46,7 @@ const statusOptions = [{ value: '', label: '所有狀態' }, { value: 'pending',
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
-  { key: 'orderId', label: '訂貨單編號', editable: true, required: true, type: 'text' },
+  { key: 'orderId', label: '訂單編號', editable: true, required: true, type: 'text' },
   { key: 'deliveryAddress', label: '送貨地址', editable: true, type: 'text' },
   { key: 'contactPhone', label: '聯絡電話', editable: true, type: 'text' },
   { key: 'scheduledDate', label: '預定日期', editable: true, type: 'date' },

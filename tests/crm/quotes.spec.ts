@@ -231,7 +231,7 @@ test.describe('報價單詳情頁面', () => {
   });
 });
 
-test.describe('報價單轉訂貨單功能', () => {
+test.describe('報價單轉訂單功能', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/quotes');
@@ -243,7 +243,7 @@ test.describe('報價單轉訂貨單功能', () => {
     await logout(page);
   });
 
-  test('應該能夠對已簽名報價單顯示轉訂貨單選項', async ({ page }) => {
+  test('應該能夠對已簽名報價單顯示轉訂單選項', async ({ page }) => {
     // 篩選已簽名的報價單
     const statusFilter = page.locator('select').first();
     
@@ -260,13 +260,13 @@ test.describe('報價單轉訂貨單功能', () => {
       
       if (await signedRow.isVisible()) {
         // 找到該行的操作按鈕
-        const convertOption = signedRow.getByText('轉訂貨單');
+        const convertOption = signedRow.getByText('轉訂單');
         
         if (await convertOption.isVisible()) {
           await convertOption.click();
           
-          // 應該顯示轉訂貨單 Modal
-          await expect(page.getByRole('heading', { name: '轉換為訂貨單' })).toBeVisible();
+          // 應該顯示轉訂單 Modal
+          await expect(page.getByRole('heading', { name: '轉換為訂單' })).toBeVisible();
           
           // 應該顯示運送方式和付款方式選擇
           await expect(page.getByLabel('運送方式 *')).toBeVisible();
@@ -291,7 +291,7 @@ test.describe('報價單轉訂貨單功能', () => {
       const signedRow = page.locator('tr').filter({ hasText: '已簽名' }).first();
       
       if (await signedRow.isVisible()) {
-        const convertOption = signedRow.getByText('轉訂貨單');
+        const convertOption = signedRow.getByText('轉訂單');
         
         if (await convertOption.isVisible()) {
           await convertOption.click();
@@ -318,7 +318,7 @@ test.describe('報價單轉訂貨單功能', () => {
       const signedRow = page.locator('tr').filter({ hasText: '已簽名' }).first();
       
       if (await signedRow.isVisible()) {
-        const convertOption = signedRow.getByText('轉訂貨單');
+        const convertOption = signedRow.getByText('轉訂單');
         
         if (await convertOption.isVisible()) {
           await convertOption.click();
@@ -336,7 +336,7 @@ test.describe('報價單轉訂貨單功能', () => {
     }
   });
 
-  test('應該能夠取消轉訂貨單 Modal', async ({ page }) => {
+  test('應該能夠取消轉訂單 Modal', async ({ page }) => {
     // 篩選已簽名的報價單
     const statusFilter = page.locator('select').first();
     
@@ -351,7 +351,7 @@ test.describe('報價單轉訂貨單功能', () => {
       const signedRow = page.locator('tr').filter({ hasText: '已簽名' }).first();
       
       if (await signedRow.isVisible()) {
-        const convertOption = signedRow.getByText('轉訂貨單');
+        const convertOption = signedRow.getByText('轉訂單');
         
         if (await convertOption.isVisible()) {
           await convertOption.click();
@@ -360,7 +360,7 @@ test.describe('報價單轉訂貨單功能', () => {
           await page.getByRole('button', { name: '取消' }).click();
           
           // Modal 應該關閉
-          await expect(page.getByRole('heading', { name: '轉換為訂貨單' })).not.toBeVisible();
+          await expect(page.getByRole('heading', { name: '轉換為訂單' })).not.toBeVisible();
         }
       }
     }

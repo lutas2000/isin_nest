@@ -1,6 +1,6 @@
 ---
 name: CRM Workflow Refactor
-overview: 重構 CRM 系統以支援完整的報價單到訂貨單工作流程，包含重新命名實體、建立多種工作單類型、自動產生工作單、以及排版管理功能。
+overview: 重構 CRM 系統以支援完整的報價單到訂單工作流程，包含重新命名實體、建立多種工作單類型、自動產生工作單、以及排版管理功能。
 todos:
   - id: rename-entities
     content: "Phase 1: 重新命名 WorkOrder/WorkOrderItem 為 Order/OrderItem，包含後端實體、服務、控制器及前端服務"
@@ -15,10 +15,10 @@ todos:
     content: "Phase 2: 建立 OutsourcingCost 實體及 CRUD"
     status: completed
   - id: quote-conversion-logic
-    content: "Phase 3: 修改報價單轉訂貨單邏輯，自動複製工件並產生對應工作單"
+    content: "Phase 3: 修改報價單轉訂單邏輯，自動複製工件並產生對應工作單"
     status: completed
   - id: frontend-order-pages
-    content: "Phase 4: 調整前端 Orders.vue 為訂貨單管理，重新命名 WorkOrderItem.vue"
+    content: "Phase 4: 調整前端 Orders.vue 為訂單管理，重新命名 WorkOrderItem.vue"
     status: completed
   - id: frontend-work-order-pages
     content: "Phase 4: 建立各類工作單前端管理頁面"
@@ -44,8 +44,8 @@ flowchart TB
     end
     
     subgraph OrderPhase[訂貨階段]
-        Order[訂貨單 Order]
-        OrderItem[訂貨單工件 OrderItem]
+        Order[訂單 Order]
+        OrderItem[訂單工件 OrderItem]
         Order --> OrderItem
     end
     
@@ -78,8 +78,8 @@ flowchart TB
 
 ### 1.1 重新命名現有實體
 
-- 將 `WorkOrder` 重新命名為 `Order`（訂貨單）
-- 將 `WorkOrderItem` 重新命名為 `OrderItem`（訂貨單工件）
+- 將 `WorkOrder` 重新命名為 `Order`（訂單）
+- 將 `WorkOrderItem` 重新命名為 `OrderItem`（訂單工件）
 - 更新所有相關的 service、controller、module 檔案名稱
 
 ### 1.2 新增工作單實體（各自獨立表格）
@@ -203,7 +203,7 @@ flowchart TB
 
 ## 二、後端邏輯變更
 
-### 2.1 報價單轉訂貨單 Service
+### 2.1 報價單轉訂單 Service
 
 修改 `quote.service.ts` 中的 `convertToWorkOrder` 方法：
 
@@ -238,8 +238,8 @@ flowchart TB
 
 ### 3.1 頁面重新命名與調整
 
-- `Orders.vue` → 訂貨單管理（保留現有功能，新增工作單概覽）
-- `WorkOrderItem.vue` → 訂貨單工件詳情
+- `Orders.vue` → 訂單管理（保留現有功能，新增工作單概覽）
+- `WorkOrderItem.vue` → 訂單工件詳情
 
 ### 3.2 新增頁面
 
@@ -304,7 +304,7 @@ apps/backend/src/crm/
 └── outsourcing-cost/         # 新增
 
 apps/frontend/src/views/CRM/
-├── Orders.vue                # 訂貨單（調整）
+├── Orders.vue                # 訂單（調整）
 ├── OrderItems.vue            # 原 WorkOrderItem.vue
 ├── DesignWorkOrders.vue      # 新增
 ├── CuttingWorkOrders.vue     # 新增
@@ -316,14 +316,14 @@ apps/frontend/src/views/CRM/
 
 ## 六、API 端點規劃
 
-### 訂貨單相關
+### 訂單相關
 
-- `POST /orders` - 建立訂貨單
-- `GET /orders` - 取得訂貨單列表
-- `GET /orders/:id` - 取得單一訂貨單
-- `PUT /orders/:id` - 更新訂貨單
-- `DELETE /orders/:id` - 刪除訂貨單
-- `GET /orders/:id/work-orders` - 取得訂貨單的所有工作單
+- `POST /orders` - 建立訂單
+- `GET /orders` - 取得訂單列表
+- `GET /orders/:id` - 取得單一訂單
+- `PUT /orders/:id` - 更新訂單
+- `DELETE /orders/:id` - 刪除訂單
+- `GET /orders/:id/work-orders` - 取得訂單的所有工作單
 
 ### 各類工作單 (以設計工作單為例)
 

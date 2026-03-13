@@ -7,9 +7,9 @@
   >
     <div class="import-form">
       <div class="form-group">
-        <label class="form-label">訂貨單 <span class="required">*</span></label>
+        <label class="form-label">訂單 <span class="required">*</span></label>
         <select v-model="form.orderId" class="form-select" :disabled="ordersLoading">
-          <option value="">請選擇訂貨單</option>
+          <option value="">請選擇訂單</option>
           <option v-for="order in orders" :key="order.id" :value="order.id">
             {{ order.id }} — {{ order.customer?.name || order.customerId }}
           </option>

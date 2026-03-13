@@ -19,7 +19,7 @@
     <SearchFilters
       title=""
       v-model:search="searchQuery"
-      search-placeholder="搜尋排版編號或訂貨單..."
+      search-placeholder="搜尋排版編號或訂單..."
     />
 
     <div class="table-card">
@@ -95,7 +95,7 @@ const selectedNesting = ref<Nesting | null>(null)
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
-  { key: 'orderId', label: '訂貨單編號', editable: true, required: true, type: 'text' },
+  { key: 'orderId', label: '訂單編號', editable: true, required: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, required: true, type: 'text' },
   { key: 'thickness', label: '厚度', editable: true, required: true, type: 'text' },
   { key: 'quantity', label: '張數', editable: true, type: 'number' },

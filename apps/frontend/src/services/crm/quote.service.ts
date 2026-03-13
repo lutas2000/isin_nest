@@ -68,7 +68,7 @@ export const quoteService = {
     return apiDelete<void>(`${API_CONFIG.CRM.QUOTES}/${id}`)
   },
 
-  // 將報價單轉換為訂貨單
+  // 將報價單轉換為訂單
   convertToOrder: (id: string, shippingMethod: string, paymentMethod: string): Promise<Order> => {
     return apiPost<Order>(`${API_CONFIG.CRM.QUOTES}/${id}/convert-to-order`, {
       shippingMethod,

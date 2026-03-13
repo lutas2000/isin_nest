@@ -146,13 +146,13 @@ export class QuoteService {
       throw new Error('運送方式和付款方式為必填欄位');
     }
 
-    // 檢查訂貨單 ID 是否已存在
+    // 檢查訂單 ID 是否已存在
     const existingOrder = await this.orderRepository.findOneBy({ id: quote.id });
     if (existingOrder) {
-      throw new Error(`訂貨單 ID ${quote.id} 已存在`);
+      throw new Error(`訂單 ID ${quote.id} 已存在`);
     }
 
-    // 建立訂貨單，直接使用報價單 ID
+    // 建立訂單，直接使用報價單 ID
     const orderData: Partial<Order> = {
       id: quote.id,
       quoteId: quote.id,

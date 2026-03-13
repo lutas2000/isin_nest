@@ -443,8 +443,8 @@ npm run test:cov
 | 登入 | `login.spec.ts` | 登入頁面、表單驗證、登入/登出流程 |
 | 客戶 | `customers.spec.ts` | 客戶 CRUD、搜尋、分頁 |
 | 聯絡人 | `contacts.spec.ts` | 聯絡人列表、搜尋 |
-| 報價單 | `quotes.spec.ts` | 報價單管理、轉訂貨單 |
-| 訂貨單 | `orders.spec.ts` | 訂貨單管理、狀態更新 |
+| 報價單 | `quotes.spec.ts` | 報價單管理、轉訂單 |
+| 訂單 | `orders.spec.ts` | 訂單管理、狀態更新 |
 | 導航 | `navigation.spec.ts` | 頁面導航、響應式設計、效能 |
 
 #### 執行 E2E 測試

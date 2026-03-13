@@ -15,7 +15,7 @@
     <SearchFilters
       v-model:searchValue="searchQuery"
       v-model:filterStatus="filterStatus"
-      search-placeholder="搜尋訂貨單編號或機台..."
+      search-placeholder="搜尋訂單編號或機台..."
       :status-options="statusOptions"
     />
 
@@ -83,7 +83,7 @@ const statusOptions = [
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
-  { key: 'orderId', label: '訂貨單編號', editable: true, required: true, type: 'text' },
+  { key: 'orderId', label: '訂單編號', editable: true, required: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, type: 'text' },
   { key: 'thickness', label: '厚度', editable: true, type: 'text' },
   { key: 'machineId', label: '機台', editable: true, type: 'text' },

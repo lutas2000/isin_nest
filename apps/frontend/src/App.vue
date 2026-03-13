@@ -104,7 +104,7 @@
               active-class="active"
             >
               <div class="nav-icon">📋</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">訂貨單</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">訂單</span>
             </router-link>
           </div>
 

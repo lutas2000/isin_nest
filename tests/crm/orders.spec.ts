@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { login, logout } from '../helpers/auth';
 
-test.describe('訂貨單管理', () => {
+test.describe('訂單管理', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/orders');
@@ -13,16 +13,16 @@ test.describe('訂貨單管理', () => {
     await logout(page);
   });
 
-  test('應該顯示訂貨單管理頁面標題', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: '訂貨單管理' })).toBeVisible();
+  test('應該顯示訂單管理頁面標題', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: '訂單管理' })).toBeVisible();
   });
 
   test('應該顯示頁面描述', async ({ page }) => {
-    await expect(page.getByText('管理訂貨單、追蹤訂單狀態和處理工作流程')).toBeVisible();
+    await expect(page.getByText('管理訂單、追蹤訂單狀態和處理工作流程')).toBeVisible();
   });
 
   test('應該顯示搜尋欄位', async ({ page }) => {
-    await expect(page.getByPlaceholder('搜尋訂貨單編號或客戶...')).toBeVisible();
+    await expect(page.getByPlaceholder('搜尋訂單編號或客戶...')).toBeVisible();
   });
 
   test('應該顯示狀態篩選器', async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe('訂貨單管理', () => {
     await expect(statusFilter).toBeVisible();
   });
 
-  test('應該顯示訂貨單列表表格', async ({ page }) => {
+  test('應該顯示訂單列表表格', async ({ page }) => {
     // 等待載入完成
     await page.waitForLoadState('networkidle');
 
@@ -42,7 +42,7 @@ test.describe('訂貨單管理', () => {
 
     if (await page.locator('table').isVisible()) {
       // 檢查表頭
-      await expect(page.getByRole('columnheader', { name: '訂貨單編號' })).toBeVisible();
+      await expect(page.getByRole('columnheader', { name: '訂單編號' })).toBeVisible();
       await expect(page.getByRole('columnheader', { name: '客戶' })).toBeVisible();
       await expect(page.getByRole('columnheader', { name: '業務員' })).toBeVisible();
       await expect(page.getByRole('columnheader', { name: '運送方式' })).toBeVisible();
@@ -52,7 +52,7 @@ test.describe('訂貨單管理', () => {
   });
 
   test('應該能夠使用搜尋功能', async ({ page }) => {
-    const searchInput = page.getByPlaceholder('搜尋訂貨單編號或客戶...');
+    const searchInput = page.getByPlaceholder('搜尋訂單編號或客戶...');
     
     await searchInput.fill('test');
     await page.waitForTimeout(500);
@@ -79,7 +79,7 @@ test.describe('訂貨單管理', () => {
     }
   });
 
-  test('應該能夠點擊訂貨單編號查看詳情', async ({ page }) => {
+  test('應該能夠點擊訂單編號查看詳情', async ({ page }) => {
     await page.waitForLoadState('networkidle');
     
     const table = page.locator('table');
@@ -90,13 +90,13 @@ test.describe('訂貨單管理', () => {
       if (await firstIdLink.isVisible()) {
         await firstIdLink.click();
         
-        // 應該導航到訂貨單詳情頁面
+        // 應該導航到訂單詳情頁面
         await expect(page).toHaveURL(/\/crm\/orders\/.*\/items/);
       }
     }
   });
 
-  test('應該顯示訂貨單狀態標籤', async ({ page }) => {
+  test('應該顯示訂單狀態標籤', async ({ page }) => {
     await page.waitForLoadState('networkidle');
     
     const table = page.locator('table');
@@ -118,7 +118,7 @@ test.describe('訂貨單管理', () => {
   });
 });
 
-test.describe('訂貨單管理 - 新增訂貨單', () => {
+test.describe('訂單管理 - 新增訂單', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/orders');
@@ -157,7 +157,7 @@ test.describe('訂貨單管理 - 新增訂貨單', () => {
   });
 });
 
-test.describe('訂貨單管理 - 編輯功能', () => {
+test.describe('訂單管理 - 編輯功能', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/orders');
@@ -228,7 +228,7 @@ test.describe('訂貨單管理 - 編輯功能', () => {
   });
 });
 
-test.describe('訂貨單管理 - 完成訂單', () => {
+test.describe('訂單管理 - 完成訂單', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/orders');
@@ -290,7 +290,7 @@ test.describe('訂貨單管理 - 完成訂單', () => {
   });
 });
 
-test.describe('訂貨單管理 - 刪除功能', () => {
+test.describe('訂單管理 - 刪除功能', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/orders');
@@ -343,7 +343,7 @@ test.describe('訂貨單管理 - 刪除功能', () => {
   });
 });
 
-test.describe('訂貨單詳情頁面', () => {
+test.describe('訂單詳情頁面', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
@@ -352,7 +352,7 @@ test.describe('訂貨單詳情頁面', () => {
     await logout(page);
   });
 
-  test('應該能夠從訂貨單列表導航到詳情頁面', async ({ page }) => {
+  test('應該能夠從訂單列表導航到詳情頁面', async ({ page }) => {
     await page.goto('/crm/orders');
     await page.waitForSelector('.orders-page');
     await page.waitForLoadState('networkidle');
@@ -366,7 +366,7 @@ test.describe('訂貨單詳情頁面', () => {
         const orderId = await firstIdLink.textContent();
         await firstIdLink.click();
         
-        // 應該導航到訂貨單詳情頁面
+        // 應該導航到訂單詳情頁面
         await expect(page).toHaveURL(/\/crm\/orders\/.*\/items/);
         
         // 頁面應該載入完成
@@ -375,7 +375,7 @@ test.describe('訂貨單詳情頁面', () => {
     }
   });
 
-  test('應該能夠直接訪問訂貨單詳情頁面', async ({ page }) => {
+  test('應該能夠直接訪問訂單詳情頁面', async ({ page }) => {
     // 假設有一個訂單 ID（這需要根據實際資料調整）
     await page.goto('/crm/orders/WO001/items');
     
@@ -386,7 +386,7 @@ test.describe('訂貨單詳情頁面', () => {
   });
 });
 
-test.describe('訂貨單管理 - 鍵盤快捷鍵', () => {
+test.describe('訂單管理 - 鍵盤快捷鍵', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto('/crm/orders');

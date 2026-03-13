@@ -19,7 +19,7 @@ export class DesignWorkOrder {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ description: '訂貨單ID', example: 'ORD001' })
+  @ApiProperty({ description: '訂單ID', example: 'ORD001' })
   @Column({
     type: 'varchar',
     length: 50,
@@ -27,7 +27,7 @@ export class DesignWorkOrder {
   })
   orderId: string;
 
-  @ApiProperty({ description: '訂貨單工件ID', example: 1 })
+  @ApiProperty({ description: '訂單工件ID', example: 1 })
   @Column({
     type: 'int',
     name: 'order_item_id',
