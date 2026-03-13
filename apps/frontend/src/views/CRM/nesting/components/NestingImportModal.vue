@@ -17,11 +17,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">材料 <span class="required">*</span></label>
-        <input v-model="form.material" type="text" class="form-input" placeholder="例如：不鏽鋼" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">厚度 <span class="required">*</span></label>
-        <input v-model="form.thickness" type="text" class="form-input" placeholder="例如：3mm" />
+        <input v-model="form.material" type="text" class="form-input" />
       </div>
       <div class="form-group">
         <label class="form-label">DOCX 檔案 <span class="required">*</span></label>
@@ -65,12 +61,12 @@ const emit = defineEmits<{
 const loading = ref(false)
 const ordersLoading = ref(false)
 const orders = ref<Order[]>([])
-const form = ref({ orderId: '', material: '', thickness: '' })
+const form = ref({ orderId: '', material: '' })
 const importFile = ref<File | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const formValid = computed(() =>
-  form.value.orderId && form.value.material && form.value.thickness && importFile.value
+  form.value.orderId && form.value.material && importFile.value
 )
 
 const loadOrders = async () => {
@@ -95,7 +91,7 @@ const handleFileSelect = (event: Event) => {
 }
 
 const resetForm = () => {
-  form.value = { orderId: '', material: '', thickness: '' }
+  form.value = { orderId: '', material: '' }
   importFile.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
@@ -112,7 +108,6 @@ const handleSubmit = async () => {
   formData.append('file', importFile.value)
   formData.append('orderId', form.value.orderId)
   formData.append('material', form.value.material)
-  formData.append('thickness', form.value.thickness)
 
   try {
     loading.value = true
