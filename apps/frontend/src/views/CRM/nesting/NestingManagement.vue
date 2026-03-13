@@ -5,6 +5,10 @@
       description="管理排版、追蹤排版進度"
     >
       <template #actions>
+        <button class="btn btn-secondary" @click="handleHeaderPrint">
+          <span class="btn-icon">🖨️</span>
+          列印選取排版
+        </button>
         <button class="btn btn-outline" @click="showImportModal = true">
           <span class="btn-icon">📄</span>
           匯入排版
@@ -57,6 +61,7 @@
           </template>
           <template v-else>
             <span class="dropdown-item" @click="handleRowView(row)">查看詳情</span>
+            <span class="dropdown-item" @click="handleRowPrint(row)">列印預覽</span>
             <span class="dropdown-item" @click="handleRowDelete(row)">刪除</span>
           </template>
         </template>
@@ -83,6 +88,7 @@ import { PageHeader, EditableDataTable, SearchFilters, type EditableColumn } fro
 import { nestingService, type Nesting } from '@/services/crm/nesting.service'
 import NestingDetailModal from './components/NestingDetailModal.vue'
 import NestingImportModal from './components/NestingImportModal.vue'
+import { printNestingById } from './utils/nestingPreviewPrint'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -92,6 +98,7 @@ const showNewRow = ref(false)
 const showDetailModal = ref(false)
 const showImportModal = ref(false)
 const selectedNesting = ref<Nesting | null>(null)
+const printTargetNestingId = ref<string | null>(null)
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
@@ -171,7 +178,21 @@ const handleRowDelete = async (row: Nesting) => {
 
 const handleRowView = (row: Nesting) => {
   selectedNesting.value = row
+  printTargetNestingId.value = row.id
   showDetailModal.value = true
+}
+
+const handleRowPrint = async (row: Nesting) => {
+  printTargetNestingId.value = row.id
+  await printNestingById(row.id)
+}
+
+const handleHeaderPrint = async () => {
+  if (!printTargetNestingId.value) {
+    alert('請先在列表中點「查看詳情」或「列印預覽」選取排版')
+    return
+  }
+  await printNestingById(printTargetNestingId.value)
 }
 
 const closeDetailModal = () => {

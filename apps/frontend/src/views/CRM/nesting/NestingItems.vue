@@ -15,28 +15,11 @@
       </template>
     </PageHeader>
 
-    <div class="preview-card">
-      <button
-        type="button"
-        class="preview-toggle"
-        :aria-expanded="previewExpanded"
-        @click="previewExpanded = !previewExpanded"
-      >
-        <span class="preview-title">Preview</span>
-        <span class="preview-chevron">{{ previewExpanded ? '▼' : '▶' }}</span>
-      </button>
-      <div v-show="previewExpanded" class="preview-body">
-        <div
-          v-if="previewDocxBlob"
-          ref="previewContainerRef"
-          class="preview-docx-wrap"
-        />
-        <p v-else-if="previewLoaded && !previewDocxBlob" class="preview-empty">
-          無預覽檔案
-        </p>
-        <p v-else class="preview-loading">載入預覽中…</p>
-      </div>
-    </div>
+    <NestingPreviewPanel
+      v-if="nesting"
+      ref="previewPanelRef"
+      :nesting-id="nesting.id"
+    />
 
     <div class="summary-card">
       <div class="summary-grid">
@@ -100,47 +83,20 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, nextTick } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { renderAsync } from 'docx-preview'
 import { PageHeader } from '@/components'
 import { nestingService, type Nesting } from '@/services/crm/nesting.service'
+import NestingPreviewPanel from './components/NestingPreviewPanel.vue'
 
 const route = useRoute()
 const nesting = ref<Nesting | null>(null)
-const previewExpanded = ref(true)
-const previewDocxBlob = ref<Blob | null>(null)
-const previewLoaded = ref(false)
-const previewContainerRef = ref<HTMLElement | null>(null)
-
-const loadPreview = async (nestingId: string) => {
-  previewLoaded.value = false
-  previewDocxBlob.value = null
-  const blob = await nestingService.getPreviewDocx(nestingId)
-  previewDocxBlob.value = blob
-  previewLoaded.value = true
-}
-
-watch(previewDocxBlob, (blob) => {
-  if (!blob) return
-  nextTick(() => {
-    const el = previewContainerRef.value
-    if (!el) return
-    el.innerHTML = ''
-    renderAsync(blob, el, undefined, { useBase64URL: true }).catch(() => {
-      el.innerHTML = '<p class="preview-empty">預覽渲染失敗</p>'
-    })
-  })
-})
+const previewPanelRef = ref<InstanceType<typeof NestingPreviewPanel> | null>(null)
 
 const loadData = async () => {
   const id = route.params.id as string
   nesting.value = await nestingService.getById(id)
 }
-
-watch(nesting, (n) => {
-  if (n?.id) loadPreview(n.id)
-}, { immediate: true })
 
 const formatSeconds = (seconds?: number) => {
   if (!seconds && seconds !== 0) return '-'
@@ -151,99 +107,8 @@ const formatSeconds = (seconds?: number) => {
   return `${pad(h)}:${pad(m)}:${pad(s)}`
 }
 
-const getHeadStyles = () => {
-  return Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-    .map((node) => node.outerHTML)
-    .join('\n')
-}
-
 const handlePrint = () => {
-  const previewEl = previewContainerRef.value
-  if (!previewEl || !previewDocxBlob.value) {
-    alert('目前沒有可列印的預覽內容')
-    return
-  }
-
-  const previewContent = previewEl.innerHTML
-  if (!previewContent.trim()) {
-    alert('預覽尚未完成，請稍後再試')
-    return
-  }
-
-  const printWindow = window.open('', '_blank')
-  if (!printWindow) {
-    alert('無法開啟列印視窗，請檢查瀏覽器彈出視窗設定')
-    return
-  }
-
-  const title = `排版預覽 - ${nesting.value?.id || ''}`
-  const styles = getHeadStyles()
-  const printOnlyStyles = `
-    <style>
-      @page {
-        size: A4 portrait;
-        margin: 0;
-      }
-
-      html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #fff !important;
-      }
-
-      /* Preview 容器原本是可捲動區塊，列印時要展開完整內容 */
-      .preview-docx-wrap {
-        max-height: none !important;
-        min-height: auto !important;
-        overflow: visible !important;
-      }
-
-      /* 避免外框與 padding 壓縮可列印寬度，導致右側表格超出 */
-      .preview-docx-wrap,
-      .preview-docx-wrap.docx-wrapper {
-        border: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-
-      .preview-docx-wrap .docx-wrapper {
-        padding: 0 !important;
-        background: #fff !important;
-      }
-
-      .preview-docx-wrap .docx {
-        box-shadow: none !important;
-        margin: 0 auto !important;
-        max-width: 100% !important;
-      }
-    </style>
-  `
-
-  const previewHtml = previewEl.outerHTML
-
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8" />
-        <title>${title}</title>
-        ${styles}
-        ${printOnlyStyles}
-      </head>
-      <body>
-        ${previewHtml}
-      </body>
-    </html>
-  `)
-  printWindow.document.close()
-
-  printWindow.onload = () => {
-    setTimeout(() => {
-      printWindow.print()
-      printWindow.close()
-    }, 250)
-  }
+  previewPanelRef.value?.print()
 }
 
 onMounted(() => {
@@ -255,74 +120,6 @@ onMounted(() => {
 .nesting-items-page {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.preview-card {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.preview-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--secondary-50);
-  border: none;
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--secondary-800);
-  text-align: left;
-}
-
-.preview-toggle:hover {
-  background: var(--secondary-100);
-}
-
-.preview-title {
-  flex: 1;
-}
-
-.preview-chevron {
-  color: var(--secondary-500);
-}
-
-.preview-body {
-  padding: 0.5rem;
-  border-top: 1px solid var(--secondary-200);
-}
-
-.preview-docx-wrap {
-  width: 100%;
-  min-height: 320px;
-  max-height: 70vh;
-  overflow: auto;
-  border: 1px solid var(--secondary-200);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  background: #fff;
-}
-
-.preview-docx-wrap :deep(.docx-wrapper) {
-  background: #fff;
-}
-
-.preview-docx-wrap :deep(img) {
-  max-width: 100% !important;
-  object-fit: cover;
-}
-
-.preview-empty,
-.preview-loading {
-  padding: 1rem;
-  color: var(--secondary-600);
-  margin: 0;
 }
 
 .summary-card {
