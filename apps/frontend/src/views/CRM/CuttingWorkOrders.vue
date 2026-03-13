@@ -13,6 +13,7 @@
     </PageHeader>
 
     <SearchFilters
+      title="切割工作單列表"
       v-model:searchValue="searchQuery"
       v-model:filterStatus="filterStatus"
       search-placeholder="搜尋訂單編號或機台..."
@@ -50,8 +51,8 @@
             <button class="btn btn-sm btn-outline" @click="cancel">取消</button>
           </template>
           <template v-else>
-            <span class="dropdown-item" @click="updateStatus(row.id, 'in_progress')" v-if="row.status === 'assigned'">開始切割</span>
-            <span class="dropdown-item" @click="updateStatus(row.id, 'completed')" v-if="row.status === 'in_progress'">完成切割</span>
+            <span class="dropdown-item" @click="updateStatus(row.id, CuttingWorkOrderStatus.IN_PROGRESS)" v-if="row.status === 'assigned'">開始切割</span>
+            <span class="dropdown-item" @click="updateStatus(row.id, CuttingWorkOrderStatus.COMPLETED)" v-if="row.status === 'in_progress'">完成切割</span>
             <span class="dropdown-item" @click="handleRowDelete(row)">刪除</span>
           </template>
         </template>
@@ -71,7 +72,6 @@ const data = ref<CuttingWorkOrder[]>([]);
 const searchQuery = ref('');
 const filterStatus = ref('');
 const showNewRow = ref(false);
-const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
 const statusOptions = [
   { value: '', label: '所有狀態' },
