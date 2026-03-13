@@ -85,12 +85,12 @@ const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
   { key: 'orderId', label: '訂單編號', editable: true, required: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, type: 'text' },
-  { key: 'thickness', label: '厚度', editable: true, type: 'text' },
+  { key: 'thickness', label: '厚度（mm）', editable: true, type: 'number' },
   { key: 'machineId', label: '機台', editable: true, type: 'text' },
   { key: 'status', label: '狀態', editable: false },
 ];
 
-const newRowTemplate = () => ({ orderId: '', material: '', thickness: '', machineId: '', status: 'pending' });
+const newRowTemplate = () => ({ orderId: '', material: '', thickness: undefined, machineId: '', status: 'pending' });
 
 const filteredData = computed(() => {
   let result = [...data.value];

@@ -60,13 +60,13 @@ export class CuttingWorkOrder {
   })
   material?: string;
 
-  @ApiProperty({ description: '厚度', example: '3mm' })
+  @ApiProperty({ description: '厚度（mm）', example: 3.1 })
   @Column({
-    type: 'varchar',
-    length: 50,
+    type: 'decimal',
+    scale: 1,
     nullable: true,
   })
-  thickness?: string;
+  thickness?: number;
 
   @ApiProperty({ description: '狀態', enum: CuttingWorkOrderStatus, example: CuttingWorkOrderStatus.PENDING })
   @Column({

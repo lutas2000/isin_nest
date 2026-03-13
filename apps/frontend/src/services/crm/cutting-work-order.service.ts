@@ -16,7 +16,7 @@ export interface CuttingWorkOrder {
   assignedStaffId?: string
   machineId?: string
   material?: string
-  thickness?: string
+  thickness?: number
   status: CuttingWorkOrderStatus
   notes?: string
   order?: any
