@@ -34,7 +34,7 @@ export class CuttingWorkOrder {
   })
   nestingId?: number;
 
-  @ApiProperty({ description: '指派人員員工編號', example: 'STAFF001', required: false })
+  @ApiProperty({ description: '負責人員員工編號', example: 'STAFF001', required: false })
   @Column({
     type: 'varchar',
     length: 10,
@@ -43,7 +43,7 @@ export class CuttingWorkOrder {
   })
   assignedStaffId?: string;
 
-  @ApiProperty({ description: '機台識別', example: 'LASER-01', required: false })
+  @ApiProperty({ description: '機台編號', example: 'LASER-01', required: false })
   @Column({
     type: 'varchar',
     length: 50,
@@ -60,7 +60,7 @@ export class CuttingWorkOrder {
   })
   material?: string;
 
-  @ApiProperty({ description: '厚度（mm）', example: 3.1 })
+  @ApiProperty({ description: '厚度', example: 3.1 })
   @Column({
     type: 'decimal',
     scale: 1,
