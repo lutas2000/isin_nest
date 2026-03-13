@@ -27,6 +27,7 @@
     "frontend:dev": "nx serve frontend",
     "frontend:build": "nx build frontend",
     "frontend:preview": "nx preview frontend",
+    "backend:dev": "nx serve backend",
     "dev:full": "node dev-scripts.js",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "nx:graph": "nx graph",
