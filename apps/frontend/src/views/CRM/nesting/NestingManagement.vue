@@ -64,12 +64,6 @@
       </EditableDataTable>
     </div>
 
-    <NestingDetailModal
-      :show="showDetailModal"
-      :nesting="selectedNesting"
-      @close="closeDetailModal"
-    />
-
     <NestingImportModal
       :show="showImportModal"
       @close="showImportModal = false"
@@ -82,19 +76,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { PageHeader, EditableDataTable, SearchFilters, type EditableColumn } from '@/components'
 import { nestingService, type Nesting } from '@/services/crm/nesting.service'
-import NestingDetailModal from './components/NestingDetailModal.vue'
 import NestingImportModal from './components/NestingImportModal.vue'
+import { useRouter } from 'vue-router'
 import { printNestingById } from './utils/nestingPreviewPrint'
 
+const router = useRouter()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const nestings = ref<Nesting[]>([])
 const searchQuery = ref('')
 const showNewRow = ref(false)
-const showDetailModal = ref(false)
 const showImportModal = ref(false)
-const selectedNesting = ref<Nesting | null>(null)
-const printTargetNestingId = ref<string | null>(null)
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
@@ -173,19 +165,11 @@ const handleRowDelete = async (row: Nesting) => {
 }
 
 const handleRowView = (row: Nesting) => {
-  selectedNesting.value = row
-  printTargetNestingId.value = row.id
-  showDetailModal.value = true
+  router.push(`/crm/nestings/${row.id}/items`)
 }
 
 const handleRowPrint = async (row: Nesting) => {
-  printTargetNestingId.value = row.id
   await printNestingById(row.id)
-}
-
-const closeDetailModal = () => {
-  showDetailModal.value = false
-  selectedNesting.value = null
 }
 
 onMounted(() => {
