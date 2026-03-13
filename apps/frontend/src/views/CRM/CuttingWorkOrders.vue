@@ -41,6 +41,14 @@
           <router-link :to="`/crm/orders/${value}/items`" class="link">{{ value }}</router-link>
         </template>
 
+        <template #cell-cncFileName="{ value, row }">
+          <template v-if="value">
+            <router-link v-if="row.nestingId" :to="`/crm/nestings/${row.nestingId}/items`" class="link">{{ value }}</router-link>
+            <span v-else>{{ value }}</span>
+          </template>
+          <span v-else class="empty-cell">-</span>
+        </template>
+
         <template #cell-status="{ value }">
           <StatusBadge :text="getStatusLabel(value)" :variant="getStatusVariant(value)" size="sm" />
         </template>
@@ -82,7 +90,7 @@ const statusOptions = [
 ];
 
 const columns: EditableColumn[] = [
-  { key: 'nestingId', label: '排版ID', editable: false },
+  { key: 'cncFileName', label: 'CNC 檔案', editable: true, type: 'text' },
   { key: 'orderId', label: '訂單編號', editable: true, required: true, type: 'text' },
   { key: 'assignedStaffId', label: '負責人', editable: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, type: 'text' },
@@ -154,4 +162,5 @@ onMounted(() => { loadData(); });
 .link { color: var(--primary-600); text-decoration: none; }
 .link:hover { text-decoration: underline; }
 .btn-icon { margin-right: 0.5rem; }
+.empty-cell { color: var(--secondary-400); }
 </style>

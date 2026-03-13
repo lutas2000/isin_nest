@@ -19,6 +19,7 @@ export interface CuttingWorkOrder {
   thickness?: number
   status: CuttingWorkOrderStatus
   notes?: string
+  cncFileName?: string
   order?: any
   assignedStaff?: any
   createdAt?: string
