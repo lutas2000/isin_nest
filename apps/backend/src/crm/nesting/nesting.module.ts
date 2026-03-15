@@ -4,9 +4,10 @@ import { NestingService } from './nesting.service';
 import { NestingController } from './nesting.controller';
 import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
+import { CuttingWorkOrder } from '../cutting-work-order/entities/cutting-work-order.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Nesting, NestingItem])],
+  imports: [TypeOrmModule.forFeature([Nesting, NestingItem, CuttingWorkOrder])],
   providers: [NestingService],
   controllers: [NestingController],
   exports: [NestingService, TypeOrmModule],

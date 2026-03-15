@@ -52,13 +52,13 @@ export class OrderItem {
   })
   material?: string;
 
-  @ApiProperty({ description: '厚度', example: '3mm' })
+  @ApiProperty({ description: '厚度', example: 3.1 })
   @Column({
-    type: 'varchar',
-    length: 50,
+    type: 'decimal',
+    scale: 1,
     nullable: true,
   })
-  thickness?: string;
+  thickness?: number;
 
   @ApiProperty({ description: '數量', example: 100 })
   @Column({ type: 'int', default: 0 })

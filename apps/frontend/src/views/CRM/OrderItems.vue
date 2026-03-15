@@ -282,7 +282,7 @@ const newRowTemplate = () => {
       cadFile: '',
       customerFile: '',
       material: '',
-      thickness: '',
+      thickness: undefined as number | undefined,
       processingIds: [] as number[],
       quantity: 0,
       unit: '',
@@ -296,7 +296,7 @@ const newRowTemplate = () => {
     cadFile: '',
     customerFile: '',
     material: '',
-    thickness: '',
+    thickness: undefined as number | undefined,
     processingIds: [] as number[],
     quantity: 0,
     unit: '',
@@ -336,7 +336,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'thickness', 
     label: '厚度', 
     editable: true, 
-    type: 'text' 
+    type: 'number' 
   },
   { 
     key: 'processing', 

@@ -246,7 +246,7 @@ function convertItableJtableToQuoteItem(
     quoteId: qno || undefined,
     customerFile: cleanString(itableRow.DWG_REF),
     material: cleanString(itableRow.METAL),
-    thickness: cleanString(itableRow.THICK),
+    thickness: itableRow.THICK != null ? Number(itableRow.THICK) || undefined : undefined,
     quantity: itableRow.QTY != null ? Math.round(Number(itableRow.QTY)) : 0,
     unitPrice: itableRow.PRICE != null ? Number(itableRow.PRICE) : 0,
     notes: jtableRow?.DWG_REF ? cleanString(jtableRow.DWG_REF) : undefined,

@@ -12,7 +12,7 @@ export enum CuttingWorkOrderStatus {
 export interface CuttingWorkOrder {
   id: number
   orderId: string
-  nestingId?: number
+  nestingId?: string
   assignedStaffId?: string
   machineId?: string
   material?: string

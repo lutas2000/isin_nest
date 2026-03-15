@@ -19,7 +19,7 @@ export interface OrderItem {
   cadFile?: string
   customerFile?: string
   material?: string
-  thickness?: string
+  thickness?: number
   quantity: number
   unit?: string
   source: string

@@ -18,7 +18,7 @@ export interface Nesting {
   orderId: string
   designWorkOrderId?: number
   material: string
-  thickness: string
+  thickness: number
   quantity: number
   nestingImageFile?: string
   cncFile?: string

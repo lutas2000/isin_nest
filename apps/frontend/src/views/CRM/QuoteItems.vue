@@ -267,7 +267,7 @@ const newRowTemplate = () => {
     return {
       customerFile: '',
       material: '',
-      thickness: '',
+      thickness: undefined as number | undefined,
       processingIds: [] as number[],
       notes: '',
       quantity: 0,
@@ -279,7 +279,7 @@ const newRowTemplate = () => {
     quoteId: quote.value.id,
     customerFile: '',
     material: '',
-    thickness: '',
+    thickness: undefined as number | undefined,
     processingIds: [...(quote.value.processingIds || [])] as number[],
     notes: '',
     quantity: 0,
@@ -311,7 +311,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'thickness', 
     label: '厚度', 
     editable: true, 
-    type: 'text' 
+    type: 'number' 
   },
   { 
     key: 'processing', 

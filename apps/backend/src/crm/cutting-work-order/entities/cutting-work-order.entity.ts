@@ -26,13 +26,14 @@ export class CuttingWorkOrder {
   })
   orderId: string;
 
-  @ApiProperty({ description: '排版ID', example: 1, required: false })
+  @ApiProperty({ description: '排版ID', example: 'NST-20260206-A01', required: false })
   @Column({
-    type: 'int',
+    type: 'varchar',
+    length: 100,
     name: 'nesting_id',
     nullable: true,
   })
-  nestingId?: number;
+  nestingId?: string;
 
   @ApiProperty({ description: '負責人員員工編號', example: 'STAFF001', required: false })
   @Column({

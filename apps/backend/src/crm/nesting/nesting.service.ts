@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
+import { CuttingWorkOrder } from '../cutting-work-order/entities/cutting-work-order.entity';
+import { CuttingWorkOrderStatus } from '../enums/work-order-status.enum';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import * as mammoth from 'mammoth';
 import * as cheerio from 'cheerio';
@@ -20,6 +22,8 @@ export class NestingService {
     private nestingRepository: Repository<Nesting>,
     @InjectRepository(NestingItem)
     private nestingItemRepository: Repository<NestingItem>,
+    @InjectRepository(CuttingWorkOrder)
+    private cuttingWorkOrderRepository: Repository<CuttingWorkOrder>,
   ) {}
 
   async findAll(
@@ -72,7 +76,12 @@ export class NestingService {
       ...data,
       id,
     });
-    return this.nestingRepository.save(nesting);
+    const savedNesting = await this.nestingRepository.save(nesting);
+
+    // 自動建立對應的切割工作單
+    await this.createCuttingWorkOrderFromNesting(savedNesting);
+
+    return savedNesting;
   }
 
   async update(id: string, data: Partial<Nesting>): Promise<Nesting> {
@@ -179,6 +188,9 @@ export class NestingService {
       savedNesting.nestingItems = nestingItems;
     }
 
+    // 自動建立對應的切割工作單
+    await this.createCuttingWorkOrderFromNesting(savedNesting);
+
     return savedNesting;
   }
 
@@ -272,6 +284,19 @@ export class NestingService {
     });
 
     return { nestingData, items };
+  }
+
+  // 根據 Nesting 自動建立對應的 CuttingWorkOrder
+  private async createCuttingWorkOrderFromNesting(nesting: Nesting): Promise<CuttingWorkOrder> {
+    const cuttingWorkOrder = this.cuttingWorkOrderRepository.create({
+      orderId: nesting.orderId,
+      nestingId: nesting.id,
+      material: nesting.material,
+      thickness: nesting.thickness,
+      cncFileName: nesting.id,
+      status: CuttingWorkOrderStatus.PENDING,
+    });
+    return this.cuttingWorkOrderRepository.save(cuttingWorkOrder);
   }
 
   // 生成排版圖號
