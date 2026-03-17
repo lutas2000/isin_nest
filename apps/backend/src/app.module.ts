@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as path from 'path';
 import { HrModule } from './hr/hr.module';
 import { AuthModule } from './auth/auth.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
@@ -16,12 +17,15 @@ function parseBool(value: string | undefined): boolean | undefined {
   return undefined;
 }
 
+// 專案根目錄 .env（與 data-source.ts、scripts 一致）
+const rootEnvPath = path.resolve(__dirname, '../../../.env');
+
 @Module({
   imports: [
-    // Environment variables
+    // Environment variables（統一使用專案根目錄 .env）
     ConfigModule.forRoot({
-      isGlobal: true, // 設置為全局模塊（不需要在其他模塊中再次導入）
-      envFilePath: '.env', // 指定 .env 文件的路徑（默認為根目錄）
+      isGlobal: true,
+      envFilePath: rootEnvPath,
     }),
     // Database
     TypeOrmModule.forRootAsync({

@@ -8,8 +8,8 @@ import { UserFeature } from '../apps/backend/src/auth/entities/user-feature.enti
 import { Feature } from '../apps/backend/src/auth/entities/feature.entity';
 import { resolve } from 'path';
 
-// 載入環境變數
-const envPath = resolve(__dirname, '../apps/backend/.env');
+// 載入環境變數（專案根目錄 .env）
+const envPath = resolve(__dirname, '../.env');
 dotenv.config({ path: envPath });
 
 async function createAdminUser() {

@@ -89,7 +89,7 @@ npm install -g nx
 
 ### 2. 環境配置
 
-創建 `.env` 檔案：
+在**專案根目錄**創建 `.env` 檔案（可複製 `.env.example` 後修改）：
 
 ```env
 # 資料庫配置

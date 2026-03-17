@@ -4,8 +4,8 @@ import * as dotenv from 'dotenv';
 import * as bcrypt from 'bcrypt';
 import { resolve } from 'path';
 
-// 載入環境變數（改為使用 scripts/.env）
-const envPath = resolve(__dirname, './.env');
+// 載入環境變數（專案根目錄 .env）
+const envPath = resolve(__dirname, '../.env');
 dotenv.config({ path: envPath });
 
 // 來源（舊）MySQL 資料庫配置

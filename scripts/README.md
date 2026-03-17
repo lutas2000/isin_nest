@@ -39,18 +39,18 @@ ADMIN_USERNAME=admin ADMIN_PASSWORD=newpassword FORCE_UPDATE=true npm run create
 
 ## 環境變數配置
 
-腳本會從 `.env` 檔案讀取資料庫配置：
+腳本會從**專案根目錄**的 `.env` 檔案讀取資料庫配置（可複製 `.env.example` 為 `.env` 後修改）：
 
 - `DB_HOST` - 資料庫主機（預設: localhost）
-- `DB_PORT` - 資料庫端口（預設: 3306）
-- `DB_USER` 或 `DB_USERNAME` - 資料庫用戶名（預設: root）
+- `DB_PORT` - 資料庫端口（預設: 5432）
+- `DB_USER` 或 `DB_USERNAME` - 資料庫用戶名（預設: postgres）
 - `DB_PASS` 或 `DB_PASSWORD` - 資料庫密碼
 - `DB_NAME` 或 `DB_DATABASE` - 資料庫名稱（預設: isin_db）
 
 ## 注意事項
 
 1. 確保資料庫服務正在運行
-2. 確保 `.env` 檔案中的資料庫配置正確
+2. 確保專案根目錄 `.env` 中的資料庫配置正確
 3. 如果用戶已存在且未使用 `--force`，腳本只會提示而不會更新
 4. 密碼會使用 bcrypt 進行雜湊處理（saltRounds: 10）
 
@@ -74,7 +74,7 @@ npm run copy-staff
 
 ### 配置
 
-腳本會從 `scripts/.env` 檔案讀取資料庫配置：
+腳本會從**專案根目錄**的 `.env` 檔案讀取資料庫配置：
 
 **來源資料庫（MySQL）配置**：
 - `SOURCE_DB_HOST` 或 `DB_HOST` - 資料庫主機（預設: localhost）
@@ -142,7 +142,7 @@ ACCESS_FILE_PATH=/path/to/quote.mdb MYSQL_TABLE_NAME=quote npm run analyze-acces
 
 ### 配置
 
-腳本會從 `apps/backend/.env` 檔案讀取配置：
+腳本會從**專案根目錄**的 `.env` 檔案讀取配置：
 
 - `ACCESS_FILE_PATH` - Access 檔案路徑（可通過命令列參數提供）
 - `ACCESS_DB_PASSWORD` - Access 資料庫密碼（如果資料庫有密碼）
@@ -215,12 +215,12 @@ ACCESS_FILE_PATH=/path/to/cust.mdb npm run migrate-customer-from-access
 
 ### 配置
 
-腳本會從 `apps/backend/.env` 檔案讀取資料庫配置：
+腳本會從**專案根目錄**的 `.env` 檔案讀取資料庫配置：
 
-- `DB_HOST` - MySQL 資料庫主機（預設: localhost）
-- `DB_PORT` - MySQL 資料庫端口（預設: 3306）
-- `DB_USER` 或 `DB_USERNAME` - MySQL 資料庫用戶名（預設: root）
-- `DB_PASS` 或 `DB_PASSWORD` - MySQL 資料庫密碼
+- `DB_HOST` - PostgreSQL 資料庫主機（預設: localhost）
+- `DB_PORT` - PostgreSQL 資料庫端口（預設: 5432）
+- `DB_USER` 或 `DB_USERNAME` - 資料庫用戶名（預設: postgres）
+- `DB_PASS` 或 `DB_PASSWORD` - 資料庫密碼
 - `DB_NAME` 或 `DB_DATABASE` - 目標資料庫名稱（預設: isin_db）
 - `ACCESS_DB_PASSWORD` - Access 資料庫密碼（如果資料庫有密碼）
 
@@ -353,12 +353,12 @@ ONLY_MODE=quote-item ACCESS_FILE_PATH=/path/to/quote.mdb npm run migrate-quote-f
 
 ### 配置
 
-腳本會從 `apps/backend/.env` 檔案讀取資料庫配置：
+腳本會從**專案根目錄**的 `.env` 檔案讀取資料庫配置：
 
-- `DB_HOST` - MySQL 資料庫主機（預設: localhost）
-- `DB_PORT` - MySQL 資料庫端口（預設: 3306）
-- `DB_USER` 或 `DB_USERNAME` - MySQL 資料庫用戶名（預設: root）
-- `DB_PASS` 或 `DB_PASSWORD` - MySQL 資料庫密碼
+- `DB_HOST` - PostgreSQL 資料庫主機（預設: localhost）
+- `DB_PORT` - PostgreSQL 資料庫端口（預設: 5432）
+- `DB_USER` 或 `DB_USERNAME` - 資料庫用戶名（預設: postgres）
+- `DB_PASS` 或 `DB_PASSWORD` - 資料庫密碼
 - `DB_NAME` 或 `DB_DATABASE` - 目標資料庫名稱（預設: isin_db）
 - `ACCESS_DB_PASSWORD` - Access 資料庫密碼（如果資料庫有密碼）
 
