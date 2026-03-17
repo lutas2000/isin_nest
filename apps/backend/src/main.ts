@@ -80,7 +80,7 @@ async function bootstrap() {
     SwaggerModule.setup('api', app, document);
 
     const port = process.env.PORT ?? 3000;
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     logger.log(`✅ 應用程式已成功啟動在端口 ${port}`);
     logger.log(`📚 Swagger 文件: http://localhost:${port}/api`);
   } catch (error) {
