@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Quote } from './entities/quote.entity';
 import { OrderService } from '../order/order.service';
 import { Order, OrderStatus } from '../order/entities/order.entity';
@@ -37,16 +37,27 @@ export class QuoteService {
   async findAll(
     page?: number,
     limit?: number,
+    isSigned?: boolean,
+    days?: number,
   ): Promise<Quote[] | PaginatedResponseDto<Quote>> {
-    // 使用預設值：page=1, limit=50
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
 
-    // 限制最大每頁筆數
     const maxLimit = Math.min(limitNum, 100);
     const skip = (pageNum - 1) * maxLimit;
 
+    const where: Record<string, any> = {};
+    if (isSigned !== undefined) {
+      where.isSigned = isSigned;
+    }
+    if (days !== undefined && days > 0) {
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+      where.createdAt = MoreThanOrEqual(since);
+    }
+
     const [data, total] = await this.quoteRepository.findAndCount({
+      where,
       relations: ['staff', 'customer', 'quoteItems'],
       order: { createdAt: 'DESC' },
       take: maxLimit,

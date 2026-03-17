@@ -11,13 +11,16 @@ export class OrderController {
   @ApiOperation({ summary: '獲取所有訂單' })
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
+  @ApiQuery({ name: 'isCompleted', required: false, description: '篩選是否完成 (true/false)' })
   @ApiResponse({ status: 200, description: '成功返回訂單列表', type: [Order] })
   @Get()
   findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('isCompleted') isCompleted?: string,
   ) {
-    return this.orderService.findAll(page, limit);
+    const isCompletedBool = isCompleted === 'true' ? true : isCompleted === 'false' ? false : undefined;
+    return this.orderService.findAll(page, limit, isCompletedBool);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個訂單' })

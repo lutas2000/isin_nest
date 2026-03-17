@@ -25,6 +25,13 @@ export class AppController {
     };
   }
 
+  @Get('health/nas')
+  @ApiOperation({ summary: 'NAS 掛載狀態檢查' })
+  @ApiResponse({ status: 200, description: '回傳 NAS 掛載狀態' })
+  async checkNasStatus(): Promise<{ mounted: boolean }> {
+    return this.appService.checkNasStatus();
+  }
+
   @Post('api/sync')
   @ApiOperation({ summary: '資料同步端點（供定期任務呼叫）' })
   @ApiResponse({ status: 200, description: '資料同步成功' })

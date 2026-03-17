@@ -1,181 +1,111 @@
 <template>
-  <div class="dashboard">
-    <!-- 歡迎區塊 -->
-    <PageHeader 
-      :title="`歡迎回來，管理員！`"
-      :description="`今天是 ${currentDate}，讓我們來看看工廠的運營狀況`"
-    >
-      <template #actions>
-        <button class="btn btn-primary">
-          <span class="btn-icon">📊</span>
-          生成報表
-        </button>
-        <button class="btn btn-outline">
-          <span class="btn-icon">⚡</span>
-          快速操作
-        </button>
-      </template>
-    </PageHeader>
+  <div class="home-page">
+    <PageHeader
+      title="首頁總覽"
+      :description="`今天是 ${currentDate}`"
+    />
 
-    <!-- KPI 指標卡片 -->
-    <div class="kpi-grid">
-      <OverviewCard
-        icon="💰"
-        :value="kpiData.revenue"
-        label="本月營收"
-        variant="primary"
-      />
-      <OverviewCard
-        icon="📦"
-        :value="kpiData.orders"
-        label="待處理訂單"
-        variant="success"
-      />
-      <OverviewCard
-        icon="⚙️"
-        :value="kpiData.production"
-        label="生產效率"
-        variant="warning"
-      />
-      <OverviewCard
-        icon="👥"
-        :value="kpiData.staff"
-        label="在職員工"
-        variant="info"
-      />
+    <!-- NAS 狀態 -->
+    <div class="section-card nas-status-card">
+      <div class="section-header">
+        <h3>NAS 掛載狀態</h3>
+      </div>
+      <div class="section-body">
+        <div class="nas-indicator">
+          <span
+            class="status-dot"
+            :class="nasLoading ? 'loading' : nasMounted ? 'online' : 'offline'"
+          ></span>
+          <span class="nas-text" v-if="nasLoading">檢查中...</span>
+          <span class="nas-text" v-else-if="nasMounted">已掛載</span>
+          <span class="nas-text" v-else>未掛載</span>
+        </div>
+      </div>
     </div>
 
-    <!-- 主要內容區域 -->
-    <div class="dashboard-content">
-      <div class="content-grid">
-        <!-- 生產狀態 -->
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h3>生產狀態</h3>
-            <button class="btn btn-sm btn-outline">查看詳情</button>
-          </div>
-          <div class="card-body">
-            <div class="production-status">
-              <div class="status-item">
-                <div class="status-indicator running"></div>
-                <div class="status-info">
-                  <div class="status-name">CNC 車床 #1</div>
-                  <div class="status-detail">正在加工 - 零件 A-123</div>
-                  <div class="status-progress">
-                    <div class="progress-bar">
-                      <div class="progress-fill" style="width: 75%"></div>
-                    </div>
-                    <span class="progress-text">75%</span>
-                  </div>
-                </div>
-              </div>
+    <!-- 未完成訂單 -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>未完成訂單</h3>
+      </div>
+      <div class="section-body">
+        <div v-if="ordersLoading" class="loading-message">載入訂單中...</div>
+        <div v-else-if="ordersError" class="error-message">{{ ordersError }}</div>
+        <div v-else-if="orders.length === 0" class="empty-message">目前沒有未完成的訂單</div>
+        <DataTable
+          v-else
+          :columns="orderColumns"
+          :data="orders"
+          :show-actions="false"
+          :pagination="true"
+          :current-page="orderPage"
+          :page-size="orderPageSize"
+          :total="orderTotal"
+          @update:page="handleOrderPageChange"
+          @update:page-size="handleOrderPageSizeChange"
+        >
+          <template #cell-customerId="{ row }">
+            {{ row.customer?.companyShortName || row.customer?.companyName || row.customerId }}
+          </template>
+          <template #cell-staffId="{ row }">
+            {{ row.staff?.name || row.staffId }}
+          </template>
+          <template #cell-isCompleted="{ value }">
+            <StatusBadge
+              :text="value ? '已完成' : '進行中'"
+              :variant="value ? 'success' : 'info'"
+            />
+          </template>
+          <template #cell-amount="{ value }">
+            NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+          </template>
+          <template #cell-createdAt="{ value }">
+            {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
+          </template>
+        </DataTable>
+      </div>
+    </div>
 
-              <div class="status-item">
-                <div class="status-indicator idle"></div>
-                <div class="status-info">
-                  <div class="status-name">CNC 銑床 #2</div>
-                  <div class="status-detail">待機中 - 等待下一個任務</div>
-                </div>
-              </div>
-
-              <div class="status-item">
-                <div class="status-indicator maintenance"></div>
-                <div class="status-info">
-                  <div class="status-name">CNC 鑽床 #3</div>
-                  <div class="status-detail">維護中 - 預計 2 小時完成</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 訂單概覽 -->
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h3>訂單概覽</h3>
-            <button class="btn btn-sm btn-outline">查看全部</button>
-          </div>
-          <div class="card-body">
-            <div class="order-summary">
-              <div class="order-stat">
-                <div class="stat-number">{{ orderStats.total }}</div>
-                <div class="stat-label">總訂單數</div>
-              </div>
-              <div class="order-stat">
-                <div class="stat-number">{{ orderStats.pending }}</div>
-                <div class="stat-label">待處理</div>
-              </div>
-              <div class="order-stat">
-                <div class="stat-number">{{ orderStats.processing }}</div>
-                <div class="stat-label">製作中</div>
-              </div>
-              <div class="order-stat">
-                <div class="stat-number">{{ orderStats.completed }}</div>
-                <div class="stat-label">已完成</div>
-              </div>
-            </div>
-
-            <div class="recent-orders">
-              <h4>最近訂單</h4>
-              <div class="order-list">
-                <div
-                  class="order-item"
-                  v-for="order in recentOrders"
-                  :key="order.id"
-                >
-                  <div class="order-info">
-                    <div class="order-id">{{ order.id }}</div>
-                    <div class="order-customer">{{ order.customer }}</div>
-                  </div>
-                  <div class="order-status">
-                    <StatusBadge 
-                      :text="order.statusText" 
-                      :variant="getOrderStatusVariant(order.status)"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 員工出勤 -->
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h3>員工出勤</h3>
-            <button class="btn btn-sm btn-outline">查看詳情</button>
-          </div>
-          <div class="card-body">
-            <div class="attendance-summary">
-              <div class="attendance-stat">
-                <div class="stat-number">{{ attendanceStats.present }}</div>
-                <div class="stat-label">在班</div>
-              </div>
-              <div class="attendance-stat">
-                <div class="stat-number">{{ attendanceStats.absent }}</div>
-                <div class="stat-label">缺勤</div>
-              </div>
-              <div class="attendance-stat">
-                <div class="stat-number">{{ attendanceStats.late }}</div>
-                <div class="stat-label">遲到</div>
-              </div>
-            </div>
-
-            <div class="attendance-chart">
-              <div
-                class="chart-bar"
-                v-for="(value, day) in attendanceChart"
-                :key="day"
-              >
-                <div class="bar-label">{{ day }}</div>
-                <div class="bar-container">
-                  <div class="bar-fill" :style="{ height: `${value}%` }"></div>
-                </div>
-                <div class="bar-value">{{ value }}%</div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- 近 30 天未簽名報價單 -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>近 30 天未簽名報價單</h3>
+      </div>
+      <div class="section-body">
+        <div v-if="quotesLoading" class="loading-message">載入報價單中...</div>
+        <div v-else-if="quotesError" class="error-message">{{ quotesError }}</div>
+        <div v-else-if="quotes.length === 0" class="empty-message">目前沒有未簽名的報價單</div>
+        <DataTable
+          v-else
+          :columns="quoteColumns"
+          :data="quotes"
+          :show-actions="false"
+          :pagination="true"
+          :current-page="quotePage"
+          :page-size="quotePageSize"
+          :total="quoteTotal"
+          @update:page="handleQuotePageChange"
+          @update:page-size="handleQuotePageSizeChange"
+        >
+          <template #cell-customerId="{ row }">
+            {{ row.customer?.companyShortName || row.customer?.companyName || row.customerId }}
+          </template>
+          <template #cell-staffId="{ row }">
+            {{ row.staff?.name || row.staffId }}
+          </template>
+          <template #cell-isSigned="{ value }">
+            <StatusBadge
+              :text="value ? '已簽名' : '待簽名'"
+              :variant="value ? 'success' : 'warning'"
+            />
+          </template>
+          <template #cell-totalAmount="{ value }">
+            NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+          </template>
+          <template #cell-createdAt="{ value }">
+            {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
+          </template>
+        </DataTable>
       </div>
     </div>
   </div>
@@ -183,11 +113,128 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { PageHeader, OverviewCard, StatusBadge } from '@/components';
+import { PageHeader, DataTable, StatusBadge } from '@/components';
+import { apiGet } from '@/services/api';
+import { API_CONFIG } from '@/config/api';
+import { orderService, type Order } from '@/services/crm/order.service';
+import { quoteService, type Quote } from '@/services/crm/quote.service';
+import type { PaginatedResponse } from '@/types/pagination';
 
-// 當前日期
 const currentDate = ref('');
-const updateDate = () => {
+
+// --- NAS ---
+const nasMounted = ref(false);
+const nasLoading = ref(true);
+
+const checkNas = async () => {
+  nasLoading.value = true;
+  try {
+    const result = await apiGet<{ mounted: boolean }>(API_CONFIG.HEALTH.NAS);
+    nasMounted.value = result.mounted;
+  } catch {
+    nasMounted.value = false;
+  } finally {
+    nasLoading.value = false;
+  }
+};
+
+// --- 未完成訂單 ---
+const orders = ref<Order[]>([]);
+const ordersLoading = ref(false);
+const ordersError = ref<string | null>(null);
+const orderPage = ref(1);
+const orderPageSize = ref(50);
+const orderTotal = ref(0);
+
+const orderColumns = [
+  { key: 'id', label: '訂單編號' },
+  { key: 'customerId', label: '客戶' },
+  { key: 'staffId', label: '業務員' },
+  { key: 'amount', label: '金額' },
+  { key: 'isCompleted', label: '狀態' },
+  { key: 'createdAt', label: '建立日期' },
+];
+
+const loadOrders = async () => {
+  ordersLoading.value = true;
+  ordersError.value = null;
+  try {
+    const response = await orderService.getAll(orderPage.value, orderPageSize.value, { isCompleted: false });
+    if (response && typeof response === 'object' && 'data' in response) {
+      const paginated = response as PaginatedResponse<Order>;
+      orders.value = paginated.data;
+      orderTotal.value = paginated.total;
+    } else {
+      orders.value = response as Order[];
+      orderTotal.value = orders.value.length;
+    }
+  } catch (err) {
+    ordersError.value = err instanceof Error ? err.message : '載入訂單失敗';
+  } finally {
+    ordersLoading.value = false;
+  }
+};
+
+const handleOrderPageChange = (page: number) => {
+  orderPage.value = page;
+  loadOrders();
+};
+
+const handleOrderPageSizeChange = (size: number) => {
+  orderPageSize.value = size;
+  orderPage.value = 1;
+  loadOrders();
+};
+
+// --- 近 30 天未簽名報價單 ---
+const quotes = ref<Quote[]>([]);
+const quotesLoading = ref(false);
+const quotesError = ref<string | null>(null);
+const quotePage = ref(1);
+const quotePageSize = ref(50);
+const quoteTotal = ref(0);
+
+const quoteColumns = [
+  { key: 'id', label: '報價單編號' },
+  { key: 'customerId', label: '客戶' },
+  { key: 'staffId', label: '經手人' },
+  { key: 'totalAmount', label: '總金額' },
+  { key: 'isSigned', label: '簽名狀態' },
+  { key: 'createdAt', label: '建立日期' },
+];
+
+const loadQuotes = async () => {
+  quotesLoading.value = true;
+  quotesError.value = null;
+  try {
+    const response = await quoteService.getAll(quotePage.value, quotePageSize.value, { isSigned: false, days: 30 });
+    if (response && typeof response === 'object' && 'data' in response) {
+      const paginated = response as PaginatedResponse<Quote>;
+      quotes.value = paginated.data;
+      quoteTotal.value = paginated.total;
+    } else {
+      quotes.value = response as Quote[];
+      quoteTotal.value = quotes.value.length;
+    }
+  } catch (err) {
+    quotesError.value = err instanceof Error ? err.message : '載入報價單失敗';
+  } finally {
+    quotesLoading.value = false;
+  }
+};
+
+const handleQuotePageChange = (page: number) => {
+  quotePage.value = page;
+  loadQuotes();
+};
+
+const handleQuotePageSizeChange = (size: number) => {
+  quotePageSize.value = size;
+  quotePage.value = 1;
+  loadQuotes();
+};
+
+onMounted(() => {
   const now = new Date();
   currentDate.value = now.toLocaleDateString('zh-TW', {
     year: 'numeric',
@@ -195,434 +242,112 @@ const updateDate = () => {
     day: 'numeric',
     weekday: 'long',
   });
-};
 
-// KPI 資料
-const kpiData = ref({
-  revenue: 'NT$ 2,450,000',
-  orders: 23,
-  production: '87.5%',
-  staff: 45,
-});
-
-// 訂單統計
-const orderStats = ref({
-  total: 156,
-  pending: 23,
-  processing: 34,
-  completed: 99,
-});
-
-// 最近訂單
-const recentOrders = ref([
-  {
-    id: 'ORD-2024-001',
-    customer: '台灣精密工業',
-    status: 'processing',
-    statusText: '製作中',
-  },
-  {
-    id: 'ORD-2024-002',
-    customer: '高雄機械廠',
-    status: 'pending',
-    statusText: '待處理',
-  },
-  {
-    id: 'ORD-2024-003',
-    customer: '台中製造商',
-    status: 'completed',
-    statusText: '已完成',
-  },
-]);
-
-// 出勤統計
-const attendanceStats = ref({
-  present: 42,
-  absent: 2,
-  late: 1,
-});
-
-// 出勤圖表
-const attendanceChart = ref({
-  週一: 95,
-  週二: 98,
-  週三: 92,
-  週四: 96,
-  週五: 94,
-});
-
-// 訂單狀態變體函數
-const getOrderStatusVariant = (status: string) => {
-  const variants: Record<string, string> = {
-    processing: 'warning',
-    pending: 'info',
-    completed: 'success'
-  };
-  return variants[status] || 'default';
-};
-
-// 快速操作
-const quickAction = (action: string) => {
-  console.log(`執行快速操作: ${action}`);
-  // 這裡可以導航到對應頁面或打開模態框
-};
-
-onMounted(() => {
-  updateDate();
-  // 每秒更新一次時間（可選）
-  setInterval(updateDate, 60000);
+  checkNas();
+  loadOrders();
+  loadQuotes();
 });
 </script>
 
 <style scoped>
-.dashboard {
+.home-page {
   max-width: 1400px;
   margin: 0 auto;
 }
 
-/* 移除歡迎區塊樣式，由 PageHeader 組件處理 */
-/* 移除 KPI 卡片樣式，由 OverviewCard 組件處理 */
-
-/* 主要內容區域 */
-.dashboard-content {
-  margin-bottom: 2rem;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.dashboard-card {
+.section-card {
   background: white;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow);
   overflow: hidden;
+  margin-bottom: 1.5rem;
 }
 
-.card-header {
-  padding: 1.5rem;
+.section-header {
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--secondary-200);
   background-color: var(--secondary-50);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.card-header h3 {
+.section-header h3 {
   margin: 0;
   color: var(--secondary-900);
 }
 
-.card-body {
+.section-body {
   padding: 1.5rem;
 }
 
-/* 生產狀態 */
-.production-status {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* NAS 狀態 */
+.nas-status-card .section-body {
+  padding: 1rem 1.5rem;
 }
 
-.status-item {
+.nas-indicator {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: var(--secondary-50);
-  border-radius: var(--border-radius);
+  gap: 0.75rem;
 }
 
-.status-indicator {
-  width: 12px;
-  height: 12px;
+.status-dot {
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.status-indicator.running {
+.status-dot.online {
   background-color: var(--success-500);
   box-shadow: 0 0 0 4px var(--success-100);
 }
 
-.status-indicator.idle {
-  background-color: var(--warning-500);
-  box-shadow: 0 0 0 4px var(--warning-100);
-}
-
-.status-indicator.maintenance {
+.status-dot.offline {
   background-color: var(--danger-500);
   box-shadow: 0 0 0 4px var(--danger-100);
 }
 
-.status-info {
-  flex: 1;
+.status-dot.loading {
+  background-color: var(--secondary-400);
+  box-shadow: 0 0 0 4px var(--secondary-100);
+  animation: pulse 1.2s ease-in-out infinite;
 }
 
-.status-name {
-  font-weight: 600;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-.status-detail {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-  margin-bottom: 0.5rem;
-}
-
-.status-progress {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.progress-bar {
-  flex: 1;
-  height: 6px;
-  background-color: var(--secondary-200);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: var(--primary-500);
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: var(--font-size-xs);
-  color: var(--secondary-600);
-  min-width: 2rem;
-}
-
-/* 訂單概覽 */
-.order-summary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.order-stat {
-  text-align: center;
-  padding: 1rem;
-  background-color: var(--secondary-50);
-  border-radius: var(--border-radius);
-}
-
-.stat-number {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--primary-600);
-  margin-bottom: 0.25rem;
-}
-
-.stat-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.recent-orders h4 {
-  margin-bottom: 1rem;
+.nas-text {
+  font-size: var(--font-size-base);
+  font-weight: 500;
   color: var(--secondary-800);
 }
 
-.order-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background-color: var(--secondary-50);
-  border-radius: var(--border-radius);
-}
-
-.order-info {
-  flex: 1;
-}
-
-.order-id {
-  font-weight: 600;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.order-customer {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.alert-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--warning-200);
-  background-color: var(--warning-50);
-}
-
-.alert-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.alert-content {
-  flex: 1;
-}
-
-.alert-title {
-  font-weight: 600;
-  color: var(--warning-800);
-  margin-bottom: 0.25rem;
-}
-
-.alert-detail {
-  font-size: var(--font-size-sm);
-  color: var(--warning-700);
-}
-
-/* 員工出勤 */
-.attendance-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.attendance-stat {
-  text-align: center;
-  padding: 1rem;
-  background-color: var(--secondary-50);
-  border-radius: var(--border-radius);
-}
-
-.attendance-chart {
-  display: flex;
-  align-items: end;
-  gap: 1rem;
-  height: 120px;
-}
-
-.chart-bar {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.bar-label {
-  font-size: var(--font-size-xs);
-  color: var(--secondary-600);
-  text-align: center;
-}
-
-.bar-container {
-  width: 100%;
-  height: 80px;
-  background-color: var(--secondary-100);
-  border-radius: var(--border-radius);
-  overflow: hidden;
-  position: relative;
-}
-
-.bar-fill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: linear-gradient(to top, var(--primary-500), var(--primary-400));
-  transition: height 0.3s ease;
-}
-
-.bar-value {
-  font-size: var(--font-size-xs);
-  color: var(--secondary-600);
-  font-weight: 500;
-}
-
-/* 快速操作 */
-.quick-actions {
-  background: white;
+/* 載入 / 錯誤 / 空資料 */
+.loading-message,
+.empty-message {
   padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-}
-
-.quick-actions h3 {
-  margin-bottom: 1.5rem;
-  color: var(--secondary-900);
-}
-
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.action-btn {
-  background: none;
-  border: 2px solid var(--secondary-200);
-  padding: 1.5rem 1rem;
-  border-radius: var(--border-radius-lg);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.action-btn:hover {
-  border-color: var(--primary-500);
-  background-color: var(--primary-50);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.action-icon {
-  font-size: 2rem;
-}
-
-.action-text {
-  font-weight: 500;
-  color: var(--secondary-700);
   text-align: center;
+  color: var(--secondary-500);
 }
 
-/* 響應式設計 */
+.error-message {
+  padding: 2rem;
+  text-align: center;
+  color: var(--danger-600);
+  background: var(--danger-50);
+  border-radius: var(--border-radius);
+}
+
+/* DataTable 內嵌時移除多餘外框 */
+.section-body :deep(.data-table) {
+  box-shadow: none;
+  border-radius: 0;
+}
+
 @media (max-width: 768px) {
-  .kpi-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .order-summary {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .attendance-summary {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .order-summary,
-  .attendance-summary {
-    grid-template-columns: 1fr;
+  .section-body {
+    padding: 1rem;
   }
 }
 </style>

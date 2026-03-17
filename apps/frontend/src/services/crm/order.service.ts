@@ -62,11 +62,12 @@ export type WorkOrder = Order
 export type WorkOrderItem = OrderItem
 
 export const orderService = {
-  // 獲取所有訂單（支援分頁）
-  getAll: (page?: number, limit?: number): Promise<Order[] | PaginatedResponse<Order>> => {
+  // 獲取所有訂單（支援分頁與篩選）
+  getAll: (page?: number, limit?: number, filters?: { isCompleted?: boolean }): Promise<Order[] | PaginatedResponse<Order>> => {
     const params: Record<string, any> = {}
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
+    if (filters?.isCompleted !== undefined) params.isCompleted = String(filters.isCompleted)
     return apiGet<Order[] | PaginatedResponse<Order>>(API_CONFIG.CRM.ORDERS, params)
   },
 

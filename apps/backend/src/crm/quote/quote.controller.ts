@@ -12,13 +12,18 @@ export class QuoteController {
   @ApiOperation({ summary: '獲取所有報價單' })
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
+  @ApiQuery({ name: 'isSigned', required: false, description: '篩選是否簽名 (true/false)' })
+  @ApiQuery({ name: 'days', required: false, description: '限制建立日期在最近 N 天內' })
   @ApiResponse({ status: 200, description: '成功返回報價單列表', type: [Quote] })
   @Get()
   findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('isSigned') isSigned?: string,
+    @Query('days', new ParseIntPipe({ optional: true })) days?: number,
   ) {
-    return this.quoteService.findAll(page, limit);
+    const isSignedBool = isSigned === 'true' ? true : isSigned === 'false' ? false : undefined;
+    return this.quoteService.findAll(page, limit, isSignedBool, days);
   }
 
   @ApiOperation({ summary: '根據ID獲取單個報價單' })

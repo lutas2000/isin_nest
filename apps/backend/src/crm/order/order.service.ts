@@ -14,13 +14,20 @@ export class OrderService {
   async findAll(
     page?: number,
     limit?: number,
+    isCompleted?: boolean,
   ): Promise<Order[] | PaginatedResponseDto<Order>> {
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
     const maxLimit = Math.min(limitNum, 100);
     const skip = (pageNum - 1) * maxLimit;
 
+    const where: Record<string, any> = {};
+    if (isCompleted !== undefined) {
+      where.isCompleted = isCompleted;
+    }
+
     const [data, total] = await this.orderRepository.findAndCount({
+      where,
       relations: ['staff', 'customer', 'orderItems'],
       order: { createdAt: 'DESC' },
       take: maxLimit,

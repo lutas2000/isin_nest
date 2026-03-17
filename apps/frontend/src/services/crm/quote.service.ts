@@ -40,11 +40,13 @@ import type { Order } from './order.service'
 export type { Order }
 
 export const quoteService = {
-  // 獲取所有報價單（支援分頁）
-  getAll: (page?: number, limit?: number): Promise<Quote[] | PaginatedResponse<Quote>> => {
+  // 獲取所有報價單（支援分頁與篩選）
+  getAll: (page?: number, limit?: number, filters?: { isSigned?: boolean; days?: number }): Promise<Quote[] | PaginatedResponse<Quote>> => {
     const params: Record<string, any> = {}
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
+    if (filters?.isSigned !== undefined) params.isSigned = String(filters.isSigned)
+    if (filters?.days !== undefined) params.days = filters.days
     return apiGet<Quote[] | PaginatedResponse<Quote>>(API_CONFIG.CRM.QUOTES, params)
   },
 
