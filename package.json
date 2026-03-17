@@ -37,6 +37,8 @@
     "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
     "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts",
     "migrate-quote-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-quote-from-access.ts",
+    "db:backup": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/backup-db.ts",
+    "db:restore": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/restore-db.ts",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./apps/backend/src/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate ./apps/backend/src/migrations/$npm_config_name",
     "migration:create": "npm run typeorm -- migration:create ./apps/backend/src/migrations/$npm_config_name",

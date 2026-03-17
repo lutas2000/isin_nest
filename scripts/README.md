@@ -422,3 +422,75 @@ ONLY_MODE=quote-item ACCESS_FILE_PATH=/path/to/quote.mdb npm run migrate-quote-f
    - `--only=quote-item`：只需要 `itable` 和 `jtable`
    - 未指定：需要 `gtable`、`itable`、`jtable` 三個資料表
 
+## 6. PostgreSQL 資料庫備份腳本 (backup-db.ts)
+
+這個腳本用於備份 PostgreSQL 資料庫，支援只備份結構、只備份資料或兩者一起。
+
+### 使用方法
+
+```bash
+# 互動式選擇備份類型與輸出檔名
+npm run db:backup
+
+# 直接指定選項與輸出檔案
+# 第一個參數：1=結構+資料、2=只有結構、3=只有資料
+# 第二個參數：輸出檔案路徑
+npm run db:backup 1 backups/isin-full.sql
+```
+
+### 功能說明
+
+- **備份模式選擇**：
+  - `1`：結構 + 資料（預設）
+  - `2`：只有結構（`pg_dump -s`）
+  - `3`：只有資料（`pg_dump -a`）
+- **自動產生檔名**：若未指定檔名，會依照目前時間與模式自動產生，例如：
+  - `backups/isin-20260317-1030-full.sql`
+  - `backups/isin-20260317-1030-schema.sql`
+  - `backups/isin-20260317-1030-data.sql`
+- **自動建立目錄**：若 `backups` 目錄不存在會自動建立
+
+### 配置
+
+腳本會從**專案根目錄**的 `.env` 檔案讀取資料庫配置：
+
+- `DB_HOST` - PostgreSQL 資料庫主機（預設: localhost）
+- `DB_PORT` - PostgreSQL 資料庫端口（預設: 5432）
+- `DB_USER` 或 `DB_USERNAME` - 資料庫用戶名（預設: postgres）
+- `DB_PASS` 或 `DB_PASSWORD` - 資料庫密碼
+- `DB_NAME` 或 `DB_DATABASE` - 資料庫名稱（預設: postgres）
+
+> 備份時會透過環境變數 `PGPASSWORD` 將密碼傳給 `pg_dump`。
+
+## 7. PostgreSQL 資料庫恢復腳本 (restore-db.ts)
+
+這個腳本用於從 `pg_dump` 產生的 `.sql` 檔案恢復 PostgreSQL 資料庫。
+
+### 使用方法
+
+```bash
+# 互動式輸入要恢復的檔案路徑
+npm run db:restore
+
+# 直接指定檔案路徑
+npm run db:restore backups/isin-20260317-1030-full.sql
+```
+
+### 功能說明
+
+- **檔案存在檢查**：在執行前會確認檔案是否存在
+- **安全確認**：恢復前會詢問一次 `yes/no` 進行確認，避免誤操作
+- **使用 psql 恢復**：內部使用 `psql -f <檔案>` 對指定資料庫執行 SQL
+
+### 配置
+
+同樣從**專案根目錄** `.env` 讀取資料庫設定：
+
+- `DB_HOST` - PostgreSQL 資料庫主機（預設: localhost）
+- `DB_PORT` - PostgreSQL 資料庫端口（預設: 5432）
+- `DB_USER` 或 `DB_USERNAME` - 資料庫用戶名（預設: postgres）
+- `DB_PASS` 或 `DB_PASSWORD` - 資料庫密碼
+- `DB_NAME` 或 `DB_DATABASE` - 資料庫名稱（預設: postgres）
+
+> 恢復時同樣會透過 `PGPASSWORD` 將密碼傳給 `psql`。
+
