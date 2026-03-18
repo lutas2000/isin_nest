@@ -64,13 +64,14 @@ export class OrderItem {
   @Column({ type: 'int', default: 0 })
   quantity: number;
 
-  @ApiProperty({ description: '單位', example: '件' })
+  @ApiProperty({ description: '代料（最多三個字）', example: '代料A', required: false })
   @Column({
     type: 'varchar',
-    length: 20,
+    length: 3,
     nullable: true,
+    name: 'substitute',
   })
-  unit?: string;
+  substitute?: string;
 
   @ApiProperty({ description: '來源', example: '新圖' })
   @Column({
@@ -102,15 +103,6 @@ export class OrderItem {
   @Column({ type: 'int', nullable: true, name: 'estimated_cutting_time' })
   estimatedCuttingTime?: number;
 
-  @ApiProperty({ description: '繪圖負責人員工編號', example: 'STAFF001', required: false })
-  @Column({ 
-    type: 'varchar',
-    length: 10,
-    nullable: true, 
-    name: 'drawing_staff_id' 
-  })
-  drawingStaffId?: string;
-
   @ApiProperty({ description: '圖號', example: 'DWG-2024-001', required: false })
   @Column({
     type: 'varchar',
@@ -119,14 +111,6 @@ export class OrderItem {
     name: 'drawing_number',
   })
   drawingNumber?: string;
-
-  @ApiProperty({ description: '是否已排版', example: false })
-  @Column({
-    type: 'boolean',
-    default: false,
-    name: 'is_nested',
-  })
-  isNested: boolean;
 
   @ApiProperty({ description: '排版ID', example: 1, required: false })
   @Column({
@@ -169,10 +153,4 @@ export class OrderItem {
   @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: Order;
-
-  // 關聯到 Staff（繪圖負責人，可為 null）
-  @ApiProperty({ description: '關聯的繪圖負責人員工資料', type: () => Staff, required: false })
-  @ManyToOne(() => Staff, { nullable: true })
-  @JoinColumn({ name: 'drawing_staff_id' })
-  drawingStaff?: Staff;
 }

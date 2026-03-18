@@ -21,19 +21,16 @@ export interface OrderItem {
   material?: string
   thickness?: number
   quantity: number
-  unit?: string
+  substitute?: string
   source: string
   processingIds?: number[]
   unitPrice: number
   estimatedCuttingTime?: number
-  drawingStaffId?: string
   drawingNumber?: string
-  isNested: boolean
   nestingId?: number
   status: string
   notes?: string
   order?: Order
-  drawingStaff?: any
   createdAt?: string
   updatedAt?: string
 }

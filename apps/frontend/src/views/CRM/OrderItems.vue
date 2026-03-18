@@ -170,8 +170,8 @@
             </button>
           </template>
 
-          <template #cell-unit="{ value }">
-            {{ value || '-' }}
+          <template #cell-substitute="{ value }">
+            {{ value || '無' }}
           </template>
 
           <template #cell-quantity="{ value }">
@@ -180,12 +180,6 @@
 
           <template #cell-unitPrice="{ value }">
             NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
-          </template>
-
-          <template #cell-subtotal="{ row }">
-            <span class="highlight">
-              NT$ {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
-            </span>
           </template>
 
           <template #cell-source="{ value }">
@@ -305,7 +299,7 @@ const newRowTemplate = () => {
       thickness: undefined as number | undefined,
       processingIds: [] as number[],
       quantity: 0,
-      unit: '',
+      substitute: '',
       unitPrice: 0,
       status: '待處理',
       notes: '',
@@ -319,7 +313,7 @@ const newRowTemplate = () => {
     thickness: undefined as number | undefined,
     processingIds: [] as number[],
     quantity: 0,
-    unit: '',
+    substitute: '',
     unitPrice: 0,
     source: '訂單新增',
     status: '待處理',
@@ -331,7 +325,7 @@ const newRowTemplate = () => {
 const editableColumns = computed<EditableColumn[]>(() => [
   { 
     key: 'id', 
-    label: '工件編號', 
+    label: '編號', 
     editable: false 
   },
   { 
@@ -364,29 +358,29 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: false, // 使用 Modal 選擇
   },
   { 
-    key: 'quantity', 
-    label: '數量', 
-    editable: true, 
-    required: true, 
-    type: 'number' 
+    key: 'quantity',
+    label: '數量',
+    editable: true,
+    required: true,
+    type: 'number'
   },
-  { 
-    key: 'unit', 
-    label: '單位', 
-    editable: true, 
-    type: 'text' 
+  {
+    key: 'substitute',
+    label: '代料',
+    editable: true,
+    type: 'select',
+    options: [
+      { value: '代料', label: '代料' },
+      { value: '代折', label: '代折' },
+      { value: null, label: '無' },
+    ]
   },
-  { 
-    key: 'unitPrice', 
-    label: '單價', 
-    editable: true, 
-    required: true, 
-    type: 'number' 
-  },
-  { 
-    key: 'subtotal', 
-    label: '小計', 
-    editable: false 
+  {
+    key: 'unitPrice',
+    label: '單價',
+    editable: true,
+    required: true,
+    type: 'number',
   },
   { 
     key: 'source', 
@@ -475,7 +469,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
       thickness: row.thickness || undefined,
       processingIds: row.processingIds || undefined,
       quantity: row.quantity || 0,
-      unit: row.unit || undefined,
+      substitute: row.substitute || undefined,
       unitPrice: row.unitPrice || 0,
       source: row.source || '訂單新增',
       status: row.status || '待處理',
@@ -510,7 +504,7 @@ const handleNewRowSave = async (row: any) => {
       thickness: row.thickness || undefined,
       processingIds: row.processingIds || undefined,
       quantity: row.quantity || 0,
-      unit: row.unit || undefined,
+      substitute: (row as any).substitute || undefined,
       unitPrice: row.unitPrice || 0,
       source: row.source || '訂單新增',
       status: row.status || '待處理',
