@@ -70,24 +70,6 @@ export class DesignWorkOrder {
   })
   customerFile?: string;
 
-  @ApiProperty({ description: 'CAD 檔案 (DWG)', example: 'design.dwg', required: false })
-  @Column({
-    type: 'varchar',
-    length: 500,
-    name: 'cad_file',
-    nullable: true,
-  })
-  cadFile?: string;
-
-  @ApiProperty({ description: 'CNC 檔案', example: 'cnc_output.nc', required: false })
-  @Column({
-    type: 'varchar',
-    length: 500,
-    name: 'cnc_file',
-    nullable: true,
-  })
-  cncFile?: string;
-
   @ApiProperty({ description: '狀態', enum: DesignWorkOrderStatus, example: DesignWorkOrderStatus.PENDING })
   @Column({
     type: 'varchar',

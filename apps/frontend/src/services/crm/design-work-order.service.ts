@@ -16,8 +16,6 @@ export interface DesignWorkOrder {
   supervisorStaffId?: string
   drawingNumber?: string
   customerFile?: string
-  cadFile?: string
-  cncFile?: string
   status: DesignWorkOrderStatus
   priority: number
   notes?: string
