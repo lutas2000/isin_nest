@@ -77,6 +77,7 @@
             <span class="dropdown-item" @click="updateStatus(row.id, 'completed')" v-if="row.status === 'in_progress'">
               完成設計
             </span>
+            <span class="dropdown-item" @click="goToCncPreview(row)">預覽 CNC</span>
             <span class="dropdown-item" @click="handleRowDelete(row)">刪除</span>
           </template>
         </template>
@@ -87,6 +88,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { PageHeader, StatusBadge, EditableDataTable, SearchFilters, type EditableColumn } from '@/components';
 import { 
   designWorkOrderService, 
@@ -101,6 +103,7 @@ const searchQuery = ref('');
 const filterStatus = ref('');
 const showNewRow = ref(false);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+const router = useRouter();
 
 const statusOptions = [
   { value: '', label: '所有狀態' },
@@ -221,6 +224,14 @@ const updateStatus = async (id: number, status: DesignWorkOrderStatus) => {
   } catch (err) {
     alert(err instanceof Error ? err.message : '更新狀態失敗');
   }
+};
+
+const goToCncPreview = (row: DesignWorkOrder) => {
+  if (!row.drawingNumber) {
+    alert('此設計工作單沒有圖號，無法預覽 CNC 檔案');
+    return;
+  }
+  router.push(`/crm/design-work-orders/${row.id}/cnc-preview`);
 };
 
 onMounted(() => {

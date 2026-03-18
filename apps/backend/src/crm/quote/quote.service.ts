@@ -196,7 +196,6 @@ export class QuoteService {
           processingIds: quoteItem.processingIds,
           notes: quoteItem.notes,
           status: 'TODO',
-          isNested: false,
         });
 
         // 根據來源與加工 IDs 產生對應工作單

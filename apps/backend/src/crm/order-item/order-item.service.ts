@@ -61,7 +61,6 @@ export class OrderItemService {
   async create(orderItem: Partial<OrderItem>): Promise<OrderItem> {
     const newOrderItem = this.orderItemRepository.create({
       ...orderItem,
-      isNested: orderItem.isNested ?? false,
     });
     return this.orderItemRepository.save(newOrderItem);
   }
@@ -70,7 +69,6 @@ export class OrderItemService {
     const newOrderItems = orderItems.map(item => 
       this.orderItemRepository.create({
         ...item,
-        isNested: item.isNested ?? false,
       })
     );
     return this.orderItemRepository.save(newOrderItems);
@@ -93,7 +91,6 @@ export class OrderItemService {
     const orderItem = await this.findOne(id);
     if (orderItem) {
       orderItem.nestingId = nestingId;
-      orderItem.isNested = isNested;
       return this.orderItemRepository.save(orderItem);
     }
     return null;

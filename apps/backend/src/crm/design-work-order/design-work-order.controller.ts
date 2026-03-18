@@ -62,6 +62,28 @@ export class DesignWorkOrderController {
     return this.designWorkOrderService.findOne(id);
   }
 
+  @ApiOperation({ summary: '取得 CNC 檔案預覽內容（優先 .nc，找不到 fallback .cnc）' })
+  @ApiParam({ name: 'id', description: '設計工作單ID', example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: '成功返回 CNC 檔案內容與寬高',
+    schema: {
+      example: {
+        drawingNumber: 'E2C7B001',
+        fileName: 'E2C7B001.nc',
+        extension: 'nc',
+        width: 1200.5,
+        height: 800.25,
+        content: 'G0 X0 Y0\nG1 X10 Y10',
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: '設計工作單或 CNC 檔案不存在' })
+  @Get(':id/cnc-preview')
+  getCncPreview(@Param('id', ParseIntPipe) id: number) {
+    return this.designWorkOrderService.getCncPreview(id);
+  }
+
   @ApiOperation({ summary: '建立新設計工作單' })
   @ApiResponse({ status: 201, description: '成功建立設計工作單', type: DesignWorkOrder })
   @ApiResponse({ status: 400, description: '輸入資料錯誤' })

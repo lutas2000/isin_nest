@@ -4,6 +4,17 @@ import { Repository } from 'typeorm';
 import { DesignWorkOrder } from './entities/design-work-order.entity';
 import { DesignWorkOrderStatus } from '../enums/work-order-status.enum';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { join as pathJoin } from 'path';
+import { promises as fs } from 'fs';
+
+export interface DesignWorkOrderCncPreview {
+  drawingNumber: string;
+  fileName: string;
+  extension: 'nc' | 'cnc';
+  content: string;
+  width: number | null;
+  height: number | null;
+}
 
 @Injectable()
 export class DesignWorkOrderService {
@@ -97,5 +108,91 @@ export class DesignWorkOrderService {
   async remove(id: number): Promise<void> {
     const designWorkOrder = await this.findOne(id);
     await this.designWorkOrderRepository.remove(designWorkOrder);
+  }
+
+  async getCncPreview(id: number): Promise<DesignWorkOrderCncPreview> {
+    const designWorkOrder = await this.findOne(id);
+    const drawingNumber = designWorkOrder.drawingNumber?.trim();
+    if (!drawingNumber) {
+      throw new NotFoundException(`設計工作單 ID ${id} 沒有圖號，無法預覽 CNC`);
+    }
+
+    const cncPath = process.env.CNC_PATH;
+    if (!cncPath) {
+      throw new NotFoundException('DWG_PATH 未設定');
+    }
+
+    const basePath = pathJoin(
+      cncPath,
+      drawingNumber.slice(0, 1),
+      drawingNumber.slice(0, 3),
+      drawingNumber,
+    );
+    const fileCandidates: Array<{ path: string; extension: 'nc' | 'cnc' }> = [
+      { path: `${basePath}.nc`, extension: 'nc' },
+      { path: `${basePath}.cnc`, extension: 'cnc' },
+    ];
+
+    let selectedFile: { path: string; extension: 'nc' | 'cnc' } | null = null;
+    for (const candidate of fileCandidates) {
+      try {
+        await fs.access(candidate.path);
+        selectedFile = candidate;
+        break;
+      } catch {
+        // Try next candidate extension.
+      }
+    }
+
+    if (!selectedFile) {
+      throw new NotFoundException(
+        `找不到圖號 ${drawingNumber} 對應 CNC 檔案（已嘗試 .nc、.cnc）`,
+      );
+    }
+
+    const content = await fs.readFile(selectedFile.path, 'utf8');
+    const bounds = this.calculateXYBounds(content);
+
+    return {
+      drawingNumber,
+      fileName: `${drawingNumber}.${selectedFile.extension}`,
+      extension: selectedFile.extension,
+      content,
+      width: bounds.width,
+      height: bounds.height,
+    };
+  }
+
+  private calculateXYBounds(content: string): { width: number | null; height: number | null } {
+    const lines = content.split(/\r?\n/);
+    let minX: number | null = null;
+    let maxX: number | null = null;
+    let minY: number | null = null;
+    let maxY: number | null = null;
+
+    for (const line of lines) {
+      const commandPart = line.split(';')[0];
+      const xMatch = commandPart.match(/(?:^|\s)X\s*(-?\d+(?:\.\d+)?)/i);
+      const yMatch = commandPart.match(/(?:^|\s)Y\s*(-?\d+(?:\.\d+)?)/i);
+      if (xMatch) {
+        const x = Number(xMatch[1]);
+        if (!Number.isNaN(x)) {
+          minX = minX === null ? x : Math.min(minX, x);
+          maxX = maxX === null ? x : Math.max(maxX, x);
+        }
+      }
+      if (yMatch) {
+        const y = Number(yMatch[1]);
+        if (!Number.isNaN(y)) {
+          minY = minY === null ? y : Math.min(minY, y);
+          maxY = maxY === null ? y : Math.max(maxY, y);
+        }
+      }
+    }
+
+    return {
+      width: minX !== null && maxX !== null ? maxX - minX : null,
+      height: minY !== null && maxY !== null ? maxY - minY : null,
+    };
   }
 }

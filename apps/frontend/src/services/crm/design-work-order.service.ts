@@ -28,6 +28,15 @@ export interface DesignWorkOrder {
   completedAt?: string
 }
 
+export interface DesignWorkOrderCncPreview {
+  drawingNumber: string
+  fileName: string
+  extension: 'nc' | 'cnc'
+  content: string
+  width: number | null
+  height: number | null
+}
+
 export const designWorkOrderService = {
   getAll: (page?: number, limit?: number): Promise<PaginatedResponse<DesignWorkOrder>> => {
     const params: Record<string, any> = {}
@@ -46,6 +55,10 @@ export const designWorkOrderService = {
 
   getById: (id: number): Promise<DesignWorkOrder> => {
     return apiGet<DesignWorkOrder>(`${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${id}`)
+  },
+
+  getCncPreview: (id: number): Promise<DesignWorkOrderCncPreview> => {
+    return apiGet<DesignWorkOrderCncPreview>(`${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${id}/cnc-preview`)
   },
 
   create: (data: Partial<DesignWorkOrder>): Promise<DesignWorkOrder> => {
