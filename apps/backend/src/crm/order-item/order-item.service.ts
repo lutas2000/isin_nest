@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderItem } from './entities/order-item.entity';
@@ -94,5 +94,66 @@ export class OrderItemService {
       return this.orderItemRepository.save(orderItem);
     }
     return null;
+  }
+
+  async getDxfPreview(id: number): Promise<{ orderItemId: number; fileName: string; extension: 'dxf'; content: string }> {
+    const orderItem = await this.orderItemRepository.findOne({
+      where: { id },
+    });
+
+    if (!orderItem) {
+      throw new NotFoundException(`訂單工件 ID ${id} 不存在`);
+    }
+
+    const cadFile = orderItem.cadFile?.trim();
+    if (!cadFile) {
+      throw new NotFoundException(`訂單工件 ID ${id} 沒有 cadFile，無法預覽 DXF`);
+    }
+
+    const dwgPath = process.env.DWG_PATH;
+    if (!dwgPath) {
+      throw new NotFoundException('DWG_PATH 未設定');
+    }
+
+    // 假設 DXF 檔名與 cadFile 主檔名相同，依照 CNC 類似規則分層
+    const baseName = cadFile.replace(/\.[^/.]+$/, '');
+    const { join: pathJoin } = await import('path');
+    const { access, readFile } = await import('fs/promises');
+
+    const basePath = pathJoin(
+      dwgPath,
+      baseName.slice(0, 1),
+      baseName.slice(0, 3),
+      baseName,
+    );
+
+    const fileCandidates: Array<{ path: string; extension: 'dxf' }> = [
+      { path: `${basePath}.dxf`, extension: 'dxf' },
+      { path: `${basePath}.DXF`, extension: 'dxf' },
+    ];
+
+    let selectedFile: { path: string; extension: 'dxf' } | null = null;
+    for (const candidate of fileCandidates) {
+      try {
+        await access(candidate.path);
+        selectedFile = candidate;
+        break;
+      } catch {
+        // 繼續嘗試下一個
+      }
+    }
+
+    if (!selectedFile) {
+      throw new NotFoundException(`找不到 cadFile ${cadFile} 對應的 DXF 檔案`);
+    }
+
+    const content = await readFile(selectedFile.path, 'utf8');
+
+    return {
+      orderItemId: id,
+      fileName: `${baseName}.dxf`,
+      extension: 'dxf',
+      content,
+    };
   }
 }

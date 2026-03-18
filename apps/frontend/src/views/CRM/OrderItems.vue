@@ -13,6 +13,14 @@
           <span class="btn-icon">🖨️</span>
           列印訂貨單
         </button>
+        <button
+          class="btn btn-outline"
+          v-if="workOrder"
+          @click="handlePrintWorkSheet"
+        >
+          <span class="btn-icon">📄</span>
+          列印工作單
+        </button>
         <button class="btn btn-outline" @click="goBack">
           <span class="btn-icon">←</span>
           返回
@@ -231,6 +239,12 @@
       :work-order="workOrder"
       :items="workOrderItems"
     />
+    <OrderWorkSheetPrint
+      v-if="workOrder"
+      ref="workOrderWorkSheetPrintRef"
+      :work-order="workOrder"
+      :items="workOrderItems"
+    />
 
     <!-- 加工選擇 Modal -->
     <ProcessingSelectModal
@@ -251,6 +265,7 @@ import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderI
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
 import OrderPrint from './prints/OrderPrint.vue';
+import OrderWorkSheetPrint from './prints/OrderWorkSheetPrint.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -271,6 +286,8 @@ const vendors = ref<Vendor[]>([]);
 
 // 列印組件 ref
 const workOrderPrintRef = ref<InstanceType<typeof OrderPrint> | null>(null);
+const workOrderWorkSheetPrintRef =
+  ref<InstanceType<typeof OrderWorkSheetPrint> | null>(null);
 
 // 表格狀態（用於 ShortcutHint）
 const tableState = computed(() => {
@@ -614,6 +631,11 @@ const goBack = () => {
 // 處理列印
 const handlePrint = () => {
   workOrderPrintRef.value?.print();
+};
+
+// 處理工作單列印
+const handlePrintWorkSheet = () => {
+  void workOrderWorkSheetPrintRef.value?.print();
 };
 
 // 載入所有加工項目（主檔）

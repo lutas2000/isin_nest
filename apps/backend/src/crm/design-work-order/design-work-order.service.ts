@@ -119,7 +119,7 @@ export class DesignWorkOrderService {
 
     const cncPath = process.env.CNC_PATH;
     if (!cncPath) {
-      throw new NotFoundException('DWG_PATH 未設定');
+      throw new NotFoundException('CNC_PATH 未設定');
     }
 
     const basePath = pathJoin(

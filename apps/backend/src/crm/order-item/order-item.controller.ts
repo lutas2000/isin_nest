@@ -62,4 +62,16 @@ export class OrderItemController {
   ): Promise<OrderItem | null> {
     return this.orderItemService.update(+id, data);
   }
+
+  @ApiOperation({ summary: '取得訂單工件 DXF 預覽內容（使用 DWG_PATH + cadFile）' })
+  @ApiParam({ name: 'id', description: '訂單工件ID', example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: '成功返回 DXF 檔案內容',
+  })
+  @ApiResponse({ status: 404, description: '訂單工件或 DXF 檔案不存在' })
+  @Get(':id/dxf-preview')
+  getDxfPreview(@Param('id') id: string) {
+    return this.orderItemService.getDxfPreview(+id);
+  }
 }

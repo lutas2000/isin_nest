@@ -35,6 +35,13 @@ export interface OrderItem {
   updatedAt?: string
 }
 
+export interface OrderItemDxfPreview {
+  orderItemId: number
+  fileName: string
+  extension: 'dxf'
+  content: string
+}
+
 export interface Order {
   id: string
   quoteId?: string
@@ -112,6 +119,10 @@ export const orderItemService = {
   // 獲取單個訂單工件
   getById: (id: number): Promise<OrderItem> => {
     return apiGet<OrderItem>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}`)
+  },
+
+  getDxfPreview: (id: number): Promise<OrderItemDxfPreview> => {
+    return apiGet<OrderItemDxfPreview>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}/dxf-preview`)
   },
 
   // 建立訂單工件
