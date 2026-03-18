@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from '../../order/entities/order.entity';
-import { Staff } from '../../../hr/staff/entities/staff.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('order_item')
