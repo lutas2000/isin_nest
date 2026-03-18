@@ -94,7 +94,7 @@
         </template>
         
         <template #cell-amount="{ value }">
-          NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
+          {{ Number(value || 0).toLocaleString('zh-TW') }}
         </template>
 
         <template #cell-notes="{ value }">
@@ -143,117 +143,6 @@
         </template>
       </EditableDataTable>
     </div>
-
-    <!-- 查看詳情 Modal -->
-    <Modal 
-      v-if="selectedOrder"
-      :show="showDetailsModal" 
-      :title="`訂單詳情 #${selectedOrder.id}`"
-      @close="showDetailsModal = false"
-    >
-      <div class="details-content">
-        <div class="details-section">
-          <h4>基本資訊</h4>
-          <div class="details-grid">
-            <div class="details-item">
-              <span class="details-label">訂單編號：</span>
-              <span class="details-value">{{ selectedOrder.id }}</span>
-            </div>
-            <div class="details-item">
-              <span class="details-label">業務員：</span>
-              <span class="details-value">{{ selectedOrder.staff?.name || '未知' }}</span>
-            </div>
-            <div class="details-item">
-              <span class="details-label">客戶：</span>
-              <span class="details-value">
-                {{ selectedOrder.customer?.companyShortName || selectedOrder.customer?.companyName || '未指定' }}
-              </span>
-            </div>
-            <div class="details-item">
-              <span class="details-label">狀態：</span>
-              <span class="details-value">
-                <StatusBadge 
-                  :text="selectedOrder.isCompleted ? '已完成' : '進行中'" 
-                  :variant="selectedOrder.isCompleted ? 'success' : 'info'"
-                />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="details-section">
-          <h4>訂單資訊</h4>
-          <div class="details-grid">
-            <div class="details-item">
-              <span class="details-label">運送方式：</span>
-              <span class="details-value">{{ selectedOrder.shippingMethod }}</span>
-            </div>
-            <div class="details-item">
-              <span class="details-label">付款方式：</span>
-              <span class="details-value">{{ selectedOrder.paymentMethod }}</span>
-            </div>
-            <div class="details-item">
-              <span class="details-label">金額：</span>
-              <span class="details-value">NT$ {{ Number(selectedOrder.amount).toLocaleString('zh-TW') }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="details-section" v-if="selectedOrder.notes">
-          <h4>備註</h4>
-          <p>{{ selectedOrder.notes }}</p>
-        </div>
-
-        <div class="details-section">
-          <h4>時間資訊</h4>
-          <div class="details-grid">
-            <div class="details-item">
-              <span class="details-label">建立時間：</span>
-              <span class="details-value">
-                {{ selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString('zh-TW') : '未知' }}
-              </span>
-            </div>
-            <div class="details-item" v-if="selectedOrder.updatedAt">
-              <span class="details-label">更新時間：</span>
-              <span class="details-value">
-                {{ new Date(selectedOrder.updatedAt).toLocaleString('zh-TW') }}
-              </span>
-            </div>
-            <div class="details-item" v-if="selectedOrder.endedAt">
-              <span class="details-label">完成時間：</span>
-              <span class="details-value">
-                {{ new Date(selectedOrder.endedAt).toLocaleString('zh-TW') }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="details-section" v-if="selectedOrder.orderItems && selectedOrder.orderItems.length > 0">
-          <h4>訂單工件</h4>
-          <div class="work-order-items-list">
-            <div 
-              class="work-order-item-card" 
-              v-for="item in selectedOrder.orderItems" 
-              :key="item.id"
-            >
-              <div class="work-order-item-header">
-                <span class="work-order-item-title">工件 #{{ item.id }}</span>
-                <span class="work-order-item-amount">NT$ {{ Number(item.unitPrice * item.quantity).toLocaleString('zh-TW') }}</span>
-              </div>
-              <div class="work-order-item-details">
-                <div v-if="item.customerFile">客戶圖檔：{{ item.customerFile }}</div>
-                <div v-if="item.material">材質：{{ item.material }}</div>
-                <div v-if="item.thickness">厚度：{{ item.thickness }}</div>
-                <div v-if="item.processing">加工方式：{{ item.processing }}</div>
-                <div>數量：{{ item.quantity }}</div>
-                <div>單價：NT$ {{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
-                <div>狀態：{{ item.status }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Modal>
   </div>
 </template>
 
