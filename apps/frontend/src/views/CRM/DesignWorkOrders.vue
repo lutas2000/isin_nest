@@ -14,7 +14,7 @@
 
     <!-- 搜尋和篩選區域 -->
     <SearchFilters
-      title="wtf"
+      title=""
       v-model:searchValue="searchQuery"
       v-model:filterStatus="filterStatus"
       search-placeholder="搜尋訂單編號或設計師..."
