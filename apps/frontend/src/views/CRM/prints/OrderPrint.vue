@@ -2,9 +2,6 @@
   <PrintContainer ref="printContainerRef">
     <CompanyHeader
       company-name="奕新雷射精機股份有限公司"
-      address="台中市東區東光園路310號"
-      phone="04-22130117"
-      fax="04-22130113"
       document-title="訂貨單"
     />
 
@@ -14,7 +11,7 @@
         <div class="info-row">
           <span class="info-label">公司名稱：</span>
           <span class="info-value">
-            {{ customerName }}
+            {{ customerName }}<template v-if="customerId"> ({{ customerId }})</template>
           </span>
         </div>
         <div class="info-row" v-if="shippingMethod">
@@ -119,13 +116,14 @@ const customerName = computed(
     '未指定',
 );
 
+const customerId = computed(() => props.workOrder.customer?.id);
+
 const shippingMethod = computed(() => props.workOrder.shippingMethod);
 const paymentMethod = computed(() => props.workOrder.paymentMethod);
 
 const orderId = computed(() => props.workOrder.id);
 const orderDate = computed(() => formatRocDate(props.workOrder.createdAt));
 const handler = computed(() => props.workOrder.staff?.name || '未知');
-const totalAmount = computed(() => props.workOrder.amount || 0);
 const notes = computed(() => props.workOrder.notes);
 
 // 取得加工名稱列表

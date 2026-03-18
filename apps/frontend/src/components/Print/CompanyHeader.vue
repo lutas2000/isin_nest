@@ -4,7 +4,7 @@
       <h1 class="company-name">{{ companyName }} {{ documentTitle }}</h1>
     </div>
     <div class="company-info">
-      <div class="company-address">{{ address }}</div>
+      <div v-if="address" class="company-address">{{ address }}</div>
       <div class="company-contact">
         <span v-if="phone">TEL:{{ phone }}</span>
         <span v-if="phone && fax"> | </span>
@@ -17,7 +17,7 @@
 <script setup lang="ts">
 interface Props {
   companyName: string;
-  address: string;
+  address?: string;
   phone?: string;
   fax?: string;
   documentTitle: string;

@@ -11,7 +11,7 @@
           @click="handlePrint"
         >
           <span class="btn-icon">🖨️</span>
-          列印
+          列印訂貨單
         </button>
         <button class="btn btn-outline" @click="goBack">
           <span class="btn-icon">←</span>
