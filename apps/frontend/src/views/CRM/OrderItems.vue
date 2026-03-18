@@ -262,6 +262,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderItem } from '@/services/crm/work-order.service';
+import { designWorkOrderService } from '@/services/crm/design-work-order.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
 import OrderPrint from './prints/OrderPrint.vue';
@@ -493,10 +494,27 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
       notes: row.notes || undefined,
     };
 
-    if (isNew) {
-      await workOrderItemService.create(data);
-    } else {
-      await workOrderItemService.update(row.id, data);
+    const previousItem = workOrderItems.value.find(item => item.id === row.id);
+
+    const savedItem = isNew
+      ? await workOrderItemService.create(data)
+      : await workOrderItemService.update(row.id, data);
+
+    const newSource = data.source || savedItem.source;
+    const oldSource = previousItem?.source;
+
+    if (newSource === '新圖' && (isNew || oldSource !== '新圖')) {
+      try {
+        await designWorkOrderService.create({
+          orderId: workOrder.value.id,
+          orderItemId: savedItem.id,
+          customerFile: savedItem.customerFile,
+          notes: savedItem.notes,
+        });
+      } catch (err) {
+        console.error('建立設計工作單失敗', err);
+        alert(err instanceof Error ? err.message : '建立設計工作單失敗');
+      }
     }
 
     await loadWorkOrder();
@@ -527,7 +545,24 @@ const handleNewRowSave = async (row: any) => {
       status: row.status || '待處理',
       notes: row.notes || undefined,
     };
-    await workOrderItemService.create(data);
+
+    const savedItem = await workOrderItemService.create(data);
+
+    const newSource = data.source || savedItem.source;
+    if (newSource === '新圖') {
+      try {
+        await designWorkOrderService.create({
+          orderId: workOrder.value.id,
+          orderItemId: savedItem.id,
+          customerFile: savedItem.customerFile,
+          notes: savedItem.notes,
+        });
+      } catch (err) {
+        console.error('建立設計工作單失敗', err);
+        alert(err instanceof Error ? err.message : '建立設計工作單失敗');
+      }
+    }
+
     showNewRow.value = false;
     await loadWorkOrder();
   } catch (err) {
