@@ -1,5 +1,5 @@
 <template>
-  <PrintContainer>
+  <PrintContainer ref="printContainerRef">
     <CompanyHeader
       company-name="奕新雷射精機股份有限公司"
       document-title="工作單"
@@ -8,24 +8,24 @@
     <div class="print-order-info">
       <div class="order-info-left">
         <div class="info-row">
-          <span class="info-label">公司名稱：</span>
+          <span class="info-label">客戶名稱：</span>
           <span class="info-value">
             {{ customerName }}<template v-if="customerId"> ({{ customerId }})</template>
           </span>
         </div>
-      </div>
-      <div class="order-info-right">
         <div class="info-row">
           <span class="info-label">訂單編號：</span>
           <span class="info-value">{{ orderId }}</span>
         </div>
+      </div>
+      <div class="order-info-right">
         <div class="info-row">
           <span class="info-label">日期：</span>
           <span class="info-value">{{ orderDate }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">業務：</span>
-          <span class="info-value">{{ handler }}</span>
+          <span class="info-label">備註：</span>
+          <span class="info-value">{{ notes }}</span>
         </div>
       </div>
     </div>
@@ -58,7 +58,6 @@
     </div>
 
     <div class="cnc-preview-section">
-      <div class="cnc-preview-title">CNC Preview</div>
       <table class="cnc-preview-table">
         <tbody>
           <tr>
@@ -68,16 +67,13 @@
               class="cnc-preview-cell"
             >
               <div class="preview-panel">
+                <div class="preview-index">{{ panel.itemIndex }}</div>
                 <img
                   v-if="panel.imageDataUrl"
                   :src="panel.imageDataUrl"
                   alt="CNC preview"
                   class="preview-image"
                 />
-                <div class="preview-index">項次 {{ panel.itemIndex }}</div>
-                <div class="preview-size">
-                  {{ formatSizeCm(panel.widthCm, panel.heightCm) }}
-                </div>
               </div>
             </td>
           </tr>
@@ -122,6 +118,8 @@ interface CncPreviewPanel {
 const props = defineProps<Props>();
 
 const allProcessings = ref<Processing[]>([]);
+const printContainerRef =
+  ref<InstanceType<typeof PrintContainer> | null>(null);
 const designWorkOrdersByItemId = ref<Record<number, DesignWorkOrder>>({});
 const previewSizeByItemId = ref<Record<number, { width: number | null; height: number | null; imageDataUrl: string | null }>>({});
 const preparing = ref(false);
@@ -135,7 +133,7 @@ const customerName = computed(
 const customerId = computed(() => props.workOrder.customer?.id);
 const orderId = computed(() => props.workOrder.id);
 const orderDate = computed(() => formatRocDate(props.workOrder.createdAt));
-const handler = computed(() => props.workOrder.staff?.name || '未知');
+const notes = computed(() => props.workOrder.notes);
 
 const previewItems = computed(() => props.items.slice(0, 7));
 
@@ -156,14 +154,6 @@ const toRoundedCm = (mmValue: number | null | undefined): number | null => {
   return Math.round(mmValue / 10);
 };
 
-const formatSizeCm = (
-  widthCm: number | null,
-  heightCm: number | null,
-): string => {
-  if (widthCm === null || heightCm === null) return '-';
-  return `${widthCm} x ${heightCm} cm`;
-};
-
 const getProcessingNames = (processingIds?: number[]) => {
   if (!processingIds || processingIds.length === 0) return '-';
   return processingIds
@@ -171,16 +161,6 @@ const getProcessingNames = (processingIds?: number[]) => {
       (id) => allProcessings.value.find((processing) => processing.id === id)?.name || `ID:${id}`,
     )
     .join('、');
-};
-
-const escapeHtml = (value: string | number | null | undefined) => {
-  const raw = String(value ?? '');
-  return raw
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 };
 
 const waitForAnimationFrames = (count: number) =>
@@ -363,36 +343,6 @@ const getOrderPrintStyles = (): string => {
       box-sizing: border-box;
     }
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Microsoft JhengHei', '微軟正黑體', Arial, sans-serif;
-      font-size: 12pt;
-      color: #000;
-      background: #fff;
-    }
-
-    .print-container {
-      width: 210mm;
-      min-height: 297mm;
-      margin: 0 auto;
-      padding: 15mm 20mm;
-      background: #fff;
-    }
-
-    @media print {
-      @page {
-        size: A4;
-        margin: 0;
-      }
-
-      .print-container {
-        width: 100%;
-        min-height: 100vh;
-        margin: 0;
-      }
-    }
-    
     .print-order-info {
       display: flex;
       justify-content: space-between;
@@ -489,8 +439,8 @@ const getOrderPrintStyles = (): string => {
     .cnc-preview-table {
       width: 100%;
       border-collapse: separate;
-      border-spacing: 4px;
-      direction: rtl;
+      border-spacing: 0;
+      direction: ltr;
       table-layout: fixed;
     }
 
@@ -508,18 +458,14 @@ const getOrderPrintStyles = (): string => {
       justify-content: center;
       align-items: center;
       height: 100%;
-      gap: 4px;
       font-size: 9pt;
       line-height: 1.2;
-      padding: 4px;
     }
 
     .preview-image {
       width: 100%;
       height: 70px;
       object-fit: contain;
-      border-bottom: 1px dashed #777;
-      padding-bottom: 2px;
     }
 
     .preview-index {
@@ -528,128 +474,12 @@ const getOrderPrintStyles = (): string => {
   `;
 };
 
-const buildPrintHtml = (): string => {
-  const tableRows = props.items
-    .map((item, index) => {
-      return `
-        <tr>
-          <td class="col-item">${index + 1}</td>
-          <td class="col-drawing">${escapeHtml(item.cadFile || '-')}</td>
-          <td class="col-material">${escapeHtml(item.material || '-')}</td>
-          <td class="col-thickness">${escapeHtml(item.thickness ?? '-')}</td>
-          <td class="col-substitute">${escapeHtml(item.substitute || '-')}</td>
-          <td class="col-quantity text-right">${escapeHtml(formatInteger(item.quantity))}</td>
-          <td class="col-processing">${escapeHtml(getProcessingNames(item.processingIds))}</td>
-        </tr>
-      `;
-    })
-    .join('');
-
-  const previewCells = previewPanels.value
-    .map((panel) => {
-      const imageHtml = panel.imageDataUrl
-        ? `<img src="${panel.imageDataUrl}" alt="CNC preview" class="preview-image" />`
-        : '';
-      return `
-        <td class="cnc-preview-cell">
-          <div class="preview-panel">
-            ${imageHtml}
-            <div class="preview-index">項次 ${panel.itemIndex}</div>
-            <div class="preview-size">${escapeHtml(formatSizeCm(panel.widthCm, panel.heightCm))}</div>
-          </div>
-        </td>
-      `;
-    })
-    .join('');
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8" />
-        <title>工作單 - ${escapeHtml(props.workOrder.id)}</title>
-        <style>
-          ${getOrderPrintStyles()}
-        </style>
-      </head>
-      <body>
-        <div class="print-container">
-          <div class="company-header">
-            <div class="company-name">奕新雷射精機股份有限公司</div>
-            <div class="document-title">工作單</div>
-          </div>
-
-          <div class="print-order-info">
-            <div class="order-info-left">
-              <div class="info-row">
-                <span class="info-label">公司名稱：</span>
-                <span class="info-value">${escapeHtml(customerName.value)}${customerId.value ? ` (${escapeHtml(customerId.value)})` : ''}</span>
-              </div>
-            </div>
-            <div class="order-info-right">
-              <div class="info-row"><span class="info-label">訂單編號：</span><span class="info-value">${escapeHtml(orderId.value)}</span></div>
-              <div class="info-row"><span class="info-label">日期：</span><span class="info-value">${escapeHtml(orderDate.value)}</span></div>
-              <div class="info-row"><span class="info-label">業務：</span><span class="info-value">${escapeHtml(handler.value)}</span></div>
-            </div>
-          </div>
-
-          <div class="print-table-container">
-            <table class="print-table">
-              <thead>
-                <tr>
-                  <th class="col-item">項次</th>
-                  <th class="col-drawing">圖號</th>
-                  <th class="col-material">材料</th>
-                  <th class="col-thickness">厚度</th>
-                  <th class="col-substitute">代料</th>
-                  <th class="col-quantity">數量</th>
-                  <th class="col-processing">後加工</th>
-                </tr>
-              </thead>
-              <tbody>${tableRows}</tbody>
-            </table>
-          </div>
-
-          <div class="cnc-preview-section">
-            <div class="cnc-preview-title">CNC Preview</div>
-            <table class="cnc-preview-table">
-              <tbody><tr>${previewCells}</tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <script>
-          (() => {
-            const images = Array.from(document.images);
-            const waiters = images.map((img) => (
-              img.complete
-                ? Promise.resolve()
-                : new Promise((resolve) => {
-                    img.addEventListener('load', resolve, { once: true });
-                    img.addEventListener('error', resolve, { once: true });
-                  })
-            ));
-            Promise.all(waiters).then(() => {
-              setTimeout(() => {
-                window.print();
-              }, 150);
-            });
-          })();
-        <\/script>
-      </body>
-    </html>
-  `;
-};
-
 const print = async () => {
   await preparePrintData();
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('無法開啟列印視窗，請檢查瀏覽器彈出視窗設定');
-    return;
-  }
-  printWindow.document.write(buildPrintHtml());
-  printWindow.document.close();
+  printContainerRef.value?.print({
+    title: `工作單 - ${props.workOrder.id}`,
+    styles: getOrderPrintStyles(),
+  });
 };
 
 onMounted(() => {
