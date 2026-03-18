@@ -5,6 +5,14 @@
       :description="workOrder ? `` : '載入中...'"
     >
       <template #actions>
+        <button
+          class="btn btn-primary"
+          v-if="workOrder"
+          @click="handlePrint"
+        >
+          <span class="btn-icon">🖨️</span>
+          列印
+        </button>
         <button class="btn btn-outline" @click="goBack">
           <span class="btn-icon">←</span>
           返回
@@ -222,6 +230,14 @@
       </div>
     </div>
 
+    <!-- 列印組件 -->
+    <OrderPrint
+      v-if="workOrder"
+      ref="workOrderPrintRef"
+      :work-order="workOrder"
+      :items="workOrderItems"
+    />
+
     <!-- 加工選擇 Modal -->
     <ProcessingSelectModal
       :show="showProcessingSelectModal"
@@ -240,6 +256,7 @@ import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderItem } from '@/services/crm/work-order.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
+import OrderPrint from './prints/OrderPrint.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -257,6 +274,9 @@ const showProcessingSelectModal = ref(false);
 const selectedWorkOrderItem = ref<WorkOrderItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
 const vendors = ref<Vendor[]>([]);
+
+// 列印組件 ref
+const workOrderPrintRef = ref<InstanceType<typeof OrderPrint> | null>(null);
 
 // 表格狀態（用於 ShortcutHint）
 const tableState = computed(() => {
@@ -595,6 +615,11 @@ const handleShortcutClick = (action: string) => {
 // 返回上一頁
 const goBack = () => {
   router.push('/crm/orders');
+};
+
+// 處理列印
+const handlePrint = () => {
+  workOrderPrintRef.value?.print();
 };
 
 // 載入所有加工項目（主檔）
