@@ -52,6 +52,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+// @ts-expect-error transitive dep from gcode-preview, no type declarations
+import { Box3, Vector3 } from 'three'
 import { init, type WebGLPreview } from 'gcode-preview'
 import { PageHeader } from '@/components'
 import { designWorkOrderService, type DesignWorkOrderCncPreview } from '@/services/crm/design-work-order.service'
@@ -64,6 +66,7 @@ const error = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const previewData = ref<DesignWorkOrderCncPreview | null>(null)
 let preview: WebGLPreview | null = null
+let destroyed = false
 
 const previewDescription = computed(() => {
   if (previewData.value?.drawingNumber) {
@@ -78,29 +81,59 @@ const formatSize = (value: number | null | undefined) => {
 }
 
 const apply2DCamera = () => {
-  if (!preview) return
+  if (!preview || !canvasRef.value) return
+
+  const box = new Box3().setFromObject(preview.scene)
+  if (box.isEmpty()) return
+
+  const center = new Vector3()
+  const size = new Vector3()
+  box.getCenter(center)
+  box.getSize(size)
+
+  const fovRad = preview.camera.fov * Math.PI / 180
+  const halfTan = Math.tan(fovRad / 2)
+  const aspect = canvasRef.value.clientWidth / canvasRef.value.clientHeight
+
+  const distForZ = (size.z / 2) / halfTan
+  const distForX = (size.x / 2) / (halfTan * aspect)
+  const distance = Math.max(distForZ, distForX, 1) * 1.15
+
+  if (distance > preview.camera.far * 0.8) {
+    preview.camera.far = distance * 3
+    preview.camera.updateProjectionMatrix()
+  }
+
+  preview.camera.position.set(center.x, center.y + distance, center.z)
+  preview.controls.target.set(center.x, center.y, center.z)
   preview.controls.enableRotate = false
   preview.controls.minPolarAngle = 0
   preview.controls.maxPolarAngle = 0
-  preview.controls.target.set(0, 0, 0)
   preview.controls.update()
 }
 
 const renderPreview = async (content: string) => {
   await nextTick()
+  if (destroyed) return
   if (!canvasRef.value) {
-    throw new Error('預覽畫布初始化失敗')
+    // 如果畫布尚未準備好，就稍後再嘗試一次，不直接丟錯
+    setTimeout(() => {
+      if (!destroyed && canvasRef.value) {
+        renderPreview(content)
+      }
+    }, 50)
+    return
   }
   preview?.dispose()
   preview = init({
     canvas: canvasRef.value,
     renderTravel: true,
+    renderTubes: true,
     lineWidth: 2,
-    buildVolume: { x: 1200, y: 1200, z: 10 },
     initialCameraPosition: [0, 1000, 0.001],
   })
-  apply2DCamera()
   preview.processGCode(content)
+  apply2DCamera()
 }
 
 const loadPreview = async () => {
@@ -131,6 +164,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  destroyed = true
   preview?.dispose()
   preview = null
 })

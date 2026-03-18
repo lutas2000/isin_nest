@@ -129,8 +129,8 @@ export class DesignWorkOrderService {
       drawingNumber,
     );
     const fileCandidates: Array<{ path: string; extension: 'nc' | 'cnc' }> = [
-      { path: `${basePath}.nc`, extension: 'nc' },
-      { path: `${basePath}.cnc`, extension: 'cnc' },
+      { path: `${basePath}.NC`, extension: 'nc' },
+      { path: `${basePath}.CNC`, extension: 'cnc' },
     ];
 
     let selectedFile: { path: string; extension: 'nc' | 'cnc' } | null = null;
@@ -146,7 +146,7 @@ export class DesignWorkOrderService {
 
     if (!selectedFile) {
       throw new NotFoundException(
-        `找不到圖號 ${drawingNumber} 對應 CNC 檔案（已嘗試 .nc、.cnc）`,
+        `找不到圖號 ${drawingNumber}`,
       );
     }
 

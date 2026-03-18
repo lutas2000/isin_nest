@@ -14,6 +14,7 @@
 
     <!-- 搜尋和篩選區域 -->
     <SearchFilters
+      title="wtf"
       v-model:searchValue="searchQuery"
       v-model:filterStatus="filterStatus"
       search-placeholder="搜尋訂單編號或設計師..."
@@ -71,10 +72,10 @@
             <button class="btn btn-sm btn-outline" @click="cancel">取消</button>
           </template>
           <template v-else>
-            <span class="dropdown-item" @click="updateStatus(row.id, 'in_progress')" v-if="row.status === 'pending'">
+            <span class="dropdown-item" @click="updateStatus(row.id, DesignWorkOrderStatus.IN_PROGRESS)" v-if="row.status === 'pending'">
               開始設計
             </span>
-            <span class="dropdown-item" @click="updateStatus(row.id, 'completed')" v-if="row.status === 'in_progress'">
+            <span class="dropdown-item" @click="updateStatus(row.id, DesignWorkOrderStatus.COMPLETED)" v-if="row.status === 'in_progress'">
               完成設計
             </span>
             <span class="dropdown-item" @click="goToCncPreview(row)">預覽 CNC</span>
@@ -102,7 +103,6 @@ const designWorkOrders = ref<DesignWorkOrder[]>([]);
 const searchQuery = ref('');
 const filterStatus = ref('');
 const showNewRow = ref(false);
-const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 const router = useRouter();
 
 const statusOptions = [
