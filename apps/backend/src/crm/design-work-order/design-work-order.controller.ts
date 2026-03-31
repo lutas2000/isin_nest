@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { DesignWorkOrderService } from './design-work-order.service';
 import { DesignWorkOrder } from './entities/design-work-order.entity';
@@ -53,15 +54,6 @@ export class DesignWorkOrderController {
     return this.designWorkOrderService.findByStatus(status);
   }
 
-  @ApiOperation({ summary: '根據ID獲取單個設計工作單' })
-  @ApiParam({ name: 'id', description: '設計工作單ID', example: 1 })
-  @ApiResponse({ status: 200, description: '成功返回設計工作單', type: DesignWorkOrder })
-  @ApiResponse({ status: 404, description: '設計工作單不存在' })
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.designWorkOrderService.findOne(id);
-  }
-
   @ApiOperation({ summary: '取得 CNC 檔案預覽內容（優先 .nc，找不到 fallback .cnc）' })
   @ApiParam({ name: 'id', description: '設計工作單ID', example: 1 })
   @ApiResponse({
@@ -84,12 +76,63 @@ export class DesignWorkOrderController {
     return this.designWorkOrderService.getCncPreview(id);
   }
 
+  @ApiOperation({ summary: '根據ID獲取單個設計工作單（含圖組子單）' })
+  @ApiParam({ name: 'id', description: '設計工作單ID', example: 1 })
+  @ApiResponse({ status: 200, description: '成功返回設計工作單', type: DesignWorkOrder })
+  @ApiResponse({ status: 404, description: '設計工作單不存在' })
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.designWorkOrderService.findOne(id);
+  }
+
   @ApiOperation({ summary: '建立新設計工作單' })
   @ApiResponse({ status: 201, description: '成功建立設計工作單', type: DesignWorkOrder })
   @ApiResponse({ status: 400, description: '輸入資料錯誤' })
   @Post()
   create(@Body() data: Partial<DesignWorkOrder>) {
     return this.designWorkOrderService.create(data);
+  }
+
+  @ApiOperation({ summary: '將頂層工作單轉為圖組' })
+  @ApiParam({ name: 'id', description: '設計工作單ID', example: 1 })
+  @ApiResponse({ status: 200, description: '成功', type: DesignWorkOrder })
+  @Post(':id/convert-to-group')
+  convertToGroup(@Param('id', ParseIntPipe) id: number) {
+    return this.designWorkOrderService.convertToGroup(id);
+  }
+
+  @ApiOperation({ summary: '解除圖組（刪除所有子工作單）' })
+  @ApiParam({ name: 'id', description: '圖組（父）設計工作單ID', example: 1 })
+  @ApiResponse({ status: 200, description: '成功', type: DesignWorkOrder })
+  @Post(':id/dissolve-group')
+  dissolveGroup(@Param('id', ParseIntPipe) id: number) {
+    return this.designWorkOrderService.dissolveGroup(id);
+  }
+
+  @ApiOperation({ summary: '將工作單加入圖組' })
+  @ApiParam({ name: 'id', description: '圖組（父）設計工作單ID', example: 1 })
+  @ApiBody({
+    schema: { example: { memberId: 2 }, properties: { memberId: { type: 'number' } } },
+  })
+  @ApiResponse({ status: 200, description: '成功', type: DesignWorkOrder })
+  @Post(':id/members')
+  addMember(
+    @Param('id', ParseIntPipe) groupId: number,
+    @Body('memberId', ParseIntPipe) memberId: number,
+  ) {
+    return this.designWorkOrderService.addMember(groupId, memberId);
+  }
+
+  @ApiOperation({ summary: '將工作單自圖組移除（不刪除工作單）' })
+  @ApiParam({ name: 'id', description: '圖組（父）設計工作單ID', example: 1 })
+  @ApiParam({ name: 'memberId', description: '子工作單ID', example: 2 })
+  @ApiResponse({ status: 200, description: '成功', type: DesignWorkOrder })
+  @Delete(':id/members/:memberId')
+  removeMember(
+    @Param('id', ParseIntPipe) groupId: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
+  ) {
+    return this.designWorkOrderService.removeMember(groupId, memberId);
   }
 
   @ApiOperation({ summary: '更新設計工作單' })

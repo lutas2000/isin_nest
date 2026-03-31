@@ -66,6 +66,18 @@
           {{ value ? new Date(value).toLocaleDateString('zh-TW') : '-' }}
         </template>
 
+        <template #cell-drawingNumber="{ row, value }">
+          <span v-if="row.isDrawingGroup" class="group-badge" title="圖組">圖組</span>
+          <router-link
+            v-if="row.isDrawingGroup && value"
+            :to="`/crm/design-work-orders/${row.id}`"
+            class="link"
+          >
+            {{ value }}
+          </router-link>
+          <span v-else>{{ value || '-' }}</span>
+        </template>
+
         <template #actions="{ row, isEditing, save, cancel }">
           <template v-if="isEditing">
             <button class="btn btn-sm btn-success" @click="save">保存</button>
@@ -77,6 +89,20 @@
             </span>
             <span class="dropdown-item" @click="updateStatus(row.id, DesignWorkOrderStatus.COMPLETED)" v-if="row.status === 'in_progress'">
               完成設計
+            </span>
+            <span
+              class="dropdown-item"
+              v-if="canConvertToGroup(row)"
+              @click="handleConvertToGroup(row)"
+            >
+              轉換為圖組
+            </span>
+            <span
+              class="dropdown-item"
+              v-if="row.isDrawingGroup"
+              @click="handleDissolveGroup(row)"
+            >
+              解除圖組
             </span>
             <span class="dropdown-item" @click="goToCncPreview(row)">預覽 CNC</span>
             <span class="dropdown-item" @click="handleRowDelete(row)">刪除</span>
@@ -151,6 +177,10 @@ const filteredData = computed(() => {
   return data;
 });
 
+const canConvertToGroup = (row: DesignWorkOrder) => {
+  return !row.isDrawingGroup && (row.parentDesignWorkOrderId == null || row.parentDesignWorkOrderId === undefined);
+};
+
 const getStatusLabel = (status: DesignWorkOrderStatus) => {
   const labels: Record<string, string> = {
     [DesignWorkOrderStatus.PENDING]: '待處理',
@@ -217,6 +247,29 @@ const handleRowDelete = async (row: DesignWorkOrder) => {
   }
 };
 
+const handleConvertToGroup = async (row: DesignWorkOrder) => {
+  if (!canConvertToGroup(row)) return;
+  try {
+    await designWorkOrderService.convertToGroup(row.id);
+    await loadData();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '轉換為圖組失敗');
+  }
+};
+
+const handleDissolveGroup = async (row: DesignWorkOrder) => {
+  if (!row.isDrawingGroup) return;
+  if (!confirm('確定要解除此圖組嗎？此操作可能會刪除其子設計工作單，且無法復原。')) {
+    return;
+  }
+  try {
+    await designWorkOrderService.dissolveGroup(row.id);
+    await loadData();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '解除圖組失敗');
+  }
+};
+
 const updateStatus = async (id: number, status: DesignWorkOrderStatus) => {
   try {
     await designWorkOrderService.updateStatus(id, status);
@@ -271,6 +324,18 @@ onMounted(() => {
 
 .link:hover {
   text-decoration: underline;
+}
+
+.group-badge {
+  display: inline-block;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-700);
+  background: var(--primary-50);
+  border-radius: var(--border-radius);
+  vertical-align: middle;
 }
 
 .btn-icon {

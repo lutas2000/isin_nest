@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { DesignWorkOrder } from './entities/design-work-order.entity';
+import { Nesting } from '../nesting/entities/nesting.entity';
 import { DesignWorkOrderStatus } from '../enums/work-order-status.enum';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { join as pathJoin } from 'path';
@@ -21,6 +27,9 @@ export class DesignWorkOrderService {
   constructor(
     @InjectRepository(DesignWorkOrder)
     private designWorkOrderRepository: Repository<DesignWorkOrder>,
+    @InjectRepository(Nesting)
+    private nestingRepository: Repository<Nesting>,
+    private dataSource: DataSource,
   ) {}
 
   async findAll(
@@ -59,9 +68,28 @@ export class DesignWorkOrderService {
   }
 
   async findOne(id: number): Promise<DesignWorkOrder> {
+    return this.loadById(id, true);
+  }
+
+  private async loadById(id: number, includeChildren: boolean): Promise<DesignWorkOrder> {
     const designWorkOrder = await this.designWorkOrderRepository.findOne({
       where: { id },
-      relations: ['order', 'orderItem', 'assignedStaff', 'supervisorStaff'],
+      relations: {
+        order: true,
+        orderItem: true,
+        assignedStaff: true,
+        supervisorStaff: true,
+        ...(includeChildren
+          ? {
+              children: {
+                order: true,
+                orderItem: true,
+                assignedStaff: true,
+                supervisorStaff: true,
+              },
+            }
+          : {}),
+      },
     });
 
     if (!designWorkOrder) {
@@ -72,21 +100,29 @@ export class DesignWorkOrderService {
   }
 
   async create(data: Partial<DesignWorkOrder>): Promise<DesignWorkOrder> {
+    const safe = { ...data } as Partial<DesignWorkOrder> & Record<string, unknown>;
+    delete safe.isDrawingGroup;
+    delete safe.parentDesignWorkOrderId;
     const designWorkOrder = this.designWorkOrderRepository.create({
-      ...data,
+      ...safe,
+      isDrawingGroup: false,
+      parentDesignWorkOrderId: null,
       status: data.status || DesignWorkOrderStatus.PENDING,
     });
     return this.designWorkOrderRepository.save(designWorkOrder);
   }
 
   async update(id: number, data: Partial<DesignWorkOrder>): Promise<DesignWorkOrder> {
-    const designWorkOrder = await this.findOne(id);
+    if (data.isDrawingGroup !== undefined || data.parentDesignWorkOrderId !== undefined) {
+      throw new BadRequestException('請使用圖組專用 API 變更圖組狀態或成員');
+    }
+    const designWorkOrder = await this.loadById(id, false);
     Object.assign(designWorkOrder, data);
     return this.designWorkOrderRepository.save(designWorkOrder);
   }
 
   async updateStatus(id: number, status: DesignWorkOrderStatus): Promise<DesignWorkOrder> {
-    const designWorkOrder = await this.findOne(id);
+    const designWorkOrder = await this.loadById(id, false);
     designWorkOrder.status = status;
 
     if (status === DesignWorkOrderStatus.COMPLETED && !designWorkOrder.completedAt) {
@@ -97,7 +133,7 @@ export class DesignWorkOrderService {
   }
 
   async assign(id: number, staffId: string): Promise<DesignWorkOrder> {
-    const designWorkOrder = await this.findOne(id);
+    const designWorkOrder = await this.loadById(id, false);
     designWorkOrder.assignedStaffId = staffId;
     if (designWorkOrder.status === DesignWorkOrderStatus.PENDING) {
       designWorkOrder.status = DesignWorkOrderStatus.IN_PROGRESS;
@@ -106,12 +142,101 @@ export class DesignWorkOrderService {
   }
 
   async remove(id: number): Promise<void> {
-    const designWorkOrder = await this.findOne(id);
+    const designWorkOrder = await this.loadById(id, false);
+    await this.clearNestingRefsForDesignWorkOrderIds([id]);
     await this.designWorkOrderRepository.remove(designWorkOrder);
   }
 
+  async convertToGroup(id: number): Promise<DesignWorkOrder> {
+    const row = await this.loadById(id, false);
+    if (row.parentDesignWorkOrderId != null) {
+      throw new BadRequestException('已屬於其他圖組的工作單無法轉為圖組');
+    }
+    if (row.isDrawingGroup) {
+      throw new BadRequestException('此工作單已是圖組');
+    }
+    row.isDrawingGroup = true;
+    await this.designWorkOrderRepository.save(row);
+    return this.findOne(id);
+  }
+
+  async dissolveGroup(id: number): Promise<DesignWorkOrder> {
+    await this.dataSource.transaction(async (manager) => {
+      const group = await manager.findOne(DesignWorkOrder, { where: { id } });
+      if (!group) {
+        throw new NotFoundException(`設計工作單 ID ${id} 不存在`);
+      }
+      if (!group.isDrawingGroup) {
+        throw new BadRequestException('此設計工作單不是圖組');
+      }
+      const children = await manager.find(DesignWorkOrder, {
+        where: { parentDesignWorkOrderId: id },
+      });
+      const childIds = children.map((c) => c.id);
+      if (childIds.length > 0) {
+        await manager.getRepository(Nesting).update(
+          { designWorkOrderId: In(childIds) },
+          { designWorkOrderId: null } as object,
+        );
+        await manager.remove(children);
+      }
+      group.isDrawingGroup = false;
+      await manager.save(DesignWorkOrder, group);
+    });
+    return this.findOne(id);
+  }
+
+  async addMember(groupId: number, memberId: number): Promise<DesignWorkOrder> {
+    if (groupId === memberId) {
+      throw new BadRequestException('不可將自己設為成員');
+    }
+    const group = await this.designWorkOrderRepository.findOne({ where: { id: groupId } });
+    if (!group) {
+      throw new NotFoundException(`設計工作單 ID ${groupId} 不存在`);
+    }
+    if (!group.isDrawingGroup) {
+      throw new BadRequestException('目標必須為圖組');
+    }
+    const member = await this.designWorkOrderRepository.findOne({ where: { id: memberId } });
+    if (!member) {
+      throw new NotFoundException(`設計工作單 ID ${memberId} 不存在`);
+    }
+    if (member.isDrawingGroup) {
+      throw new BadRequestException('不可將圖組加入圖組');
+    }
+    if (member.parentDesignWorkOrderId != null) {
+      throw new ConflictException('該工作單已隸屬其他圖組');
+    }
+    member.parentDesignWorkOrderId = groupId;
+    await this.designWorkOrderRepository.save(member);
+    return this.findOne(memberId);
+  }
+
+  async removeMember(groupId: number, memberId: number): Promise<DesignWorkOrder> {
+    const member = await this.designWorkOrderRepository.findOne({ where: { id: memberId } });
+    if (!member) {
+      throw new NotFoundException(`設計工作單 ID ${memberId} 不存在`);
+    }
+    if (member.parentDesignWorkOrderId !== groupId) {
+      throw new BadRequestException('該工作單不屬於此圖組');
+    }
+    member.parentDesignWorkOrderId = null;
+    await this.designWorkOrderRepository.save(member);
+    return this.findOne(memberId);
+  }
+
+  private async clearNestingRefsForDesignWorkOrderIds(ids: number[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    await this.nestingRepository.update(
+      { designWorkOrderId: In(ids) },
+      { designWorkOrderId: null } as object,
+    );
+  }
+
   async getCncPreview(id: number): Promise<DesignWorkOrderCncPreview> {
-    const designWorkOrder = await this.findOne(id);
+    const designWorkOrder = await this.loadById(id, false);
     const drawingNumber = designWorkOrder.drawingNumber?.trim();
     if (!drawingNumber) {
       throw new NotFoundException(`設計工作單 ID ${id} 沒有圖號，無法預覽 CNC`);

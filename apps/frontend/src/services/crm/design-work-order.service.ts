@@ -19,6 +19,9 @@ export interface DesignWorkOrder {
   status: DesignWorkOrderStatus
   priority: number
   notes?: string
+  isDrawingGroup?: boolean
+  parentDesignWorkOrderId?: number | null
+  children?: DesignWorkOrder[]
   order?: any
   orderItem?: any
   assignedStaff?: any
@@ -79,5 +82,25 @@ export const designWorkOrderService = {
 
   delete: (id: number): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${id}`)
+  },
+
+  convertToGroup: (id: number): Promise<DesignWorkOrder> => {
+    return apiPost<DesignWorkOrder>(`${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${id}/convert-to-group`, {})
+  },
+
+  dissolveGroup: (id: number): Promise<DesignWorkOrder> => {
+    return apiPost<DesignWorkOrder>(`${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${id}/dissolve-group`, {})
+  },
+
+  addMember: (groupId: number, memberId: number): Promise<DesignWorkOrder> => {
+    return apiPost<DesignWorkOrder>(`${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${groupId}/members`, {
+      memberId,
+    })
+  },
+
+  removeMember: (groupId: number, memberId: number): Promise<DesignWorkOrder> => {
+    return apiDelete<DesignWorkOrder>(
+      `${API_CONFIG.CRM.DESIGN_WORK_ORDERS}/${groupId}/members/${memberId}`,
+    )
   },
 }

@@ -12,6 +12,7 @@ import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
 import CRMOrderItems from '../views/CRM/OrderItems.vue'
 import CRMDesignWorkOrders from '../views/CRM/DesignWorkOrders.vue'
+import CRMDesignWorkOrder from '../views/CRM/DesignWorkOrder.vue'
 import CRMDesignWorkOrderCncPreview from '../views/CRM/DesignWorkOrderCncPreview.vue'
 import CRMCuttingWorkOrders from '../views/CRM/CuttingWorkOrders.vue'
 import CRMProcessingWorkOrders from '../views/CRM/ProcessingWorkOrders.vue'
@@ -123,6 +124,12 @@ const routes = [
     name: 'CRMDesignWorkOrders',
     component: CRMDesignWorkOrders,
     meta: { title: '設計工作單', icon: '✏️', requiresAuth: true }
+  },
+  {
+    path: '/crm/design-work-orders/:id',
+    name: 'CRMDesignWorkOrderDetail',
+    component: CRMDesignWorkOrder,
+    meta: { title: '設計工作單詳情', icon: '✏️', requiresAuth: true }
   },
   {
     path: '/crm/design-work-orders/:id/cnc-preview',

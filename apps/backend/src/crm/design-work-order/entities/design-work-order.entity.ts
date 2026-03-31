@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
@@ -92,6 +93,22 @@ export class DesignWorkOrder {
   })
   notes?: string;
 
+  @ApiProperty({ description: '是否為圖組（可包含多張子設計工作單）', example: false })
+  @Column({
+    type: 'boolean',
+    name: 'is_drawing_group',
+    default: false,
+  })
+  isDrawingGroup: boolean;
+
+  @ApiProperty({ description: '所屬圖組父單 ID（子單才有值）', example: 1, required: false })
+  @Column({
+    type: 'int',
+    name: 'parent_design_work_order_id',
+    nullable: true,
+  })
+  parentDesignWorkOrderId?: number | null;
+
   @CreateDateColumn({
     type: 'timestamptz',
     name: 'created_at',
@@ -130,4 +147,14 @@ export class DesignWorkOrder {
   @ManyToOne(() => Staff, { nullable: true })
   @JoinColumn({ name: 'supervisor_staff_id' })
   supervisorStaff?: Staff;
+
+  @ManyToOne(() => DesignWorkOrder, (parent) => parent.children, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'parent_design_work_order_id' })
+  parent?: DesignWorkOrder;
+
+  @OneToMany(() => DesignWorkOrder, (child) => child.parent)
+  children?: DesignWorkOrder[];
 }
