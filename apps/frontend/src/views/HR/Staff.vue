@@ -40,10 +40,13 @@
         </template>
       </TableHeader>
 
-      <DataTable
+      <EditableDataTable
         :columns="tableColumns"
         :data="filteredStaff"
         :show-actions="true"
+        :editable="false"
+        @row-view="viewStaff"
+        @row-edit="editStaff"
       >
         <template #cell-id="{ row }">
           <span class="clickable-cell" @click="viewStaff(row)">
@@ -106,7 +109,7 @@
             </button>
           </div>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
 
     <!-- 新增員工模態框 -->
@@ -748,7 +751,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, TableHeader } from '@/components';
+import { PageHeader, TableHeader } from '@/components';
+import EditableDataTable from '@/components/EditableDataTable.vue';
 import { useErrorStore } from '@/stores/error';
 import { apiPost } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
