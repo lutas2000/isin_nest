@@ -34,6 +34,45 @@ export class QuoteService {
     private deliveryWorkOrderService: DeliveryWorkOrderService,
   ) {}
 
+  /**
+   * 產生當日用的報價單編號
+   * 規則：(民國年後兩碼)(月)(日)(流水號三碼)
+   * 例如：2026/3/28 的第一筆為 150328001
+   */
+  private async generateQuoteId(date: Date = new Date()): Promise<string> {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    const rocYear = year - 1911;
+    const yearPart = rocYear.toString().slice(-2).padStart(2, '0');
+    const monthPart = month.toString().padStart(2, '0');
+    const dayPart = day.toString().padStart(2, '0');
+    const prefix = `${yearPart}${monthPart}${dayPart}`; // 例如 150328
+
+    // 取得當天所有已存在的同前綴編號，取最大流水號 + 1
+    const existingQuotes = await this.quoteRepository
+      .createQueryBuilder('quote')
+      .where('quote.id LIKE :prefix', { prefix: `${prefix}%` })
+      .getMany();
+
+    let maxSeq = 0;
+    for (const q of existingQuotes) {
+      if (!q.id.startsWith(prefix)) continue;
+      const suffix = q.id.slice(prefix.length);
+      if (/^\d{3}$/.test(suffix)) {
+        const num = parseInt(suffix, 10);
+        if (num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+
+    const nextSeq = maxSeq + 1;
+    const seqPart = nextSeq.toString().padStart(3, '0');
+    return `${prefix}${seqPart}`;
+  }
+
   async findAll(
     page?: number,
     limit?: number,
@@ -80,48 +119,10 @@ export class QuoteService {
       throw new Error('客戶 ID 為必填欄位');
     }
 
-    let quoteId: string;
-
-    // 如果已經提供了 ID，使用提供的 ID
-    if (quote.id) {
-      quoteId = quote.id;
-      // 檢查 ID 是否已存在
-      const existingQuote = await this.quoteRepository.findOneBy({ id: quoteId });
-      if (existingQuote) {
-        throw new Error(`報價單 ID ${quoteId} 已存在`);
-      }
-    } else {
-      // 自動生成報價單 ID：純數字格式（例如：00010301, 00010302, ...）
-      // 查找所有純數字的報價單 ID，找出最大序號
-      const allQuotes = await this.quoteRepository
-        .createQueryBuilder('quote')
-        .getMany();
-      
-      let sequenceNumber = 10301; // 預設起始序號
-      if (allQuotes.length > 0) {
-        // 從所有純數字的報價單 ID 中提取數字，找出最大值
-        const numbers = allQuotes
-          .map(q => {
-            // 只處理純數字的 ID
-            if (/^\d+$/.test(q.id)) {
-              return parseInt(q.id, 10);
-            }
-            return 0;
-          })
-          .filter(n => n > 0);
-        
-        if (numbers.length > 0) {
-          sequenceNumber = Math.max(...numbers) + 1;
-        }
-      }
-
-      // 格式化序號為 8 位數（例如：00010301, 00010302, ...）
-      quoteId = sequenceNumber.toString().padStart(8, '0');
-    }
-
     const newQuote = this.quoteRepository.create({
       ...quote,
-      id: quoteId,
+      // 不再接受外部指定 ID，統一由系統依規則產生
+      id: await this.generateQuoteId(),
     });
     
     return this.quoteRepository.save(newQuote);
@@ -157,15 +158,8 @@ export class QuoteService {
       throw new Error('運送方式和付款方式為必填欄位');
     }
 
-    // 檢查訂單 ID 是否已存在
-    const existingOrder = await this.orderRepository.findOneBy({ id: quote.id });
-    if (existingOrder) {
-      throw new Error(`訂單 ID ${quote.id} 已存在`);
-    }
-
-    // 建立訂單，直接使用報價單 ID
+    // 建立訂單，使用訂單自己的自動編號規則（不再沿用報價單 ID）
     const orderData: Partial<Order> = {
-      id: quote.id,
       quoteId: quote.id,
       customerId: quote.customerId,
       staffId: quote.staffId,
