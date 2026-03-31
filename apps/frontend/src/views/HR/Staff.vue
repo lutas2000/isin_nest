@@ -749,20 +749,6 @@
                   </span>
                 </div>
               </div>
-
-              <div class="detail-row">
-                <div class="detail-label">是否需要外帳</div>
-                <div class="detail-value">
-                  <span
-                    class="badge"
-                    :class="
-                      viewingStaff.have_fake ? 'badge-warning' : 'badge-success'
-                    "
-                  >
-                    {{ viewingStaff.have_fake ? '是' : '否' }}
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
