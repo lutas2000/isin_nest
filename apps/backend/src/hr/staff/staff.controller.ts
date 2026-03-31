@@ -68,4 +68,14 @@ export class StaffController {
   ): Promise<Staff | null> {
     return this.usersService.update(id, data);
   }
+
+  @ApiOperation({ summary: '驗證員工管理頁面解鎖密碼' })
+  @ApiResponse({ status: 200, description: '回傳密碼是否正確' })
+  @Post('lock/verify')
+  verifyLockPassword(
+    @Body('password') password: string,
+  ): { valid: boolean } {
+    const correct = process.env.STAFF_PAGE_LOCK_PASSWORD || '0323L';
+    return { valid: password === correct };
+  }
 }

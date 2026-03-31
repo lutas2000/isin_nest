@@ -1,19 +1,50 @@
 <template>
   <div class="staff-page">
-    <PageHeader
-      title="員工管理"
-      description="管理公司員工資訊、職位和權限"
-    >
-      <template #actions>
-        <button class="btn btn-primary" @click="showAddModal = true">
-          <span class="btn-icon">👤</span>
-          新增員工
-        </button>
-      </template>
-    </PageHeader>
+    <!-- 上鎖畫面 -->
+    <div v-if="isLocked" class="staff-lock-overlay">
+      <div class="staff-lock-card">
+        <h2 class="staff-lock-title">員工管理 - 已上鎖</h2>
+        <p class="staff-lock-desc">請輸入解鎖密碼以檢視員工資料</p>
+        <div class="staff-lock-form">
+          <label class="form-label">解鎖密碼</label>
+          <input
+            v-model="passwordInput"
+            type="password"
+            class="form-control"
+            placeholder="請輸入解鎖密碼"
+            @keyup.enter="tryUnlock"
+          />
+          <p v-if="passwordError" class="staff-lock-error">
+            {{ passwordError }}
+          </p>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button" @click="tryUnlock">
+              解鎖
+            </button>
+          </div>
+          <p class="staff-lock-hint">
+            此頁面若超過 5 分鐘未操作，將自動再次上鎖。
+          </p>
+        </div>
+      </div>
+    </div>
 
-    <!-- 員工列表 -->
-    <div class="staff-content">
+    <!-- 主要內容（解鎖後顯示） -->
+    <div v-else>
+      <PageHeader
+        title="員工管理"
+        description="管理公司員工資訊、職位和權限"
+      >
+        <template #actions>
+          <button class="btn btn-primary" @click="showAddModal = true">
+            <span class="btn-icon">👤</span>
+            新增員工
+          </button>
+        </template>
+      </PageHeader>
+
+      <!-- 員工列表 -->
+      <div class="staff-content">
       <TableHeader title="員工列表">
         <template #actions>
           <div class="search-box">
@@ -110,10 +141,10 @@
           </div>
         </template>
       </EditableDataTable>
-    </div>
+      </div>
 
-    <!-- 新增員工模態框 -->
-    <div
+      <!-- 新增員工模態框 -->
+      <div
       v-if="showAddModal"
       class="modal-overlay"
       @click="showAddModal = false"
@@ -351,10 +382,10 @@
           </div>
         </form>
       </div>
-    </div>
+      </div>
 
-    <!-- 編輯員工模態框 -->
-    <div
+      <!-- 編輯員工模態框 -->
+      <div
       v-if="showEditModal"
       class="modal-overlay"
       @click="showEditModal = false"
@@ -555,10 +586,10 @@
           </div>
         </form>
       </div>
-    </div>
+      </div>
 
-    <!-- 查看員工詳情模態框 -->
-    <div
+      <!-- 查看員工詳情模態框 -->
+      <div
       v-if="showViewModal"
       class="modal-overlay"
       @click="showViewModal = false"
@@ -745,12 +776,13 @@
           </button>
         </div>
       </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { PageHeader, TableHeader } from '@/components';
 import EditableDataTable from '@/components/EditableDataTable.vue';
 import { useErrorStore } from '@/stores/error';
@@ -779,6 +811,80 @@ interface Staff {
   stop_work: string | null;
   have_fake: boolean;
 }
+
+// 頁面鎖定相關
+const isLocked = ref(true);
+const passwordInput = ref('');
+const passwordError = ref('');
+const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 分鐘
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+const lockScreen = () => {
+  isLocked.value = true;
+  passwordInput.value = '';
+  passwordError.value = '';
+  if (idleTimer) {
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+};
+
+const startIdleTimer = () => {
+  if (idleTimer) {
+    clearTimeout(idleTimer);
+  }
+  idleTimer = setTimeout(() => {
+    lockScreen();
+  }, IDLE_TIMEOUT);
+};
+
+const resetIdleTimer = () => {
+  if (!isLocked.value) {
+    startIdleTimer();
+  }
+};
+
+const activityEvents = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+
+const handleUserActivity = () => {
+  resetIdleTimer();
+};
+
+const tryUnlock = async () => {
+  passwordError.value = '';
+
+  if (!passwordInput.value) {
+    passwordError.value = '請輸入密碼';
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/staffs/lock/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: passwordInput.value }),
+    });
+
+    if (!response.ok) {
+      passwordError.value = '驗證失敗，請稍後再試';
+      return;
+    }
+
+    const data = await response.json();
+    if (data?.valid) {
+      isLocked.value = false;
+      passwordError.value = '';
+      startIdleTimer();
+    } else {
+      passwordError.value = '密碼錯誤，請再試一次';
+    }
+  } catch (error) {
+    console.error('解鎖驗證失敗:', error);
+    passwordError.value = '網路錯誤，請稍後再試';
+  }
+};
 
 // 搜尋和篩選
 const staffSearch = ref('');
@@ -1187,9 +1293,22 @@ const formatDate = (dateString: string | null) => {
   return new Date(dateString).toLocaleDateString('zh-TW');
 };
 
-// 頁面載入時取得資料
+// 頁面載入時取得資料與掛載活動監聽
 onMounted(() => {
   loadStaffData();
+  activityEvents.forEach((eventName) => {
+    window.addEventListener(eventName, handleUserActivity);
+  });
+});
+
+onUnmounted(() => {
+  if (idleTimer) {
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+  activityEvents.forEach((eventName) => {
+    window.removeEventListener(eventName, handleUserActivity);
+  });
 });
 </script>
 
@@ -1197,6 +1316,52 @@ onMounted(() => {
 .staff-page {
   max-width: 1400px;
   margin: 0 auto;
+}
+
+/* 上鎖畫面樣式 */
+.staff-lock-overlay {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.staff-lock-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  border: 1px solid var(--secondary-200);
+}
+
+.staff-lock-title {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--font-size-xl);
+  color: var(--secondary-900);
+}
+
+.staff-lock-desc {
+  margin: 0 0 1.5rem 0;
+  color: var(--secondary-600);
+}
+
+.staff-lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.staff-lock-error {
+  color: var(--danger-600);
+  font-size: var(--font-size-sm);
+}
+
+.staff-lock-hint {
+  margin-top: 0.75rem;
+  font-size: var(--font-size-xs);
+  color: var(--secondary-500);
 }
 
 .btn-icon {
