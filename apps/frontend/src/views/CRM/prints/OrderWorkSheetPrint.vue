@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import PrintContainer from '@/components/Print/PrintContainer.vue';
 import CompanyHeader from '@/components/Print/CompanyHeader.vue';
 import { getCompanyHeaderStyles } from '@/components/Print/printStyles';
@@ -481,10 +481,6 @@ const print = async () => {
     styles: getOrderPrintStyles(),
   });
 };
-
-onMounted(() => {
-  void preparePrintData();
-});
 
 defineExpose({ print });
 </script>
