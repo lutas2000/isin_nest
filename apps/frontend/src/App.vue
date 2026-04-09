@@ -286,7 +286,13 @@ const pageTitles: Record<string, string> = {
 };
 
 const currentPageTitle = computed(() => {
-  return pageTitles[route.path] || 'ISIN CNC 管理系統';
+  if (route.name === 'CRMQuoteItems') {
+    return '報價單詳情';
+  }
+  if (route.name === 'CRMOrderItems') {
+    return '訂單詳情';
+  }
+  return pageTitles[route.path] || '奕新雷射 銷管系統';
 });
 
 // 檢查是否為重設密碼頁面
