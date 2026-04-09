@@ -82,13 +82,9 @@
               <div class="nav-icon">🤝</div>
               <span v-if="!sidebarCollapsed" class="nav-text">客戶</span>
             </router-link>
-            <router-link
-              to="/crm/contacts"
-              class="nav-item"
-              active-class="active"
-            >
-              <div class="nav-icon">👤</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">聯絡人</span>
+            <router-link to="/crm/vendors" class="nav-item" active-class="active">
+              <div class="nav-icon">🏭</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">廠商</span>
             </router-link>
             <router-link
               to="/crm/quotes"
@@ -157,10 +153,6 @@
             <router-link to="/crm/processings" class="nav-item" active-class="active">
               <div class="nav-icon">🔩</div>
               <span v-if="!sidebarCollapsed" class="nav-text">加工項目</span>
-            </router-link>
-            <router-link to="/crm/vendors" class="nav-item" active-class="active">
-              <div class="nav-icon">🏭</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">廠商</span>
             </router-link>
             <router-link to="/settings" class="nav-item" active-class="active">
               <div class="nav-icon">⚙️</div>
