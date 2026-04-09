@@ -244,7 +244,7 @@ interface Column {
 export interface EditableColumn extends Column {
   editable?: boolean;
   required?: boolean;
-  type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select';
+  type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'date';
   options?: Array<{value: any, label: string}> | (() => Array<{value: any, label: string}>);
   searchFunction?: (searchTerm: string) => Promise<Array<{value: any, label: string}>>;
   truncate?: boolean;

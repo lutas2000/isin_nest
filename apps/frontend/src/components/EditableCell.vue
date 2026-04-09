@@ -33,6 +33,22 @@
       step="any"
     />
 
+    <!-- 日期輸入 -->
+    <input
+      v-else-if="column.type === 'date'"
+      ref="inputRef"
+      type="date"
+      class="form-control"
+      :class="{ 
+        'required-field-empty': column.required && (!value || value === ''),
+        'form-control-error': column.required && (!value || value === '')
+      }"
+      :value="value"
+      @input="handleInput($event)"
+      @keydown="handleKeyDown"
+      @blur="handleBlur"
+    />
+
     <!-- 下拉選單 -->
     <select
       v-else-if="column.type === 'select'"

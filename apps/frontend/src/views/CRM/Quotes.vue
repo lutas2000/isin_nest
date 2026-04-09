@@ -399,13 +399,21 @@ const tableState = computed(() => {
   };
 });
 
+const getTodayDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // 新增行模板
 const newRowTemplate = () => ({
   staffId: authStore.staffId || '',
   customerId: '',
   totalAmount: 0,
   isSupplyMaterial: false,
-  quoteDeadline: '',
+  quoteDeadline: getTodayDateString(),
   notes: '',
   processingIds: [] as number[],
   isSigned: false,
@@ -499,7 +507,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'quoteDeadline',
     label: '報價期限',
     editable: true,
-    type: 'text'
+    type: 'date'
   },
   { 
     key: 'processing', 
