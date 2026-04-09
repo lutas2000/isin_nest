@@ -411,15 +411,26 @@ const handleSave = async (row: QuoteItem, isNew: boolean) => {
     return;
   }
 
+  const thickness = Number(row.thickness);
+  const quantity = Number(row.quantity);
+  if (!Number.isFinite(thickness) || thickness <= 0) {
+    alert('厚度需大於 0');
+    return;
+  }
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    alert('數量需大於 0');
+    return;
+  }
+
   try {
     const data: Partial<QuoteItem> = {
       quoteId: quote.value.id,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
-      thickness: row.thickness || undefined,
+      thickness,
       processingIds: row.processingIds || undefined,
       notes: row.notes || undefined,
-      quantity: row.quantity || 0,
+      quantity,
       unitPrice: row.unitPrice || 0,
       source: row.source || undefined,
     };
@@ -443,15 +454,26 @@ const handleNewRowSave = async (row: any) => {
     return;
   }
 
+  const thickness = Number(row.thickness);
+  const quantity = Number(row.quantity);
+  if (!Number.isFinite(thickness) || thickness <= 0) {
+    alert('厚度需大於 0');
+    return;
+  }
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    alert('數量需大於 0');
+    return;
+  }
+
   try {
     const data: Partial<QuoteItem> = {
       quoteId: quote.value.id,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
-      thickness: row.thickness || undefined,
+      thickness,
       processingIds: row.processingIds || undefined,
       notes: row.notes || undefined,
-      quantity: row.quantity || 0,
+      quantity,
       unitPrice: row.unitPrice || 0,
       source: row.source || undefined,
     };
@@ -713,6 +735,25 @@ onMounted(() => {
 
 .btn-icon {
   margin-right: 0.5rem;
+}
+
+/* 縮小指定欄位寬度：項次、厚度、數量 */
+:deep(.editable-data-table .table th:nth-child(1)),
+:deep(.editable-data-table .table td:nth-child(1)) {
+  width: 32px;
+  min-width: 32px;
+}
+
+:deep(.editable-data-table .table th:nth-child(4)),
+:deep(.editable-data-table .table td:nth-child(4)) {
+  width: 64px;
+  min-width: 64px;
+}
+
+:deep(.editable-data-table .table th:nth-child(7)),
+:deep(.editable-data-table .table td:nth-child(7)) {
+  width: 64px;
+  min-width: 64px;
 }
 
 /* Modal 表單樣式 */
