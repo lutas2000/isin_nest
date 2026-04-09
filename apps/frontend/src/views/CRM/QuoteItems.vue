@@ -1,21 +1,5 @@
 <template>
   <div class="quote-items-page">
-    <PageHeader 
-      title="報價單詳情" 
-      :description="quote ? `` : '載入中...'"
-    >
-      <template #actions>
-        <button class="btn btn-primary" @click="handlePrint" v-if="quote">
-          <span class="btn-icon">🖨️</span>
-          列印
-        </button>
-        <button class="btn btn-outline" @click="goBack">
-          <span class="btn-icon">←</span>
-          返回
-        </button>
-      </template>
-    </PageHeader>
-
     <div v-if="loading" class="loading-message">載入中...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
     
@@ -53,6 +37,18 @@
                   取消
                 </button>
               </template>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="handlePrint"
+              >
+                <span class="btn-icon">🖨️</span>
+                列印
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" @click="goBack">
+                <span class="btn-icon">←</span>
+                返回
+              </button>
             </template>
             <template #value-status>
               <StatusBadge
@@ -205,7 +201,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  PageHeader,
   StatusBadge,
   TableHeader,
   EditableDataTable,
