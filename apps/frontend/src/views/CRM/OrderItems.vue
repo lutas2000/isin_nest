@@ -811,7 +811,7 @@ onMounted(() => {
 
 <style scoped>
 .work-order-items-page {
-  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
 }
 

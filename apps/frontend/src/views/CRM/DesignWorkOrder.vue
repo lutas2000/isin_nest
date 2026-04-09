@@ -274,7 +274,7 @@ onMounted(() => {
 
 <style scoped>
 .design-work-order-detail {
-  max-width: 960px;
+  width: 100%;
   margin: 0 auto;
 }
 

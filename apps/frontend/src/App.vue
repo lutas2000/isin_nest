@@ -601,6 +601,7 @@ onUnmounted(() => {
 /* 主要內容區域 */
 .main-content {
   flex: 1;
+  min-width: 0;
   margin-left: var(--sidebar-width);
   transition: margin-left 0.3s ease;
   min-height: 100vh;
@@ -803,6 +804,10 @@ onUnmounted(() => {
 /* 頁面內容 */
 .page-content {
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 2rem;
 }
 

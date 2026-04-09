@@ -826,7 +826,7 @@ onMounted(() => {
 
 <style scoped>
 .staff-segment-page {
-  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
 }
 

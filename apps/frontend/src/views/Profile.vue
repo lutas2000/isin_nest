@@ -169,7 +169,7 @@ const handleLogout = () => {
 
 <style scoped>
 .profile-page {
-  max-width: 800px;
+  width: 100%;
   margin: 0 auto;
 }
 

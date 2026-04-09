@@ -155,7 +155,7 @@ onMounted(() => { loadData(); });
 </script>
 
 <style scoped>
-.cutting-work-orders-page { max-width: 1400px; margin: 0 auto; }
+.cutting-work-orders-page { width: 100%; margin: 0 auto; }
 .loading-message, .error-message { padding: 2rem; text-align: center; }
 .error-message { color: var(--danger-600); background: var(--danger-50); border-radius: var(--border-radius-lg); }
 .table-card { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); overflow: hidden; }

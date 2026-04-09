@@ -118,7 +118,7 @@ onMounted(() => {
 
 <style scoped>
 .nesting-items-page {
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
 }
 
