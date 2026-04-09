@@ -940,6 +940,18 @@ defineExpose({
   white-space: nowrap;
 }
 
+/* 隱藏數字輸入框上下增減控制 */
+:deep(input[type="number"]) {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+:deep(input[type="number"]::-webkit-outer-spin-button),
+:deep(input[type="number"]::-webkit-inner-spin-button) {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .action-buttons {
   display: flex;
   gap: 0.5rem;
