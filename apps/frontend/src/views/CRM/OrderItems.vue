@@ -34,79 +34,15 @@
     <div v-else-if="workOrder" class="work-order-items-content">
       <!-- 工作單詳細資訊 -->
       <div class="work-order-details-card">
-        <TableHeader title="訂單資訊" />
         <div class="details-content">
-          <div class="details-section">
-            <h4>基本資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">訂單編號：</span>
-                <span class="details-value">{{ workOrder.id }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">業務員：</span>
-                <span class="details-value">{{ workOrder.staff?.name || '未知' }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">客戶：</span>
-                <span class="details-value">
-                  {{ workOrder.customer?.companyName || workOrder.customer?.companyShortName || '未指定' }}
-                </span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">狀態：</span>
-                <span class="details-value">
-                  <StatusBadge
-                    :text="workOrder.isCompleted ? '已完成' : '進行中'"
-                    :variant="workOrder.isCompleted ? 'success' : 'info'"
-                  />
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section">
-            <h4>訂單資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">運送方式：</span>
-                <span class="details-value">{{ workOrder.shippingMethod }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">付款方式：</span>
-                <span class="details-value">{{ workOrder.paymentMethod }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section" v-if="workOrder.notes">
-            <h4>備註</h4>
-            <p>{{ workOrder.notes }}</p>
-          </div>
-
-          <div class="details-section">
-            <h4>時間資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">建立時間：</span>
-                <span class="details-value">
-                  {{ workOrder.createdAt ? new Date(workOrder.createdAt).toLocaleString('zh-TW') : '未知' }}
-                </span>
-              </div>
-              <div class="details-item" v-if="workOrder.endedAt">
-                <span class="details-label">完成時間：</span>
-                <span class="details-value">
-                  {{ new Date(workOrder.endedAt).toLocaleString('zh-TW') }}
-                </span>
-              </div>
-              <div class="details-item" v-if="workOrder.updatedAt">
-                <span class="details-label">更新時間：</span>
-                <span class="details-value">
-                  {{ new Date(workOrder.updatedAt).toLocaleString('zh-TW') }}
-                </span>
-              </div>
-            </div>
-          </div>
+          <DetailPairs :items="detailItems">
+            <template #value-status>
+              <StatusBadge
+                :text="workOrder.isCompleted ? '已完成' : '進行中'"
+                :variant="workOrder.isCompleted ? 'success' : 'info'"
+              />
+            </template>
+          </DetailPairs>
         </div>
       </div>
 
@@ -251,7 +187,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint } from '@/components';
+import {
+  PageHeader,
+  StatusBadge,
+  TableHeader,
+  EditableDataTable,
+  ShortcutHint,
+  DetailPairs,
+  type EditableColumn,
+  type DetailPairItem,
+} from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderItem } from '@/services/crm/work-order.service';
 import { designWorkOrderService } from '@/services/crm/design-work-order.service';
@@ -285,6 +230,20 @@ const vendors = ref<Vendor[]>([]);
 const workOrderPrintRef = ref<InstanceType<typeof OrderPrint> | null>(null);
 const workOrderWorkSheetPrintRef =
   ref<InstanceType<typeof OrderWorkSheetPrint> | null>(null);
+
+const dateTimeFormatter = new Intl.DateTimeFormat('zh-TW', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+const formatDateTime = (value?: string | Date | null) => {
+  if (!value) return '未知';
+  return dateTimeFormatter.format(new Date(value));
+};
 
 // 表格狀態（用於 ShortcutHint）
 const tableState = computed(() => {
@@ -433,6 +392,32 @@ const displayWorkOrderItems = computed<DisplayWorkOrderItem[]>(() =>
     sequence: index + 1,
   })),
 );
+
+const detailItems = computed<DetailPairItem[]>(() => {
+  if (!workOrder.value) return [];
+
+  const items: DetailPairItem[] = [
+    { key: 'id', label: '訂單編號', value: workOrder.value.id },
+    { key: 'staff', label: '業務員', value: workOrder.value.staff?.name || '未知' },
+    {
+      key: 'customer',
+      label: '客戶',
+      value: workOrder.value.customer?.companyName || workOrder.value.customer?.companyShortName || '未指定',
+    },
+    { key: 'status', label: '狀態', value: workOrder.value.isCompleted ? '已完成' : '進行中' },
+    { key: 'shippingMethod', label: '運送方式', value: workOrder.value.shippingMethod || '-' },
+    { key: 'paymentMethod', label: '付款方式', value: workOrder.value.paymentMethod || '-' },
+    { key: 'createdAt', label: '建立時間', value: formatDateTime(workOrder.value.createdAt) },
+    { key: 'endedAt', label: '完成時間', value: workOrder.value.endedAt ? formatDateTime(workOrder.value.endedAt) : '-' },
+    { key: 'updatedAt', label: '更新時間', value: workOrder.value.updatedAt ? formatDateTime(workOrder.value.updatedAt) : '-' },
+  ];
+
+  if (workOrder.value.notes) {
+    items.push({ key: 'notes', label: '備註', value: workOrder.value.notes, fullWidth: true });
+  }
+
+  return items;
+});
 
 // 載入訂單資料
 const loadWorkOrder = async () => {
@@ -770,57 +755,6 @@ onMounted(() => {
   padding: 2rem;
 }
 
-.details-section {
-  margin-bottom: 2rem;
-}
-
-.details-section:last-child {
-  margin-bottom: 0;
-}
-
-.details-section h4 {
-  margin-bottom: 1rem;
-  color: var(--secondary-900);
-  font-size: var(--font-size-lg);
-  border-bottom: 2px solid var(--secondary-200);
-  padding-bottom: 0.5rem;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.details-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.details-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-  font-weight: 500;
-}
-
-.details-value {
-  font-size: var(--font-size-base);
-  color: var(--secondary-900);
-}
-
-.details-value.highlight {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--primary-600);
-}
-
-.details-section p {
-  color: var(--secondary-700);
-  line-height: 1.6;
-  margin: 0;
-}
-
 /* 訂單工件列表 */
 .empty-message {
   padding: 3rem;
@@ -1013,10 +947,6 @@ onMounted(() => {
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-  .details-grid {
-    grid-template-columns: 1fr;
-  }
-
   .form-row {
     grid-template-columns: 1fr;
   }

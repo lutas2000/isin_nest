@@ -22,69 +22,15 @@
     <div v-else-if="quote" class="quote-items-content">
       <!-- 報價單詳細資訊 -->
       <div class="quote-details-card">
-        <TableHeader title="報價單資訊" />
         <div class="details-content">
-          <div class="details-section">
-            <h4>基本資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">報價單編號：</span>
-                <span class="details-value">{{ quote.id }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">經手人：</span>
-                <span class="details-value">{{ quote.staff?.name || '未知' }}</span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">客戶：</span>
-                <span class="details-value">
-                  {{ quote.customer?.companyName || quote.customer?.companyShortName || '未指定' }}
-                </span>
-              </div>
-              <div class="details-item">
-                <span class="details-label">狀態：</span>
-                <span class="details-value">
-                  <StatusBadge 
-                    :text="quote.isSigned ? '已簽名' : '待簽名'" 
-                    :variant="quote.isSigned ? 'success' : 'warning'"
-                  />
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section">
-            <h4>金額資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">總計金額：</span>
-                <span class="details-value highlight">{{ Number(quote.totalAmount).toLocaleString('zh-TW') }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section" v-if="quote.notes">
-            <h4>注意事項</h4>
-            <p>{{ quote.notes }}</p>
-          </div>
-
-          <div class="details-section">
-            <h4>時間資訊</h4>
-            <div class="details-grid">
-              <div class="details-item">
-                <span class="details-label">建立時間：</span>
-                <span class="details-value">
-                  {{ quote.createdAt ? new Date(quote.createdAt).toLocaleString('zh-TW') : '未知' }}
-                </span>
-              </div>
-              <div class="details-item" v-if="quote.updatedAt">
-                <span class="details-label">更新時間：</span>
-                <span class="details-value">
-                  {{ new Date(quote.updatedAt).toLocaleString('zh-TW') }}
-                </span>
-              </div>
-            </div>
-          </div>
+          <DetailPairs :items="detailItems">
+            <template #value-status>
+              <StatusBadge
+                :text="quote.isSigned ? '已簽名' : '待簽名'"
+                :variant="quote.isSigned ? 'success' : 'warning'"
+              />
+            </template>
+          </DetailPairs>
         </div>
       </div>
 
@@ -221,7 +167,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PageHeader, StatusBadge, TableHeader, EditableDataTable, type EditableColumn, ShortcutHint } from '@/components';
+import {
+  PageHeader,
+  StatusBadge,
+  TableHeader,
+  EditableDataTable,
+  ShortcutHint,
+  DetailPairs,
+  type EditableColumn,
+  type DetailPairItem,
+} from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
@@ -247,6 +202,20 @@ const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null
 const showProcessingSelectModal = ref(false);
 const selectedQuoteItem = ref<QuoteItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
+
+const dateTimeFormatter = new Intl.DateTimeFormat('zh-TW', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+const formatDateTime = (value?: string | Date | null) => {
+  if (!value) return '未知';
+  return dateTimeFormatter.format(new Date(value));
+};
 
 // 表格狀態（用於 ShortcutHint）
 const tableState = computed(() => {
@@ -374,6 +343,30 @@ const displayQuoteItems = computed<DisplayQuoteItem[]>(() =>
     sequence: index + 1,
   })),
 );
+
+const detailItems = computed<DetailPairItem[]>(() => {
+  if (!quote.value) return [];
+
+  const items: DetailPairItem[] = [
+    { key: 'id', label: '報價單編號', value: quote.value.id },
+    { key: 'staff', label: '經手人', value: quote.value.staff?.name || '未知' },
+    {
+      key: 'customer',
+      label: '客戶',
+      value: quote.value.customer?.companyName || quote.value.customer?.companyShortName || '未指定',
+    },
+    { key: 'status', label: '狀態', value: quote.value.isSigned ? '已簽名' : '待簽名' },
+    { key: 'totalAmount', label: '總計金額', value: Number(quote.value.totalAmount).toLocaleString('zh-TW') },
+    { key: 'createdAt', label: '建立時間', value: formatDateTime(quote.value.createdAt) },
+    { key: 'updatedAt', label: '更新時間', value: quote.value.updatedAt ? formatDateTime(quote.value.updatedAt) : '-' },
+  ];
+
+  if (quote.value.notes) {
+    items.push({ key: 'notes', label: '注意事項', value: quote.value.notes, fullWidth: true });
+  }
+
+  return items;
+});
 
 // 載入報價單資料
 const loadQuote = async () => {
@@ -669,57 +662,6 @@ onMounted(() => {
   padding: 2rem;
 }
 
-.details-section {
-  margin-bottom: 2rem;
-}
-
-.details-section:last-child {
-  margin-bottom: 0;
-}
-
-.details-section h4 {
-  margin-bottom: 1rem;
-  color: var(--secondary-900);
-  font-size: var(--font-size-lg);
-  border-bottom: 2px solid var(--secondary-200);
-  padding-bottom: 0.5rem;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.details-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.details-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-  font-weight: 500;
-}
-
-.details-value {
-  font-size: var(--font-size-base);
-  color: var(--secondary-900);
-}
-
-.details-value.highlight {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--primary-600);
-}
-
-.details-section p {
-  color: var(--secondary-700);
-  line-height: 1.6;
-  margin: 0;
-}
-
 /* 報價單工件列表 */
 .empty-message {
   padding: 3rem;
@@ -825,10 +767,6 @@ onMounted(() => {
 
 /* 響應式設計 */
 @media (max-width: 768px) {
-  .details-grid {
-    grid-template-columns: 1fr;
-  }
-
   .quote-item-details {
     grid-template-columns: 1fr;
   }
