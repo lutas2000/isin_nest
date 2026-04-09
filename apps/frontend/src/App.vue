@@ -17,14 +17,6 @@
             <div class="logo-icon">🏭</div>
             <h2 v-if="!sidebarCollapsed" class="logo-text">奕新雷射</h2>
           </div>
-          <button
-            class="sidebar-toggle"
-            @click="toggleSidebar"
-            :title="sidebarCollapsed ? '展開側邊欄' : '收起側邊欄'"
-          >
-            <span v-if="!sidebarCollapsed">◀</span>
-            <span v-else>▶</span>
-          </button>
         </div>
 
         <nav class="sidebar-nav">
@@ -181,6 +173,30 @@
         <!-- 頂部導航欄 -->
         <header class="top-header">
           <div class="header-left">
+            <button
+              type="button"
+              class="header-menu-btn"
+              @click="toggleSidebar"
+              :title="sidebarCollapsed ? '展開側邊欄' : '收起側邊欄'"
+              aria-label="切換側邊欄"
+            >
+              <svg
+                class="header-menu-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
             <h1 class="page-title">{{ currentPageTitle }}</h1>
           </div>
           <div class="header-right">
@@ -294,23 +310,29 @@ const isResetPasswordPage = computed(() => {
 
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
+  if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+    showMobileOverlay.value = !sidebarCollapsed.value;
+  }
 };
 
 const closeMobileSidebar = () => {
   showMobileOverlay.value = false;
+  sidebarCollapsed.value = true;
 };
 
 // 監聽路由變化，在移動端自動收起側邊欄
 watch(route, () => {
-  if (window.innerWidth <= 768) {
+  if (typeof window !== 'undefined' && window.innerWidth <= 768) {
     showMobileOverlay.value = false;
+    sidebarCollapsed.value = true;
   }
 });
 
 // 響應式處理
 const handleResize = () => {
-  if (window.innerWidth <= 768) {
+  if (typeof window !== 'undefined' && window.innerWidth <= 768) {
     sidebarCollapsed.value = true;
+    showMobileOverlay.value = false;
   }
 };
 
@@ -424,7 +446,12 @@ onUnmounted(() => {
 }
 
 .sidebar-collapsed {
-  width: 70px;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-right: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 .sidebar-header {
@@ -582,7 +609,7 @@ onUnmounted(() => {
 }
 
 .main-expanded {
-  margin-left: 70px;
+  margin-left: 0;
 }
 
 /* 頂部導航欄 */
@@ -597,6 +624,42 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.header-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--secondary-200);
+  border-radius: var(--border-radius);
+  background: var(--secondary-50);
+  color: var(--secondary-700);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.header-menu-btn:hover {
+  background: var(--secondary-100);
+  border-color: var(--secondary-300);
+  color: var(--secondary-900);
+}
+
+.header-menu-icon {
+  display: block;
 }
 
 .page-title {
@@ -761,7 +824,8 @@ onUnmounted(() => {
   }
 
   .sidebar-collapsed {
-    width: 60px;
+    width: 0;
+    min-width: 0;
   }
 
   .main-content {
@@ -769,18 +833,29 @@ onUnmounted(() => {
   }
 
   .main-expanded {
-    margin-left: 60px;
+    margin-left: 0;
   }
 }
 
 @media (max-width: 768px) {
   .sidebar {
+    width: min(280px, 86vw);
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      width 0.3s ease;
+    pointer-events: auto;
   }
 
-  .sidebar.show {
+  .sidebar.sidebar-collapsed {
+    width: min(280px, 86vw);
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .sidebar:not(.sidebar-collapsed) {
     transform: translateX(0);
+    pointer-events: auto;
   }
 
   .main-content {
@@ -793,6 +868,7 @@ onUnmounted(() => {
 
   .top-header {
     padding: 1rem;
+    z-index: 1001;
   }
 
   .page-content {
