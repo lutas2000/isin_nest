@@ -107,7 +107,7 @@
         <EditableDataTable
           ref="editableTableRef"
           :columns="editableColumns"
-          :data="quoteItems"
+          :data="displayQuoteItems"
           :show-actions="true"
           :editable="true"
           :show-new-row="showNewRow"
@@ -120,8 +120,8 @@
           @row-delete="handleRowDelete"
           @row-edit="handleRowEdit"
         >
-          <template #cell-id="{ value }">
-            {{ value || '待生成' }}
+          <template #cell-sequence="{ value }">
+            {{ value }}
           </template>
 
           <template #cell-customerFile="{ value }">
@@ -205,7 +205,7 @@
       v-if="quote"
       ref="quotePrintRef"
       :quote="quote"
-      :items="quoteItems"
+      :items="orderedQuoteItems"
     />
 
     <!-- 加工選擇 Modal -->
@@ -235,6 +235,10 @@ const quote = ref<Quote | null>(null);
 const quoteItems = ref<QuoteItem[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+type DisplayQuoteItem = QuoteItem & {
+  sequence: number;
+};
 
 // EditableDataTable ref
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
@@ -290,10 +294,10 @@ const newRowTemplate = () => {
 
 // 可編輯表格列定義
 const editableColumns = computed<EditableColumn[]>(() => [
-  { 
-    key: 'id', 
-    label: '工件編號', 
-    editable: false 
+  {
+    key: 'sequence',
+    label: '項次',
+    editable: false
   },
   { 
     key: 'customerFile', 
@@ -355,6 +359,21 @@ const editableColumns = computed<EditableColumn[]>(() => [
     ]
   },
 ]);
+
+const orderedQuoteItems = computed<QuoteItem[]>(() => {
+  return [...quoteItems.value].sort((a, b) => {
+    const aId = typeof a.id === 'number' ? a.id : Number.POSITIVE_INFINITY;
+    const bId = typeof b.id === 'number' ? b.id : Number.POSITIVE_INFINITY;
+    return aId - bId;
+  });
+});
+
+const displayQuoteItems = computed<DisplayQuoteItem[]>(() =>
+  orderedQuoteItems.value.map((item, index) => ({
+    ...item,
+    sequence: index + 1,
+  })),
+);
 
 // 載入報價單資料
 const loadQuote = async () => {

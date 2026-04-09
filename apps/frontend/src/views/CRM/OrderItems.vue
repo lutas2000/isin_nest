@@ -129,7 +129,7 @@
         <EditableDataTable
           ref="editableTableRef"
           :columns="editableColumns"
-          :data="workOrderItems"
+          :data="displayWorkOrderItems"
           :show-actions="true"
           :editable="true"
           :show-new-row="showNewRow"
@@ -142,8 +142,8 @@
           @row-delete="handleRowDelete"
           @row-edit="handleRowEdit"
         >
-          <template #cell-id="{ value }">
-            {{ value || '待生成' }}
+          <template #cell-sequence="{ value }">
+            {{ value }}
           </template>
 
           <template #cell-cadFile="{ value }">
@@ -229,13 +229,13 @@
       v-if="workOrder"
       ref="workOrderPrintRef"
       :work-order="workOrder"
-      :items="workOrderItems"
+      :items="orderedWorkOrderItems"
     />
     <OrderWorkSheetPrint
       v-if="workOrder"
       ref="workOrderWorkSheetPrintRef"
       :work-order="workOrder"
-      :items="workOrderItems"
+      :items="orderedWorkOrderItems"
     />
 
     <!-- 加工選擇 Modal -->
@@ -267,6 +267,10 @@ const workOrder = ref<WorkOrder | null>(null);
 const workOrderItems = ref<WorkOrderItem[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+type DisplayWorkOrderItem = WorkOrderItem & {
+  sequence: number;
+};
 
 // EditableDataTable ref
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
@@ -333,10 +337,10 @@ const newRowTemplate = () => {
 
 // 可編輯表格列定義
 const editableColumns = computed<EditableColumn[]>(() => [
-  { 
-    key: 'id', 
-    label: '編號', 
-    editable: false 
+  {
+    key: 'sequence',
+    label: '項次',
+    editable: false
   },
   { 
     key: 'cadFile', 
@@ -414,6 +418,21 @@ const editableColumns = computed<EditableColumn[]>(() => [
     type: 'text' 
   },
 ]);
+
+const orderedWorkOrderItems = computed<WorkOrderItem[]>(() => {
+  return [...workOrderItems.value].sort((a, b) => {
+    const aId = typeof a.id === 'number' ? a.id : Number.POSITIVE_INFINITY;
+    const bId = typeof b.id === 'number' ? b.id : Number.POSITIVE_INFINITY;
+    return aId - bId;
+  });
+});
+
+const displayWorkOrderItems = computed<DisplayWorkOrderItem[]>(() =>
+  orderedWorkOrderItems.value.map((item, index) => ({
+    ...item,
+    sequence: index + 1,
+  })),
+);
 
 // 載入訂單資料
 const loadWorkOrder = async () => {
