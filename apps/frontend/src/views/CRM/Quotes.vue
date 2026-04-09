@@ -124,10 +124,6 @@
           <span>{{ value ? String(value).replace(/-/g, '/') : '' }}</span>
         </template>
 
-        <template #cell-createdAt="{ value }">
-          {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
-        </template>
-        
         <template #actions="{ row, isEditing, save, cancel }">
           <!-- 編輯模式：顯示保存和取消按鈕（這些會直接顯示，不在下拉選單中） -->
           <template v-if="isEditing">
@@ -516,11 +512,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true, 
     type: 'text',
     truncate: true
-  },
-  { 
-    key: 'createdAt', 
-    label: '建立日期', 
-    editable: false 
   },
 ]);
 
