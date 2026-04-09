@@ -76,10 +76,6 @@
                 <span class="details-label">付款方式：</span>
                 <span class="details-value">{{ workOrder.paymentMethod }}</span>
               </div>
-              <div class="details-item">
-                <span class="details-label">金額：</span>
-                <span class="details-value highlight">NT$ {{ Number(workOrder.amount).toLocaleString('zh-TW') }}</span>
-              </div>
             </div>
           </div>
 
@@ -184,10 +180,6 @@
 
           <template #cell-quantity="{ value }">
             {{ value }}
-          </template>
-
-          <template #cell-unitPrice="{ value }">
-            NT$ {{ Number(value || 0).toLocaleString('zh-TW') }}
           </template>
 
           <template #cell-source="{ value }">
@@ -392,13 +384,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
       { value: '代折', label: '代折' },
       { value: null, label: '無' },
     ]
-  },
-  {
-    key: 'unitPrice',
-    label: '單價',
-    editable: true,
-    required: true,
-    type: 'number',
   },
   { 
     key: 'source', 

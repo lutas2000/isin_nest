@@ -93,10 +93,6 @@
           />
         </template>
         
-        <template #cell-amount="{ value }">
-          {{ Number(value || 0).toLocaleString('zh-TW') }}
-        </template>
-
         <template #cell-notes="{ value }">
           <span v-if="value && value.length > 50" :title="value">
             {{ value.substring(0, 50) }}...
@@ -149,7 +145,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, ShortcutHint } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { apiGet } from '@/services/api';
@@ -186,9 +182,6 @@ const authStore = useAuthStore();
 // 路由
 const router = useRouter();
 
-// Modal 控制
-const showDetailsModal = ref(false);
-const selectedOrder = ref<WorkOrder | null>(null);
 const showNewRow = ref(false);
 
 // EditableDataTable ref
@@ -296,12 +289,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
       { value: '轉帳', label: '轉帳' },
       { value: '月結', label: '月結' }
     ]
-  },
-  { 
-    key: 'amount', 
-    label: '金額', 
-    editable: true, 
-    type: 'number' 
   },
   { 
     key: 'isCompleted', 
