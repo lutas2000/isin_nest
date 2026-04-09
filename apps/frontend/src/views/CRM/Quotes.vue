@@ -45,7 +45,7 @@
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
-        :editable="true"
+        :dbl-click-to-edit="false"
         :show-new-row="showNewRow"
         :new-row-template="newRowTemplate"
         @update:page="handlePageChange"
@@ -326,7 +326,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
@@ -361,7 +361,6 @@ interface Staff {
 
 const staffList = ref<Staff[]>([]); // 銷管部員工列表
 
-// 認證 store
 const authStore = useAuthStore();
 
 // 路由
@@ -407,7 +406,6 @@ const getTodayDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
-// 新增行模板
 const newRowTemplate = () => ({
   staffId: authStore.staffId || '',
   customerId: '',
@@ -674,7 +672,6 @@ const handleSave = async (row: Quote, isNew: boolean) => {
   }
 };
 
-// 處理新增行保存
 const handleNewRowSave = async (row: any) => {
   try {
     const data: Partial<Quote> = {

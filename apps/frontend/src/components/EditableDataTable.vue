@@ -261,6 +261,8 @@ interface Props {
   pageSize?: number;
   total?: number;
   editable?: boolean;
+  /** 為 false 時，雙擊列不會進入編輯（仍可用 F2、選單「編輯」等） */
+  dblClickToEdit?: boolean;
   showNewRow?: boolean;
   newRowTemplate?: any;
 }
@@ -273,6 +275,7 @@ const props = withDefaults(defineProps<Props>(), {
   pageSize: 50,
   total: 0,
   editable: true,
+  dblClickToEdit: true,
   showNewRow: false,
   newRowTemplate: () => ({}),
 });
@@ -417,8 +420,8 @@ const truncateText = (text: string, maxLength: number) => {
 
 // 滑鼠雙擊 row 進入編輯模式
 const handleRowDblClick = (row: any, index: number) => {
-  // 若整個表格不可編輯，或該列已在編輯中，就不處理
-  if (!props.editable || isEditing(row, index)) {
+  // 若整個表格不可編輯、已關閉雙擊編輯，或該列已在編輯中，就不處理
+  if (!props.editable || !props.dblClickToEdit || isEditing(row, index)) {
     return;
   }
 
@@ -519,6 +522,9 @@ const handlePageSizeChange = () => {
 };
 
 const startEdit = (row: any, index: number) => {
+  if (!props.editable) {
+    return;
+  }
   const key = getRowKey(row, index);
   editingRowId.value = key;
   editingData.value[key] = { ...row };
@@ -628,6 +634,9 @@ const cancelNewRow = () => {
 const handleTableKeyDown = (event: KeyboardEvent) => {
   // 處理 Insert 或 F7 新增行快捷鍵（優先處理，不受其他狀態影響）
   if (event.key === 'Insert' || event.key === 'F7') {
+    if (!props.editable) {
+      return;
+    }
     event.preventDefault();
     // 只有在沒有正在編輯任何欄位，且沒有正在顯示新增行時才觸發
     if (focusedFieldKey.value === null && !isNewRowFocused.value && !editingRowId.value) {
@@ -694,7 +703,7 @@ const handleTableKeyDown = (event: KeyboardEvent) => {
     }
   } else if (event.key === 'F2') {
     // 只有在非編輯狀態時才允許進入編輯
-    if (!isEditingCurrentRow) {
+    if (props.editable && !isEditingCurrentRow) {
       event.preventDefault();
       startEdit(currentRow, currentIndex);
       emit('row-edit', currentRow, currentIndex);
