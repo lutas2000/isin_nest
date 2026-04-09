@@ -28,6 +28,7 @@ export interface Quote {
   designFee: number
   shippingFee: number
   isSupplyMaterial: boolean
+  quoteDeadline?: string
   quoteItems?: QuoteItem[]
   staff?: any
   customer?: any

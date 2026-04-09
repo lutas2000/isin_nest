@@ -85,9 +85,9 @@
     </div>
 
     <!-- 備註 -->
-    <div class="print-notes" v-if="notes">
+    <div class="print-notes" v-if="printNotes">
       <div class="notes-title">備註</div>
-      <div class="notes-content">{{ notes }}</div>
+      <div class="notes-content">{{ printNotes }}</div>
     </div>
   </PrintContainer>
 </template>
@@ -132,7 +132,35 @@ const quoteId = computed(() => props.quote.id);
 const quoteDate = computed(() => formatRocDate(props.quote.createdAt));
 const handler = computed(() => props.quote.staff?.name || '未知');
 const totalAmount = computed(() => props.quote.totalAmount);
-const notes = computed(() => props.quote.notes);
+
+const formatQuoteDeadline = (value?: string) => {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value.replace(/-/g, '/');
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+  return parsedDate.toLocaleDateString('zh-TW');
+};
+
+const printNotes = computed(() => {
+  const lines: string[] = [];
+
+  if (props.quote.notes?.trim()) {
+    lines.push(props.quote.notes.trim());
+  }
+
+  lines.push(`代料：${props.quote.isSupplyMaterial ? '是' : '否'}`);
+
+  if (props.quote.quoteDeadline) {
+    lines.push(`報價期限：${formatQuoteDeadline(props.quote.quoteDeadline)}`);
+  }
+
+  return lines.join('\n');
+});
 
 // 取得報價單列印樣式
 const getQuotePrintStyles = (): string => {

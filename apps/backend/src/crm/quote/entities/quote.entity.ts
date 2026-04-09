@@ -101,6 +101,14 @@ export class Quote {
   @Column({ type: 'boolean', default: false, name: 'is_supply_material' })
   isSupplyMaterial: boolean;
 
+  @ApiProperty({
+    description: '報價期限',
+    example: '2026-04-30',
+    required: false,
+  })
+  @Column({ type: 'date', name: 'quote_deadline', nullable: true })
+  quoteDeadline?: string;
+
   @CreateDateColumn({
     type: 'timestamptz',
     name: 'created_at',

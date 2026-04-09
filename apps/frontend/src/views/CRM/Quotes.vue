@@ -116,6 +116,14 @@
           <span v-else>{{ value || '' }}</span>
         </template>
 
+        <template #cell-isSupplyMaterial="{ value }">
+          <span>{{ value ? '是' : '否' }}</span>
+        </template>
+
+        <template #cell-quoteDeadline="{ value }">
+          <span>{{ value ? String(value).replace(/-/g, '/') : '' }}</span>
+        </template>
+
         <template #cell-createdAt="{ value }">
           {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
         </template>
@@ -400,6 +408,8 @@ const newRowTemplate = () => ({
   staffId: authStore.staffId || '',
   customerId: '',
   totalAmount: 0,
+  isSupplyMaterial: false,
+  quoteDeadline: '',
   notes: '',
   processingIds: [] as number[],
   isSigned: false,
@@ -478,6 +488,22 @@ const editableColumns = computed<EditableColumn[]>(() => [
       { value: false, label: '待簽名' },
       { value: true, label: '已簽名' }
     ]
+  },
+  {
+    key: 'isSupplyMaterial',
+    label: '代料',
+    editable: true,
+    type: 'select',
+    options: [
+      { value: false, label: '否' },
+      { value: true, label: '是' }
+    ]
+  },
+  {
+    key: 'quoteDeadline',
+    label: '報價期限',
+    editable: true,
+    type: 'text'
   },
   { 
     key: 'processing', 
@@ -622,6 +648,8 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         staffId: row.staffId,
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
+        isSupplyMaterial: Boolean(row.isSupplyMaterial),
+        quoteDeadline: row.quoteDeadline || undefined,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
         isSigned: row.isSigned || false,
@@ -633,6 +661,8 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         staffId: row.staffId,
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
+        isSupplyMaterial: Boolean(row.isSupplyMaterial),
+        quoteDeadline: row.quoteDeadline || undefined,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
         isSigned: row.isSigned || false,
@@ -652,6 +682,8 @@ const handleNewRowSave = async (row: any) => {
       staffId: row.staffId,
       customerId: row.customerId,
       totalAmount: row.totalAmount || 0,
+      isSupplyMaterial: Boolean(row.isSupplyMaterial),
+      quoteDeadline: row.quoteDeadline || undefined,
       notes: row.notes || undefined,
       processingIds: row.processingIds || [],
       isSigned: row.isSigned || false,
