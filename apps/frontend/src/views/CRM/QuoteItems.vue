@@ -50,10 +50,38 @@
                 返回
               </button>
             </template>
-            <template #value-status>
-              <StatusBadge
-                :text="quote.isSigned ? '已簽名' : '待簽名'"
-                :variant="quote.isSigned ? 'success' : 'warning'"
+            <template #edit-isSigned>
+              <label class="checkbox-inline">
+                <input v-model="detailDraft.isSigned" type="checkbox" />
+                已簽名
+              </label>
+            </template>
+            <template #edit-processingIds>
+              <button
+                type="button"
+                class="processing-btn processing-btn--details"
+                @click="openQuoteHeaderProcessingModal"
+              >
+                <span
+                  v-if="detailDraft.processingIds.length > 0"
+                  class="processing-tags"
+                >
+                  {{ getProcessingNames(detailDraft.processingIds) }}
+                </span>
+                <span v-else class="processing-empty">選擇加工</span>
+              </button>
+            </template>
+            <template #edit-isSupplyMaterial>
+              <label class="checkbox-inline">
+                <input v-model="detailDraft.isSupplyMaterial" type="checkbox" />
+                代料
+              </label>
+            </template>
+            <template #edit-quoteDeadline>
+              <input
+                v-model="detailDraft.quoteDeadline"
+                type="date"
+                class="form-control"
               />
             </template>
             <template #edit-notes>
@@ -189,9 +217,9 @@
 
     <!-- 加工選擇 Modal -->
     <ProcessingSelectModal
-      :show="showProcessingSelectModal"
-      :model-value="selectedQuoteItem?.processingIds || []"
-      @close="showProcessingSelectModal = false"
+      :show="processingModalKind !== null"
+      :model-value="processingModalModelValue"
+      @close="closeProcessingModal"
       @confirm="handleProcessingConfirm"
     />
   </div>
@@ -201,7 +229,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  StatusBadge,
   TableHeader,
   EditableDataTable,
   ShortcutHint,
@@ -230,10 +257,21 @@ type DisplayQuoteItem = QuoteItem & {
 // EditableDataTable ref
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
-// Processing Modal 相關
-const showProcessingSelectModal = ref(false);
+// Processing Modal 相關（單頭編輯 / 明細列）
+type QuoteProcessingModalKind = 'item' | 'header' | null;
+const processingModalKind = ref<QuoteProcessingModalKind>(null);
 const selectedQuoteItem = ref<QuoteItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
+
+const processingModalModelValue = computed(() => {
+  if (processingModalKind.value === 'header') {
+    return detailDraft.value.processingIds || [];
+  }
+  if (processingModalKind.value === 'item' && selectedQuoteItem.value) {
+    return selectedQuoteItem.value.processingIds || [];
+  }
+  return [];
+});
 
 const dateTimeFormatter = new Intl.DateTimeFormat('zh-TW', {
   year: 'numeric',
@@ -247,6 +285,19 @@ const dateTimeFormatter = new Intl.DateTimeFormat('zh-TW', {
 const formatDateTime = (value?: string | Date | null) => {
   if (!value) return '未知';
   return dateTimeFormatter.format(new Date(value));
+};
+
+const dateOnlyFormatter = new Intl.DateTimeFormat('zh-TW', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+const formatDateOnly = (value?: string | Date | null) => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return dateOnlyFormatter.format(d);
 };
 
 // 表格狀態（用於 ShortcutHint）
@@ -267,12 +318,22 @@ const tableState = computed(() => {
 const detailsEditing = ref(false);
 const detailDraft = ref({
   notes: '',
+  isSigned: false,
+  isSupplyMaterial: false,
+  quoteDeadline: '',
+  processingIds: [] as number[],
 });
 
 const startDetailsEdit = () => {
   if (!quote.value) return;
   detailDraft.value = {
     notes: quote.value.notes || '',
+    isSigned: !!quote.value.isSigned,
+    isSupplyMaterial: !!quote.value.isSupplyMaterial,
+    quoteDeadline: quote.value.quoteDeadline
+      ? String(quote.value.quoteDeadline).slice(0, 10)
+      : '',
+    processingIds: [...(quote.value.processingIds || [])],
   };
   detailsEditing.value = true;
 };
@@ -286,6 +347,10 @@ const saveDetailsEdit = async () => {
   try {
     await quoteService.update(quote.value.id, {
       notes: detailDraft.value.notes.trim() || undefined,
+      isSigned: detailDraft.value.isSigned,
+      isSupplyMaterial: detailDraft.value.isSupplyMaterial,
+      quoteDeadline: detailDraft.value.quoteDeadline.trim() || undefined,
+      processingIds: [...detailDraft.value.processingIds],
     });
     detailsEditing.value = false;
     await loadQuote();
@@ -418,14 +483,33 @@ const detailItems = computed<DetailFieldItem[]>(() => {
       label: '客戶',
       value: quote.value.customer?.companyName || quote.value.customer?.companyShortName || '未指定',
     },
-    { key: 'status', label: '狀態', value: quote.value.isSigned ? '已簽名' : '待簽名' },
+    {
+      key: 'isSigned',
+      label: '已簽名',
+      value: quote.value.isSigned ? '是' : '否',
+    },
+    {
+      key: 'processingIds',
+      label: '後加工',
+      value: getProcessingNames(quote.value.processingIds),
+    },
+    {
+      key: 'isSupplyMaterial',
+      label: '代料',
+      value: quote.value.isSupplyMaterial ? '是' : '否',
+    },
+    {
+      key: 'quoteDeadline',
+      label: '報價期限',
+      value: formatDateOnly(quote.value.quoteDeadline),
+    },
     { key: 'totalAmount', label: '總計金額', value: Number(quote.value.totalAmount).toLocaleString('zh-TW') },
     { key: 'createdAt', label: '建立時間', value: formatDateTime(quote.value.createdAt) },
     { key: 'updatedAt', label: '更新時間', value: quote.value.updatedAt ? formatDateTime(quote.value.updatedAt) : '-' },
     {
       key: 'notes',
-      label: '注意事項',
-      value: quote.value.notes || '-',
+      label: '備註',
+      value: quote.value.notes || '',
       fullWidth: true,
     },
   ];
@@ -654,25 +738,41 @@ const loadAllProcessings = async () => {
   }
 };
 
-// 開啟加工選擇 Modal
+const closeProcessingModal = () => {
+  processingModalKind.value = null;
+  selectedQuoteItem.value = null;
+};
+
+// 開啟加工選擇 Modal（明細列）
 const openProcessingSelectModal = (item: QuoteItem) => {
+  processingModalKind.value = 'item';
   selectedQuoteItem.value = item;
-  showProcessingSelectModal.value = true;
+};
+
+// 開啟加工選擇 Modal（報價單單頭）
+const openQuoteHeaderProcessingModal = () => {
+  processingModalKind.value = 'header';
+  selectedQuoteItem.value = null;
 };
 
 // 確認加工選擇
 const handleProcessingConfirm = async (value: { ids: number[]; processings: Processing[] }) => {
-  if (!selectedQuoteItem.value) return;
+  if (processingModalKind.value === 'header') {
+    detailDraft.value.processingIds = [...value.ids];
+    closeProcessingModal();
+    return;
+  }
 
-  try {
-    await quoteItemService.update(selectedQuoteItem.value.id, {
-      processingIds: value.ids,
-    });
-    await loadQuote();
-    showProcessingSelectModal.value = false;
-    selectedQuoteItem.value = null;
-  } catch (err) {
-    alert(err instanceof Error ? err.message : '更新加工項目失敗');
+  if (processingModalKind.value === 'item' && selectedQuoteItem.value) {
+    try {
+      await quoteItemService.update(selectedQuoteItem.value.id, {
+        processingIds: value.ids,
+      });
+      await loadQuote();
+      closeProcessingModal();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '更新加工項目失敗');
+    }
   }
 };
 
@@ -814,6 +914,20 @@ onMounted(() => {
   font-size: 0.85rem;
   transition: all 0.2s;
   text-align: left;
+}
+
+.processing-btn--details {
+  width: 100%;
+  max-width: 100%;
+  min-height: 2.25rem;
+}
+
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: var(--font-size-base);
 }
 
 .processing-btn:hover {
