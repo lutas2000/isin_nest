@@ -23,14 +23,51 @@
       <!-- 報價單詳細資訊 -->
       <div class="quote-details-card">
         <div class="details-content">
-          <DetailPairs :items="detailItems">
+          <DetailFieldsPanel
+            v-model:editing="detailsEditing"
+            :items="detailItems"
+          >
+            <template #actions>
+              <template v-if="!detailsEditing">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  @click="startDetailsEdit"
+                >
+                  編輯
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  @click="saveDetailsEdit"
+                >
+                  儲存
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  @click="cancelDetailsEdit"
+                >
+                  取消
+                </button>
+              </template>
+            </template>
             <template #value-status>
               <StatusBadge
                 :text="quote.isSigned ? '已簽名' : '待簽名'"
                 :variant="quote.isSigned ? 'success' : 'warning'"
               />
             </template>
-          </DetailPairs>
+            <template #edit-notes>
+              <textarea
+                v-model="detailDraft.notes"
+                class="form-control"
+                rows="3"
+              />
+            </template>
+          </DetailFieldsPanel>
         </div>
       </div>
 
@@ -173,9 +210,9 @@ import {
   TableHeader,
   EditableDataTable,
   ShortcutHint,
-  DetailPairs,
+  DetailFieldsPanel,
   type EditableColumn,
-  type DetailPairItem,
+  type DetailFieldItem,
 } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
@@ -230,6 +267,37 @@ const tableState = computed(() => {
     data: tableRef.data,
   };
 });
+
+// 報價單詳情區塊編輯
+const detailsEditing = ref(false);
+const detailDraft = ref({
+  notes: '',
+});
+
+const startDetailsEdit = () => {
+  if (!quote.value) return;
+  detailDraft.value = {
+    notes: quote.value.notes || '',
+  };
+  detailsEditing.value = true;
+};
+
+const cancelDetailsEdit = () => {
+  detailsEditing.value = false;
+};
+
+const saveDetailsEdit = async () => {
+  if (!quote.value) return;
+  try {
+    await quoteService.update(quote.value.id, {
+      notes: detailDraft.value.notes.trim() || undefined,
+    });
+    detailsEditing.value = false;
+    await loadQuote();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '儲存報價詳情失敗');
+  }
+};
 
 // 新增行控制
 const showNewRow = ref(false);
@@ -344,10 +412,10 @@ const displayQuoteItems = computed<DisplayQuoteItem[]>(() =>
   })),
 );
 
-const detailItems = computed<DetailPairItem[]>(() => {
+const detailItems = computed<DetailFieldItem[]>(() => {
   if (!quote.value) return [];
 
-  const items: DetailPairItem[] = [
+  const items: DetailFieldItem[] = [
     { key: 'id', label: '報價單編號', value: quote.value.id },
     { key: 'staff', label: '經手人', value: quote.value.staff?.name || '未知' },
     {
@@ -359,11 +427,13 @@ const detailItems = computed<DetailPairItem[]>(() => {
     { key: 'totalAmount', label: '總計金額', value: Number(quote.value.totalAmount).toLocaleString('zh-TW') },
     { key: 'createdAt', label: '建立時間', value: formatDateTime(quote.value.createdAt) },
     { key: 'updatedAt', label: '更新時間', value: quote.value.updatedAt ? formatDateTime(quote.value.updatedAt) : '-' },
+    {
+      key: 'notes',
+      label: '注意事項',
+      value: quote.value.notes || '-',
+      fullWidth: true,
+    },
   ];
-
-  if (quote.value.notes) {
-    items.push({ key: 'notes', label: '注意事項', value: quote.value.notes, fullWidth: true });
-  }
 
   return items;
 });

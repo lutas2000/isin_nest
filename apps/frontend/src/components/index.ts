@@ -13,5 +13,5 @@ export { default as DraggableList } from './DraggableList.vue';
 export { default as SectionHeader } from './SectionHeader.vue';
 export { default as TableHeader } from './TableHeader.vue';
 export { default as ShortcutHint } from './ShortcutHint.vue';
-export { default as DetailPairs } from './DetailPairs.vue';
-export type { DetailPairItem } from './DetailPairs.vue';
+export { default as DetailFieldsPanel } from './DetailFieldsPanel.vue';
+export type { DetailFieldItem } from './DetailFieldsPanel.vue';

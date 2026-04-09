@@ -35,14 +35,65 @@
       <!-- 工作單詳細資訊 -->
       <div class="work-order-details-card">
         <div class="details-content">
-          <DetailPairs :items="detailItems">
+          <DetailFieldsPanel
+            v-model:editing="detailsEditing"
+            :items="detailItems"
+          >
+            <template #actions>
+              <template v-if="!detailsEditing">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  @click="startDetailsEdit"
+                >
+                  編輯
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  @click="saveDetailsEdit"
+                >
+                  儲存
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  @click="cancelDetailsEdit"
+                >
+                  取消
+                </button>
+              </template>
+            </template>
             <template #value-status>
               <StatusBadge
                 :text="workOrder.isCompleted ? '已完成' : '進行中'"
                 :variant="workOrder.isCompleted ? 'success' : 'info'"
               />
             </template>
-          </DetailPairs>
+            <template #edit-shippingMethod>
+              <input
+                v-model="detailDraft.shippingMethod"
+                type="text"
+                class="form-control"
+              />
+            </template>
+            <template #edit-paymentMethod>
+              <input
+                v-model="detailDraft.paymentMethod"
+                type="text"
+                class="form-control"
+              />
+            </template>
+            <template #edit-notes>
+              <textarea
+                v-model="detailDraft.notes"
+                class="form-control"
+                rows="3"
+              />
+            </template>
+          </DetailFieldsPanel>
         </div>
       </div>
 
@@ -193,9 +244,9 @@ import {
   TableHeader,
   EditableDataTable,
   ShortcutHint,
-  DetailPairs,
+  DetailFieldsPanel,
   type EditableColumn,
-  type DetailPairItem,
+  type DetailFieldItem,
 } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderItem } from '@/services/crm/work-order.service';
@@ -258,6 +309,43 @@ const tableState = computed(() => {
     data: tableRef.data,
   };
 });
+
+// 訂單詳情區塊編輯
+const detailsEditing = ref(false);
+const detailDraft = ref({
+  shippingMethod: '',
+  paymentMethod: '',
+  notes: '',
+});
+
+const startDetailsEdit = () => {
+  if (!workOrder.value) return;
+  detailDraft.value = {
+    shippingMethod: workOrder.value.shippingMethod || '',
+    paymentMethod: workOrder.value.paymentMethod || '',
+    notes: workOrder.value.notes || '',
+  };
+  detailsEditing.value = true;
+};
+
+const cancelDetailsEdit = () => {
+  detailsEditing.value = false;
+};
+
+const saveDetailsEdit = async () => {
+  if (!workOrder.value) return;
+  try {
+    await workOrderService.update(workOrder.value.id, {
+      shippingMethod: detailDraft.value.shippingMethod,
+      paymentMethod: detailDraft.value.paymentMethod,
+      notes: detailDraft.value.notes.trim() || undefined,
+    });
+    detailsEditing.value = false;
+    await loadWorkOrder();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '儲存訂單詳情失敗');
+  }
+};
 
 // 新增行控制
 const showNewRow = ref(false);
@@ -393,10 +481,10 @@ const displayWorkOrderItems = computed<DisplayWorkOrderItem[]>(() =>
   })),
 );
 
-const detailItems = computed<DetailPairItem[]>(() => {
+const detailItems = computed<DetailFieldItem[]>(() => {
   if (!workOrder.value) return [];
 
-  const items: DetailPairItem[] = [
+  const items: DetailFieldItem[] = [
     { key: 'id', label: '訂單編號', value: workOrder.value.id },
     { key: 'staff', label: '業務員', value: workOrder.value.staff?.name || '未知' },
     {
@@ -410,11 +498,13 @@ const detailItems = computed<DetailPairItem[]>(() => {
     { key: 'createdAt', label: '建立時間', value: formatDateTime(workOrder.value.createdAt) },
     { key: 'endedAt', label: '完成時間', value: workOrder.value.endedAt ? formatDateTime(workOrder.value.endedAt) : '-' },
     { key: 'updatedAt', label: '更新時間', value: workOrder.value.updatedAt ? formatDateTime(workOrder.value.updatedAt) : '-' },
+    {
+      key: 'notes',
+      label: '備註',
+      value: workOrder.value.notes || '-',
+      fullWidth: true,
+    },
   ];
-
-  if (workOrder.value.notes) {
-    items.push({ key: 'notes', label: '備註', value: workOrder.value.notes, fullWidth: true });
-  }
 
   return items;
 });
