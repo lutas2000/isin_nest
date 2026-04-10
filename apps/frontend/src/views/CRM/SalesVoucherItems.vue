@@ -118,9 +118,6 @@
           <template #cell-quantity="{ value }">{{ value }}</template>
           <template #cell-unitPrice="{ value }">{{ formatMoney(value) }}</template>
           <template #cell-source="{ value }">{{ value || '-' }}</template>
-          <template #cell-status="{ value }">
-            <StatusBadge :text="value || '-'" variant="secondary" size="sm" />
-          </template>
           <template #cell-notes="{ value }">{{ value || '-' }}</template>
           <template #actions="{ row, isEditing, save, cancel }">
             <template v-if="isEditing">
@@ -149,7 +146,6 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   PageHeader,
-  StatusBadge,
   TableHeader,
   EditableDataTable,
   ShortcutHint,
@@ -334,7 +330,6 @@ const newRowTemplate = () => ({
   substitute: '',
   unitPrice: 0,
   source: '新圖',
-  status: 'TODO',
   notes: '',
 });
 
@@ -378,18 +373,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
       { value: '新圖', label: '新圖' },
       { value: '舊圖', label: '舊圖' },
       { value: '修改', label: '修改' },
-    ],
-  },
-  {
-    key: 'status',
-    label: '狀態',
-    editable: true,
-    type: 'select',
-    options: [
-      { value: 'TODO', label: 'TODO' },
-      { value: '待處理', label: '待處理' },
-      { value: '處理中', label: '處理中' },
-      { value: '已完成', label: '已完成' },
     ],
   },
   { key: 'notes', label: '備註', editable: true, type: 'text' },
@@ -467,7 +450,6 @@ const buildItemPayload = (row: SalesVoucherItem): Partial<SalesVoucherItem> => (
   substitute: row.substitute || undefined,
   unitPrice: row.unitPrice || 0,
   source: row.source || '新圖',
-  status: row.status || 'TODO',
   notes: row.notes || undefined,
 });
 
@@ -500,7 +482,6 @@ const handleNewRowSave = async (row: any) => {
       substitute: row.substitute || undefined,
       unitPrice: row.unitPrice || 0,
       source: row.source || '新圖',
-      status: row.status || 'TODO',
       notes: row.notes || undefined,
     });
     showNewRow.value = false;

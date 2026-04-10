@@ -63,7 +63,7 @@ export class SalesVoucherItem {
   @Column({ type: 'int', default: 0 })
   quantity: number;
 
-  @ApiProperty({ description: '代料（最多三個字）', required: false })
+  @ApiProperty({ description: '代料', required: false })
   @Column({
     type: 'varchar',
     length: 3,
@@ -98,10 +98,6 @@ export class SalesVoucherItem {
   })
   unitPrice: number;
 
-  @ApiProperty({ description: '估計切割時間（分鐘）', required: false })
-  @Column({ type: 'int', nullable: true, name: 'estimated_cutting_time' })
-  estimatedCuttingTime?: number;
-
   @ApiProperty({ description: '圖號', required: false })
   @Column({
     type: 'varchar',
@@ -110,23 +106,6 @@ export class SalesVoucherItem {
     name: 'drawing_number',
   })
   drawingNumber?: string;
-
-  @ApiProperty({ description: '排版ID', required: false })
-  @Column({
-    type: 'int',
-    nullable: true,
-    name: 'nesting_id',
-  })
-  nestingId: number | null;
-
-  @ApiProperty({ description: '狀態', example: 'TODO' })
-  @Column({
-    type: 'varchar',
-    length: 50,
-    default: 'TODO',
-    nullable: false,
-  })
-  status: string;
 
   @ApiProperty({ description: '備註', required: false })
   @Column({

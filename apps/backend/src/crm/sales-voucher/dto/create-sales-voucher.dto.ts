@@ -55,23 +55,8 @@ export class CreateSalesVoucherItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
-  estimatedCuttingTime?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
   @IsString()
   drawingNumber?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  nestingId?: number | null;
-
-  @ApiPropertyOptional({ default: 'TODO' })
-  @IsOptional()
-  @IsString()
-  status?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -32,10 +32,7 @@ export interface SalesVoucherItem {
   source: string
   processingIds?: number[]
   unitPrice: number
-  estimatedCuttingTime?: number
   drawingNumber?: string
-  nestingId?: number | null
-  status: string
   notes?: string
   createdAt?: string
   updatedAt?: string
@@ -60,10 +57,7 @@ export interface CreateSalesVoucherPayload {
     source: string
     processingIds?: number[]
     unitPrice?: number
-    estimatedCuttingTime?: number
     drawingNumber?: string
-    nestingId?: number | null
-    status?: string
     notes?: string
   }>
 }

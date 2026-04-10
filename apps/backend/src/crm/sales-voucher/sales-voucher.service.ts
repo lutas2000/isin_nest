@@ -83,10 +83,7 @@ export class SalesVoucherService {
       source: dto.source,
       processingIds: dto.processingIds,
       unitPrice: dto.unitPrice ?? 0,
-      estimatedCuttingTime: dto.estimatedCuttingTime,
       drawingNumber: dto.drawingNumber,
-      nestingId: dto.nestingId ?? null,
-      status: dto.status ?? 'TODO',
       notes: dto.notes,
     };
   }
@@ -193,10 +190,7 @@ export class SalesVoucherService {
           source: oi.source,
           processingIds: oi.processingIds,
           unitPrice: oi.unitPrice,
-          estimatedCuttingTime: oi.estimatedCuttingTime,
           drawingNumber: oi.drawingNumber,
-          nestingId: oi.nestingId,
-          status: oi.status,
           notes: oi.notes,
         });
         await queryRunner.manager.save(item);
