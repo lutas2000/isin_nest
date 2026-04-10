@@ -94,6 +94,14 @@
               <div class="nav-icon">📋</div>
               <span v-if="!sidebarCollapsed" class="nav-text">訂單</span>
             </router-link>
+            <router-link
+              to="/crm/sales-vouchers"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">🧾</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">銷貨單</span>
+            </router-link>
           </div>
 
           <div class="nav-section">
@@ -287,6 +295,7 @@ const pageTitles: Record<string, string> = {
   '/crm': '客戶',
   '/crm/contacts': '聯絡人',
   '/crm/orders': '工作單',
+  '/crm/sales-vouchers': '銷貨單',
   '/crm/quotes': '報價單',
   '/crm/vendors': '廠商管理',
   '/settings': '系統設定',
@@ -299,6 +308,9 @@ const currentPageTitle = computed(() => {
   }
   if (route.name === 'CRMOrderItems') {
     return '訂單詳情';
+  }
+  if (route.name === 'CRMSalesVoucherItems') {
+    return '銷貨單明細';
   }
   return pageTitles[route.path] || '奕新雷射 銷管系統';
 });

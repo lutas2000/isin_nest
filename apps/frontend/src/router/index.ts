@@ -22,6 +22,8 @@ import CRMNestingManagement from '../views/CRM/nesting/NestingManagement.vue'
 import CRMNestingItems from '../views/CRM/nesting/NestingItems.vue'
 import CRMQuotes from '../views/CRM/Quotes.vue'
 import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
+import CRMSalesVouchers from '../views/CRM/SalesVouchers.vue'
+import CRMSalesVoucherItems from '../views/CRM/SalesVoucherItems.vue'
 import CRMVendors from '../views/CRM/Vendors.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
@@ -118,6 +120,18 @@ const routes = [
     name: 'CRMOrderItems',
     component: CRMOrderItems,
     meta: { title: '訂單詳情', icon: '📋', requiresAuth: true }
+  },
+  {
+    path: '/crm/sales-vouchers',
+    name: 'CRMSalesVouchers',
+    component: CRMSalesVouchers,
+    meta: { title: '銷貨單', icon: '🧾', requiresAuth: true }
+  },
+  {
+    path: '/crm/sales-vouchers/:id/items',
+    name: 'CRMSalesVoucherItems',
+    component: CRMSalesVoucherItems,
+    meta: { title: '銷貨單明細', icon: '🧾', requiresAuth: true }
   },
   {
     path: '/crm/design-work-orders',

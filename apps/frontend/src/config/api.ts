@@ -32,6 +32,8 @@ export const API_CONFIG = {
     QUOTE_ITEMS: '/crm/quote-items',
     ORDERS: '/crm/orders',
     ORDER_ITEMS: '/crm/order-items',
+    SALES_VOUCHERS: '/crm/sales-vouchers',
+    SALES_VOUCHER_ITEMS: '/crm/sales-voucher-items',
     // 舊端點（保持向後兼容）
     WORK_ORDERS: '/crm/orders',
     WORK_ORDER_ITEMS: '/crm/order-items',

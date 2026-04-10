@@ -20,6 +20,7 @@ const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = 
     { code: 'OLD', label: '舊圖' },
     { code: 'MODIFIED', label: '修改' },
   ],
+  vat_rate: [{ code: 'default', label: '5' }],
   processing_type: [
     { code: 'LASER_CUT', label: '雷射切割' },
     { code: 'BENDING', label: '折彎' },

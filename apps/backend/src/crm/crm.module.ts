@@ -14,6 +14,8 @@ import { ProcessingWorkOrderModule } from './processing-work-order/processing-wo
 import { DeliveryWorkOrderModule } from './delivery-work-order/delivery-work-order.module';
 import { NestingModule } from './nesting/nesting.module';
 import { OutsourcingCostModule } from './outsourcing-cost/outsourcing-cost.module';
+import { SalesVoucherModule } from './sales-voucher/sales-voucher.module';
+import { SalesVoucherItemModule } from './sales-voucher-item/sales-voucher-item.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { OutsourcingCostModule } from './outsourcing-cost/outsourcing-cost.modul
     DeliveryWorkOrderModule,
     NestingModule,
     OutsourcingCostModule,
+    SalesVoucherModule,
+    SalesVoucherItemModule,
   ],
   exports: [
     CustomerModule,
@@ -49,6 +53,8 @@ import { OutsourcingCostModule } from './outsourcing-cost/outsourcing-cost.modul
     DeliveryWorkOrderModule,
     NestingModule,
     OutsourcingCostModule,
+    SalesVoucherModule,
+    SalesVoucherItemModule,
   ],
 })
 export class CrmModule {}
