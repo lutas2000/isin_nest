@@ -1,10 +1,5 @@
 <template>
   <div class="sales-vouchers-page">
-    <PageHeader
-      title="銷貨單"
-      description="銷賬單據：可手動建立，或由訂單複製（與送貨／配送工單無關）"
-    />
-
     <ShortcutHint :table-state="tableState" @shortcut-click="handleShortcutClick" />
 
     <div class="toolbar card-toolbar">
@@ -146,7 +141,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
-  PageHeader,
   EditableDataTable,
   type EditableColumn,
   SearchFilters,
