@@ -47,7 +47,29 @@
         </template>
 
         <template #cell-phones="{ value }">
-          {{ value && value.length > 0 ? value[0] : '無' }}
+          <button
+            v-if="value && value.length > 0"
+            type="button"
+            class="copy-text-button"
+            title="點擊複製電話"
+            @click.stop="copyToClipboard(value[0], '電話')"
+          >
+            {{ value[0] }}
+          </button>
+          <span v-else>無</span>
+        </template>
+
+        <template #cell-fax="{ value }">
+          <button
+            v-if="value"
+            type="button"
+            class="copy-text-button"
+            title="點擊複製傳真"
+            @click.stop="copyToClipboard(value, '傳真')"
+          >
+            {{ value }}
+          </button>
+          <span v-else>無</span>
         </template>
 
         <template #actions="{ row, isEditing }">
@@ -453,6 +475,35 @@ const handlePageSizeChange = (newSize: number) => {
   loadCustomers();
 };
 
+const fallbackCopyText = (text: string) => {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+};
+
+const copyToClipboard = async (value: string, label: string) => {
+  const text = value?.trim();
+  if (!text) return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      fallbackCopyText(text);
+    }
+    alert(`${label}已複製到剪貼簿`);
+  } catch (err) {
+    console.error(`Failed to copy ${label}:`, err);
+    alert(`複製${label}失敗`);
+  }
+};
+
 // 載入特定客戶的聯絡人
 const loadCustomerContacts = async (customerId: string) => {
   contactsLoading.value = true;
@@ -661,6 +712,17 @@ onMounted(() => {
 }
 
 .link-button:hover {
+  text-decoration: underline;
+}
+
+.copy-text-button {
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  color: var(--primary-600);
+  cursor: pointer;
+  font: inherit;
   text-decoration: underline;
 }
 
