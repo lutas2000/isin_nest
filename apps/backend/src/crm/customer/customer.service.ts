@@ -15,6 +15,8 @@ export class CustomerService {
     page?: number,
     limit?: number,
     search?: string,
+    sortBy?: string,
+    sortOrder?: 'ASC' | 'DESC',
   ): Promise<Customer[] | PaginatedResponseDto<Customer>> {
     // 使用預設值：page=1, limit=50
     const pageNum = page ?? 1;
@@ -27,17 +29,43 @@ export class CustomerService {
     // 建立查詢建構器
     const queryBuilder = this.customerRepository
       .createQueryBuilder('customer')
-      .leftJoinAndSelect('customer.contacts', 'contacts')
-      .orderBy('customer.createdAt', 'DESC');
+      .leftJoinAndSelect('customer.contacts', 'contacts');
+
+    const sortableFields: Record<string, string> = {
+      id: 'customer.id',
+      companyName: 'customer.companyName',
+      companyShortName: 'customer.companyShortName',
+      createdAt: 'customer.createdAt',
+      updatedAt: 'customer.updatedAt',
+    };
+    const orderField = sortableFields[sortBy ?? ''] ?? 'customer.id';
+    const orderDirection: 'ASC' | 'DESC' = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
     // 如果有搜尋關鍵字，添加搜尋條件
     if (search && search.trim()) {
-      const searchTerm = `%${search.trim()}%`;
+      const trimmedSearch = search.trim();
+      const searchTerm = `%${trimmedSearch}%`;
+      const prefixSearchTerm = `${trimmedSearch}%`;
       // Postgres 中直接將 id cast 成文字並使用 ILIKE 做不分大小寫搜尋
       queryBuilder.where(
         '(CAST(customer.id AS TEXT) ILIKE :search OR customer.companyName ILIKE :search OR customer.companyShortName ILIKE :search)',
         { search: searchTerm },
       );
+      queryBuilder
+        .addSelect(
+          `CASE
+            WHEN CAST(customer.id AS TEXT) ILIKE :prefixSearch THEN 0
+            WHEN customer.companyName ILIKE :prefixSearch THEN 0
+            WHEN customer.companyShortName ILIKE :prefixSearch THEN 0
+            ELSE 1
+          END`,
+          'prefix_match_rank',
+        )
+        .setParameter('prefixSearch', prefixSearchTerm)
+        .orderBy('prefix_match_rank', 'ASC')
+        .addOrderBy(orderField, orderDirection);
+    } else {
+      queryBuilder.orderBy(orderField, orderDirection);
     }
 
     // 執行分頁查詢

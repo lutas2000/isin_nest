@@ -40,11 +40,19 @@ export interface Contact {
 
 export const customerService = {
   // 獲取所有客戶（支援分頁和搜尋）
-  getAll: (page?: number, limit?: number, search?: string): Promise<Customer[] | PaginatedResponse<Customer>> => {
+  getAll: (
+    page?: number,
+    limit?: number,
+    search?: string,
+    sortBy: string = 'id',
+    sortOrder: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<Customer[] | PaginatedResponse<Customer>> => {
     const params: Record<string, any> = {}
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
     if (search !== undefined && search.trim()) params.search = search.trim()
+    if (sortBy.trim()) params.sortBy = sortBy.trim()
+    params.sortOrder = sortOrder
     return apiGet<Customer[] | PaginatedResponse<Customer>>(API_CONFIG.CRM.CUSTOMERS, params)
   },
 

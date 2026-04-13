@@ -14,15 +14,24 @@ export class CustomerController {
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiQuery({ name: 'search', required: false, description: '搜尋關鍵字（客戶ID、公司名稱、公司簡稱）', example: '台灣' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: '排序欄位（id, companyName, companyShortName, createdAt, updatedAt）',
+    example: 'id',
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, description: '排序方向（ASC 或 DESC）', example: 'ASC' })
   @ApiResponse({ status: 200, description: '成功返回客戶列表', type: [Customer] })
   @Get()
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ) {
     try {
-      const result = await this.customerService.findAll(page, limit, search);
+      const result = await this.customerService.findAll(page, limit, search, sortBy, sortOrder);
       return result;
     } catch (error) {
       this.logger.error('查詢客戶列表失敗:', error);
