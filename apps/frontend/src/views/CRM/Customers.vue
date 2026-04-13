@@ -50,10 +50,6 @@
           {{ value && value.length > 0 ? value[0] : '無' }}
         </template>
 
-        <template #cell-accountReceivable="{ value }">
-          NT$ {{ Number(value).toLocaleString('zh-TW') }}
-        </template>
-
         <template #actions="{ row, isEditing }">
           <template v-if="!isEditing">
             <span class="dropdown-item" @click="goToCustomerContacts(row)">聯絡人</span>
@@ -217,15 +213,6 @@
                 placeholder="0"
               />
             </div>
-          <div class="form-group">
-              <label>帳款</label>
-              <input 
-                type="number" 
-                class="form-control" 
-                v-model="customerForm.accountReceivable"
-                placeholder="0"
-              />
-            </div>
           </div>
 
         <div class="form-group">
@@ -342,10 +329,6 @@
                 <span class="details-label">信用額度：</span>
                 <span class="details-value">NT$ {{ Number(selectedCustomer.creditLimit).toLocaleString('zh-TW') }}</span>
               </div>
-              <div class="details-item">
-                <span class="details-label">帳款：</span>
-                <span class="details-value">NT$ {{ Number(selectedCustomer.accountReceivable).toLocaleString('zh-TW') }}</span>
-              </div>
               <div class="details-item" v-if="selectedCustomer.bank">
                 <span class="details-label">往來銀行：</span>
                 <span class="details-value">{{ selectedCustomer.bank }}</span>
@@ -426,8 +409,7 @@ const editableColumns: EditableColumn[] = [
   { key: 'companyName', label: '公司名稱', editable: false },
   { key: 'companyShortName', label: '公司簡稱', editable: false },
   { key: 'phones', label: '電話', editable: false },
-  { key: 'email', label: 'Email', editable: false },
-  { key: 'accountReceivable', label: '帳款', editable: false },
+  { key: 'fax', label: '傳真', editable: false },
 ];
 
 // 表單驗證
