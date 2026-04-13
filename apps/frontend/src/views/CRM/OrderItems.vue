@@ -1,9 +1,6 @@
 <template>
   <div class="mx-auto w-full">
-    <PageHeader
-      title="訂單詳情"
-      :description="workOrder ? `` : '載入中...'"
-    >
+    <TableHeader :title="workOrder ? '' : '載入中...'" :border="false">
       <template #actions>
         <button
           class="btn btn-primary"
@@ -26,7 +23,7 @@
           返回
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <div v-if="loading" class="p-8 text-center">載入中...</div>
     <div v-else-if="error" class="rounded-lg bg-danger-50 p-8 text-center text-danger-600">
@@ -241,7 +238,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  PageHeader,
   StatusBadge,
   TableHeader,
   EditableDataTable,

@@ -1,10 +1,5 @@
 <template>
   <div class="profile-page">
-    <PageHeader 
-      title="個人資料"
-      description="查看您的帳戶資訊與員工資料"
-    />
-
     <div class="profile-content">
       <!-- 用戶基本資訊卡片 -->
       <div class="profile-card">
@@ -139,7 +134,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { PageHeader } from '@/components'
 
 const router = useRouter()
 const authStore = useAuthStore()

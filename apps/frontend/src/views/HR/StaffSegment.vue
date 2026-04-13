@@ -1,16 +1,13 @@
 <template>
   <div class="staff-segment-page">
-    <PageHeader
-      title="員工段別管理"
-      description="管理員工工作時段設定、休息時間和特殊班別"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
           <span class="mr-2">⏰</span>
           新增上班時段
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <!-- 搜尋和篩選 -->
     <div class="search-filters">
@@ -48,10 +45,11 @@
     <div class="segment-content">
       <TableHeader title="上班時段列表"></TableHeader>
 
-      <DataTable
+      <EditableDataTable
         :columns="segmentColumns"
         :data="filteredSegments"
         :show-actions="true"
+        :editable="false"
       >
         <template #cell-staffId="{ row }">
           <span class="clickable-cell" @click="viewSegment(row)">
@@ -116,7 +114,7 @@
             </button>
           </div>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
 
     <!-- 新增段別模態框 -->
@@ -466,7 +464,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, TableHeader } from '@/components';
+import { EditableDataTable, TableHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
 
 const errorStore = useErrorStore();

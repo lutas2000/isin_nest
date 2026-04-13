@@ -1,23 +1,28 @@
 <template>
   <div class="cutting-work-orders-page">
-    <PageHeader 
-      title="切割工作單管理"
-      description="管理切割工作單、追蹤切割進度"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary" @click="showNewRow = true">
           <span class="mr-2">➕</span>
           新增切割工作單
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <SearchFilters
-      title="切割工作單列表"
-      v-model:searchValue="searchQuery"
-      v-model:filterStatus="filterStatus"
+      :card="false"
+      :compact="true"
+      :show-search="true"
       search-placeholder="搜尋訂單編號或機台..."
-      :status-options="statusOptions"
+      :filters="[
+        {
+          key: 'status',
+          placeholder: '所有狀態',
+          options: statusOptions
+        }
+      ]"
+      v-model:search="searchQuery"
+      @update:filter="handleFilterUpdate"
     />
 
     <div class="table-card">
@@ -71,7 +76,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, StatusBadge, EditableDataTable, SearchFilters, type EditableColumn } from '@/components';
+import { StatusBadge, EditableDataTable, SearchFilters, TableHeader, type EditableColumn } from '@/components';
 import { cuttingWorkOrderService, type CuttingWorkOrder, CuttingWorkOrderStatus } from '@/services/crm/cutting-work-order.service';
 
 const loading = ref(false);
@@ -82,12 +87,17 @@ const filterStatus = ref('');
 const showNewRow = ref(false);
 
 const statusOptions = [
-  { value: '', label: '所有狀態' },
   { value: 'pending', label: '待處理' },
   { value: 'assigned', label: '已分派' },
   { value: 'in_progress', label: '進行中' },
   { value: 'completed', label: '已完成' },
 ];
+
+const handleFilterUpdate = (key: string, value: string) => {
+  if (key === 'status') {
+    filterStatus.value = value;
+  }
+};
 
 const columns: EditableColumn[] = [
   { key: 'cncFileName', label: 'CNC 檔案', editable: true, type: 'text' },

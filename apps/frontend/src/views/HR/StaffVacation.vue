@@ -1,16 +1,13 @@
 <template>
   <div class="staff-vacation-page">
-    <PageHeader
-      title="員工假期管理"
-      description="管理國定假日、公司假期等假期設定"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
           <span class="mr-2">📅</span>
           新增假期記錄
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <!-- 搜尋和篩選 -->
     <div class="search-filters">
@@ -67,10 +64,11 @@
       </SectionHeader>
 
       <div class="table-container">
-        <DataTable
+        <EditableDataTable
           :columns="vacationColumns"
           :data="filteredVacations"
           :show-actions="true"
+          :editable="false"
         >
           <template #cell-date="{ row }">
             <span class="clickable-cell" @click="viewVacation(row)">
@@ -104,7 +102,7 @@
               </button>
             </div>
           </template>
-        </DataTable>
+        </EditableDataTable>
         <div
           v-if="filteredVacations.length === 0"
           class="empty-state"
@@ -285,7 +283,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, SectionHeader } from '@/components';
+import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
 
 const errorStore = useErrorStore();

@@ -1,9 +1,6 @@
 <template>
   <div class="attendance-page">
-    <PageHeader
-      title="出勤管理"
-      description="管理員工出勤記錄、打卡時間和考勤統計"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary">
           <span class="mr-2">📅</span>
@@ -14,7 +11,7 @@
           出勤報表
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <!-- 出勤概覽 -->
     <div class="attendance-overview">
@@ -75,10 +72,11 @@
           </template>
         </SectionHeader>
 
-        <DataTable
+        <EditableDataTable
           :columns="todayColumns"
           :data="todayAttendance"
           :show-actions="false"
+          :editable="false"
         >
           <template #cell-employeeId="{ value }">
             {{ value }}
@@ -108,7 +106,7 @@
           <template #cell-notes="{ value }">
             {{ value || '-' }}
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
 
       <!-- 出勤記錄 -->
@@ -138,10 +136,11 @@
           </template>
         </SectionHeader>
 
-        <DataTable
+        <EditableDataTable
           :columns="recordColumns"
           :data="filteredRecords"
           :show-actions="false"
+          :editable="false"
         >
           <template #cell-date="{ value }">
             {{ value }}
@@ -172,7 +171,7 @@
               {{ row.statusText }}
             </span>
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
 
       <!-- 統計報表 -->
@@ -235,7 +234,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, SectionHeader } from '@/components';
+import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
 
 // 頁面標籤
 const tabs = [

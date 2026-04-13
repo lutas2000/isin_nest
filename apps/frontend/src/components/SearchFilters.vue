@@ -1,8 +1,8 @@
 <template>
-  <div class="overflow-hidden rounded-lg bg-white shadow">
-    <div class="flex items-center justify-between gap-4 border-b border-secondary-200 px-8 pb-4 pt-8 md:flex-col md:items-start md:px-4 md:pt-4">
-      <h3>{{ title }}</h3>
-      <div class="flex gap-4 md:w-full md:flex-col">
+  <div :class="containerClass">
+    <div :class="headerClass">
+      <h3 v-if="title" class="m-0 text-lg font-semibold text-secondary-900">{{ title }}</h3>
+      <div :class="controlsClass">
         <div v-if="showSearch" class="min-w-[300px] md:min-w-0">
           <input
             type="text"
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 interface FilterOption {
   value: string;
@@ -66,15 +66,22 @@ interface Props {
   showDateFilter?: boolean;
   search?: string;
   date?: string;
+  card?: boolean;
+  compact?: boolean;
+  controlsLayout?: 'row' | 'column';
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  title: '',
   showSearch: true,
   searchPlaceholder: '搜尋...',
   filters: () => [],
   showDateFilter: false,
   search: '',
-  date: ''
+  date: '',
+  card: true,
+  compact: false,
+  controlsLayout: 'row',
 });
 
 const emit = defineEmits<{
@@ -86,6 +93,28 @@ const emit = defineEmits<{
 const searchValue = ref(props.search);
 const dateValue = ref(props.date);
 const filterValues = ref<Record<string, string>>({});
+
+const containerClass = computed(() => {
+  if (!props.card) {
+    return '';
+  }
+  return 'overflow-hidden rounded-lg bg-white shadow';
+});
+
+const headerClass = computed(() => {
+  const base = props.card
+    ? 'flex items-center justify-between gap-4 border-b border-secondary-200 px-8 md:px-4'
+    : 'flex items-center justify-between gap-4';
+  const density = props.compact ? 'py-3' : 'pb-4 pt-8 md:pt-4';
+  return `${base} ${density} md:flex-col md:items-start`;
+});
+
+const controlsClass = computed(() => {
+  if (props.controlsLayout === 'column') {
+    return 'flex w-full flex-col gap-3';
+  }
+  return 'flex flex-wrap items-center gap-3 md:w-full md:flex-col md:items-stretch';
+});
 
 const getInputValue = (event: Event) => {
   const target = event.target as HTMLInputElement | HTMLSelectElement | null;

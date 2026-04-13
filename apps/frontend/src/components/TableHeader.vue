@@ -1,63 +1,33 @@
 <template>
-  <div class="table-header">
-    <h3 v-if="title" class="table-title">{{ title }}</h3>
-    <div class="table-actions" v-if="$slots.actions">
+  <div :class="headerClass">
+    <h3 v-if="props.title" class="m-0 text-lg font-semibold text-secondary-900">{{ props.title }}</h3>
+    <div v-if="$slots.actions" :class="actionsClass">
       <slot name="actions"></slot>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 interface Props {
   title?: string;
+  compact?: boolean;
+  border?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: undefined,
+  compact: false,
+  border: true,
 });
+
+const headerClass = computed(() => {
+  const padding = props.compact ? 'px-4 py-3 md:px-4 md:py-3' : 'px-8 py-6 md:px-4 md:py-4';
+  const border = props.border ? 'border-b border-secondary-200' : '';
+  return `flex items-center justify-between gap-4 bg-white md:flex-col md:items-start ${padding} ${border}`.trim();
+});
+
+const actionsClass = 'flex flex-wrap items-center gap-3 md:w-full md:flex-col md:items-stretch';
 </script>
-
-<style scoped>
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  background: white;
-}
-
-.table-title {
-  margin: 0;
-  color: var(--secondary-900);
-  font-weight: 600;
-}
-
-.table-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .table-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-  }
-
-  .table-actions {
-    width: 100%;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .table-actions > * {
-    width: 100%;
-  }
-}
-</style>
 

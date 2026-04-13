@@ -31,22 +31,14 @@
 
     <!-- 主要內容（解鎖後顯示） -->
     <div v-else>
-      <PageHeader
-        title="員工管理"
-        description="管理公司員工資訊、職位和權限"
-      >
+      <!-- 員工列表 -->
+      <div class="staff-content overflow-hidden rounded-lg bg-white shadow">
+      <TableHeader title="員工列表">
         <template #actions>
           <button class="btn btn-primary" @click="showAddModal = true">
             <span class="mr-2">👤</span>
             新增員工
           </button>
-        </template>
-      </PageHeader>
-
-      <!-- 員工列表 -->
-      <div class="staff-content overflow-hidden rounded-lg bg-white shadow">
-      <TableHeader title="員工列表">
-        <template #actions>
           <div class="search-box min-w-[240px]">
             <input
               type="text"
@@ -769,7 +761,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { PageHeader, TableHeader } from '@/components';
+import { TableHeader } from '@/components';
 import EditableDataTable from '@/components/EditableDataTable.vue';
 import { useErrorStore } from '@/stores/error';
 import { apiPost } from '@/services/api';

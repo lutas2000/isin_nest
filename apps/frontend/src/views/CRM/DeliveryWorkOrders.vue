@@ -1,12 +1,26 @@
 <template>
   <div class="delivery-work-orders-page">
-    <PageHeader title="送貨工作單管理" description="管理送貨工作單、追蹤送貨進度">
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary" @click="showNewRow = true"><span class="mr-2">➕</span>新增送貨工作單</button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
-    <SearchFilters v-model:searchValue="searchQuery" v-model:filterStatus="filterStatus" search-placeholder="搜尋訂單編號或地址..." :status-options="statusOptions" />
+    <SearchFilters
+      :card="false"
+      :compact="true"
+      :show-search="true"
+      search-placeholder="搜尋訂單編號或地址..."
+      :filters="[
+        {
+          key: 'status',
+          placeholder: '所有狀態',
+          options: statusOptions
+        }
+      ]"
+      v-model:search="searchQuery"
+      @update:filter="handleFilterUpdate"
+    />
 
     <div class="table-card">
       <div v-if="loading" class="loading-message">載入中...</div>
@@ -31,7 +45,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, StatusBadge, EditableDataTable, SearchFilters, type EditableColumn } from '@/components';
+import { StatusBadge, EditableDataTable, SearchFilters, TableHeader, type EditableColumn } from '@/components';
 import { deliveryWorkOrderService, type DeliveryWorkOrder, DeliveryWorkOrderStatus } from '@/services/crm/delivery-work-order.service';
 
 const loading = ref(false);
@@ -42,7 +56,13 @@ const filterStatus = ref('');
 const showNewRow = ref(false);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
-const statusOptions = [{ value: '', label: '所有狀態' }, { value: 'pending', label: '待處理' }, { value: 'ready', label: '準備送貨' }, { value: 'in_transit', label: '運送中' }, { value: 'delivered', label: '已送達' }];
+const statusOptions = [{ value: 'pending', label: '待處理' }, { value: 'ready', label: '準備送貨' }, { value: 'in_transit', label: '運送中' }, { value: 'delivered', label: '已送達' }];
+
+const handleFilterUpdate = (key: string, value: string) => {
+  if (key === 'status') {
+    filterStatus.value = value;
+  }
+};
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },

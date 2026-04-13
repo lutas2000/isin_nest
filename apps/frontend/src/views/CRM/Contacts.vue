@@ -1,34 +1,32 @@
 <template>
   <div class="contacts-page">
-    <PageHeader 
-      :title="pageTitle" 
-      :description="pageDescription"
-    >
-      <template #actions>
-        <button class="btn btn-primary" @click="showCreateModal = true">
-          <span class="mr-2">👤</span>
-          新增聯絡人
-        </button>
-      </template>
-    </PageHeader>
-
     <!-- 聯絡人列表 -->
     <div class="contacts-content">
       <SearchFilters
-        title="聯絡人列表"
+        :title="pageTitle"
+        :card="false"
+        :compact="true"
         :show-search="true"
         :search-placeholder="isCustomerMode ? '搜尋聯絡人姓名...' : '搜尋聯絡人姓名或客戶...'"
         v-model:search="contactSearch"
         @update:filter="handleFilterUpdate"
-      />
+      >
+        <template #controls>
+          <button class="btn btn-primary" @click="showCreateModal = true">
+            <span class="mr-2">👤</span>
+            新增聯絡人
+          </button>
+        </template>
+      </SearchFilters>
 
       <div v-if="loading" class="loading-message">載入中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <DataTable
+      <EditableDataTable
         v-else
         :columns="tableColumns"
         :data="contacts"
         :show-actions="true"
+        :editable="false"
         :pagination="true"
         :current-page="currentPage"
         :page-size="pageSize"
@@ -55,7 +53,7 @@
           <button class="btn btn-sm btn-primary" @click="editContact(row)">編輯</button>
           <button class="btn btn-sm btn-danger" @click="deleteContact(row.id)">刪除</button>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
 
     <!-- 創建/編輯聯絡人 Modal -->
@@ -195,7 +193,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { PageHeader, DataTable, SearchFilters, Modal } from '@/components';
+import { EditableDataTable, SearchFilters, Modal } from '@/components';
 import { contactService } from '@/services/crm/contact.service';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 
@@ -225,14 +223,6 @@ const pageTitle = computed(() => {
     return `${currentCustomer.value.companyName} - 聯絡人`;
   }
   return '聯絡人管理';
-});
-
-// 頁面描述
-const pageDescription = computed(() => {
-  if (isCustomerMode.value && currentCustomer.value) {
-    return `管理 ${currentCustomer.value.companyName} 的聯絡人資訊`;
-  }
-  return '管理所有客戶的聯絡人資訊';
 });
 
 // 客戶資料（用於下拉選單）

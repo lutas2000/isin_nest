@@ -1,10 +1,5 @@
 <template>
   <div class="settings-page">
-    <PageHeader
-      title="系統設定"
-      description="管理銷管設定和權限設定"
-    />
-
     <div class="settings-content">
       <!-- 頁籤導航 -->
       <div class="tabs">
@@ -36,7 +31,7 @@
           <h4 class="category-title">{{ getCategoryLabel(category) }}</h4>
           <DraggableList
             :items="getCrmConfigsByCategory(category)"
-            @order-change="handleCrmOrderChange($event, category)"
+            @order-change="handleCrmOrderChange($event)"
           >
             <template #item="{ item: config }">
               <div class="item-code">{{ config.code }}</div>
@@ -72,10 +67,11 @@
         </SectionHeader>
 
 
-        <DataTable
+        <EditableDataTable
           :columns="featureTableColumns"
           :data="featureConfigs"
           :show-actions="true"
+          :editable="false"
         >
           <template #cell-permissions="{ row }">
             <div class="permissions-list">
@@ -109,7 +105,7 @@
               </button>
             </div>
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
     </div>
 
@@ -249,8 +245,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, Modal, DraggableList, SectionHeader } from '@/components';
+import { ref, onMounted } from 'vue';
+import { EditableDataTable, Modal, DraggableList, SectionHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -455,7 +451,7 @@ const closeCrmModal = () => {
 };
 
 // 拖曳處理 - 處理順序改變
-const handleCrmOrderChange = async (newConfigs: CrmConfig[], category: string) => {
+const handleCrmOrderChange = async (newConfigs: CrmConfig[]) => {
   // 更新 display order
   const updates = newConfigs.map((config, index) => ({
     id: config.id,

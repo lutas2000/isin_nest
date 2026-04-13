@@ -1,10 +1,5 @@
 <template>
   <div class="home-page">
-    <PageHeader
-      title="首頁總覽"
-      :description="`今天是 ${currentDate}`"
-    />
-
     <!-- NAS 狀態 -->
     <div class="section-card nas-status-card">
       <div class="section-header">
@@ -32,11 +27,12 @@
         <div v-if="ordersLoading" class="loading-message">載入訂單中...</div>
         <div v-else-if="ordersError" class="error-message">{{ ordersError }}</div>
         <div v-else-if="orders.length === 0" class="empty-message">目前沒有未完成的訂單</div>
-        <DataTable
+        <EditableDataTable
           v-else
           :columns="orderColumns"
           :data="orders"
           :show-actions="false"
+          :editable="false"
           :pagination="true"
           :current-page="orderPage"
           :page-size="orderPageSize"
@@ -62,7 +58,7 @@
           <template #cell-createdAt="{ value }">
             {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
     </div>
 
@@ -75,11 +71,12 @@
         <div v-if="quotesLoading" class="loading-message">載入報價單中...</div>
         <div v-else-if="quotesError" class="error-message">{{ quotesError }}</div>
         <div v-else-if="quotes.length === 0" class="empty-message">目前沒有未簽名的報價單</div>
-        <DataTable
+        <EditableDataTable
           v-else
           :columns="quoteColumns"
           :data="quotes"
           :show-actions="false"
+          :editable="false"
           :pagination="true"
           :current-page="quotePage"
           :page-size="quotePageSize"
@@ -105,7 +102,7 @@
           <template #cell-createdAt="{ value }">
             {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
     </div>
   </div>
@@ -113,7 +110,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { PageHeader, DataTable, StatusBadge } from '@/components';
+import { EditableDataTable, StatusBadge } from '@/components';
 import { apiGet } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
 import { orderService, type Order } from '@/services/crm/order.service';

@@ -69,7 +69,7 @@
               </slot>
             </td>
             <td v-if="showActions" class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2">
-              <div class="action-buttons relative flex justify-center gap-2 md:flex-col md:gap-1">
+              <div class="action-buttons relative flex items-center justify-start gap-2 md:flex-col md:items-stretch md:gap-1">
                 <button 
                   class="btn btn-sm btn-success" 
                   @click="saveNewRow"
@@ -131,7 +131,7 @@
               </slot>
             </td>
             <td v-if="showActions" class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2">
-              <div class="action-buttons relative flex justify-center gap-2 md:flex-col md:gap-1">
+              <div class="action-buttons relative flex items-center justify-start gap-2 md:flex-col md:items-stretch md:gap-1">
                 <!-- 編輯模式：直接顯示 slot 內容或預設按鈕 -->
                 <template v-if="isEditing(row, index)">
                   <slot 

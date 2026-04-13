@@ -1,9 +1,6 @@
 <template>
   <div class="manhour-page">
-    <PageHeader
-      title="上班時段"
-      description="管理員工工時記錄、加班統計和工時分析"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
           <span class="mr-2">⏱️</span>
@@ -14,7 +11,7 @@
           工時報表
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <!-- 工時概覽 -->
     <div class="manhour-overview">
@@ -105,10 +102,11 @@
             </div>
           </template>
           <template v-else>
-            <DataTable
+            <EditableDataTable
               :columns="recordColumns"
               :data="filteredRecords"
               :show-actions="true"
+              :editable="false"
             >
               <template #cell-day="{ value }">
                 {{ formatDate(value) }}
@@ -147,7 +145,7 @@
                   </button>
                 </div>
               </template>
-            </DataTable>
+            </EditableDataTable>
           </template>
         </div>
       </div>
@@ -317,7 +315,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { PageHeader, DataTable, SectionHeader } from '@/components';
+import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
 import { buildApiUrl, API_CONFIG } from '../../config/api';
 import { useAuthStore } from '../../stores/auth';
 

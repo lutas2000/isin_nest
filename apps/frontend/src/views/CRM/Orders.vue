@@ -1,11 +1,5 @@
 <template>
   <div class="orders-page">
-    <PageHeader 
-      title="訂單管理"
-      description="管理訂單、追蹤訂單狀態和處理工作流程"
-    >
-    </PageHeader>
-
     <!-- 快捷鍵提示 -->
     <ShortcutHint 
       :table-state="tableState" 
@@ -16,6 +10,8 @@
     <div class="orders-content">
       <SearchFilters
         title=""
+        :card="false"
+        :compact="true"
         :show-search="true"
         search-placeholder="搜尋訂單編號或客戶..."
         :filters="[
@@ -145,7 +141,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, ShortcutHint } from '@/components';
+import { EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, ShortcutHint } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { apiGet } from '@/services/api';

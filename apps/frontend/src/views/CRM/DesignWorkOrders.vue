@@ -1,24 +1,29 @@
 <template>
   <div class="design-work-orders-page">
-    <PageHeader 
-      title="設計工作單管理"
-      description="管理設計工作單、追蹤設計進度"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary" @click="showNewRow = true">
           <span class="mr-2">➕</span>
           新增設計工作單
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <!-- 搜尋和篩選區域 -->
     <SearchFilters
-      title=""
-      v-model:searchValue="searchQuery"
-      v-model:filterStatus="filterStatus"
+      :card="false"
+      :compact="true"
+      :show-search="true"
       search-placeholder="搜尋訂單編號或設計師..."
-      :status-options="statusOptions"
+      :filters="[
+        {
+          key: 'status',
+          placeholder: '所有狀態',
+          options: statusOptions,
+        }
+      ]"
+      v-model:search="searchQuery"
+      @update:filter="handleFilterUpdate"
     />
 
     <!-- 設計工作單列表 -->
@@ -116,7 +121,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, StatusBadge, EditableDataTable, SearchFilters, type EditableColumn } from '@/components';
+import { StatusBadge, EditableDataTable, SearchFilters, TableHeader, type EditableColumn } from '@/components';
 import { 
   designWorkOrderService, 
   type DesignWorkOrder, 
@@ -132,11 +137,16 @@ const showNewRow = ref(false);
 const router = useRouter();
 
 const statusOptions = [
-  { value: '', label: '所有狀態' },
   { value: 'pending', label: '待處理' },
   { value: 'in_progress', label: '進行中' },
   { value: 'completed', label: '已完成' },
 ];
+
+const handleFilterUpdate = (key: string, value: string) => {
+  if (key === 'status') {
+    filterStatus.value = value;
+  }
+};
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },

@@ -1,9 +1,6 @@
 <template>
   <div class="leave-page">
-    <PageHeader
-      title="請假管理"
-      description="管理員工請假申請、審核流程和請假統計"
-    >
+    <TableHeader :border="false">
       <template #actions>
         <button class="btn btn-primary">
           <span class="mr-2">📝</span>
@@ -14,7 +11,7 @@
           請假報表
         </button>
       </template>
-    </PageHeader>
+    </TableHeader>
 
     <!-- 請假概覽 -->
     <div class="leave-overview">
@@ -93,10 +90,11 @@
           </template>
         </SectionHeader>
 
-        <DataTable
+        <EditableDataTable
           :columns="applicationColumns"
           :data="filteredApplications"
           :show-actions="true"
+          :editable="false"
         >
           <template #cell-applyDate="{ value }">
             {{ value }}
@@ -143,7 +141,7 @@
               </button>
             </div>
           </template>
-        </DataTable>
+        </EditableDataTable>
       </div>
 
       <!-- 請假統計 -->
@@ -249,7 +247,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { PageHeader, DataTable, SectionHeader } from '@/components';
+import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
 
 // 頁面標籤
 const tabs = [
