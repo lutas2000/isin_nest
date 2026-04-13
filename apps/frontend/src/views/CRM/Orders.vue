@@ -62,13 +62,13 @@
         <template #cell-id="{ row, value }">
           <button 
             v-if="value" 
-            class="link-button" 
+            class="cursor-pointer border-0 bg-transparent p-0 text-primary-600 underline" 
             type="button" 
             @click="viewDetails(row)"
           >
             {{ value }}
           </button>
-          <span v-else class="text-muted">待生成</span>
+          <span v-else class="text-secondary-400">待生成</span>
         </template>
 
         <template #cell-customerId="{ row, value }">
@@ -607,24 +607,8 @@ onMounted(() => {
   background: var(--danger-50);
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
-.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  color: var(--primary-600);
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
-}
 
-.link-button:hover {
-  color: var(--primary-700);
-}
 
 /* Modal 表單樣式 */
 .modal-form {
@@ -766,9 +750,6 @@ textarea.form-control {
   color: var(--secondary-700);
 }
 
-.text-muted {
-  color: var(--secondary-400);
-}
 
 /* 響應式設計 */
 @media (max-width: 768px) {

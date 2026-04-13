@@ -1,16 +1,31 @@
 <template>
-  <div v-if="show" class="modal-overlay" @click="handleOverlayClick">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>{{ title }}</h3>
-        <button class="modal-close" @click="$emit('close')">×</button>
+  <div
+    v-if="show"
+    class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50"
+    @click="handleOverlayClick"
+  >
+    <div
+      class="max-h-[90vh] w-[90%] max-w-[600px] overflow-y-auto rounded-lg bg-white shadow-lg md:w-[95%] md:mx-4"
+      @click.stop
+    >
+      <div class="flex items-center justify-between border-b border-secondary-200 px-8 py-6 md:px-4 md:py-4">
+        <h3 class="m-0 text-secondary-900">{{ title }}</h3>
+        <button
+          class="flex h-[30px] w-[30px] items-center justify-center rounded-full border-0 bg-transparent p-0 text-2xl text-secondary-500 transition-colors hover:bg-secondary-100"
+          @click="$emit('close')"
+        >
+          ×
+        </button>
       </div>
-      
-      <div class="modal-body">
+
+      <div class="p-8 md:p-4">
         <slot></slot>
       </div>
-      
-      <div class="modal-footer" v-if="$slots.footer">
+
+      <div
+        v-if="$slots.footer"
+        class="flex justify-end gap-4 border-t border-secondary-200 px-8 py-6 md:flex-col md:px-4 md:py-4 [&_.btn]:md:w-full"
+      >
         <slot name="footer"></slot>
       </div>
     </div>
@@ -38,95 +53,3 @@ const handleOverlayClick = () => {
   }
 };
 </script>
-
-<style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--secondary-500);
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
-}
-
-.modal-close:hover {
-  background-color: var(--secondary-100);
-}
-
-.modal-body {
-  padding: 2rem;
-}
-
-.modal-footer {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    margin: 1rem;
-  }
-  
-  .modal-header,
-  .modal-body,
-  .modal-footer {
-    padding: 1rem;
-  }
-  
-  .modal-footer {
-    flex-direction: column;
-  }
-  
-  .modal-footer .btn {
-    width: 100%;
-  }
-}
-</style>

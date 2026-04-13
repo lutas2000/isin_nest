@@ -1,12 +1,17 @@
 <template>
-  <div class="quote-items-page">
-    <div v-if="loading" class="loading-message">載入中...</div>
-    <div v-else-if="error" class="error-message">{{ error }}</div>
+  <div class="mx-auto w-full">
+    <div v-if="loading" class="p-8 text-center">載入中...</div>
+    <div
+      v-else-if="error"
+      class="rounded-lg bg-danger-50 p-8 text-center text-danger-600"
+    >
+      {{ error }}
+    </div>
     
-    <div v-else-if="quote" class="quote-items-content">
+    <div v-else-if="quote" class="flex flex-col gap-8">
       <!-- 報價單詳細資訊 -->
-      <div class="quote-details-card">
-        <div class="details-content">
+      <div class="overflow-hidden rounded-lg bg-white shadow">
+        <div class="p-8">
           <DetailFieldsPanel
             v-model:editing="detailsEditing"
             :items="detailItems"
@@ -42,11 +47,11 @@
                 class="btn btn-primary btn-sm"
                 @click="handlePrint"
               >
-                <span class="btn-icon">🖨️</span>
+                <span class="mr-2">🖨️</span>
                 列印
               </button>
               <button type="button" class="btn btn-outline btn-sm" @click="goBack">
-                <span class="btn-icon">←</span>
+                <span class="mr-2">←</span>
                 返回
               </button>
             </template>
@@ -102,11 +107,11 @@
     />
 
       <!-- 報價單工件列表 -->
-      <div class="quote-items-card">
+      <div class="overflow-hidden rounded-lg bg-white shadow">
         <TableHeader title="報價單工件列表">
           <template #actions>
             <button class="btn btn-primary" @click="showNewRow = true">
-              <span class="btn-icon">➕</span>
+              <span class="mr-2">➕</span>
               新增工件
             </button>
           </template>
@@ -792,40 +797,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.quote-items-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-.loading-message,
-.error-message {
-  padding: 2rem;
-  text-align: center;
-}
-
-.error-message {
-  color: var(--danger-600);
-  background: var(--danger-50);
-  border-radius: var(--border-radius-lg);
-}
-
-.quote-items-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.quote-details-card,
-.quote-items-card {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.details-content {
-  padding: 2rem;
-}
 
 /* 報價單工件列表 */
 .empty-message {
@@ -838,10 +809,6 @@ onMounted(() => {
 .highlight {
   font-weight: 600;
   color: var(--primary-600);
-}
-
-.btn-icon {
-  margin-right: 0.5rem;
 }
 
 /* 縮小指定欄位寬度：項次、厚度、數量 */
@@ -940,7 +907,7 @@ onMounted(() => {
 }
 
 .processing-empty {
-  color: var(--text-muted);
+  color: var(--text-secondary-400);
   font-style: italic;
 }
 

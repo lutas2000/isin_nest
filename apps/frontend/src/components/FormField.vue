@@ -1,16 +1,16 @@
 <template>
-  <div class="form-group">
-    <label v-if="label" class="form-label" :for="fieldId">
+  <div class="mb-4 flex flex-col">
+    <label v-if="label" class="mb-2 font-medium text-secondary-700" :for="fieldId">
       {{ label }}
-      <span v-if="required" class="required">*</span>
+      <span v-if="required" class="ml-1 text-danger-500">*</span>
     </label>
-    
+
     <input
       v-if="type === 'text' || type === 'email' || type === 'password' || type === 'number'"
       :type="type"
       :id="fieldId"
-      class="form-control"
-      :class="{ 'is-invalid': hasError }"
+      class="rounded border border-secondary-300 px-3 py-3 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 disabled:cursor-not-allowed disabled:bg-secondary-50 md:py-2.5"
+      :class="{ 'border-danger-500 focus:border-danger-500 focus:ring-danger-100': hasError }"
       :placeholder="placeholder"
       :required="required"
       :disabled="disabled"
@@ -25,8 +25,8 @@
     <select
       v-else-if="type === 'select'"
       :id="fieldId"
-      class="form-control"
-      :class="{ 'is-invalid': hasError }"
+      class="rounded border border-secondary-300 px-3 py-3 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 disabled:cursor-not-allowed disabled:bg-secondary-50 md:py-2.5"
+      :class="{ 'border-danger-500 focus:border-danger-500 focus:ring-danger-100': hasError }"
       :required="required"
       :disabled="disabled"
       v-model="inputValue"
@@ -45,8 +45,8 @@
     <textarea
       v-else-if="type === 'textarea'"
       :id="fieldId"
-      class="form-control"
-      :class="{ 'is-invalid': hasError }"
+      class="min-h-20 resize-y rounded border border-secondary-300 px-3 py-3 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 disabled:cursor-not-allowed disabled:bg-secondary-50 md:py-2.5"
+      :class="{ 'border-danger-500 focus:border-danger-500 focus:ring-danger-100': hasError }"
       :placeholder="placeholder"
       :required="required"
       :disabled="disabled"
@@ -56,11 +56,11 @@
       @input="$emit('update:modelValue', $event.target.value)"
     ></textarea>
     
-    <div v-if="hasError" class="error-message">
+    <div v-if="hasError" class="mt-1 text-sm text-danger-600">
       {{ errorMessage }}
     </div>
-    
-    <div v-if="helpText" class="help-text">
+
+    <div v-if="helpText" class="mt-1 text-sm text-secondary-600">
       {{ helpText }}
     </div>
   </div>
@@ -114,74 +114,3 @@ watch(() => props.modelValue, (newValue) => {
   inputValue.value = newValue;
 });
 </script>
-
-<style scoped>
-.form-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1rem;
-}
-
-.form-label {
-  font-weight: 500;
-  color: var(--secondary-700);
-  margin-bottom: 0.5rem;
-}
-
-.required {
-  color: var(--danger-500);
-  margin-left: 0.25rem;
-}
-
-.form-control {
-  padding: 0.75rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
-
-.form-control:disabled {
-  background-color: var(--secondary-50);
-  cursor: not-allowed;
-}
-
-.form-control.is-invalid {
-  border-color: var(--danger-500);
-}
-
-.form-control.is-invalid:focus {
-  border-color: var(--danger-500);
-  box-shadow: 0 0 0 3px var(--danger-100);
-}
-
-.error-message {
-  color: var(--danger-600);
-  font-size: var(--font-size-sm);
-  margin-top: 0.25rem;
-}
-
-.help-text {
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-  margin-top: 0.25rem;
-}
-
-textarea.form-control {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .form-control {
-    padding: 0.625rem;
-  }
-}
-</style>

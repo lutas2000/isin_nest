@@ -5,7 +5,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
-          <span class="btn-icon">👥</span>
+          <span class="mr-2">👥</span>
           新增客戶
         </button>
       </template>
@@ -40,7 +40,7 @@
         <template #cell-id="{ row, value }">
           <button
             type="button"
-            class="link-button"
+            class="cursor-pointer border-0 bg-transparent p-0 text-primary-600 underline"
             @click="viewDetails(row)"
           >
             {{ value }}
@@ -698,23 +698,8 @@ onMounted(() => {
   background: var(--danger-50);
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
-.link-button {
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: none;
-  color: var(--primary-600);
-  cursor: pointer;
-  font: inherit;
-}
 
-.link-button:hover {
-  text-decoration: underline;
-}
 
 .copy-text-button {
   padding: 0;

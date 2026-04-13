@@ -1,21 +1,21 @@
 <template>
-  <div class="sales-vouchers-page">
+  <div class="mx-auto w-full">
     <ShortcutHint :table-state="tableState" @shortcut-click="handleShortcutClick" />
 
-    <div class="toolbar card-toolbar">
-      <div class="toolbar-row">
-        <label class="toolbar-label">從訂單建立</label>
+    <div class="mb-4 rounded-lg bg-white px-5 py-4 shadow">
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="text-sm text-secondary-700">從訂單建立</label>
         <input
           v-model="fromOrderId"
           type="text"
-          class="form-control toolbar-input"
+          class="form-control max-w-[200px]"
           placeholder="訂單編號"
         />
-        <label class="toolbar-label">稅金</label>
+        <label class="text-sm text-secondary-700">稅金</label>
         <input
           v-model.number="fromOrderTax"
           type="number"
-          class="form-control toolbar-input toolbar-input-narrow"
+          class="form-control max-w-[120px]"
           min="0"
           step="0.01"
         />
@@ -25,7 +25,7 @@
       </div>
     </div>
 
-    <div class="sales-content">
+    <div class="overflow-hidden rounded-lg bg-white shadow">
       <SearchFilters
         title=""
         :show-search="true"
@@ -35,8 +35,8 @@
         v-model:search="voucherSearch"
       />
 
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+      <div v-if="loading" class="p-8 text-center">載入中...</div>
+      <div v-else-if="error" class="bg-danger-50 p-8 text-center text-danger-600">{{ error }}</div>
       <EditableDataTable
         v-else
         ref="editableTableRef"
@@ -64,25 +64,25 @@
         <template #cell-id="{ row, value }">
           <button
             v-if="value"
-            class="link-button"
+            class="cursor-pointer border-0 bg-transparent p-0 text-primary-600 underline"
             type="button"
             @click="viewDetails(row)"
           >
             {{ value }}
           </button>
-          <span v-else class="text-muted">待生成</span>
+          <span v-else class="text-secondary-400">待生成</span>
         </template>
 
         <template #cell-orderId="{ value }">
           <router-link
             v-if="value"
             :to="`/crm/orders/${value}/items`"
-            class="link"
+            class="text-primary-600 underline"
             @click.stop
           >
             {{ value }}
           </router-link>
-          <span v-else class="text-muted">—</span>
+          <span v-else class="text-secondary-400">—</span>
         </template>
 
         <template #cell-customerId="{ row, value }">
@@ -92,12 +92,12 @@
           >
             {{ value }}
           </span>
-          <span v-else class="text-muted">未指定</span>
+          <span v-else class="text-secondary-400">未指定</span>
         </template>
 
         <template #cell-staffId="{ row, value }">
           <span v-if="value">{{ row.staff?.name || value }}</span>
-          <span v-else class="text-muted">—</span>
+          <span v-else class="text-secondary-400">—</span>
         </template>
 
         <template #cell-amount="{ value }">
@@ -469,80 +469,3 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-.sales-vouchers-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-.card-toolbar {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.toolbar-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.toolbar-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-700);
-}
-
-.toolbar-input {
-  max-width: 200px;
-}
-
-.toolbar-input-narrow {
-  max-width: 120px;
-}
-
-.sales-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.loading-message,
-.error-message {
-  padding: 2rem;
-  text-align: center;
-}
-
-.error-message {
-  color: var(--danger-600);
-  background: var(--danger-50);
-}
-
-.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--primary-600);
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
-}
-
-.link {
-  color: var(--primary-600);
-  text-decoration: underline;
-}
-
-.text-muted {
-  color: var(--secondary-400);
-}
-
-.form-control {
-  padding: 0.5rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-}
-</style>

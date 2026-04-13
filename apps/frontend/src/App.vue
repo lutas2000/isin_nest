@@ -1,9 +1,9 @@
 <template>
-  <div id="app" class="app">
+  <div id="app" class="app min-h-screen">
     <!-- 未登入時或重設密碼頁面時顯示滿版 -->
     <div
       v-if="!authStore.isLoggedIn || isResetPasswordPage"
-      class="full-page-container"
+      class="full-page-container min-h-screen"
     >
       <router-view />
     </div>
@@ -177,7 +177,7 @@
       </aside>
 
       <!-- 主要內容區域 -->
-      <main class="main-content" :class="{ 'main-expanded': sidebarCollapsed }">
+      <main class="main-content bg-secondary-50" :class="{ 'main-expanded': sidebarCollapsed }">
         <!-- 頂部導航欄 -->
         <header class="top-header">
           <div class="header-left">

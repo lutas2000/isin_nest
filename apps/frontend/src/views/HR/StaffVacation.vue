@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
-          <span class="btn-icon">📅</span>
+          <span class="mr-2">📅</span>
           新增假期記錄
         </button>
       </template>
@@ -60,7 +60,7 @@
       <SectionHeader title="假期記錄列表">
         <template #actions>
           <button class="btn btn-outline" @click="loadVacationData">
-            <span class="btn-icon">🔄</span>
+            <span class="mr-2">🔄</span>
             重新載入
           </button>
         </template>
@@ -578,9 +578,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 搜尋和篩選 */
 .search-filters {

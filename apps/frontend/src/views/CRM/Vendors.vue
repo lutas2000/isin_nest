@@ -51,13 +51,13 @@
         <template #cell-id="{ row, value }">
           <button
             v-if="value"
-            class="link-button"
+            class="cursor-pointer border-0 bg-transparent p-0 text-primary-600 underline"
             type="button"
             @click="viewDetails(row)"
           >
             {{ value }}
           </button>
-          <span v-else class="text-muted">待生成</span>
+          <span v-else class="text-secondary-400">待生成</span>
         </template>
 
         <template #cell-notes="{ value }">
@@ -451,24 +451,8 @@ onMounted(() => {
   background: var(--danger-50);
 }
 
-.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  color: var(--primary-600);
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
-}
 
-.link-button:hover {
-  color: var(--primary-700);
-}
 
-.text-muted {
-  color: var(--secondary-400);
-}
 
 /* 詳情 Modal 樣式 */
 .details-content {

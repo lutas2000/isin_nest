@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showNewRow = true">
-          <span class="btn-icon">+</span>
+          <span class="mr-2">+</span>
           新增加工項目
         </button>
       </template>
@@ -326,8 +326,5 @@ onMounted(() => {
   font-size: var(--font-size-sm);
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 </style>

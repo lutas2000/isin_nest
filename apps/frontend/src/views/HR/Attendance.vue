@@ -6,11 +6,11 @@
     >
       <template #actions>
         <button class="btn btn-primary">
-          <span class="btn-icon">📅</span>
+          <span class="mr-2">📅</span>
           今日出勤
         </button>
         <button class="btn btn-outline">
-          <span class="btn-icon">📊</span>
+          <span class="mr-2">📊</span>
           出勤報表
         </button>
       </template>
@@ -447,9 +447,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 出勤概覽 */
 .attendance-overview {

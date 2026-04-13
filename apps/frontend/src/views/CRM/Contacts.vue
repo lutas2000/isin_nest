@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
-          <span class="btn-icon">👤</span>
+          <span class="mr-2">👤</span>
           新增聯絡人
         </button>
       </template>
@@ -42,12 +42,12 @@
 
         <template #cell-phones="{ value }">
           <span v-if="value && value.length > 0">{{ value[0] }}</span>
-          <span v-else class="text-muted">無</span>
+          <span v-else class="text-secondary-400">無</span>
         </template>
 
         <template #cell-email="{ value }">
           <span v-if="value">{{ value }}</span>
-          <span v-else class="text-muted">無</span>
+          <span v-else class="text-secondary-400">無</span>
         </template>
 
         <template #actions="{ row }">
@@ -161,7 +161,7 @@
               </div>
               <div class="details-item" v-else>
                 <span class="details-label">電話：</span>
-                <span class="details-value text-muted">未提供</span>
+                <span class="details-value text-secondary-400">未提供</span>
               </div>
               <div class="details-item" v-if="selectedContact.email">
                 <span class="details-label">Email：</span>
@@ -169,7 +169,7 @@
               </div>
               <div class="details-item" v-else>
                 <span class="details-label">Email：</span>
-                <span class="details-value text-muted">未提供</span>
+                <span class="details-value text-secondary-400">未提供</span>
               </div>
             </div>
           </div>
@@ -496,14 +496,7 @@ onMounted(() => {
   background: var(--danger-50);
 }
 
-.text-muted {
-  color: var(--secondary-500);
-  font-style: italic;
-}
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* Modal 表單樣式 */
 .modal-form {

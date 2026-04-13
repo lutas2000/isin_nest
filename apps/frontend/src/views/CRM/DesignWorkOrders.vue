@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showNewRow = true">
-          <span class="btn-icon">➕</span>
+          <span class="mr-2">➕</span>
           新增設計工作單
         </button>
       </template>
@@ -338,7 +338,4 @@ onMounted(() => {
   vertical-align: middle;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 </style>

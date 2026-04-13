@@ -6,11 +6,11 @@
     >
       <template #actions>
         <button class="btn btn-primary">
-          <span class="btn-icon">📝</span>
+          <span class="mr-2">📝</span>
           新增請假
         </button>
         <button class="btn btn-outline">
-          <span class="btn-icon">📊</span>
+          <span class="mr-2">📊</span>
           請假報表
         </button>
       </template>
@@ -418,9 +418,6 @@ const leavePolicies = ref([
   margin: 0 auto;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 請假概覽 */
 .leave-overview {

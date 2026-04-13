@@ -1,18 +1,35 @@
 <template>
-  <div class="data-table">
-    <div class="table-container">
-      <table class="table">
+  <div class="overflow-hidden rounded-lg bg-white shadow">
+    <div class="overflow-x-auto text-sm md:text-sm">
+      <table class="w-full border-collapse">
         <thead>
           <tr>
-            <th v-for="column in columns" :key="column.key">
+            <th
+              v-for="column in columns"
+              :key="column.key"
+              class="border-b border-secondary-200 bg-secondary-50 px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider text-secondary-700 md:px-2 md:py-2"
+            >
               {{ column.label }}
             </th>
-            <th v-if="showActions">操作</th>
+            <th
+              v-if="showActions"
+              class="border-b border-secondary-200 bg-secondary-50 px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider text-secondary-700 md:px-2 md:py-2"
+            >
+              操作
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, index) in data" :key="getRowKey(row, index)">
-            <td v-for="column in columns" :key="column.key">
+          <tr
+            v-for="(row, index) in data"
+            :key="getRowKey(row, index)"
+            class="hover:bg-secondary-50"
+          >
+            <td
+              v-for="column in columns"
+              :key="column.key"
+              class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2"
+            >
               <slot 
                 :name="`cell-${column.key}`" 
                 :row="row" 
@@ -22,8 +39,8 @@
                 {{ row[column.key] }}
               </slot>
             </td>
-            <td v-if="showActions">
-              <div class="action-buttons">
+            <td v-if="showActions" class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2">
+              <div class="flex gap-2 md:flex-col md:gap-1">
                 <slot name="actions" :row="row" :index="index">
                   <button class="btn btn-sm btn-outline">查看詳情</button>
                   <button class="btn btn-sm btn-primary">編輯</button>
@@ -36,12 +53,19 @@
     </div>
     
     <!-- 分頁控制 -->
-    <div v-if="pagination" class="pagination-container">
-      <div class="pagination-info">
+    <div
+      v-if="pagination"
+      class="flex flex-wrap items-center justify-between gap-4 border-t border-secondary-200 bg-secondary-50 p-4 md:flex-col md:items-stretch"
+    >
+      <div class="text-sm text-secondary-600">
         顯示第 {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, total) }} 筆，共 {{ total }} 筆
       </div>
-      <div class="pagination-controls">
-        <select v-model="localPageSize" @change="handlePageSizeChange" class="page-size-select">
+      <div class="flex items-center gap-2 md:flex-wrap md:justify-center">
+        <select
+          v-model="localPageSize"
+          @change="handlePageSizeChange"
+          class="cursor-pointer rounded border border-secondary-300 bg-white px-3 py-1.5 text-sm"
+        >
           <option :value="25">25 筆/頁</option>
           <option :value="50">50 筆/頁</option>
           <option :value="100">100 筆/頁</option>
@@ -53,7 +77,7 @@
         >
           上一頁
         </button>
-        <span class="page-info">
+        <span class="px-2 text-sm text-secondary-600">
           第 {{ currentPage }} / {{ totalPages }} 頁
         </span>
         <button 
@@ -128,115 +152,3 @@ watch(() => props.pageSize, (newSize) => {
   localPageSize.value = newSize;
 });
 </script>
-
-<style scoped>
-.data-table {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.table th {
-  background-color: var(--secondary-50);
-  font-weight: 600;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table tbody tr:hover {
-  background-color: var(--secondary-50);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-top: 1px solid var(--secondary-200);
-  background-color: var(--secondary-50);
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.pagination-info {
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.page-size-select {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  background: white;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.page-info {
-  padding: 0 0.5rem;
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .table-container {
-    font-size: var(--font-size-sm);
-  }
-  
-  .table th,
-  .table td {
-    padding: 0.5rem;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .pagination-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .pagination-controls {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-}
-</style>

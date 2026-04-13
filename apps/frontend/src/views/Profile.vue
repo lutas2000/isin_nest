@@ -51,7 +51,7 @@
                     {{ feature }}
                   </span>
                 </template>
-                <span v-else class="text-muted">無特殊權限</span>
+                <span v-else class="text-secondary-400">無特殊權限</span>
               </span>
             </div>
           </div>
@@ -124,11 +124,11 @@
       <!-- 操作區 -->
       <div class="profile-actions">
         <button class="btn btn-outline" @click="goToResetPassword">
-          <span class="btn-icon">🔑</span>
+          <span class="mr-2">🔑</span>
           修改密碼
         </button>
         <button class="btn btn-danger" @click="handleLogout">
-          <span class="btn-icon">🚪</span>
+          <span class="mr-2">🚪</span>
           登出
         </button>
       </div>
@@ -291,10 +291,6 @@ const handleLogout = () => {
   font-weight: 600;
 }
 
-.text-muted {
-  color: var(--secondary-400);
-  font-style: italic;
-}
 
 /* Badge 樣式 */
 .badge {
@@ -367,9 +363,6 @@ const handleLogout = () => {
   padding: 0.75rem 1.5rem;
 }
 
-.btn-icon {
-  font-size: 1rem;
-}
 
 /* 響應式設計 */
 @media (max-width: 768px) {

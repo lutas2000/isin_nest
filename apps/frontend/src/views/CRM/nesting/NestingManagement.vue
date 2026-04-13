@@ -6,11 +6,11 @@
     >
       <template #actions>
         <button class="btn btn-outline" @click="showImportModal = true">
-          <span class="btn-icon">📄</span>
+          <span class="mr-2">📄</span>
           匯入排版
         </button>
         <button class="btn btn-primary" @click="showNewRow = true">
-          <span class="btn-icon">➕</span>
+          <span class="mr-2">➕</span>
           新增排版
         </button>
       </template>
@@ -211,7 +211,4 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 </style>

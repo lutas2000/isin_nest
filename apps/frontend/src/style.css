@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@source "./**/*.{vue,ts}";
+
 /* CNC 工廠銷管+HR CRM 系統主題 */
 :root {
   /* 主色調 - 工業藍 */

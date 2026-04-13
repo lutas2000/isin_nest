@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button v-if="nesting" class="btn btn-primary" @click="handlePrint">
-          <span class="btn-icon">🖨️</span>
+          <span class="mr-2">🖨️</span>
           列印
         </button>
         <router-link to="/crm/nestings" class="btn btn-outline">
@@ -188,9 +188,6 @@ onMounted(() => {
   text-align: center;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 @media (max-width: 768px) {
   .summary-grid {

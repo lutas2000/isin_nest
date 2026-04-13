@@ -1,24 +1,24 @@
 <template>
-  <div class="search-filters">
-    <div class="content-header">
+  <div class="overflow-hidden rounded-lg bg-white shadow">
+    <div class="flex items-center justify-between gap-4 border-b border-secondary-200 px-8 pb-4 pt-8 md:flex-col md:items-start md:px-4 md:pt-4">
       <h3>{{ title }}</h3>
-      <div class="header-controls">
-        <div class="search-box" v-if="showSearch">
-          <input 
-            type="text" 
-            class="form-control" 
+      <div class="flex gap-4 md:w-full md:flex-col">
+        <div v-if="showSearch" class="min-w-[300px] md:min-w-0">
+          <input
+            type="text"
+            class="w-full rounded border border-secondary-300 px-3 py-2 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
             :placeholder="searchPlaceholder"
             v-model="searchValue"
-            @input="$emit('update:search', $event.target.value)"
+            @input="handleSearchInput"
           />
         </div>
-        
-        <select 
-          v-for="filter in filters" 
+
+        <select
+          v-for="filter in filters"
           :key="filter.key"
-          class="form-control" 
+          class="rounded border border-secondary-300 px-3 py-2 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
           v-model="filterValues[filter.key]"
-          @change="$emit('update:filter', filter.key, $event.target.value)"
+          @change="handleFilterChange(filter.key, $event)"
         >
           <option value="">{{ filter.placeholder }}</option>
           <option 
@@ -29,15 +29,15 @@
             {{ option.label }}
           </option>
         </select>
-        
-        <input 
+
+        <input
           v-if="showDateFilter"
-          type="date" 
-          class="form-control" 
+          type="date"
+          class="rounded border border-secondary-300 px-3 py-2 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
           v-model="dateValue"
-          @change="$emit('update:date', $event.target.value)"
+          @change="handleDateChange"
         />
-        
+
         <slot name="controls"></slot>
       </div>
     </div>
@@ -87,6 +87,23 @@ const searchValue = ref(props.search);
 const dateValue = ref(props.date);
 const filterValues = ref<Record<string, string>>({});
 
+const getInputValue = (event: Event) => {
+  const target = event.target as HTMLInputElement | HTMLSelectElement | null;
+  return target?.value ?? '';
+};
+
+const handleSearchInput = (event: Event) => {
+  emit('update:search', getInputValue(event));
+};
+
+const handleFilterChange = (key: string, event: Event) => {
+  emit('update:filter', key, getInputValue(event));
+};
+
+const handleDateChange = (event: Event) => {
+  emit('update:date', getInputValue(event));
+};
+
 // 監聽 props 變化
 watch(() => props.search, (newValue) => {
   searchValue.value = newValue;
@@ -96,66 +113,3 @@ watch(() => props.date, (newValue) => {
   dateValue.value = newValue;
 });
 </script>
-
-<style scoped>
-.search-filters {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.content-header {
-  padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
-
-.search-box {
-  min-width: 300px;
-}
-
-.form-control {
-  padding: 0.75rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .content-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .header-controls {
-    width: 100%;
-    flex-direction: column;
-  }
-  
-  .search-box {
-    min-width: auto;
-  }
-}
-</style>

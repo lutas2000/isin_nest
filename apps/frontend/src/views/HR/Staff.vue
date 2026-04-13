@@ -1,5 +1,5 @@
 <template>
-  <div class="staff-page">
+  <div class="mx-auto w-full">
     <!-- 上鎖畫面 -->
     <div v-if="isLocked" class="staff-lock-overlay">
       <div class="staff-lock-card">
@@ -37,17 +37,17 @@
       >
         <template #actions>
           <button class="btn btn-primary" @click="showAddModal = true">
-            <span class="btn-icon">👤</span>
+            <span class="mr-2">👤</span>
             新增員工
           </button>
         </template>
       </PageHeader>
 
       <!-- 員工列表 -->
-      <div class="staff-content">
+      <div class="staff-content overflow-hidden rounded-lg bg-white shadow">
       <TableHeader title="員工列表">
         <template #actions>
-          <div class="search-box">
+          <div class="search-box min-w-[240px]">
             <input
               type="text"
               class="form-control"
@@ -1350,9 +1350,6 @@ onUnmounted(() => {
   color: var(--secondary-500);
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 員工列表 */
 .staff-content {

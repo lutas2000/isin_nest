@@ -249,7 +249,7 @@ onMounted(() => {
 .empty-message {
   padding: 2rem;
   text-align: center;
-  color: var(--text-muted);
+  color: var(--text-secondary-400);
 }
 
 .processing-item {

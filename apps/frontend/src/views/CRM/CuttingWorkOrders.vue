@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showNewRow = true">
-          <span class="btn-icon">➕</span>
+          <span class="mr-2">➕</span>
           新增切割工作單
         </button>
       </template>
@@ -161,6 +161,5 @@ onMounted(() => { loadData(); });
 .table-card { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); overflow: hidden; }
 .link { color: var(--primary-600); text-decoration: none; }
 .link:hover { text-decoration: underline; }
-.btn-icon { margin-right: 0.5rem; }
 .empty-cell { color: var(--secondary-400); }
 </style>

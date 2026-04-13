@@ -1,10 +1,10 @@
 <template>
-  <div class="page-header">
-    <div class="header-content">
-      <h1>{{ title }}</h1>
-      <p v-if="description">{{ description }}</p>
+  <div class="mb-8 flex items-center justify-between gap-4 rounded-lg bg-white p-8 shadow md:flex-col md:text-center">
+    <div>
+      <h1 class="mb-2 text-secondary-900">{{ title }}</h1>
+      <p v-if="description" class="m-0 text-secondary-600">{{ description }}</p>
     </div>
-    <div class="header-actions" v-if="$slots.actions">
+    <div v-if="$slots.actions" class="flex gap-4 md:w-full md:justify-center">
       <slot name="actions"></slot>
     </div>
   </div>
@@ -16,51 +16,5 @@ interface Props {
   description?: string;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 </script>
-
-<style scoped>
-.page-header {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-content h1 {
-  margin-bottom: 0.5rem;
-  color: var(--secondary-900);
-}
-
-.header-content p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn-icon {
-  margin-right: 0.5rem;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: center;
-  }
-}
-</style>

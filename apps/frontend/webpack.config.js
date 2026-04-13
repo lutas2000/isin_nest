@@ -13,7 +13,7 @@ module.exports = composePlugins(withNx(), (config) => {
   // CSS loader
   config.module.rules.push({
     test: /\.css$/,
-    use: ['vue-style-loader', 'css-loader']
+    use: ['vue-style-loader', 'css-loader', 'postcss-loader']
   });
 
   // TypeScript loader

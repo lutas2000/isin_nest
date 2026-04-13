@@ -7,11 +7,11 @@
       </div>
       <div class="header-actions">
         <button class="btn btn-primary">
-          <span class="btn-icon">📋</span>
+          <span class="mr-2">📋</span>
           新增工單
         </button>
         <button class="btn btn-outline">
-          <span class="btn-icon">⚙️</span>
+          <span class="mr-2">⚙️</span>
           設備維護
         </button>
       </div>
@@ -519,9 +519,6 @@ const filteredInspections = computed(() => {
   gap: 1rem;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 生產概覽 */
 .production-overview {

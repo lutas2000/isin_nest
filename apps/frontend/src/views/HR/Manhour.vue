@@ -6,11 +6,11 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showCreateModal = true">
-          <span class="btn-icon">⏱️</span>
+          <span class="mr-2">⏱️</span>
           新增工時
         </button>
         <button class="btn btn-outline" @click="activeTab = 'reports'">
-          <span class="btn-icon">📊</span>
+          <span class="mr-2">📊</span>
           工時報表
         </button>
       </template>
@@ -790,9 +790,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 工時概覽 */
 .manhour-overview {

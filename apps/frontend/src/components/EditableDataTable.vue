@@ -1,19 +1,28 @@
 <template>
   <div 
     ref="tableRef"
-    class="editable-data-table"
+    class="editable-data-table overflow-hidden rounded-lg bg-white shadow"
     @keydown="handleTableKeyDown"
     tabindex="0"
   >
-    <div class="table-container">
-      <table class="table">
+    <div class="table-container overflow-x-auto md:text-sm">
+      <table class="table w-full border-collapse">
         <thead>
           <tr>
-            <th v-for="column in columns" :key="column.key">
+            <th
+              v-for="column in columns"
+              :key="column.key"
+              class="border-b border-secondary-200 bg-secondary-50 px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider text-secondary-700 md:px-2 md:py-2"
+            >
               <span v-if="column.required" class="required-mark">*</span>
               {{ column.label }}
             </th>
-            <th v-if="showActions">操作</th>
+            <th
+              v-if="showActions"
+              class="border-b border-secondary-200 bg-secondary-50 px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider text-secondary-700 md:px-2 md:py-2"
+            >
+              操作
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -27,7 +36,11 @@
               'focused-row': isNewRowFocused
             }"
           >
-            <td v-for="column in columns" :key="column.key">
+            <td
+              v-for="column in columns"
+              :key="column.key"
+              class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2"
+            >
               <EditableCell
                 v-if="isColumnEditable(column)"
                 :column="column"
@@ -55,8 +68,8 @@
                 <span v-else>{{ newRowData[column.key] }}</span>
               </slot>
             </td>
-            <td v-if="showActions">
-              <div class="action-buttons">
+            <td v-if="showActions" class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2">
+              <div class="action-buttons relative flex justify-center gap-2 md:flex-col md:gap-1">
                 <button 
                   class="btn btn-sm btn-success" 
                   @click="saveNewRow"
@@ -85,7 +98,11 @@
             }"
             @dblclick="handleRowDblClick(row, index)"
           >
-            <td v-for="column in columns" :key="column.key">
+            <td
+              v-for="column in columns"
+              :key="column.key"
+              class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2"
+            >
               <EditableCell
                 v-if="isEditing(row, index) && isColumnEditable(column)"
                 :column="column"
@@ -113,8 +130,8 @@
                 <span v-else>{{ row[column.key] }}</span>
               </slot>
             </td>
-            <td v-if="showActions">
-              <div class="action-buttons">
+            <td v-if="showActions" class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2">
+              <div class="action-buttons relative flex justify-center gap-2 md:flex-col md:gap-1">
                 <!-- 編輯模式：直接顯示 slot 內容或預設按鈕 -->
                 <template v-if="isEditing(row, index)">
                   <slot 
@@ -199,12 +216,19 @@
     </div>
     
     <!-- 分頁控制 -->
-    <div v-if="pagination" class="pagination-container">
-      <div class="pagination-info">
+    <div
+      v-if="pagination"
+      class="pagination-container flex flex-wrap items-center justify-between gap-4 border-t border-secondary-200 bg-secondary-50 p-4 md:flex-col md:items-stretch"
+    >
+      <div class="pagination-info text-sm text-secondary-600">
         顯示第 {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, total) }} 筆，共 {{ total }} 筆
       </div>
-      <div class="pagination-controls">
-        <select v-model="localPageSize" @change="handlePageSizeChange" class="page-size-select">
+      <div class="pagination-controls flex items-center gap-2 md:flex-wrap md:justify-center">
+        <select
+          v-model="localPageSize"
+          @change="handlePageSizeChange"
+          class="page-size-select cursor-pointer rounded border border-secondary-300 bg-white px-3 py-1.5 text-sm"
+        >
           <option :value="25">25 筆/頁</option>
           <option :value="50">50 筆/頁</option>
           <option :value="100">100 筆/頁</option>
@@ -216,7 +240,7 @@
         >
           上一頁
         </button>
-        <span class="page-info">
+        <span class="page-info px-2 text-sm text-secondary-600">
           第 {{ currentPage }} / {{ totalPages }} 頁
         </span>
         <button 
@@ -888,38 +912,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.editable-data-table {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.table th {
-  background-color: var(--secondary-50);
-  font-weight: 600;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 .table tbody tr:hover {
   background-color: var(--secondary-50);
 }
@@ -967,13 +959,6 @@ defineExpose({
   margin: 0;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-  position: relative;
-  justify-content: center;
-}
-
 .actions-dropdown {
   position: relative;
   display: inline-flex;
@@ -1015,73 +1000,9 @@ defineExpose({
   height: 18px;
 }
 
-.pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-top: 1px solid var(--secondary-200);
-  background-color: var(--secondary-50);
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.pagination-info {
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.page-size-select {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  background: white;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.page-info {
-  padding: 0 0.5rem;
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-}
-
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .table-container {
-    font-size: var(--font-size-sm);
-  }
-  
-  .table th,
-  .table td {
-    padding: 0.5rem;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .pagination-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .pagination-controls {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
 }
 </style>
 

@@ -6,7 +6,7 @@
     >
       <template #actions>
         <button class="btn btn-primary" @click="showAddModal = true">
-          <span class="btn-icon">⏰</span>
+          <span class="mr-2">⏰</span>
           新增上班時段
         </button>
       </template>
@@ -830,9 +830,6 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 段別統計 */
 .segment-overview {

@@ -1,5 +1,5 @@
 <template>
-  <div class="work-order-items-page">
+  <div class="mx-auto w-full">
     <PageHeader
       title="訂單詳情"
       :description="workOrder ? `` : '載入中...'"
@@ -10,7 +10,7 @@
           v-if="workOrder"
           @click="handlePrint"
         >
-          <span class="btn-icon">🖨️</span>
+          <span class="mr-2">🖨️</span>
           列印訂貨單
         </button>
         <button
@@ -18,23 +18,25 @@
           v-if="workOrder"
           @click="handlePrintWorkSheet"
         >
-          <span class="btn-icon">📄</span>
+          <span class="mr-2">📄</span>
           列印工作單
         </button>
         <button class="btn btn-outline" @click="goBack">
-          <span class="btn-icon">←</span>
+          <span class="mr-2">←</span>
           返回
         </button>
       </template>
     </PageHeader>
 
-    <div v-if="loading" class="loading-message">載入中...</div>
-    <div v-else-if="error" class="error-message">{{ error }}</div>
+    <div v-if="loading" class="p-8 text-center">載入中...</div>
+    <div v-else-if="error" class="rounded-lg bg-danger-50 p-8 text-center text-danger-600">
+      {{ error }}
+    </div>
 
-    <div v-else-if="workOrder" class="work-order-items-content">
+    <div v-else-if="workOrder" class="flex flex-col gap-8">
       <!-- 工作單詳細資訊 -->
-      <div class="work-order-details-card">
-        <div class="details-content">
+      <div class="overflow-hidden rounded-lg bg-white shadow">
+        <div class="p-8">
           <DetailFieldsPanel
             v-model:editing="detailsEditing"
             :items="detailItems"
@@ -104,11 +106,11 @@
       />
 
       <!-- 訂單工件列表 -->
-      <div class="work-order-items-card">
+      <div class="overflow-hidden rounded-lg bg-white shadow">
         <TableHeader title="訂單工件列表">
           <template #actions>
             <button class="btn btn-primary" @click="showNewRow = true">
-              <span class="btn-icon">➕</span>
+              <span class="mr-2">➕</span>
               新增工件
             </button>
           </template>
@@ -810,41 +812,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.work-order-items-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-.loading-message,
-.error-message {
-  padding: 2rem;
-  text-align: center;
-}
-
-.error-message {
-  color: var(--danger-600);
-  background: var(--danger-50);
-  border-radius: var(--border-radius-lg);
-}
-
-.work-order-items-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.work-order-details-card,
-.work-order-items-card {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.details-content {
-  padding: 2rem;
-}
-
 /* 訂單工件列表 */
 .empty-message {
   padding: 3rem;
@@ -856,10 +823,6 @@ onMounted(() => {
 .highlight {
   font-weight: 600;
   color: var(--primary-600);
-}
-
-.btn-icon {
-  margin-right: 0.5rem;
 }
 
 /* Modal 表單樣式 */

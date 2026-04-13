@@ -24,7 +24,7 @@
         <SectionHeader title="銷管設定">
           <template #actions>
             <button class="btn btn-primary" @click="showAddCrmModal = true">
-              <span class="btn-icon">➕</span>
+              <span class="mr-2">➕</span>
               新增設定
             </button>
           </template>
@@ -65,7 +65,7 @@
         <SectionHeader title="權限設定">
           <template #actions>
             <button class="btn btn-primary" @click="showAddFeatureModal = true">
-              <span class="btn-icon">➕</span>
+              <span class="mr-2">➕</span>
               新增職稱
             </button>
           </template>
@@ -87,7 +87,7 @@
               >
                 {{ perm.feature.name }}: {{ getPermissionLabel(perm.permission) }}
               </span>
-              <span v-if="!row.permissions || row.permissions.length === 0" class="text-muted">
+              <span v-if="!row.permissions || row.permissions.length === 0" class="text-secondary-400">
                 無權限設定
               </span>
             </div>
@@ -705,14 +705,7 @@ onMounted(() => {
   gap: 0.5rem;
 }
 
-.text-muted {
-  color: var(--secondary-500);
-  font-style: italic;
-}
 
-.btn-icon {
-  margin-right: 0.5rem;
-}
 
 /* 項目內容樣式 */
 .item-code {

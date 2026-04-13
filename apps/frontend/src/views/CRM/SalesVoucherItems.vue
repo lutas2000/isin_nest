@@ -14,7 +14,7 @@
           依預設稅率帶入稅金
         </button>
         <button type="button" class="btn btn-outline" @click="goBack">
-          <span class="btn-icon">←</span>
+          <span class="mr-2">←</span>
           返回
         </button>
       </template>
@@ -80,7 +80,7 @@
         <TableHeader title="銷貨明細">
           <template #actions>
             <button type="button" class="btn btn-primary" @click="showNewRow = true">
-              <span class="btn-icon">➕</span>
+              <span class="mr-2">➕</span>
               新增明細
             </button>
           </template>
@@ -627,9 +627,6 @@ onMounted(() => {
   color: var(--secondary-500);
 }
 
-.btn-icon {
-  margin-right: 0.35rem;
-}
 
 .link {
   color: var(--primary-600);
