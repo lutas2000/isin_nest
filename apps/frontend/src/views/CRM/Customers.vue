@@ -22,17 +22,19 @@
 
       <div v-if="loading" class="loading-message">載入中...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <DataTable
+      <EditableDataTable
         v-else
-        :columns="tableColumns"
+        :columns="editableColumns"
         :data="customers"
         :show-actions="true"
         :pagination="true"
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
+        :editable="false"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
+        @row-view="viewDetails"
       >
         <template #cell-id="{ row, value }">
           <button
@@ -52,13 +54,13 @@
           NT$ {{ Number(value).toLocaleString('zh-TW') }}
         </template>
 
-        <template #actions="{ row }">
-          <button class="btn btn-sm btn-outline" @click="goToCustomerContacts(row)">
-            聯絡人
-          </button>
-          <button class="btn btn-sm btn-primary" @click="editCustomer(row)">編輯</button>
+        <template #actions="{ row, isEditing }">
+          <template v-if="!isEditing">
+            <span class="dropdown-item" @click="goToCustomerContacts(row)">聯絡人</span>
+            <span class="dropdown-item" @click="editCustomer(row)">編輯</span>
+          </template>
         </template>
-      </DataTable>
+      </EditableDataTable>
     </div>
 
     <!-- 創建/編輯客戶 Modal -->
@@ -368,7 +370,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, DataTable, SearchFilters, Modal } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, Modal } from '@/components';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 import { contactService } from '@/services/crm/contact.service';
 import { useAuthStore } from '@/stores/auth';
@@ -419,14 +421,13 @@ const customerForm = ref({
   notes: '',
 });
 
-// 表格列定義
-const tableColumns = [
-  { key: 'id', label: '客戶ID' },
-  { key: 'companyName', label: '公司名稱' },
-  { key: 'companyShortName', label: '公司簡稱' },
-  { key: 'phones', label: '電話' },
-  { key: 'email', label: 'Email' },
-  { key: 'accountReceivable', label: '帳款' },
+const editableColumns: EditableColumn[] = [
+  { key: 'id', label: '客戶ID', editable: false },
+  { key: 'companyName', label: '公司名稱', editable: false },
+  { key: 'companyShortName', label: '公司簡稱', editable: false },
+  { key: 'phones', label: '電話', editable: false },
+  { key: 'email', label: 'Email', editable: false },
+  { key: 'accountReceivable', label: '帳款', editable: false },
 ];
 
 // 表單驗證
