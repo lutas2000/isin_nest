@@ -263,6 +263,8 @@ interface Props {
   editable?: boolean;
   /** 為 false 時，雙擊列不會進入編輯（仍可用 F2、選單「編輯」等） */
   dblClickToEdit?: boolean;
+  /** 控制元件掛載後是否自動聚焦表格容器 */
+  autoFocusOnMount?: boolean;
   showNewRow?: boolean;
   newRowTemplate?: any;
 }
@@ -276,6 +278,7 @@ const props = withDefaults(defineProps<Props>(), {
   total: 0,
   editable: true,
   dblClickToEdit: true,
+  autoFocusOnMount: true,
   showNewRow: false,
   newRowTemplate: () => ({}),
 });
@@ -501,6 +504,9 @@ watch(() => props.data, (newData) => {
 onMounted(() => {
   if (props.data.length > 0 && !props.showNewRow) {
     focusedRowIndex.value = 0;
+  }
+  if (!props.autoFocusOnMount) {
+    return;
   }
   // 自動 focus 到表格，讓鍵盤操作可以立即使用
   nextTick(() => {

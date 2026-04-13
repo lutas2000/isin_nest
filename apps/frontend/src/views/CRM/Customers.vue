@@ -32,6 +32,7 @@
         :page-size="pageSize"
         :total="total"
         :editable="false"
+        :auto-focus-on-mount="false"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         @row-view="viewDetails"
