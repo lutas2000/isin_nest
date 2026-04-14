@@ -1,15 +1,5 @@
 <template>
   <div class="customers-page">
-    <PageHeader 
-      title="客戶管理"
-    >
-      <template #actions>
-        <button class="btn btn-primary" @click="showCreateModal = true">
-          <span class="mr-2">👥</span>
-          新增客戶
-        </button>
-      </template>
-    </PageHeader>
 
     <!-- 客戶列表 -->
     <div class="customers-content">
