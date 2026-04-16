@@ -107,15 +107,11 @@
     />
 
       <!-- 報價單工件列表 -->
-      <div class="overflow-hidden rounded-lg bg-white shadow">
-        <TableHeader title="報價單工件列表">
-          <template #actions>
-            <button class="btn btn-primary" @click="showNewRow = true">
-              <span class="mr-2">➕</span>
-              新增工件
-            </button>
-          </template>
-        </TableHeader>
+      <CrmTableContainer
+        title="工件列表"
+        :loading="loading"
+        :error="error"
+      >
         <EditableDataTable
           ref="editableTableRef"
           :columns="editableColumns"
@@ -209,7 +205,7 @@
             </template>
           </template>
         </EditableDataTable>
-      </div>
+      </CrmTableContainer>
     </div>
 
     <!-- 列印組件 -->
@@ -234,7 +230,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  TableHeader,
+  CrmTableContainer,
   EditableDataTable,
   ShortcutHint,
   DetailFieldsPanel,

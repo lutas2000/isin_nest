@@ -1,5 +1,12 @@
 <template>
   <div class="overflow-hidden rounded-lg bg-white shadow">
+    <div
+      v-if="title"
+      class="border-b border-secondary-100 !px-6 !py-4 text-lg font-semibold text-secondary-900 md:!px-4 md:!py-3"
+    >
+      {{ title }}
+    </div>
+
     <!-- Toolbar: search + filters + sort + custom controls -->
     <div
       v-if="showToolbar || $slots.controls"
@@ -68,6 +75,7 @@ import FilterControl, { type FilterDefinition } from './FilterControl.vue';
 import SortControl, { type SortOption, type SortValue } from './SortControl.vue';
 
 interface Props {
+  title?: string;
   loading?: boolean;
   loadingText?: string;
   error?: string | null;
@@ -82,6 +90,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  title: '',
   loading: false,
   loadingText: '載入中...',
   error: null,
