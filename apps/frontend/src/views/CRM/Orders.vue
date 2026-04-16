@@ -7,31 +7,29 @@
     />
 
     <!-- 訂單列表 -->
-    <div class="orders-content">
-      <SearchFilters
-        :card="false"
-        :compact="true"
-        :show-search="true"
-        search-placeholder="搜尋訂單編號或客戶..."
-        :filters="[
-          {
-            key: 'status',
-            placeholder: '全部狀態',
-            options: [
-              { value: 'active', label: '進行中' },
-              { value: 'completed', label: '已完成' }
-            ]
-          }
-        ]"
-        :show-date-filter="false"
-        v-model:search="orderSearch"
-        @update:filter="handleFilterUpdate"
-      />
-
-      <div v-if="loading" class="loading-message">載入訂單中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <CrmTableContainer
+      :loading="loading"
+      loading-text="載入訂單中..."
+      :error="error"
+      :show-search="true"
+      :search="orderSearch"
+      search-placeholder="搜尋訂單編號或客戶..."
+      :filters="[
+        {
+          key: 'status',
+          placeholder: '全部狀態',
+          options: [
+            { value: 'active', label: '進行中' },
+            { value: 'completed', label: '已完成' }
+          ]
+        }
+      ]"
+      :filter-values="{ status: orderStatusFilter }"
+      @update:search="orderSearch = $event"
+      @update:filters="handleContainerFilterUpdate"
+      @retry="loadOrders"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="editableColumns"
         :data="filteredOrders"
@@ -133,14 +131,14 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, ShortcutHint } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, ShortcutHint } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { apiGet } from '@/services/api';
@@ -335,9 +333,9 @@ const filteredOrders = computed(() => {
 });
 
 // 處理篩選器更新
-const handleFilterUpdate = (key: string, value: string) => {
-  if (key === 'status') {
-    orderStatusFilter.value = value;
+const handleContainerFilterUpdate = (filters: Record<string, string>) => {
+  if ('status' in filters) {
+    orderStatusFilter.value = filters.status;
   }
 };
 

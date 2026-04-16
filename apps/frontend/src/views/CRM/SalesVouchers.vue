@@ -25,19 +25,16 @@
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-lg bg-white shadow">
-      <SearchFilters
-        :show-search="true"
-        search-placeholder="搜尋銷貨單號、訂單號或客戶..."
-        :filters="[]"
-        :show-date-filter="false"
-        v-model:search="voucherSearch"
-      />
-
-      <div v-if="loading" class="p-8 text-center">載入中...</div>
-      <div v-else-if="error" class="bg-danger-50 p-8 text-center text-danger-600">{{ error }}</div>
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="voucherSearch"
+      search-placeholder="搜尋銷貨單號、訂單號或客戶..."
+      @update:search="voucherSearch = $event"
+      @retry="loadVouchers"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="editableColumns"
         :data="filteredRows"
@@ -132,7 +129,7 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
   </div>
 </template>
 
@@ -142,7 +139,7 @@ import { useRouter } from 'vue-router';
 import {
   EditableDataTable,
   type EditableColumn,
-  SearchFilters,
+  CrmTableContainer,
   ShortcutHint,
 } from '@/components';
 import {

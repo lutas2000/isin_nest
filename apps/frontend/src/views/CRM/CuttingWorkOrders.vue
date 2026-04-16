@@ -9,10 +9,11 @@
       </template>
     </TableHeader>
 
-    <SearchFilters
-      :card="false"
-      :compact="true"
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
       :show-search="true"
+      :search="searchQuery"
       search-placeholder="搜尋訂單編號或機台..."
       :filters="[
         {
@@ -21,15 +22,12 @@
           options: statusOptions
         }
       ]"
-      v-model:search="searchQuery"
-      @update:filter="handleFilterUpdate"
-    />
-
-    <div class="table-card">
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+      :filter-values="{ status: filterStatus }"
+      @update:search="searchQuery = $event"
+      @update:filters="(f: Record<string, string>) => { if ('status' in f) filterStatus = f.status; }"
+      @retry="loadData"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="columns"
         :data="filteredData"
@@ -70,13 +68,13 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { StatusBadge, EditableDataTable, SearchFilters, TableHeader, type EditableColumn } from '@/components';
+import { StatusBadge, EditableDataTable, CrmTableContainer, TableHeader, type EditableColumn } from '@/components';
 import { cuttingWorkOrderService, type CuttingWorkOrder, CuttingWorkOrderStatus } from '@/services/crm/cutting-work-order.service';
 
 const loading = ref(false);
@@ -92,12 +90,6 @@ const statusOptions = [
   { value: 'in_progress', label: '進行中' },
   { value: 'completed', label: '已完成' },
 ];
-
-const handleFilterUpdate = (key: string, value: string) => {
-  if (key === 'status') {
-    filterStatus.value = value;
-  }
-};
 
 const columns: EditableColumn[] = [
   { key: 'cncFileName', label: 'CNC 檔案', editable: true, type: 'text' },
@@ -166,9 +158,6 @@ onMounted(() => { loadData(); });
 
 <style scoped>
 .cutting-work-orders-page { width: 100%; margin: 0 auto; }
-.loading-message, .error-message { padding: 2rem; text-align: center; }
-.error-message { color: var(--danger-600); background: var(--danger-50); border-radius: var(--border-radius-lg); }
-.table-card { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); overflow: hidden; }
 .link { color: var(--primary-600); text-decoration: none; }
 .link:hover { text-decoration: underline; }
 .empty-cell { color: var(--secondary-400); }

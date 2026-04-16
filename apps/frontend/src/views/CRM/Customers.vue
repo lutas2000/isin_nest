@@ -2,17 +2,16 @@
   <div class="customers-page">
 
     <!-- 客戶列表 -->
-    <div class="customers-content">
-      <SearchFilters
-        :show-search="true"
-        search-placeholder="搜尋客戶名稱或公司..."
-        v-model:search="customerSearch"
-      />
-
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="customerSearch"
+      search-placeholder="搜尋客戶名稱或公司..."
+      @update:search="customerSearch = $event"
+      @retry="loadCustomers"
+    >
       <EditableDataTable
-        v-else
         :columns="editableColumns"
         :data="customers"
         :show-actions="true"
@@ -69,7 +68,7 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
 
     <!-- 創建/編輯客戶 Modal -->
     <Modal
@@ -365,7 +364,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { EditableDataTable, type EditableColumn, SearchFilters, Modal } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, Modal } from '@/components';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 import { contactService } from '@/services/crm/contact.service';
 import { useAuthStore } from '@/stores/auth';
@@ -669,23 +668,6 @@ onMounted(() => {
   margin-bottom: 2rem;
 }
 
-.customers-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.loading-message,
-.error-message {
-  padding: 2rem;
-  text-align: center;
-}
-
-.error-message {
-  color: var(--danger-600);
-  background: var(--danger-50);
-}
 
 
 

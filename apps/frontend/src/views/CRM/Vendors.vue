@@ -13,18 +13,16 @@
     />
 
     <!-- 廠商列表 -->
-    <div class="vendors-content">
-      <SearchFilters
-        :show-search="true"
-        search-placeholder="搜尋廠商名稱或聯絡人..."
-        :show-date-filter="false"
-        v-model:search="vendorSearch"
-      />
-
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="vendorSearch"
+      search-placeholder="搜尋廠商名稱或聯絡人..."
+      @update:search="vendorSearch = $event"
+      @retry="loadVendors"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="editableColumns"
         :data="vendors"
@@ -95,7 +93,7 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
 
     <!-- 查看詳情 Modal -->
     <Modal
@@ -160,7 +158,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, Modal, ShortcutHint } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, CrmTableContainer, Modal, ShortcutHint } from '@/components';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
 
 // 廠商資料

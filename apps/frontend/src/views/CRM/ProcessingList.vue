@@ -19,17 +19,16 @@
     />
 
     <!-- 加工項目列表 -->
-    <div class="processing-content">
-      <SearchFilters
-        :show-search="true"
-        search-placeholder="搜尋加工名稱..."
-        v-model:search="processingSearch"
-      />
-
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="processingSearch"
+      search-placeholder="搜尋加工名稱..."
+      @update:search="processingSearch = $event"
+      @retry="loadData"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="editableColumns"
         :data="filteredProcessings"
@@ -75,13 +74,13 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { PageHeader, SearchFilters, EditableDataTable, ShortcutHint, type EditableColumn } from '@/components'
+import { PageHeader, CrmTableContainer, EditableDataTable, ShortcutHint, type EditableColumn } from '@/components'
 import { processingService, type Processing } from '@/services/crm/processing.service'
 import { vendorService, type Vendor } from '@/services/crm/vendor.service'
 

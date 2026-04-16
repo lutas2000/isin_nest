@@ -13,29 +13,28 @@
     />
 
     <!-- 報價單列表 -->
-    <div class="quotes-content">
-      <SearchFilters
-        :show-search="true"
-        search-placeholder="搜尋報價單編號或客戶..."
-        :filters="[
-          {
-            key: 'status',
-            placeholder: '全部狀態',
-            options: [
-              { value: 'pending', label: '待簽名' },
-              { value: 'signed', label: '已簽名' }
-            ]
-          }
-        ]"
-        :show-date-filter="false"
-        v-model:search="quoteSearch"
-        @update:filter="handleFilterUpdate"
-      />
-
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="quoteSearch"
+      search-placeholder="搜尋報價單編號或客戶..."
+      :filters="[
+        {
+          key: 'status',
+          placeholder: '全部狀態',
+          options: [
+            { value: 'pending', label: '待簽名' },
+            { value: 'signed', label: '已簽名' }
+          ]
+        }
+      ]"
+      :filter-values="{ status: quoteStatusFilter }"
+      @update:search="quoteSearch = $event"
+      @update:filters="handleContainerFilterUpdate"
+      @retry="loadQuotes"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="editableColumns"
         :data="filteredQuotes"
@@ -157,7 +156,7 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
 
     <!-- 查看詳情 Modal -->
     <Modal 
@@ -327,7 +326,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, StatusBadge, Modal, ShortcutHint } from '@/components';
+import { PageHeader, EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, quoteItemService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
@@ -558,9 +557,9 @@ const getProcessingNames = (processingIds?: number[]) => {
 };
 
 // 處理篩選器更新
-const handleFilterUpdate = (key: string, value: string) => {
-  if (key === 'status') {
-    quoteStatusFilter.value = value;
+const handleContainerFilterUpdate = (filters: Record<string, string>) => {
+  if ('status' in filters) {
+    quoteStatusFilter.value = filters.status;
   }
 };
 

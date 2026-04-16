@@ -16,16 +16,16 @@
       </template>
     </PageHeader>
 
-    <SearchFilters
-      v-model:search="searchQuery"
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="searchQuery"
       search-placeholder="搜尋排版編號或訂單..."
-    />
-
-    <div class="table-card">
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+      @update:search="searchQuery = $event"
+      @retry="loadData"
+    >
       <EditableDataTable
-        v-else
         ref="editableTableRef"
         :columns="columns"
         :data="filteredData"
@@ -61,7 +61,7 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
 
     <NestingImportModal
       :show="showImportModal"
@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { PageHeader, EditableDataTable, SearchFilters, type EditableColumn } from '@/components'
+import { PageHeader, EditableDataTable, CrmTableContainer, type EditableColumn } from '@/components'
 import { nestingService, type Nesting } from '@/services/crm/nesting.service'
 import NestingImportModal from './components/NestingImportModal.vue'
 import { useRouter } from 'vue-router'
@@ -180,25 +180,6 @@ onMounted(() => {
 .nesting-management-page {
   width: 100%;
   margin: 0 auto;
-}
-
-.loading-message,
-.error-message {
-  padding: 2rem;
-  text-align: center;
-}
-
-.error-message {
-  color: var(--danger-600);
-  background: var(--danger-50);
-  border-radius: var(--border-radius-lg);
-}
-
-.table-card {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
 }
 
 .link {

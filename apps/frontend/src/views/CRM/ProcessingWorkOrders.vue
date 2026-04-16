@@ -6,10 +6,11 @@
       </template>
     </TableHeader>
 
-    <SearchFilters
-      :card="false"
-      :compact="true"
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
       :show-search="true"
+      :search="searchQuery"
       search-placeholder="搜尋訂單編號..."
       :filters="[
         {
@@ -18,14 +19,12 @@
           options: statusOptions
         }
       ]"
-      v-model:search="searchQuery"
-      @update:filter="handleFilterUpdate"
-    />
-
-    <div class="table-card">
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
-      <EditableDataTable v-else ref="editableTableRef" :columns="columns" :data="filteredData" :show-actions="true" :editable="true" :show-new-row="showNewRow" :new-row-template="newRowTemplate" @save="handleSave" @new-row-save="handleNewRowSave" @new-row-cancel="showNewRow = false" @row-delete="handleRowDelete">
+      :filter-values="{ status: filterStatus }"
+      @update:search="searchQuery = $event"
+      @update:filters="(f: Record<string, string>) => { if ('status' in f) filterStatus = f.status; }"
+      @retry="loadData"
+    >
+      <EditableDataTable ref="editableTableRef" :columns="columns" :data="filteredData" :show-actions="true" :editable="true" :show-new-row="showNewRow" :new-row-template="newRowTemplate" @save="handleSave" @new-row-save="handleNewRowSave" @new-row-cancel="showNewRow = false" @row-delete="handleRowDelete">
         <template #cell-orderId="{ value }"><router-link :to="`/crm/orders/${value}/items`" class="link">{{ value }}</router-link></template>
         <template #cell-status="{ value }"><StatusBadge :text="getStatusLabel(value)" :variant="getStatusVariant(value)" size="sm" /></template>
         <template #actions="{ row, isEditing, save, cancel }">
@@ -37,13 +36,13 @@
           </template>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { StatusBadge, EditableDataTable, SearchFilters, TableHeader, type EditableColumn } from '@/components';
+import { StatusBadge, EditableDataTable, CrmTableContainer, TableHeader, type EditableColumn } from '@/components';
 import { processingWorkOrderService, type ProcessingWorkOrder, ProcessingWorkOrderStatus } from '@/services/crm/processing-work-order.service';
 
 const loading = ref(false);
@@ -55,12 +54,6 @@ const showNewRow = ref(false);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
 const statusOptions = [{ value: 'pending', label: '待處理' }, { value: 'in_progress', label: '進行中' }, { value: 'completed', label: '已完成' }];
-
-const handleFilterUpdate = (key: string, value: string) => {
-  if (key === 'status') {
-    filterStatus.value = value;
-  }
-};
 
 const columns: EditableColumn[] = [
   { key: 'id', label: 'ID', editable: false },
@@ -94,9 +87,6 @@ onMounted(() => { loadData(); });
 
 <style scoped>
 .processing-work-orders-page { width: 100%; margin: 0 auto; }
-.loading-message, .error-message { padding: 2rem; text-align: center; }
-.error-message { color: var(--danger-600); background: var(--danger-50); border-radius: var(--border-radius-lg); }
-.table-card { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); overflow: hidden; }
 .link { color: var(--primary-600); text-decoration: none; }
 .link:hover { text-decoration: underline; }
 </style>

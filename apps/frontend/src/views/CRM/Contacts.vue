@@ -1,27 +1,23 @@
 <template>
   <div class="contacts-page">
     <!-- 聯絡人列表 -->
-    <div class="contacts-content">
-      <SearchFilters
-        :card="false"
-        :compact="true"
-        :show-search="true"
-        :search-placeholder="isCustomerMode ? '搜尋聯絡人姓名...' : '搜尋聯絡人姓名或客戶...'"
-        v-model:search="contactSearch"
-        @update:filter="handleFilterUpdate"
-      >
-        <template #controls>
-          <button class="btn btn-primary" @click="showCreateModal = true">
-            <span class="mr-2">👤</span>
-            新增聯絡人
-          </button>
-        </template>
-      </SearchFilters>
+    <CrmTableContainer
+      :loading="loading"
+      :error="error"
+      :show-search="true"
+      :search="contactSearch"
+      :search-placeholder="isCustomerMode ? '搜尋聯絡人姓名...' : '搜尋聯絡人姓名或客戶...'"
+      @update:search="contactSearch = $event"
+      @retry="loadContacts"
+    >
+      <template #controls>
+        <button class="btn btn-primary" @click="showCreateModal = true">
+          <span class="mr-2">👤</span>
+          新增聯絡人
+        </button>
+      </template>
 
-      <div v-if="loading" class="loading-message">載入中...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
       <EditableDataTable
-        v-else
         :columns="tableColumns"
         :data="contacts"
         :show-actions="true"
@@ -53,7 +49,7 @@
           <button class="btn btn-sm btn-danger" @click="deleteContact(row.id)">刪除</button>
         </template>
       </EditableDataTable>
-    </div>
+    </CrmTableContainer>
 
     <!-- 創建/編輯聯絡人 Modal -->
     <Modal 
@@ -192,7 +188,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { EditableDataTable, SearchFilters, Modal } from '@/components';
+import { EditableDataTable, CrmTableContainer, Modal } from '@/components';
 import { contactService } from '@/services/crm/contact.service';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 
@@ -217,12 +213,6 @@ const currentCustomer = ref<Customer | null>(null);
 const isCustomerMode = computed(() => !!route.params.customerId);
 
 // 頁面標題
-const pageTitle = computed(() => {
-  if (isCustomerMode.value && currentCustomer.value) {
-    return `${currentCustomer.value.companyName} - 聯絡人`;
-  }
-  return '聯絡人管理';
-});
 
 // 客戶資料（用於下拉選單）
 const customers = ref<Customer[]>([]);
@@ -307,11 +297,6 @@ const loadCustomers = async () => {
 };
 
 // 處理篩選器更新
-const handleFilterUpdate = (key: string, value: string) => {
-  if (key === 'customer') {
-    selectedCustomerFilter.value = value;
-  }
-};
 
 // 查看詳情
 const viewDetails = (contact: Contact) => {
