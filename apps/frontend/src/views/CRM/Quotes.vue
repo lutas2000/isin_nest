@@ -78,7 +78,7 @@
           <span v-else>{{ row.staff?.name || value }}</span>
         </template>
 
-        <template #cell-isSigned="{ row, value }">
+        <template #cell-isSigned="{ value }">
           <StatusBadge 
             :text="value ? '已簽名' : '待簽名'" 
             :variant="value ? 'success' : 'warning'"
@@ -109,7 +109,7 @@
         </template>
 
         <template #cell-isSupplyMaterial="{ value }">
-          <span>{{ value ? '是' : '否' }}</span>
+          <span>{{ value || '-' }}</span>
         </template>
 
         <template #cell-quoteDeadline="{ value }">
@@ -320,7 +320,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, quoteItemService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
@@ -402,7 +402,7 @@ const newRowTemplate = () => ({
   staffId: authStore.staffId || '',
   customerId: '',
   totalAmount: 0,
-  isSupplyMaterial: false,
+  isSupplyMaterial: '',
   quoteDeadline: getTodayDateString(),
   notes: '',
   processingIds: [] as number[],
@@ -487,11 +487,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'isSupplyMaterial',
     label: '代料',
     editable: true,
-    type: 'select',
-    options: [
-      { value: false, label: '否' },
-      { value: true, label: '是' }
-    ]
+    type: 'text'
   },
   {
     key: 'quoteDeadline',
@@ -624,7 +620,7 @@ const viewDetails = (quote: Quote) => {
 };
 
 // 處理欄位變更（僅更新本地狀態，不自動保存）
-const handleFieldChange = (row: Quote, field: string, value: any, isNew: boolean) => {
+const handleFieldChange = (_row: Quote, _field: string, _value: any, _isNew: boolean) => {
   // 只更新本地狀態，不觸發自動保存
   // 保存將在 Enter 或 blur 時觸發
 };
@@ -637,7 +633,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         staffId: row.staffId,
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
-        isSupplyMaterial: Boolean(row.isSupplyMaterial),
+        isSupplyMaterial: row.isSupplyMaterial?.trim() || undefined,
         quoteDeadline: row.quoteDeadline || undefined,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
@@ -650,7 +646,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         staffId: row.staffId,
         customerId: row.customerId,
         totalAmount: row.totalAmount || 0,
-        isSupplyMaterial: Boolean(row.isSupplyMaterial),
+        isSupplyMaterial: row.isSupplyMaterial?.trim() || undefined,
         quoteDeadline: row.quoteDeadline || undefined,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
@@ -670,7 +666,7 @@ const handleNewRowSave = async (row: any) => {
       staffId: row.staffId,
       customerId: row.customerId,
       totalAmount: row.totalAmount || 0,
-      isSupplyMaterial: Boolean(row.isSupplyMaterial),
+      isSupplyMaterial: row.isSupplyMaterial?.trim() || undefined,
       quoteDeadline: row.quoteDeadline || undefined,
       notes: row.notes || undefined,
       processingIds: row.processingIds || [],
@@ -714,7 +710,7 @@ const handleRowView = (row: Quote) => {
 };
 
 // 處理 row-edit 事件（快捷鍵觸發，F2）
-const handleRowEdit = (row: Quote, index: number) => {
+const handleRowEdit = (_row: Quote, _index: number) => {
   // 編輯狀態會由 EditableDataTable 內部處理
   // 這裡可以加入額外的邏輯，例如記錄編輯歷史等
 };

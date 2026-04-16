@@ -155,7 +155,9 @@ const printNotes = computed(() => {
     lines.push(props.quote.notes.trim());
   }
 
-  lines.push(`代料：${props.quote.isSupplyMaterial ? '是' : '否'}`);
+  if (props.quote.isSupplyMaterial?.trim()) {
+    lines.push(`代料：${props.quote.isSupplyMaterial.trim()}`);
+  }
 
   if (props.quote.quoteDeadline) {
     lines.push(`報價期限：${formatQuoteDeadline(props.quote.quoteDeadline)}`);

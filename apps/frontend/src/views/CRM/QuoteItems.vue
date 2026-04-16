@@ -83,10 +83,12 @@
               </button>
             </template>
             <template #edit-isSupplyMaterial>
-              <label class="inline-flex cursor-pointer items-center gap-2 text-base">
-                <input v-model="detailDraft.isSupplyMaterial" type="checkbox" />
-                代料
-              </label>
+              <input
+                v-model="detailDraft.isSupplyMaterial"
+                type="text"
+                class="form-control"
+                placeholder="輸入代料說明"
+              />
             </template>
             <template #edit-quoteDeadline>
               <input
@@ -326,7 +328,7 @@ const detailsEditing = ref(false);
 const detailDraft = ref({
   notes: '',
   isSigned: false,
-  isSupplyMaterial: false,
+  isSupplyMaterial: '',
   quoteDeadline: '',
   processingIds: [] as number[],
 });
@@ -336,7 +338,7 @@ const startDetailsEdit = () => {
   detailDraft.value = {
     notes: quote.value.notes || '',
     isSigned: !!quote.value.isSigned,
-    isSupplyMaterial: !!quote.value.isSupplyMaterial,
+    isSupplyMaterial: quote.value.isSupplyMaterial || '',
     quoteDeadline: quote.value.quoteDeadline
       ? String(quote.value.quoteDeadline).slice(0, 10)
       : '',
@@ -355,7 +357,7 @@ const saveDetailsEdit = async () => {
     await quoteService.update(quote.value.id, {
       notes: detailDraft.value.notes.trim() || undefined,
       isSigned: detailDraft.value.isSigned,
-      isSupplyMaterial: detailDraft.value.isSupplyMaterial,
+      isSupplyMaterial: detailDraft.value.isSupplyMaterial.trim() || undefined,
       quoteDeadline: detailDraft.value.quoteDeadline.trim() || undefined,
       processingIds: [...detailDraft.value.processingIds],
     });
@@ -509,7 +511,7 @@ const detailItems = computed<DetailFieldItem[]>(() => {
     {
       key: 'isSupplyMaterial',
       label: '代料',
-      value: quote.value.isSupplyMaterial ? '是' : '否',
+      value: quote.value.isSupplyMaterial || '-',
     },
     {
       key: 'quoteDeadline',

@@ -27,7 +27,7 @@ export interface Quote {
   isSigned: boolean
   designFee: number
   shippingFee: number
-  isSupplyMaterial: boolean
+  isSupplyMaterial?: string
   quoteDeadline?: string
   quoteItems?: QuoteItem[]
   staff?: any

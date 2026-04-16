@@ -97,9 +97,9 @@ export class Quote {
   })
   shippingFee: number;
 
-  @ApiProperty({ description: '是否代料', example: false })
-  @Column({ type: 'boolean', default: false, name: 'is_supply_material' })
-  isSupplyMaterial: boolean;
+  @ApiProperty({ description: '代料說明', example: '客供' })
+  @Column({ type: 'varchar', length: 100, name: 'is_supply_material', nullable: true })
+  isSupplyMaterial?: string;
 
   @ApiProperty({
     description: '報價期限',
