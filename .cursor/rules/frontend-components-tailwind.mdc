@@ -1,0 +1,32 @@
+---
+description: Frontend component inventory and Tailwind usage rules
+globs: apps/frontend/src/**/*
+alwaysApply: false
+---
+
+# Frontend Components And Tailwind Rules
+
+## Component inventory
+
+Shared components under `apps/frontend/src/components`:
+- `CrmTableContainer.vue` - CRM 列表頁容器，整合搜尋、篩選、排序、載入與錯誤狀態。
+- `DataTable.vue` / `EditableDataTable.vue` / `EditableCell.vue` / `TableHeader.vue` - 通用資料表與可編輯表格相關元件。
+- `SearchField.vue` / `FilterControl.vue` / `SortControl.vue` / `SearchFilters.vue` - 搜尋、篩選、排序控制元件。
+- `Modal.vue` / `ErrorModal.vue` / `ProcessingSelectModal.vue` - 通用與情境式彈窗元件。
+- `PageHeader.vue` / `SectionHeader.vue` / `OverviewCard.vue` / `StatusBadge.vue` / `ErrorMessage.vue` / `ShortcutHint.vue` - 頁面與資訊展示元件。
+- `FormField.vue` / `DetailFieldsPanel.vue` / `DraggableList.vue` / `TabNavigation.vue` - 表單、明細、拖曳排序與頁籤元件。
+- `Print/CompanyHeader.vue` / `Print/PrintContainer.vue` - 列印版面元件。
+
+When adding a new component, removing one, renaming one, or materially changing a shared component's responsibility, update this rule in the same task so the inventory stays current.
+
+## Tailwind rules
+
+- Prefer Tailwind utility classes directly in Vue templates for layout, spacing, typography, borders, colors, and states.
+- Reuse existing shared components before building a new one. If a new shared pattern is introduced, document it here.
+- Keep class usage consistent with existing frontend patterns: rounded corners, spacing scale, semantic colors like `primary-*`, `secondary-*`, `danger-*`.
+- Extract repeated UI patterns into a shared component or a named class in `apps/frontend/src/style.css`; do not copy long class strings across many files.
+- Use `class` for the default styling and `:class` only for true state variants such as active, error, disabled, selected, or size changes.
+- Prefer responsive utilities inline, such as `md:px-4`, instead of separate ad hoc CSS unless the styling is shared or too complex.
+- Avoid raw hex colors and one-off arbitrary values unless there is a clear existing precedent; prefer theme tokens and existing utility scale first.
+- For interactive controls, keep hover, focus, disabled, and empty states explicit and visually consistent.
+- When using native `select`, `input`, or `button`, verify browser default appearance does not hide spacing; if needed, use explicit properties like `appearance-none` or inline logical padding.
