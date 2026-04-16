@@ -1,7 +1,7 @@
 export interface PrintOptions {
   title?: string;
   styles?: string;
-  pageSize?: 'A4' | 'A3' | 'Letter';
+  pageSize?: 'A4' | 'A5' | 'A3' | 'Letter';
   margin?: {
     top?: string;
     right?: string;
@@ -10,10 +10,25 @@ export interface PrintOptions {
   };
 }
 
+const getPageDimensions = (pageSize: string) => {
+  switch (pageSize) {
+    case 'A5':
+      return { width: '148mm', minHeight: '210mm' };
+    case 'A3':
+      return { width: '297mm', minHeight: '420mm' };
+    case 'Letter':
+      return { width: '216mm', minHeight: '279mm' };
+    case 'A4':
+    default:
+      return { width: '210mm', minHeight: '297mm' };
+  }
+};
+
 /**
  * 取得基礎列印樣式
  */
 const getBasePrintStyles = (pageSize: string, margin: string): string => {
+  const { width, minHeight } = getPageDimensions(pageSize);
   return `
     * {
       margin: 0;
@@ -30,8 +45,8 @@ const getBasePrintStyles = (pageSize: string, margin: string): string => {
     }
     
     .print-container {
-      width: 210mm;
-      min-height: 297mm;
+      width: ${width};
+      min-height: ${minHeight};
       margin: 0 auto;
       padding: ${margin};
       background: white;

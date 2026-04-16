@@ -98,6 +98,7 @@ import PrintContainer from '@/components/Print/PrintContainer.vue';
 import CompanyHeader from '@/components/Print/CompanyHeader.vue';
 import { getCompanyHeaderStyles } from '@/components/Print/printStyles';
 import { formatRocDate, formatInteger } from '@/utils/formatters';
+import type { PrintOptions } from '@/utils/print';
 import type { Quote, QuoteItem } from '@/services/crm/quote.service';
 
 interface Props {
@@ -108,6 +109,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const printContainerRef = ref<InstanceType<typeof PrintContainer> | null>(null);
+type QuotePrintPageSize = Extract<NonNullable<PrintOptions['pageSize']>, 'A4' | 'A5'>;
 
 // 計算屬性
 const customerName = computed(() => 
@@ -163,15 +165,23 @@ const printNotes = computed(() => {
 });
 
 // 取得報價單列印樣式
-const getQuotePrintStyles = (): string => {
+const getQuotePrintStyles = (pageSize: QuotePrintPageSize = 'A4'): string => {
+  const isA5 = pageSize === 'A5';
+  const infoFontSize = isA5 ? '9pt' : '11pt';
+  const tableFontSize = isA5 ? '8pt' : '10pt';
+  const notesFontSize = isA5 ? '8pt' : '10pt';
+  const rowSpacing = isA5 ? '3px' : '5px';
+  const cellPadding = isA5 ? '3px' : '5px';
+  const sectionSpacing = isA5 ? '12px' : '20px';
   return `
     ${getCompanyHeaderStyles()}
     
     .print-quote-info {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 20px;
-      font-size: 11pt;
+      margin-bottom: ${sectionSpacing};
+      font-size: ${infoFontSize};
+      gap: ${isA5 ? '12px' : '20px'};
     }
     
     .quote-info-left,
@@ -180,7 +190,7 @@ const getQuotePrintStyles = (): string => {
     }
     
     .info-row {
-      margin-bottom: 5px;
+      margin-bottom: ${rowSpacing};
     }
     
     .info-label {
@@ -192,20 +202,22 @@ const getQuotePrintStyles = (): string => {
     }
     
     .print-table-container {
-      margin-bottom: 20px;
+      margin-bottom: ${sectionSpacing};
     }
     
     .print-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10pt;
+      font-size: ${tableFontSize};
+      table-layout: fixed;
     }
     
     .print-table th,
     .print-table td {
       border: 1px solid #000;
-      padding: 5px;
+      padding: ${cellPadding};
       text-align: left;
+      word-break: break-word;
     }
     
     .print-table th {
@@ -265,13 +277,13 @@ const getQuotePrintStyles = (): string => {
     }
     
     .print-notes {
-      margin-top: 20px;
-      font-size: 10pt;
+      margin-top: ${sectionSpacing};
+      font-size: ${notesFontSize};
     }
     
     .notes-title {
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: ${isA5 ? '6px' : '10px'};
     }
     
     .notes-content {
@@ -282,10 +294,11 @@ const getQuotePrintStyles = (): string => {
 };
 
 // 暴露列印方法
-const print = () => {
+const print = (pageSize: QuotePrintPageSize = 'A4') => {
   printContainerRef.value?.print({
-    title: `報價單 - ${props.quote.id}`,
-    styles: getQuotePrintStyles(),
+    title: `報價單 ${pageSize} - ${props.quote.id}`,
+    styles: getQuotePrintStyles(pageSize),
+    pageSize,
   });
 };
 

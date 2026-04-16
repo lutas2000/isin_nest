@@ -44,11 +44,17 @@
               </template>
               <button
                 type="button"
-                class="btn btn-primary btn-sm"
-                @click="handlePrint"
+                class="btn btn-outline btn-sm"
+                @click="handlePrint('A4')"
               >
-                <span class="mr-2">🖨️</span>
-                列印
+                列印A4
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm"
+                @click="handlePrint('A5')"
+              >
+                列印A5
               </button>
               <button type="button" class="btn btn-outline btn-sm" @click="goBack">
                 <span class="mr-2">←</span>
@@ -725,8 +731,8 @@ const goBack = () => {
 const quotePrintRef = ref<InstanceType<typeof QuotePrint> | null>(null);
 
 // 處理列印
-const handlePrint = () => {
-  quotePrintRef.value?.print();
+const handlePrint = (pageSize: 'A4' | 'A5' = 'A4') => {
+  quotePrintRef.value?.print(pageSize);
 };
 
 // 載入所有加工項目（主檔）
