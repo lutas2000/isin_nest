@@ -17,8 +17,9 @@
                 getColumnWidthClass(column),
               ]"
             >
-              <span v-if="column.required" class="required-mark">*</span>
-              {{ column.label }}
+              <span :class="{ 'required-label': column.required }">
+                {{ column.label }}
+              </span>
             </th>
             <th
               v-if="showActions"
@@ -956,9 +957,9 @@ defineExpose({
   outline: none;
 }
 
-.required-mark {
-  color: var(--danger-600);
-  margin-right: 0.25rem;
+.required-label {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .truncated-text {
