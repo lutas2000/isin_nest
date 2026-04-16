@@ -12,7 +12,7 @@ Shared components under `apps/frontend/src/components`:
 - `CrmTableContainer.vue` - CRM 列表頁容器，整合搜尋、篩選、排序、載入與錯誤狀態。
 - `DataTable.vue` / `EditableDataTable.vue` / `EditableCell.vue` / `TableHeader.vue` - 通用資料表與可編輯表格相關元件。
 - `SearchField.vue` / `FilterControl.vue` / `SortControl.vue` / `SearchFilters.vue` - 搜尋、篩選、排序控制元件。
-- `Modal.vue` / `ErrorModal.vue` / `ProcessingSelectModal.vue` - 通用與情境式彈窗元件。
+- `Modal.vue` / `ErrorModal.vue` / `ProcessingSelectModal.vue` / `CrmConfigModal.vue` - 通用與情境式彈窗元件。
 - `PageHeader.vue` / `SectionHeader.vue` / `OverviewCard.vue` / `StatusBadge.vue` / `ErrorMessage.vue` / `ShortcutHint.vue` - 頁面與資訊展示元件。
 - `FormField.vue` / `DetailFieldsPanel.vue` / `DraggableList.vue` / `TabNavigation.vue` - 表單、明細、拖曳排序與頁籤元件。
 - `Print/CompanyHeader.vue` / `Print/PrintContainer.vue` - 列印版面元件。

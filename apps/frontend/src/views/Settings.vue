@@ -109,56 +109,13 @@
       </div>
     </div>
 
-    <!-- 新增/編輯 CRM 設定模態框 -->
-    <Modal
+    <CrmConfigModal
       :show="showAddCrmModal || showEditCrmModal"
-      :title="showEditCrmModal ? '編輯銷管設定' : '新增銷管設定'"
+      :is-editing="showEditCrmModal"
+      :initial-data="crmForm"
       @close="closeCrmModal"
-    >
-      <form @submit.prevent="saveCrmConfig">
-        <div class="form-group">
-          <label class="form-label">分類 *</label>
-          <select class="form-control" v-model="crmForm.category" required>
-            <option value="">選擇分類</option>
-            <option value="shipping_method">運送方式</option>
-            <option value="payment_method">付款方式</option>
-            <option value="source_type">來源類型</option>
-            <option value="processing_type">加工類型</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">代碼 *</label>
-          <input
-            type="text"
-            class="form-control"
-            v-model="crmForm.code"
-            required
-            maxlength="50"
-            placeholder="例如：EXPRESS"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">顯示名稱 *</label>
-          <input
-            type="text"
-            class="form-control"
-            v-model="crmForm.label"
-            required
-            maxlength="100"
-            placeholder="例如：快遞"
-          />
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn btn-outline" @click="closeCrmModal">
-            取消
-          </button>
-          <button type="submit" class="btn btn-primary">儲存</button>
-        </div>
-      </form>
-    </Modal>
+      @save="saveCrmConfig"
+    />
 
     <!-- 新增/編輯權限設定模態框 -->
     <Modal
@@ -246,7 +203,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { EditableDataTable, Modal, DraggableList, SectionHeader } from '@/components';
+import { EditableDataTable, CrmConfigModal, Modal, DraggableList, SectionHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -410,15 +367,15 @@ const deleteCrmConfig = async (config: CrmConfig) => {
   }
 };
 
-const saveCrmConfig = async () => {
+const saveCrmConfig = async (formValue: { category: string; code: string; label: string }) => {
   try {
-    const categoryConfigs = getCrmConfigsByCategory(crmForm.value.category);
+    const categoryConfigs = getCrmConfigsByCategory(formValue.category);
     const maxOrder = categoryConfigs.length > 0
       ? Math.max(...categoryConfigs.map((c) => c.displayOrder))
       : -1;
     
     const formData = {
-      ...crmForm.value,
+      ...formValue,
       displayOrder: editingCrmId.value
         ? undefined
         : maxOrder + 1,
@@ -659,49 +616,6 @@ onMounted(() => {
   gap: 0.75rem;
   align-items: center;
 }
-
-/* 表單 */
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  font-weight: 500;
-  color: var(--secondary-700);
-  margin-bottom: 0.5rem;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--secondary-200);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-
 
 /* 項目內容樣式 */
 .item-code {

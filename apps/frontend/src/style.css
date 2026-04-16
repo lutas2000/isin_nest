@@ -294,6 +294,24 @@ a:hover {
   @apply mt-1 text-sm text-danger-600;
 }
 
+.form-actions {
+  @apply mt-8 flex justify-end gap-3 border-t border-secondary-200 pt-6;
+}
+
+.form-actions .btn {
+  @apply min-h-11 px-5 py-2.5 text-sm font-medium;
+}
+
+@media (max-width: 768px) {
+  .form-actions {
+    @apply flex-col-reverse;
+  }
+
+  .form-actions .btn {
+    @apply w-full;
+  }
+}
+
 /* 卡片 */
 .card {
   @apply overflow-hidden rounded-lg border border-secondary-200 bg-white shadow;
