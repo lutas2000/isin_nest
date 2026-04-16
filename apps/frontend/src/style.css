@@ -412,6 +412,21 @@ a:hover {
   100% { transform: rotate(360deg); }
 }
 
+/* QuoteItems 報價單工件列表 - 項次 / 厚度 / 數量欄位寬度 */
+.quote-items-view .editable-data-table .table th:nth-child(1),
+.quote-items-view .editable-data-table .table td:nth-child(1) {
+  width: 32px;
+  min-width: 32px;
+}
+
+.quote-items-view .editable-data-table .table th:nth-child(4),
+.quote-items-view .editable-data-table .table td:nth-child(4),
+.quote-items-view .editable-data-table .table th:nth-child(7),
+.quote-items-view .editable-data-table .table td:nth-child(7) {
+  width: 64px;
+  min-width: 64px;
+}
+
 /* 響應式設計 */
 @media (max-width: 1024px) {
   :root {

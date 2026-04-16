@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto w-full">
+  <div class="quote-items-view mx-auto w-full">
     <div v-if="loading" class="p-8 text-center">載入中...</div>
     <div
       v-else-if="error"
@@ -62,7 +62,7 @@
               </button>
             </template>
             <template #edit-isSigned>
-              <label class="checkbox-inline">
+              <label class="inline-flex cursor-pointer items-center gap-2 text-base">
                 <input v-model="detailDraft.isSigned" type="checkbox" />
                 已簽名
               </label>
@@ -70,20 +70,20 @@
             <template #edit-processingIds>
               <button
                 type="button"
-                class="processing-btn processing-btn--details"
+                class="inline-flex min-h-9 w-full cursor-pointer items-center gap-1 rounded border border-secondary-200 bg-secondary-50 px-2 py-1 text-left text-sm transition-all duration-200 hover:border-primary-300 hover:bg-secondary-100"
                 @click="openQuoteHeaderProcessingModal"
               >
                 <span
                   v-if="detailDraft.processingIds.length > 0"
-                  class="processing-tags"
+                  class="text-secondary-800"
                 >
                   {{ getProcessingNames(detailDraft.processingIds) }}
                 </span>
-                <span v-else class="processing-empty">選擇加工</span>
+                <span v-else class="italic text-secondary-400">選擇加工</span>
               </button>
             </template>
             <template #edit-isSupplyMaterial>
-              <label class="checkbox-inline">
+              <label class="inline-flex cursor-pointer items-center gap-2 text-base">
                 <input v-model="detailDraft.isSupplyMaterial" type="checkbox" />
                 代料
               </label>
@@ -151,14 +151,14 @@
           </template>
 
           <template #cell-processing="{ row }">
-            <button 
-              class="processing-btn"
+            <button
+              class="inline-flex cursor-pointer items-center gap-1 rounded border border-secondary-200 bg-secondary-50 px-2 py-1 text-left text-sm transition-all duration-200 hover:border-primary-300 hover:bg-secondary-100"
               @click.stop="openProcessingSelectModal(row)"
             >
-              <span v-if="row.processingIds && row.processingIds.length > 0" class="processing-tags">
+              <span v-if="row.processingIds && row.processingIds.length > 0" class="text-secondary-800">
                 {{ getProcessingNames(row.processingIds) }}
               </span>
-              <span v-else class="processing-empty">選擇加工</span>
+              <span v-else class="italic text-secondary-400">選擇加工</span>
             </button>
           </template>
 
@@ -175,7 +175,7 @@
           </template>
 
           <template #cell-subtotal="{ row }">
-            <span class="highlight">
+            <span class="font-semibold text-primary-600">
               {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
             </span>
           </template>
@@ -797,134 +797,3 @@ onMounted(() => {
   loadAllProcessings();
 });
 </script>
-
-<style scoped>
-
-/* 報價單工件列表 */
-.empty-message {
-  padding: 3rem;
-  text-align: center;
-  color: var(--secondary-500);
-  font-size: var(--font-size-base);
-}
-
-.highlight {
-  font-weight: 600;
-  color: var(--primary-600);
-}
-
-/* 縮小指定欄位寬度：項次、厚度、數量 */
-:deep(.editable-data-table .table th:nth-child(1)),
-:deep(.editable-data-table .table td:nth-child(1)) {
-  width: 32px;
-  min-width: 32px;
-}
-
-:deep(.editable-data-table .table th:nth-child(4)),
-:deep(.editable-data-table .table td:nth-child(4)) {
-  width: 64px;
-  min-width: 64px;
-}
-
-:deep(.editable-data-table .table th:nth-child(7)),
-:deep(.editable-data-table .table td:nth-child(7)) {
-  width: 64px;
-  min-width: 64px;
-}
-
-/* Modal 表單樣式 */
-.modal-form {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-500);
-}
-
-/* 加工按鈕樣式 */
-.processing-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--secondary-50, #f8f9fa);
-  border: 1px solid var(--border-color, #dee2e6);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.processing-btn--details {
-  width: 100%;
-  max-width: 100%;
-  min-height: 2.25rem;
-}
-
-.checkbox-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  font-size: var(--font-size-base);
-}
-
-.processing-btn:hover {
-  background: var(--secondary-100, #e9ecef);
-  border-color: var(--primary-300, #90caf9);
-}
-
-.processing-tags {
-  color: var(--text-primary);
-}
-
-.processing-empty {
-  color: var(--text-secondary-400);
-  font-style: italic;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .quote-item-details {
-    grid-template-columns: 1fr;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
-
-
-
-
