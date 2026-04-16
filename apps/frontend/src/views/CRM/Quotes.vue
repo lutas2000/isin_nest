@@ -1,11 +1,5 @@
 <template>
   <div class="quotes-page">
-    <PageHeader 
-      title="報價單管理" 
-      description="管理客戶報價單、追蹤報價狀態和處理報價流程"
-    >
-    </PageHeader>
-
     <!-- 快捷鍵提示 -->
     <ShortcutHint 
       :table-state="tableState" 

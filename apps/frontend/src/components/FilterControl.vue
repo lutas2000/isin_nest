@@ -1,28 +1,55 @@
 <template>
-  <div v-if="filters.length > 0" class="flex flex-wrap items-center gap-2">
-    <select
+  <div v-if="filters.length > 0" class="flex flex-wrap items-center gap-2 px-2 py-1">
+    <div
       v-for="filter in filters"
       :key="filter.key"
-      class="rounded border border-secondary-300 px-3 py-2 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
-      :value="getFilterValue(filter.key)"
-      @change="handleChange(filter.key, $event)"
+      class="relative"
     >
-      <option value="">{{ filter.placeholder }}</option>
-      <option
-        v-for="option in filter.options"
-        :key="option.value"
-        :value="option.value"
+      <select
+        class="h-10 min-w-[112px] appearance-none rounded-xl border border-secondary-200 bg-white py-2 pl-3 pr-8 text-sm font-medium transition-colors hover:border-secondary-300 hover:bg-secondary-50 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        :class="getFilterValue(filter.key) ? 'text-secondary-900' : 'text-secondary-500'"
+        :value="getFilterValue(filter.key)"
+        @change="handleChange(filter.key, $event)"
       >
-        {{ option.label }}
-      </option>
-    </select>
+        <option value="">{{ filter.placeholder }}</option>
+        <option
+          v-for="option in filter.options"
+          :key="option.value"
+          :value="option.value"
+        >
+          {{ option.label }}
+        </option>
+      </select>
+      <svg
+        class="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-secondary-400"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </div>
 
     <button
       v-if="hasActiveFilters"
       type="button"
-      class="rounded px-2 py-1 text-sm text-secondary-500 transition-colors hover:text-danger-600"
+      class="inline-flex h-10 items-center gap-1 rounded-xl border border-secondary-200 px-3 text-sm font-medium text-secondary-600 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-600"
       @click="clearAll"
     >
+      <svg
+        class="h-3.5 w-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
       清除篩選
     </button>
   </div>

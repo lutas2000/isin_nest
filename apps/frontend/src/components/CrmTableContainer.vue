@@ -2,18 +2,16 @@
   <div class="overflow-hidden rounded-lg bg-white shadow">
     <!-- Toolbar: search + filters + sort + custom controls -->
     <div
-      v-if="showToolbar"
-      class="flex flex-wrap items-center gap-3 border-b border-secondary-200 px-6 py-4 md:flex-col md:items-stretch md:px-4"
+      v-if="showToolbar || $slots.controls"
+      class="flex flex-wrap items-center gap-3 border-b border-secondary-100 !px-6 !py-4 md:!px-4 md:!py-3"
     >
-      <div v-if="showSearch" class="min-w-[280px] md:min-w-0 md:w-full">
-        <input
-          type="text"
-          class="w-full rounded border border-secondary-300 px-3 py-2 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
-          :placeholder="searchPlaceholder"
-          :value="search"
-          @input="handleSearchInput"
-        />
-      </div>
+      <SearchField
+        v-if="showSearch"
+        class="w-[320px] shrink-0 max-w-full"
+        :model-value="search"
+        :placeholder="searchPlaceholder"
+        @update:model-value="emit('update:search', $event)"
+      />
 
       <FilterControl
         v-if="filters.length > 0"
@@ -29,7 +27,7 @@
         @update:model-value="handleSortUpdate"
       />
 
-      <div v-if="$slots.controls" class="ml-auto flex items-center gap-2 md:ml-0 md:w-full">
+      <div v-if="$slots.controls" class="ml-auto flex items-center gap-2">
         <slot name="controls" />
       </div>
     </div>
@@ -65,6 +63,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import SearchField from './SearchField.vue';
 import FilterControl, { type FilterDefinition } from './FilterControl.vue';
 import SortControl, { type SortOption, type SortValue } from './SortControl.vue';
 
@@ -109,11 +108,6 @@ const showToolbar = computed(
     props.filters.length > 0 ||
     props.sortOptions.length > 0,
 );
-
-const handleSearchInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  emit('update:search', target.value);
-};
 
 const handleFilterUpdate = (value: Record<string, string>) => {
   emit('update:filters', value);

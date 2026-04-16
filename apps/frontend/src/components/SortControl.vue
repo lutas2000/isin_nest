@@ -1,7 +1,7 @@
 <template>
   <div v-if="options.length > 0" class="flex items-center gap-2">
     <select
-      class="rounded border border-secondary-300 px-3 py-2 text-base transition-colors focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+      class="h-10 min-w-[112px] appearance-none rounded-xl border border-secondary-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-secondary-700 transition-colors hover:border-secondary-300 hover:bg-secondary-50 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
       :value="modelValue.key"
       @change="handleKeyChange"
     >
@@ -18,7 +18,7 @@
     <button
       v-if="modelValue.key"
       type="button"
-      class="flex items-center justify-center rounded border border-secondary-300 px-2 py-2 text-secondary-600 transition-colors hover:border-primary-500 hover:text-primary-600 focus:outline-none focus:ring-4 focus:ring-primary-100"
+      class="flex h-10 w-10 items-center justify-center rounded-xl border border-secondary-200 text-secondary-600 transition-colors hover:border-secondary-300 hover:bg-secondary-50 hover:text-primary-600 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
       @click="toggleDirection"
     >
       <svg

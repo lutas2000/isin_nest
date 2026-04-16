@@ -4,6 +4,7 @@ export { default as TabNavigation } from './TabNavigation.vue';
 export { default as DataTable } from './DataTable.vue';
 export { default as EditableDataTable } from './EditableDataTable.vue';
 export type { EditableColumn } from './EditableDataTable.vue';
+export { default as SearchField } from './SearchField.vue';
 export { default as SearchFilters } from './SearchFilters.vue';
 export { default as CrmTableContainer } from './CrmTableContainer.vue';
 export { default as SortControl } from './SortControl.vue';
