@@ -6,7 +6,7 @@
       class="relative"
     >
       <select
-        class="h-10 min-w-[112px] appearance-none rounded-xl border border-secondary-200 bg-white py-2 pl-3 pr-8 text-sm font-medium transition-colors hover:border-secondary-300 hover:bg-secondary-50 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+        class="h-10 min-w-[112px] appearance-none rounded-xl border border-[var(--secondary-200)] bg-white py-2 pl-3 pr-8 text-sm font-medium transition-colors hover:border-[var(--secondary-300)] hover:bg-secondary-50 focus:border-[var(--primary-500)] focus:outline-none"
         :class="getFilterValue(filter.key) ? 'text-secondary-900' : 'text-secondary-500'"
         :value="getFilterValue(filter.key)"
         @change="handleChange(filter.key, $event)"
