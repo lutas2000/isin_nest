@@ -1,17 +1,20 @@
 <template>
-  <div class="detail-fields-panel">
-    <div v-if="$slots.actions" class="detail-fields-panel__actions">
+  <div class="!p-6 md:!p-4">
+    <div
+      v-if="$slots.actions"
+      class="mb-4 flex flex-wrap items-center justify-end gap-3"
+    >
       <slot name="actions" />
     </div>
-    <div class="detail-fields-panel__grid">
+    <div class="grid grid-cols-1 gap-x-4 gap-y-3 md:grid-cols-2">
       <div
         v-for="item in items"
         :key="item.key"
-        class="detail-fields-panel__row"
-        :class="{ 'detail-fields-panel__row--full-width': item.fullWidth }"
+        class="grid min-w-0 grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-1.5"
+        :class="{ 'md:col-span-2': item.fullWidth }"
       >
-        <span class="detail-fields-panel__label">{{ item.label }}：</span>
-        <span class="detail-fields-panel__value">
+        <span class="whitespace-nowrap text-sm text-secondary-600">{{ item.label }}：</span>
+        <span class="min-w-0 text-base text-secondary-900">
           <template v-if="editing && hasEditSlot(item.key)">
             <slot :name="`edit-${item.key}`" :item="item" />
           </template>
@@ -51,59 +54,3 @@ const formatValue = (value: DetailFieldItem['value']) => {
   return value;
 };
 </script>
-
-<style scoped>
-.detail-fields-panel__actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.detail-fields-panel__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem 1rem;
-}
-
-.detail-fields-panel__row {
-  display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.375rem;
-  min-width: 0;
-}
-
-.detail-fields-panel__row--full-width {
-  grid-column: 1 / -1;
-}
-
-.detail-fields-panel__label {
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
-}
-
-.detail-fields-panel__value {
-  color: var(--secondary-900);
-  font-size: var(--font-size-base);
-  min-width: 0;
-}
-
-.detail-fields-panel__value :deep(.form-control) {
-  width: 100%;
-  min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .detail-fields-panel__actions {
-    justify-content: flex-start;
-  }
-
-  .detail-fields-panel__grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
