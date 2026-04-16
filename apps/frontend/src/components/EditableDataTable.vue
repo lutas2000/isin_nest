@@ -12,7 +12,10 @@
             <th
               v-for="column in columns"
               :key="column.key"
-              class="border-b border-secondary-200 bg-secondary-50 px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider text-secondary-700 md:px-2 md:py-2"
+              :class="[
+                'border-b border-secondary-200 bg-secondary-50 px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider text-secondary-700 md:px-2 md:py-2',
+                getColumnWidthClass(column),
+              ]"
             >
               <span v-if="column.required" class="required-mark">*</span>
               {{ column.label }}
@@ -39,7 +42,10 @@
             <td
               v-for="column in columns"
               :key="column.key"
-              class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2"
+              :class="[
+                'border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2',
+                getColumnWidthClass(column),
+              ]"
             >
               <EditableCell
                 v-if="isColumnEditable(column)"
@@ -101,7 +107,10 @@
             <td
               v-for="column in columns"
               :key="column.key"
-              class="border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2"
+              :class="[
+                'border-b border-secondary-200 px-4 py-4 text-left md:px-2 md:py-2',
+                getColumnWidthClass(column),
+              ]"
             >
               <EditableCell
                 v-if="isEditing(row, index) && isColumnEditable(column)"
@@ -265,6 +274,8 @@ interface Column {
   sortable?: boolean;
 }
 
+export type EditableColumnWidth = 'sequence' | 'short-number' | 'long-number' | 'notes';
+
 export interface EditableColumn extends Column {
   editable?: boolean;
   required?: boolean;
@@ -273,7 +284,18 @@ export interface EditableColumn extends Column {
   searchFunction?: (searchTerm: string) => Promise<Array<{value: any, label: string}>>;
   truncate?: boolean;
   validator?: (value: any) => boolean;
+  width?: EditableColumnWidth;
 }
+
+const COLUMN_WIDTH_CLASS: Record<EditableColumnWidth, string> = {
+  'sequence': 'w-16 min-w-16',
+  'short-number': 'w-16 min-w-16',
+  'long-number': 'w-24 min-w-24',
+  'notes': 'min-w-40',
+};
+
+const getColumnWidthClass = (column: EditableColumn): string =>
+  column.width ? COLUMN_WIDTH_CLASS[column.width] : '';
 
 interface Props {
   columns: EditableColumn[];

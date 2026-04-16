@@ -1,5 +1,5 @@
 <template>
-  <div class="quote-items-view mx-auto w-full">
+  <div class="mx-auto w-full">
     <div v-if="loading" class="p-8 text-center">載入中...</div>
     <div
       v-else-if="error"
@@ -401,66 +401,72 @@ const editableColumns = computed<EditableColumn[]>(() => [
   {
     key: 'sequence',
     label: '項次',
-    editable: false
+    editable: false,
+    width: 'sequence',
   },
-  { 
-    key: 'customerFile', 
-    label: '客戶圖檔', 
-    editable: true, 
-    type: 'text' 
+  {
+    key: 'customerFile',
+    label: '客戶圖檔',
+    editable: true,
+    type: 'text',
   },
-  { 
-    key: 'material', 
-    label: '材質', 
-    editable: true, 
-    type: 'text' 
+  {
+    key: 'material',
+    label: '材質',
+    editable: true,
+    type: 'text',
   },
-  { 
-    key: 'thickness', 
-    label: '厚度', 
-    editable: true, 
-    type: 'number' 
+  {
+    key: 'thickness',
+    label: '厚度',
+    editable: true,
+    type: 'number',
+    width: 'short-number',
   },
-  { 
-    key: 'processing', 
-    label: '加工', 
+  {
+    key: 'processing',
+    label: '加工',
     editable: false, // 使用 Modal 選擇
   },
-  { 
-    key: 'notes', 
-    label: '備註', 
-    editable: true, 
-    type: 'text' 
+  {
+    key: 'notes',
+    label: '備註',
+    editable: true,
+    type: 'text',
+    width: 'notes',
   },
-  { 
-    key: 'quantity', 
-    label: '數量', 
-    editable: true, 
-    required: true, 
-    type: 'number' 
+  {
+    key: 'quantity',
+    label: '數量',
+    editable: true,
+    required: true,
+    type: 'number',
+    width: 'short-number',
   },
-  { 
-    key: 'unitPrice', 
-    label: '單價', 
-    editable: true, 
-    required: true, 
-    type: 'number' 
+  {
+    key: 'unitPrice',
+    label: '單價',
+    editable: true,
+    required: true,
+    type: 'number',
+    width: 'long-number',
   },
-  { 
-    key: 'subtotal', 
-    label: '小計', 
-    editable: false 
+  {
+    key: 'subtotal',
+    label: '小計',
+    editable: false,
+    width: 'long-number',
   },
-  { 
-    key: 'source', 
-    label: '來源', 
-    editable: true, 
+  {
+    key: 'source',
+    label: '來源',
+    editable: true,
     type: 'select',
     options: [
       { value: '新圖', label: '新圖' },
       { value: '舊圖', label: '舊圖' },
       { value: '修改', label: '修改' },
-    ]
+    ],
   },
 ]);
 
