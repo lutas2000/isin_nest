@@ -6,8 +6,9 @@
       class="relative"
     >
       <select
-        class="h-10 min-w-[112px] appearance-none rounded-xl border border-[var(--secondary-200)] bg-white py-2 pl-3 pr-8 text-sm font-medium transition-colors hover:border-[var(--secondary-300)] hover:bg-secondary-50 focus:border-[var(--primary-500)] focus:outline-none"
+        class="h-10 min-w-[112px] appearance-none rounded-xl border border-[var(--secondary-200)] bg-white py-2 pl-4 pr-8 text-sm font-medium transition-colors hover:border-[var(--secondary-300)] hover:bg-secondary-50 focus:border-[var(--primary-500)] focus:outline-none"
         :class="getFilterValue(filter.key) ? 'text-secondary-900' : 'text-secondary-500'"
+        style="padding-inline-start: 1rem;"
         :value="getFilterValue(filter.key)"
         @change="handleChange(filter.key, $event)"
       >
@@ -32,26 +33,6 @@
         <path d="m6 9 6 6 6-6" />
       </svg>
     </div>
-
-    <button
-      v-if="hasActiveFilters"
-      type="button"
-      class="inline-flex h-10 items-center gap-1 rounded-xl border border-secondary-200 px-3 text-sm font-medium text-secondary-600 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-600"
-      @click="clearAll"
-    >
-      <svg
-        class="h-3.5 w-3.5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M18 6 6 18M6 6l12 12" />
-      </svg>
-      清除篩選
-    </button>
   </div>
 </template>
 
@@ -89,13 +70,5 @@ const hasActiveFilters = computed(() =>
 const handleChange = (key: string, event: Event) => {
   const target = event.target as HTMLSelectElement;
   emit('update:modelValue', { ...props.modelValue, [key]: target.value });
-};
-
-const clearAll = () => {
-  const cleared: Record<string, string> = {};
-  for (const f of props.filters) {
-    cleared[f.key] = '';
-  }
-  emit('update:modelValue', cleared);
 };
 </script>
