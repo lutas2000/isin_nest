@@ -3,7 +3,6 @@
     <!-- 聯絡人列表 -->
     <div class="contacts-content">
       <SearchFilters
-        :title="pageTitle"
         :card="false"
         :compact="true"
         :show-search="true"

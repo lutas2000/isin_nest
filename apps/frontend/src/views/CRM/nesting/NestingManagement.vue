@@ -17,7 +17,6 @@
     </PageHeader>
 
     <SearchFilters
-      title=""
       v-model:search="searchQuery"
       search-placeholder="搜尋排版編號或訂單..."
     />

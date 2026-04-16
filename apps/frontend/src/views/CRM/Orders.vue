@@ -9,7 +9,6 @@
     <!-- 訂單列表 -->
     <div class="orders-content">
       <SearchFilters
-        title=""
         :card="false"
         :compact="true"
         :show-search="true"

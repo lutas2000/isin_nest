@@ -15,7 +15,6 @@
     <!-- 廠商列表 -->
     <div class="vendors-content">
       <SearchFilters
-        title=""
         :show-search="true"
         search-placeholder="搜尋廠商名稱或聯絡人..."
         :show-date-filter="false"

@@ -21,7 +21,6 @@
     <!-- 加工項目列表 -->
     <div class="processing-content">
       <SearchFilters
-        title=""
         :show-search="true"
         search-placeholder="搜尋加工名稱..."
         v-model:search="processingSearch"

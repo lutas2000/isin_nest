@@ -1,7 +1,6 @@
 <template>
   <div :class="containerClass">
     <div :class="headerClass">
-      <h3 v-if="title" class="m-0 text-lg font-semibold text-secondary-900">{{ title }}</h3>
       <div :class="controlsClass">
         <div v-if="showSearch" class="min-w-[300px] md:min-w-0">
           <input
@@ -59,7 +58,6 @@ interface Filter {
 }
 
 interface Props {
-  title: string;
   showSearch?: boolean;
   searchPlaceholder?: string;
   filters?: Filter[];
@@ -72,7 +70,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '',
   showSearch: true,
   searchPlaceholder: '搜尋...',
   filters: () => [],

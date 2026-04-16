@@ -27,7 +27,6 @@
 
     <div class="overflow-hidden rounded-lg bg-white shadow">
       <SearchFilters
-        title=""
         :show-search="true"
         search-placeholder="搜尋銷貨單號、訂單號或客戶..."
         :filters="[]"

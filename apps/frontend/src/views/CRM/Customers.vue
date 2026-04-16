@@ -4,7 +4,6 @@
     <!-- 客戶列表 -->
     <div class="customers-content">
       <SearchFilters
-        title="客戶列表"
         :show-search="true"
         search-placeholder="搜尋客戶名稱或公司..."
         v-model:search="customerSearch"
@@ -366,7 +365,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { PageHeader, EditableDataTable, type EditableColumn, SearchFilters, Modal } from '@/components';
+import { EditableDataTable, type EditableColumn, SearchFilters, Modal } from '@/components';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 import { contactService } from '@/services/crm/contact.service';
 import { useAuthStore } from '@/stores/auth';
