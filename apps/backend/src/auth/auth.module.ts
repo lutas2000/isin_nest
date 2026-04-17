@@ -36,7 +36,7 @@ import { FeatureGuard } from './guards/feature.guard';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: { expiresIn: '1h' },
+        signOptions: { expiresIn: '16h' },
       }),
     }),
   ],
