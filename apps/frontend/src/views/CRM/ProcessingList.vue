@@ -47,15 +47,29 @@
           <span v-else class="internal-badge">內部加工</span>
         </template>
 
-        <template #actions="{ row, isEditing, save, cancel, startEdit }">
+        <template #actions="{ row, index, isEditing, save, cancel, startEdit }">
           <template v-if="isEditing">
             <button class="btn btn-sm btn-success" @click="save">保存</button>
             <button class="btn btn-sm btn-outline" @click="cancel">取消</button>
           </template>
           <template v-else>
             <span class="dropdown-item" @click="startEdit">編輯</span>
-            <span 
-              class="dropdown-item danger" 
+            <span
+              class="dropdown-item"
+              :class="{ 'is-disabled': !canMoveUp(index) }"
+              @click="canMoveUp(index) && moveUp(index)"
+            >
+              上移
+            </span>
+            <span
+              class="dropdown-item"
+              :class="{ 'is-disabled': !canMoveDown(index) }"
+              @click="canMoveDown(index) && moveDown(index)"
+            >
+              下移
+            </span>
+            <span
+              class="dropdown-item danger"
               @click="deleteProcessing(row)"
             >
               刪除
@@ -88,6 +102,7 @@ const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null
 
 // 新增行模板
 const newRowTemplate = () => ({
+  id: undefined as number | undefined,
   name: '',
   vendorId: undefined as number | undefined,
   displayOrder: 0,
@@ -95,18 +110,18 @@ const newRowTemplate = () => ({
 
 // 表格欄位定義（支援 inline 編輯）
 const editableColumns = computed<EditableColumn[]>(() => [
+  { key: 'id', label: 'ID', editable: true, required: true, type: 'number', width: 'short-number' },
   { key: 'name', label: '加工名稱', editable: true, required: true, type: 'text' },
-  { 
-    key: 'vendorId', 
-    label: '執行廠商', 
-    editable: true, 
+  {
+    key: 'vendorId',
+    label: '執行廠商',
+    editable: true,
     type: 'select',
     options: [
       { value: '', label: '內部加工' },
       ...vendors.value.map(v => ({ value: v.id, label: v.name })),
     ],
   },
-  { key: 'displayOrder', label: '顯示順序', editable: true, type: 'number' },
 ])
 
 // 提供給 ShortcutHint 使用的表格狀態
@@ -144,21 +159,52 @@ const handleShortcutClick = (action: string) => {
   }
 }
 
-// 過濾後的資料
+// 過濾後的資料（預設以 displayOrder 升冪排序）
 const filteredProcessings = computed(() => {
-  let result = processings.value
+  let result = [...processings.value].sort(
+    (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.id - b.id,
+  )
 
-  // 搜尋過濾
   if (processingSearch.value) {
     const search = processingSearch.value.toLowerCase()
-    result = result.filter(p => 
+    result = result.filter(p =>
       p.name.toLowerCase().includes(search) ||
-      (p.vendor?.name || '').toLowerCase().includes(search)
+      (p.vendor?.name || '').toLowerCase().includes(search),
     )
   }
 
   return result
 })
+
+// 順序調整
+const canMoveUp = (index: number) => index > 0
+const canMoveDown = (index: number) => index < filteredProcessings.value.length - 1
+
+const moveUp = async (index: number) => {
+  if (!canMoveUp(index)) return
+  await swapDisplayOrder(index, index - 1)
+}
+
+const moveDown = async (index: number) => {
+  if (!canMoveDown(index)) return
+  await swapDisplayOrder(index, index + 1)
+}
+
+const swapDisplayOrder = async (aIndex: number, bIndex: number) => {
+  const list = filteredProcessings.value
+  const a = list[aIndex]
+  const b = list[bIndex]
+  if (!a || !b) return
+  try {
+    const aOrder = a.displayOrder ?? 0
+    const bOrder = b.displayOrder ?? 0
+    await processingService.update(a.id, { displayOrder: bOrder })
+    await processingService.update(b.id, { displayOrder: aOrder })
+    await loadData()
+  } catch (err: any) {
+    alert(err.message || '調整順序失敗')
+  }
+}
 
 // 載入資料
 const loadData = async () => {
@@ -202,18 +248,27 @@ const handleFieldChange = () => {}
 
 // 處理保存（編輯既有項目）
 const handleSave = async (row: Processing, isNew: boolean) => {
+  // EditableDataTable 在 emit('save') 之後才會清空 editingRowId，
+  // 因此可以同步取得編輯前的 id，用於支援使用者修改 id
+  const oldIdKey = editableTableRef.value?.editingRowId
+  const oldId = oldIdKey != null && oldIdKey !== '' ? Number(oldIdKey) : row.id
+  const newIdRaw = Number(row.id)
+  const newId = Number.isFinite(newIdRaw) ? newIdRaw : oldId
+
   try {
     const rawVendorId = row.vendorId as string | number | null | undefined
     const vendorId = (rawVendorId === '' || rawVendorId == null) ? undefined : Number(rawVendorId)
-    const data = {
+    const data: { id?: number; name: string; vendorId?: number; displayOrder: number } = {
       name: row.name,
       vendorId: vendorId || undefined,
       displayOrder: row.displayOrder ?? 0,
     }
     if (isNew) {
+      if (Number.isFinite(newIdRaw)) data.id = newIdRaw
       await processingService.create(data)
     } else {
-      await processingService.update(row.id, data)
+      if (newId !== oldId) data.id = newId
+      await processingService.update(oldId, data)
     }
     await loadData()
   } catch (err: any) {
@@ -226,7 +281,10 @@ const handleNewRowSave = async (row: any) => {
   try {
     const rawVendorId = row.vendorId as string | number | null | undefined
     const vendorId = (rawVendorId === '' || rawVendorId == null) ? undefined : Number(rawVendorId)
+    const rawId = Number(row.id)
+    const idValue = Number.isFinite(rawId) && rawId > 0 ? rawId : undefined
     await processingService.create({
+      id: idValue,
       name: row.name,
       vendorId: vendorId || undefined,
       displayOrder: row.displayOrder ?? 0,
@@ -241,7 +299,7 @@ const handleNewRowSave = async (row: any) => {
 // 刪除加工項目
 const deleteProcessing = async (processing: Processing) => {
   if (!confirm(`確定要刪除「${processing.name}」嗎？此操作無法復原！`)) return
-  
+
   try {
     await processingService.delete(processing.id)
     loadData()
@@ -313,5 +371,9 @@ onMounted(() => {
   font-size: var(--font-size-sm);
 }
 
-
+.dropdown-item.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
 </style>

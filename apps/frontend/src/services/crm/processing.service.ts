@@ -15,12 +15,14 @@ export interface Processing {
 }
 
 export interface CreateProcessingDto {
+  id?: number
   name: string
   vendorId?: number
   displayOrder?: number
 }
 
 export interface UpdateProcessingDto {
+  id?: number
   name?: string
   vendorId?: number
   displayOrder?: number
