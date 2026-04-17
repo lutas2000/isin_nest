@@ -1,71 +1,100 @@
 <template>
-  <div class="settings-page">
-    <div class="settings-content">
-      <!-- 頁籤導航 -->
-      <div class="tabs">
+  <div class="w-full">
+    <div class="rounded-lg bg-white p-4 shadow md:p-8">
+      <div class="mb-6 flex flex-wrap gap-2 border-b-2 border-secondary-200 pb-2">
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          class="tab-button"
-          :class="{ active: activeTab === tab.id }"
+          type="button"
+          class="rounded-t-md border-b-[3px] px-4 py-2 text-sm font-medium transition md:px-6 md:py-3"
+          :class="
+            activeTab === tab.id
+              ? 'border-primary-500 text-primary-600'
+              : 'border-transparent text-secondary-600 hover:bg-primary-50 hover:text-primary-600'
+          "
           @click="activeTab = tab.id"
         >
           {{ tab.label }}
         </button>
       </div>
 
-      <!-- 銷管設定 -->
-      <div v-if="activeTab === 'crm'" class="settings-section">
+      <div v-if="activeTab === 'crm'" class="space-y-4">
         <SectionHeader title="銷管設定">
           <template #actions>
-            <button class="btn btn-primary" @click="showAddCrmModal = true">
-              <span class="mr-2">➕</span>
+            <button
+              type="button"
+              class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-primary-700"
+              @click="showAddCrmModal = true"
+            >
+              <span class="mr-1.5">➕</span>
               新增設定
             </button>
           </template>
         </SectionHeader>
 
-
-        <!-- 依分類顯示設定 -->
-        <div v-for="category in crmCategories" :key="category" class="category-section">
-          <h4 class="category-title">{{ getCategoryLabel(category) }}</h4>
-          <DraggableList
-            :items="getCrmConfigsByCategory(category)"
-            @order-change="handleCrmOrderChange($event)"
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-sm font-medium text-secondary-700">種類：</span>
+          <button
+            v-for="option in crmFilterOptions"
+            :key="option.value"
+            type="button"
+            class="rounded-md border px-3 py-1.5 text-sm transition"
+            :class="
+              selectedCrmFilter === option.value
+                ? 'border-primary-500 bg-primary-50 text-primary-700'
+                : 'border-secondary-300 text-secondary-700 hover:border-primary-300 hover:text-primary-600'
+            "
+            @click="selectedCrmFilter = option.value"
           >
-            <template #item="{ item: config }">
-              <div class="item-code">{{ config.code }}</div>
-              <div class="item-label">{{ config.label }}</div>
+            {{ option.label }}
+          </button>
+        </div>
+
+        <EditableDataTable
+          :columns="crmTableColumns"
+          :data="filteredAndSortedCrmConfigs"
+          :show-actions="true"
+          :editable="true"
+          @save="handleInlineCrmSave"
+        >
+          <template #actions="{ row, isEditing, save, cancel, startEdit }">
+            <template v-if="isEditing">
+              <button type="button" class="btn btn-sm btn-success" @click="save()">
+                儲存
+              </button>
+              <button type="button" class="btn btn-sm btn-outline" @click="cancel()">
+                取消
+              </button>
             </template>
-            <template #actions="{ item: config }">
-              <button
-                class="btn btn-sm btn-primary"
-                @click="editCrmConfig(config)"
-              >
+            <template v-else>
+              <button type="button" class="dropdown-item" @click="startEdit()">
                 編輯
               </button>
               <button
-                class="btn btn-sm btn-danger"
-                @click="deleteCrmConfig(config)"
+                type="button"
+                class="dropdown-item danger"
+                @click="openDeleteCrmModal(row)"
               >
                 刪除
               </button>
             </template>
-          </DraggableList>
-        </div>
+          </template>
+        </EditableDataTable>
       </div>
 
-      <!-- 權限設定 -->
-      <div v-if="activeTab === 'feature'" class="settings-section">
+      <div v-if="activeTab === 'feature'" class="space-y-4">
         <SectionHeader title="權限設定">
           <template #actions>
-            <button class="btn btn-primary" @click="showAddFeatureModal = true">
-              <span class="mr-2">➕</span>
+            <button
+              type="button"
+              class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-primary-700"
+              @click="showAddFeatureModal = true"
+            >
+              <span class="mr-1.5">➕</span>
               新增職稱
             </button>
           </template>
         </SectionHeader>
-
 
         <EditableDataTable
           :columns="featureTableColumns"
@@ -74,86 +103,113 @@
           :editable="false"
         >
           <template #cell-permissions="{ row }">
-            <div class="permissions-list">
+            <div class="flex flex-wrap gap-2">
               <span
                 v-for="perm in row.permissions"
                 :key="perm.id"
-                class="permission-badge"
+                class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
                 :class="getPermissionClass(perm.permission)"
               >
                 {{ perm.feature.name }}: {{ getPermissionLabel(perm.permission) }}
               </span>
-              <span v-if="!row.permissions || row.permissions.length === 0" class="text-secondary-400">
+              <span v-if="!row.permissions || row.permissions.length === 0" class="text-sm text-secondary-400">
                 無權限設定
               </span>
             </div>
           </template>
 
           <template #actions="{ row }">
-            <div class="action-buttons">
-              <button
-                class="btn btn-sm btn-primary"
-                @click="editFeatureConfig(row)"
-              >
-                編輯
-              </button>
-              <button
-                class="btn btn-sm btn-danger"
-                @click="deleteFeatureConfig(row)"
-              >
-                刪除
-              </button>
-            </div>
+            <button type="button" class="dropdown-item" @click="editFeatureConfig(row)">
+              編輯
+            </button>
+            <button
+              type="button"
+              class="dropdown-item danger"
+              @click="deleteFeatureConfig(row)"
+            >
+              刪除
+            </button>
           </template>
         </EditableDataTable>
       </div>
     </div>
 
     <CrmConfigModal
-      :show="showAddCrmModal || showEditCrmModal"
-      :is-editing="showEditCrmModal"
+      :show="showAddCrmModal"
+      :is-editing="false"
       :initial-data="crmForm"
       @close="closeCrmModal"
       @save="saveCrmConfig"
     />
 
-    <!-- 新增/編輯權限設定模態框 -->
+    <Modal
+      :show="showDeleteCrmModal"
+      title="刪除銷管設定"
+      @close="closeDeleteCrmModal"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-secondary-700">
+          確定要刪除「{{ deletingCrmConfig?.label }}」嗎？此操作無法復原。
+        </p>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            class="rounded-md border border-secondary-300 px-4 py-2 text-sm font-medium text-secondary-700 transition hover:bg-secondary-50"
+            @click="closeDeleteCrmModal"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-danger-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-danger-700"
+            @click="confirmDeleteCrm"
+          >
+            確認刪除
+          </button>
+        </div>
+      </div>
+    </Modal>
+
     <Modal
       :show="showAddFeatureModal || showEditFeatureModal"
       :title="showEditFeatureModal ? '編輯權限設定' : '新增權限設定'"
       @close="closeFeatureModal"
     >
-      <form @submit.prevent="saveFeatureConfig">
-        <div class="form-group">
-          <label class="form-label">職稱 *</label>
+      <form class="space-y-4" @submit.prevent="saveFeatureConfig">
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-secondary-700">職稱 *</label>
           <input
-            type="text"
-            class="form-control"
             v-model="featureForm.jobTitle"
+            type="text"
             required
             placeholder="例如：經理"
+            class="w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm text-secondary-900 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
           />
         </div>
 
-        <div class="form-group">
-          <label class="form-label">描述</label>
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-secondary-700">描述</label>
           <textarea
-            class="form-control"
             v-model="featureForm.description"
             rows="3"
             placeholder="職稱的描述"
+            class="w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm text-secondary-900 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
           />
         </div>
 
-        <div class="form-group">
-          <label class="form-label">權限設定</label>
-          <div class="permissions-editor">
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-secondary-700">權限設定</label>
+          <div class="space-y-3">
             <div
               v-for="(perm, index) in featureForm.permissions"
               :key="index"
-              class="permission-row"
+              class="grid gap-3 md:grid-cols-[2fr_1fr_auto]"
             >
-              <select class="form-control" v-model="perm.feature" required>
+              <select
+                v-model="perm.feature"
+                required
+                class="w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm text-secondary-900 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+              >
                 <option value="">選擇功能</option>
                 <option
                   v-for="feature in availableFeatures"
@@ -163,7 +219,11 @@
                   {{ feature.label }} ({{ feature.name }})
                 </option>
               </select>
-              <select class="form-control" v-model="perm.permission" required>
+              <select
+                v-model="perm.permission"
+                required
+                class="w-full rounded-md border border-secondary-300 bg-white px-3 py-2 text-sm text-secondary-900 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+              >
                 <option
                   v-for="permType in availablePermissionTypes"
                   :key="permType.value"
@@ -174,15 +234,16 @@
               </select>
               <button
                 type="button"
-                class="btn btn-sm btn-danger"
+                class="inline-flex items-center justify-center rounded-md border border-danger-300 px-3 py-2 text-sm font-medium text-danger-600 transition hover:bg-danger-50"
                 @click="removePermission(index)"
               >
                 移除
               </button>
             </div>
+
             <button
               type="button"
-              class="btn btn-outline"
+              class="inline-flex items-center rounded-md border border-secondary-300 px-3 py-2 text-sm font-medium text-secondary-700 transition hover:bg-secondary-50"
               @click="addPermission"
             >
               ➕ 新增權限
@@ -190,11 +251,20 @@
           </div>
         </div>
 
-        <div class="form-actions">
-          <button type="button" class="btn btn-outline" @click="closeFeatureModal">
+        <div class="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            class="rounded-md border border-secondary-300 px-4 py-2 text-sm font-medium text-secondary-700 transition hover:bg-secondary-50"
+            @click="closeFeatureModal"
+          >
             取消
           </button>
-          <button type="submit" class="btn btn-primary">儲存</button>
+          <button
+            type="submit"
+            class="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700"
+          >
+            儲存
+          </button>
         </div>
       </form>
     </Modal>
@@ -202,8 +272,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { EditableDataTable, CrmConfigModal, Modal, DraggableList, SectionHeader } from '@/components';
+import { computed, onMounted, ref } from 'vue';
+import { EditableDataTable, CrmConfigModal, Modal, SectionHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -227,10 +297,14 @@ interface CrmConfig {
   displayOrder: number;
 }
 
+interface CrmConfigTableRow extends CrmConfig {
+  categoryLabel: string;
+}
+
 const crmConfigs = ref<CrmConfig[]>([]);
 const showAddCrmModal = ref(false);
-const showEditCrmModal = ref(false);
-const editingCrmId = ref<number | null>(null);
+const showDeleteCrmModal = ref(false);
+const deletingCrmConfig = ref<CrmConfig | null>(null);
 
 const crmForm = ref({
   category: '',
@@ -238,7 +312,26 @@ const crmForm = ref({
   label: '',
 });
 
-const crmCategories = ['shipping_method', 'payment_method', 'source_type', 'processing_type'];
+type CrmFilterType = 'shipping_method' | 'payment_method' | 'source_type';
+
+const crmCategorySortOrder: Record<string, number> = {
+  shipping_method: 0,
+  payment_method: 1,
+  source_type: 2,
+};
+
+const selectedCrmFilter = ref<CrmFilterType>('shipping_method');
+
+const crmFilterOptions: Array<{ label: string; value: CrmFilterType }> = [
+  { label: '運送方式', value: 'shipping_method' },
+  { label: '付款方式', value: 'payment_method' },
+  { label: '來源類型', value: 'source_type' },
+];
+
+const crmTableColumns = [
+  { key: 'code', label: '代碼' },
+  { key: 'label', label: '名稱' },
+];
 
 const getCategoryLabel = (category: string) => {
   const labels: Record<string, string> = {
@@ -250,13 +343,24 @@ const getCategoryLabel = (category: string) => {
   return labels[category] || category;
 };
 
-const getCrmConfigsByCategory = (category: string) => {
+const filteredAndSortedCrmConfigs = computed<CrmConfigTableRow[]>(() => {
   return crmConfigs.value
-    .filter((config) => config.category === category)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
-};
-
-// 拖曳相關 - 已移至 DraggableList 組件
+    .filter((config) => config.category === selectedCrmFilter.value)
+    .slice()
+    .sort((a, b) => {
+      const categoryOrderDiff =
+        (crmCategorySortOrder[a.category] ?? Number.MAX_SAFE_INTEGER) -
+        (crmCategorySortOrder[b.category] ?? Number.MAX_SAFE_INTEGER);
+      if (categoryOrderDiff !== 0) {
+        return categoryOrderDiff;
+      }
+      return a.displayOrder - b.displayOrder;
+    })
+    .map((config) => ({
+      ...config,
+      categoryLabel: getCategoryLabel(config.category),
+    }));
+});
 
 // Feature 設定
 interface Feature {
@@ -346,22 +450,38 @@ const loadPermissionTypes = async () => {
 };
 
 // CRM 設定操作
-const editCrmConfig = (config: CrmConfig) => {
-  editingCrmId.value = config.id;
-  crmForm.value = {
-    category: config.category,
-    code: config.code,
-    label: config.label,
-  };
-  showEditCrmModal.value = true;
+const handleInlineCrmSave = async (row: CrmConfig) => {
+  try {
+    await apiRequest(`/crm/configs/${row.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        category: row.category,
+        code: row.code,
+        label: row.label,
+      }),
+    });
+    await loadCrmConfigs();
+  } catch (error) {
+    errorStore.showError(error instanceof Error ? error.message : '儲存失敗');
+  }
 };
 
-const deleteCrmConfig = async (config: CrmConfig) => {
-  if (!confirm(`確定要刪除「${config.label}」嗎？`)) return;
+const openDeleteCrmModal = (config: CrmConfig) => {
+  deletingCrmConfig.value = config;
+  showDeleteCrmModal.value = true;
+};
 
+const closeDeleteCrmModal = () => {
+  showDeleteCrmModal.value = false;
+  deletingCrmConfig.value = null;
+};
+
+const confirmDeleteCrm = async () => {
+  if (!deletingCrmConfig.value) return;
   try {
-    await apiRequest(`/crm/configs/${config.id}`, { method: 'DELETE' });
+    await apiRequest(`/crm/configs/${deletingCrmConfig.value.id}`, { method: 'DELETE' });
     await loadCrmConfigs();
+    closeDeleteCrmModal();
   } catch (error) {
     errorStore.showError(error instanceof Error ? error.message : '刪除失敗');
   }
@@ -369,26 +489,17 @@ const deleteCrmConfig = async (config: CrmConfig) => {
 
 const saveCrmConfig = async (formValue: { category: string; code: string; label: string }) => {
   try {
-    const categoryConfigs = getCrmConfigsByCategory(formValue.category);
+    const categoryConfigs = crmConfigs.value.filter((config) => config.category === formValue.category);
     const maxOrder = categoryConfigs.length > 0
       ? Math.max(...categoryConfigs.map((c) => c.displayOrder))
       : -1;
     
     const formData = {
       ...formValue,
-      displayOrder: editingCrmId.value
-        ? undefined
-        : maxOrder + 1,
+      displayOrder: maxOrder + 1,
     };
-    
-    if (editingCrmId.value) {
-      await apiRequest(`/crm/configs/${editingCrmId.value}`, {
-        method: 'PUT',
-        body: JSON.stringify(formData),
-      });
-    } else {
-      await apiPost('/crm/configs', formData);
-    }
+
+    await apiPost('/crm/configs', formData);
     await loadCrmConfigs();
     closeCrmModal();
   } catch (error) {
@@ -398,37 +509,11 @@ const saveCrmConfig = async (formValue: { category: string; code: string; label:
 
 const closeCrmModal = () => {
   showAddCrmModal.value = false;
-  showEditCrmModal.value = false;
-  editingCrmId.value = null;
   crmForm.value = {
     category: '',
     code: '',
     label: '',
   };
-};
-
-// 拖曳處理 - 處理順序改變
-const handleCrmOrderChange = async (newConfigs: CrmConfig[]) => {
-  // 更新 display order
-  const updates = newConfigs.map((config, index) => ({
-    id: config.id,
-    displayOrder: index,
-  }));
-  
-  // 批量更新順序
-  try {
-    await Promise.all(
-      updates.map((update) =>
-        apiRequest(`/crm/configs/${update.id}`, {
-          method: 'PUT',
-          body: JSON.stringify({ displayOrder: update.displayOrder }),
-        })
-      )
-    );
-    await loadCrmConfigs();
-  } catch (error) {
-    errorStore.showError(error instanceof Error ? error.message : '更新順序失敗');
-  }
 };
 
 // Feature 設定操作
@@ -498,9 +583,9 @@ const removePermission = (index: number) => {
 };
 
 const getPermissionClass = (permission: string) => {
-  if (permission === 'write') return 'badge-write';
-  if (permission === 'personal') return 'badge-personal';
-  return 'badge-read';
+  if (permission === 'write') return 'bg-success-100 text-success-700';
+  if (permission === 'personal') return 'bg-warning-100 text-warning-700';
+  return 'bg-info-100 text-info-700';
 };
 
 const getPermissionLabel = (permission: string) => {
@@ -516,136 +601,3 @@ onMounted(() => {
   loadPermissionTypes();
 });
 </script>
-
-<style scoped>
-.settings-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-.settings-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  padding: 2rem;
-}
-
-/* 頁籤 */
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid var(--secondary-200);
-}
-
-.tab-button {
-  background: none;
-  border: none;
-  padding: 1rem 2rem;
-  cursor: pointer;
-  color: var(--secondary-600);
-  font-weight: 500;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.tab-button:hover {
-  color: var(--primary-600);
-  background-color: var(--primary-50);
-}
-
-.tab-button.active {
-  color: var(--primary-600);
-  border-bottom-color: var(--primary-500);
-}
-
-/* 區塊標題 - 已移至 SectionHeader 組件 */
-
-.category-section {
-  margin-bottom: 2rem;
-}
-
-.category-title {
-  margin: 0 0 1rem 0;
-  color: var(--secondary-800);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--secondary-200);
-}
-
-/* 權限顯示 */
-.permissions-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.permission-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-}
-
-.badge-read {
-  background-color: var(--info-100);
-  color: var(--info-700);
-}
-
-.badge-write {
-  background-color: var(--success-100);
-  color: var(--success-700);
-}
-
-.badge-personal {
-  background-color: var(--warning-100);
-  color: var(--warning-700);
-}
-
-/* 權限編輯器 */
-.permissions-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.permission-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr auto;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-/* 項目內容樣式 */
-.item-code {
-  font-weight: 600;
-  color: var(--secondary-800);
-  min-width: 100px;
-}
-
-.item-label {
-  color: var(--secondary-700);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .settings-content {
-    padding: 1rem;
-  }
-
-  .tabs {
-    flex-direction: column;
-  }
-
-  .tab-button {
-    text-align: left;
-  }
-
-  /* section-header 響應式設計已移至 SectionHeader 組件 */
-
-  .permission-row {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
