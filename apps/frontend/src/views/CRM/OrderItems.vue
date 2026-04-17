@@ -8,7 +8,7 @@
     <div v-else-if="workOrder" class="flex flex-col gap-8">
       <!-- 工作單詳細資訊 -->
       <div class="overflow-hidden rounded-lg bg-white shadow">
-        <div class="p-8">
+        <div class="p-4 md:p-3">
           <DetailFieldsPanel
             v-model:editing="detailsEditing"
             :items="detailItems"
