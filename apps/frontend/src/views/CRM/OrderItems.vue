@@ -1,30 +1,5 @@
 <template>
   <div class="mx-auto w-full">
-    <TableHeader :title="workOrder ? '' : '載入中...'" :border="false">
-      <template #actions>
-        <button
-          class="btn btn-primary"
-          v-if="workOrder"
-          @click="handlePrint"
-        >
-          <span class="mr-2">🖨️</span>
-          列印訂貨單
-        </button>
-        <button
-          class="btn btn-outline"
-          v-if="workOrder"
-          @click="handlePrintWorkSheet"
-        >
-          <span class="mr-2">📄</span>
-          列印工作單
-        </button>
-        <button class="btn btn-outline" @click="goBack">
-          <span class="mr-2">←</span>
-          返回
-        </button>
-      </template>
-    </TableHeader>
-
     <div v-if="loading" class="p-8 text-center">載入中...</div>
     <div v-else-if="error" class="rounded-lg bg-danger-50 p-8 text-center text-danger-600">
       {{ error }}
@@ -39,10 +14,34 @@
             :items="detailItems"
           >
             <template #actions>
+              <button
+                type="button"
+                class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+                @click="handlePrint"
+              >
+                <span class="mr-2">🖨️</span>
+                列印訂貨單
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center rounded-md border border-secondary-300 bg-white px-3 py-1.5 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-50"
+                @click="handlePrintWorkSheet"
+              >
+                <span class="mr-2">📄</span>
+                列印工作單
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center rounded-md border border-secondary-300 bg-white px-3 py-1.5 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-50"
+                @click="goBack"
+              >
+                <span class="mr-2">←</span>
+                返回
+              </button>
               <template v-if="!detailsEditing">
                 <button
                   type="button"
-                  class="btn btn-outline btn-sm"
+                  class="inline-flex items-center rounded-md border border-secondary-300 bg-white px-3 py-1.5 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-50"
                   @click="startDetailsEdit"
                 >
                   編輯
@@ -51,14 +50,14 @@
               <template v-else>
                 <button
                   type="button"
-                  class="btn btn-primary btn-sm"
+                  class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
                   @click="saveDetailsEdit"
                 >
                   儲存
                 </button>
                 <button
                   type="button"
-                  class="btn btn-outline btn-sm"
+                  class="inline-flex items-center rounded-md border border-secondary-300 bg-white px-3 py-1.5 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-50"
                   @click="cancelDetailsEdit"
                 >
                   取消
@@ -96,7 +95,7 @@
             <template #edit-notes>
               <textarea
                 v-model="detailDraft.notes"
-                class="form-control"
+                class="w-full rounded-md border border-secondary-300 px-3 py-2 text-base text-secondary-900 focus:border-primary-500 focus:outline-none"
                 rows="3"
               />
             </template>
@@ -111,15 +110,7 @@
       />
 
       <!-- 訂單工件列表 -->
-      <div class="overflow-hidden rounded-lg bg-white shadow">
-        <TableHeader title="訂單工件列表">
-          <template #actions>
-            <button class="btn btn-primary" @click="showNewRow = true">
-              <span class="mr-2">➕</span>
-              新增工件
-            </button>
-          </template>
-        </TableHeader>
+      <CrmTableContainer title="訂單工件列表">
         <EditableDataTable
           ref="editableTableRef"
           :columns="editableColumns"
@@ -159,13 +150,13 @@
 
           <template #cell-processing="{ row }">
             <button 
-              class="processing-btn"
+              class="cursor-pointer rounded-md border border-primary-200 bg-primary-50 px-3 py-1 text-sm text-primary-700 transition-colors hover:border-primary-300 hover:bg-primary-100"
               @click.stop="openProcessingSelectModal(row)"
             >
-              <span v-if="row.processingIds && row.processingIds.length > 0" class="processing-tags">
+              <span v-if="row.processingIds && row.processingIds.length > 0">
                 {{ getProcessingNames(row.processingIds) }}
               </span>
-              <span v-else class="processing-empty">選擇加工</span>
+              <span v-else class="text-secondary-500">選擇加工</span>
             </button>
           </template>
 
@@ -193,13 +184,13 @@
             <!-- 編輯模式：顯示保存和取消按鈕 -->
             <template v-if="isEditing">
               <button 
-                class="btn btn-sm btn-success" 
+                class="inline-flex items-center rounded-md bg-success-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-success-700"
                 @click="save"
               >
                 保存
               </button>
               <button 
-                class="btn btn-sm btn-outline" 
+                class="inline-flex items-center rounded-md border border-secondary-300 bg-white px-3 py-1.5 text-sm font-medium text-secondary-700 transition-colors hover:bg-secondary-50"
                 @click="cancel"
               >
                 取消
@@ -208,7 +199,7 @@
             <!-- 非編輯模式：顯示下拉選單項目 -->
             <template v-else>
               <span 
-                class="dropdown-item" 
+                class="block cursor-pointer rounded px-2 py-1 text-sm text-danger-600 transition-colors hover:bg-danger-50"
                 @click="deleteItem(row.id)"
               >
                 刪除
@@ -216,7 +207,7 @@
             </template>
           </template>
         </EditableDataTable>
-      </div>
+      </CrmTableContainer>
     </div>
 
     <!-- 列印組件 -->
@@ -247,8 +238,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
+  CrmTableContainer,
   StatusBadge,
-  TableHeader,
   EditableDataTable,
   type EditableColumn,
   ShortcutHint,
@@ -863,207 +854,3 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-/* 訂單工件列表 */
-.empty-message {
-  padding: 3rem;
-  text-align: center;
-  color: var(--secondary-500);
-  font-size: var(--font-size-base);
-}
-
-.highlight {
-  font-weight: 600;
-  color: var(--primary-600);
-}
-
-/* Modal 表單樣式 */
-.modal-form {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-500);
-}
-
-/* 加工按鈕 */
-.processing-btn {
-  background: var(--primary-50);
-  border: 1px solid var(--primary-200);
-  border-radius: var(--border-radius);
-  padding: 0.25rem 0.75rem;
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  color: var(--primary-700);
-  transition: all 0.2s ease;
-}
-
-.processing-btn:hover {
-  background: var(--primary-100);
-  border-color: var(--primary-300);
-}
-
-.processing-progress {
-  font-weight: 600;
-}
-
-.processing-empty {
-  color: var(--secondary-500);
-}
-
-/* 加工管理 Modal */
-.processing-modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.add-processing-form {
-  background: var(--secondary-50);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-}
-
-.add-processing-form h4,
-.processing-list h4 {
-  margin: 0 0 1rem 0;
-  font-size: var(--font-size-base);
-  color: var(--secondary-800);
-  font-weight: 600;
-}
-
-.checkbox-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-}
-
-.checkbox-wrapper input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-/* 加工項目列表 */
-.processing-items {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.processing-item {
-  background: white;
-  border: 1px solid var(--secondary-200);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  border-left: 4px solid var(--secondary-400);
-}
-
-.processing-item.status-pending {
-  border-left-color: var(--secondary-400);
-}
-
-.processing-item.status-in_progress {
-  border-left-color: var(--warning-500);
-}
-
-.processing-item.status-completed {
-  border-left-color: var(--success-500);
-}
-
-.processing-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.processing-item-type {
-  font-weight: 600;
-  color: var(--secondary-800);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.outsourced-badge {
-  background: var(--info-100);
-  color: var(--info-700);
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-}
-
-.processing-item-details {
-  margin-bottom: 0.75rem;
-}
-
-.detail-row {
-  display: flex;
-  gap: 0.5rem;
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-  margin-bottom: 0.25rem;
-}
-
-.detail-label {
-  color: var(--secondary-500);
-}
-
-.processing-item-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .processing-item-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .processing-item-actions {
-    flex-direction: column;
-  }
-}
-</style>
