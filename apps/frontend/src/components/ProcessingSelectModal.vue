@@ -2,9 +2,6 @@
   <Modal :show="show" title="選擇加工項目" @close="handleClose">
     <div class="flex max-h-[60vh] flex-col gap-4" @keydown="handleKeydown">
       <div class="space-y-2">
-        <label for="processing-search-input" class="text-sm font-medium text-secondary-700">
-          搜尋加工（名稱 / 代碼）
-        </label>
         <input
           id="processing-search-input"
           ref="searchInputRef"
@@ -63,9 +60,18 @@
       </div>
 
       <div v-if="selectedProcessings.length > 0" class="rounded-lg bg-secondary-50 p-3">
-        <p class="mb-2 text-xs font-medium text-secondary-600">
-          已選擇（{{ selectedProcessings.length }}）
-        </p>
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <p class="text-xs font-medium text-secondary-600">
+            已選擇（{{ selectedProcessings.length }}）
+          </p>
+          <button
+            class="rounded-md border border-secondary-300 bg-white px-2 py-1 text-xs font-medium text-secondary-700 transition hover:bg-secondary-100"
+            type="button"
+            @click="handleClear"
+          >
+            清除
+          </button>
+        </div>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="processing in selectedProcessings"
@@ -82,18 +88,12 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" type="button" @click="handleClose">取消</button>
-      <button
-        v-if="selectedProcessings.length > 0"
-        class="btn btn-outline"
-        type="button"
-        @click="handleClear"
-      >
-        清除
-      </button>
-      <button class="btn btn-primary" type="button" @click="handleConfirm">
-        確定（{{ selectedProcessings.length }}）
-      </button>
+      <div class="flex w-full justify-end gap-3 md:flex-row">
+        <button class="btn btn-secondary" type="button" @click="handleClose">取消</button>
+        <button class="btn btn-primary" type="button" @click="handleConfirm">
+          確定（{{ selectedProcessings.length }}）
+        </button>
+      </div>
     </template>
   </Modal>
 </template>
