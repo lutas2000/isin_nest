@@ -14,6 +14,12 @@ This file maps task intent to skill folders for on-demand loading.
   - Trigger: role permission changes, guard updates, or sensitive operation access control.
   - Use with: `../rules/backend/security-authz.md`, `../rules/backend/api-contract-swagger.md`.
 
+## Deployment Skills
+
+- `prod-deploy-update-run/SKILL.md`
+  - Trigger: update and run production services using git pull, DB migration, Docker builds, and Docker Compose.
+  - Use with: `../rules/docker/deployment-baseline.md`, `../rules/backend/typeorm-entity-migration.md`.
+
 ## Documentation Governance
 
 After task completion, also review:
