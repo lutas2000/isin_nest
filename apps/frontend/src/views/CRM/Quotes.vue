@@ -50,6 +50,7 @@
         @row-delete="handleRowDelete"
         @row-view="handleRowView"
         @row-edit="handleRowEdit"
+        @focus-field="handleTableFocusField"
       >
         <template #cell-id="{ row, value }">
           <button 
@@ -311,7 +312,7 @@
     <ProcessingSelectModal
       :show="showProcessingSelectModal"
       :model-value="selectedQuoteForProcessing?.processingIds || []"
-      @close="showProcessingSelectModal = false"
+      @close="closeProcessingSelectModal"
       @confirm="handleProcessingConfirm"
     />
   </div>
@@ -366,6 +367,7 @@ const selectedQuote = ref<Quote | null>(null);
 const selectedQuoteForProcessing = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
 const showNewRow = ref(false);
+const processingAutoOpenBlockedUntil = ref(0);
 
 // 加工項目相關
 const allProcessings = ref<Processing[]>([]);
@@ -499,6 +501,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'processing', 
     label: '後加工', 
     editable: false, // 使用 Modal 選擇
+    keyboardFocusable: true,
   },
   { 
     key: 'notes', 
@@ -841,13 +844,41 @@ const loadAllProcessings = async () => {
 
 // 開啟加工選擇 Modal
 const openProcessingSelectModal = (quote: Quote) => {
+  if (showProcessingSelectModal.value) return;
   selectedQuoteForProcessing.value = quote;
   showProcessingSelectModal.value = true;
+};
+
+const closeProcessingSelectModal = () => {
+  processingAutoOpenBlockedUntil.value = Date.now() + 200;
+  showProcessingSelectModal.value = false;
+  selectedQuoteForProcessing.value = null;
+};
+
+const handleTableFocusField = (payload: {
+  row: Quote;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+  byKeyboard: boolean;
+}) => {
+  if (!payload.byKeyboard || payload.fieldKey !== 'processing') {
+    return;
+  }
+  if (Date.now() < processingAutoOpenBlockedUntil.value || showProcessingSelectModal.value) {
+    return;
+  }
+  openProcessingSelectModal(payload.row);
 };
 
 // 確認加工選擇
 const handleProcessingConfirm = async (value: { ids: number[]; processings: Processing[] }) => {
   if (!selectedQuoteForProcessing.value) return;
+  if (!selectedQuoteForProcessing.value.id) {
+    selectedQuoteForProcessing.value.processingIds = [...value.ids];
+    closeProcessingSelectModal();
+    return;
+  }
 
   try {
     const quoteId = selectedQuoteForProcessing.value.id;
@@ -860,8 +891,7 @@ const handleProcessingConfirm = async (value: { ids: number[]; processings: Proc
       await quoteItemService.update(item.id, { processingIds: value.ids });
     }
     await loadQuotes();
-    showProcessingSelectModal.value = false;
-    selectedQuoteForProcessing.value = null;
+    closeProcessingSelectModal();
     alert(`已更新報價單及 ${items.length} 個工件的後加工項目`);
   } catch (err) {
     alert(err instanceof Error ? err.message : '更新後加工失敗');

@@ -127,6 +127,7 @@
           @new-row-show="showNewRow = true"
           @row-delete="handleRowDelete"
           @row-edit="handleRowEdit"
+          @focus-field="handleTableFocusField"
         >
           <template #cell-sequence="{ value }">
             {{ value }}
@@ -228,7 +229,7 @@
     <ProcessingSelectModal
       :show="showProcessingSelectModal"
       :model-value="selectedWorkOrderItem?.processingIds || []"
-      @close="showProcessingSelectModal = false"
+      @close="closeProcessingSelectModal"
       @confirm="handleProcessingConfirm"
     />
   </div>
@@ -274,6 +275,7 @@ const showProcessingSelectModal = ref(false);
 const selectedWorkOrderItem = ref<WorkOrderItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
 const vendors = ref<Vendor[]>([]);
+const processingAutoOpenBlockedUntil = ref(0);
 
 // 列印組件 ref
 const workOrderPrintRef = ref<InstanceType<typeof OrderPrint> | null>(null);
@@ -415,6 +417,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'processing', 
     label: '加工', 
     editable: false, // 使用 Modal 選擇
+    keyboardFocusable: true,
   },
   { 
     key: 'quantity',
@@ -771,20 +774,49 @@ const loadVendors = async () => {
 
 // 開啟加工選擇 Modal
 const openProcessingSelectModal = (item: WorkOrderItem) => {
+  if (showProcessingSelectModal.value) return;
   selectedWorkOrderItem.value = item;
   showProcessingSelectModal.value = true;
+};
+
+const closeProcessingSelectModal = () => {
+  processingAutoOpenBlockedUntil.value = Date.now() + 200;
+  showProcessingSelectModal.value = false;
+  selectedWorkOrderItem.value = null;
+};
+
+const handleTableFocusField = (payload: {
+  row: WorkOrderItem;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+  byKeyboard: boolean;
+}) => {
+  if (!payload.byKeyboard || payload.fieldKey !== 'processing') {
+    return;
+  }
+  if (Date.now() < processingAutoOpenBlockedUntil.value || showProcessingSelectModal.value) {
+    return;
+  }
+  openProcessingSelectModal(payload.row);
 };
 
 // 確認加工選擇
 const handleProcessingConfirm = async (value: { ids: number[]; processings: Processing[] }) => {
   if (!selectedWorkOrderItem.value) return;
+  if (!selectedWorkOrderItem.value.id) {
+    selectedWorkOrderItem.value.processingIds = [...value.ids];
+    closeProcessingSelectModal();
+    selectedWorkOrderItem.value = null;
+    return;
+  }
 
   try {
     await workOrderItemService.update(selectedWorkOrderItem.value.id, {
       processingIds: value.ids,
     });
     await loadWorkOrder();
-    showProcessingSelectModal.value = false;
+    closeProcessingSelectModal();
     selectedWorkOrderItem.value = null;
   } catch (err) {
     alert(err instanceof Error ? err.message : '更新加工項目失敗');

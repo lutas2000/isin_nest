@@ -135,6 +135,7 @@
           @new-row-show="showNewRow = true"
           @row-delete="handleRowDelete"
           @row-edit="handleRowEdit"
+          @focus-field="handleTableFocusField"
         >
           <template #cell-sequence="{ value }">
             {{ value }}
@@ -271,6 +272,7 @@ type QuoteProcessingModalKind = 'item' | 'header' | null;
 const processingModalKind = ref<QuoteProcessingModalKind>(null);
 const selectedQuoteItem = ref<QuoteItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
+const processingAutoOpenBlockedUntil = ref(0);
 
 const processingModalModelValue = computed(() => {
   if (processingModalKind.value === 'header') {
@@ -429,6 +431,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'processing',
     label: '加工',
     editable: false, // 使用 Modal 選擇
+    keyboardFocusable: true,
   },
   {
     key: 'notes',
@@ -754,14 +757,32 @@ const loadAllProcessings = async () => {
 };
 
 const closeProcessingModal = () => {
+  processingAutoOpenBlockedUntil.value = Date.now() + 200;
   processingModalKind.value = null;
   selectedQuoteItem.value = null;
 };
 
 // 開啟加工選擇 Modal（明細列）
 const openProcessingSelectModal = (item: QuoteItem) => {
+  if (processingModalKind.value !== null) return;
   processingModalKind.value = 'item';
   selectedQuoteItem.value = item;
+};
+
+const handleTableFocusField = (payload: {
+  row: QuoteItem;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+  byKeyboard: boolean;
+}) => {
+  if (!payload.byKeyboard || payload.fieldKey !== 'processing') {
+    return;
+  }
+  if (Date.now() < processingAutoOpenBlockedUntil.value || processingModalKind.value !== null) {
+    return;
+  }
+  openProcessingSelectModal(payload.row);
 };
 
 // 開啟加工選擇 Modal（報價單單頭）
@@ -779,6 +800,11 @@ const handleProcessingConfirm = async (value: { ids: number[]; processings: Proc
   }
 
   if (processingModalKind.value === 'item' && selectedQuoteItem.value) {
+    if (!selectedQuoteItem.value.id) {
+      selectedQuoteItem.value.processingIds = [...value.ids];
+      closeProcessingModal();
+      return;
+    }
     try {
       await quoteItemService.update(selectedQuoteItem.value.id, {
         processingIds: value.ids,

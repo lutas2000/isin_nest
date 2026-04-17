@@ -1,88 +1,97 @@
 <template>
-  <Modal
-    :show="show"
-    title="選擇加工項目"
-    @close="handleClose"
-  >
-    <div class="processing-select-modal">
-      <!-- 搜尋 -->
-      <div class="search-box">
+  <Modal :show="show" title="選擇加工項目" @close="handleClose">
+    <div class="flex max-h-[60vh] flex-col gap-4" @keydown="handleKeydown">
+      <div class="space-y-2">
+        <label for="processing-search-input" class="text-sm font-medium text-secondary-700">
+          搜尋加工（名稱 / 代碼）
+        </label>
         <input
-          type="text"
+          id="processing-search-input"
+          ref="searchInputRef"
           v-model="searchQuery"
-          placeholder="搜尋加工項目..."
-          class="form-control"
+          type="text"
+          placeholder="輸入名稱或代碼..."
+          autocomplete="off"
+          class="w-full rounded-lg border border-secondary-300 px-3 py-2 text-sm text-secondary-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
         />
+        <p class="text-xs text-secondary-500">
+          ↑↓ 移動　Space 勾選/取消　Enter 儲存　Esc 關閉
+        </p>
       </div>
 
-      <!-- 加工項目列表 -->
-      <div class="processing-list">
-        <div v-if="loading" class="loading-message">載入中...</div>
-        <div v-else-if="filteredProcessings.length === 0" class="empty-message">
-          沒有找到加工項目
+      <div
+        ref="listRef"
+        class="overflow-y-auto rounded-lg border border-secondary-200"
+      >
+        <div v-if="loading" class="px-4 py-10 text-center text-sm text-secondary-500">
+          載入中...
         </div>
-        <div
-          v-else
-          v-for="processing in filteredProcessings"
+        <div v-else-if="filteredProcessings.length === 0" class="px-4 py-10 text-center text-sm text-secondary-500">
+          沒有符合的加工項目
+        </div>
+        <button
+          v-for="(processing, index) in filteredProcessings"
           :key="processing.id"
-          class="processing-item"
-          :class="{ selected: isSelected(processing.id) }"
+          type="button"
+          :ref="el => setItemRef(processing.id, el)"
+          :class="[
+            'flex w-full items-start gap-3 border-b border-secondary-100 px-4 py-3 text-left transition last:border-b-0',
+            activeIndex === index ? 'bg-primary-50 ring-1 ring-inset ring-primary-200' : 'bg-white hover:bg-secondary-50',
+          ]"
+          @mouseenter="activeIndex = index"
           @click="toggleSelection(processing)"
         >
-          <div class="processing-checkbox">
-            <input
-              type="checkbox"
-              :checked="isSelected(processing.id)"
-              @click.stop
-              @change="toggleSelection(processing)"
-            />
-          </div>
-          <div class="processing-info">
-            <div class="processing-name">{{ processing.name }}</div>
-            <div class="processing-vendor">
-              <span v-if="processing.vendor" class="vendor-badge outsourced">
-                委外：{{ processing.vendor.name }}
-              </span>
-              <span v-else class="vendor-badge internal">
-                內部加工
-              </span>
-            </div>
-          </div>
-        </div>
+          <span
+            class="mt-0.5 inline-flex h-5 w-5 flex-none items-center justify-center rounded border text-xs font-semibold"
+            :class="isSelected(processing.id)
+              ? 'border-primary-500 bg-primary-500 text-white'
+              : 'border-secondary-300 bg-white text-transparent'"
+          >
+            ✓
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-secondary-900">
+              {{ processing.name }}
+            </span>
+            <span class="mt-1 block text-xs text-secondary-500">
+              代碼：{{ processing.code || '-' }}
+              <span class="mx-1 text-secondary-300">|</span>
+              {{ processing.vendor ? `委外：${processing.vendor.name}` : '內部加工' }}
+            </span>
+          </span>
+        </button>
       </div>
 
-      <!-- 已選擇的項目 -->
-      <div v-if="selectedProcessings.length > 0" class="selected-items">
-        <div class="selected-title">已選擇（{{ selectedProcessings.length }}）：</div>
-        <div class="selected-tags">
-          <span
+      <div v-if="selectedProcessings.length > 0" class="rounded-lg bg-secondary-50 p-3">
+        <p class="mb-2 text-xs font-medium text-secondary-600">
+          已選擇（{{ selectedProcessings.length }}）
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <button
             v-for="processing in selectedProcessings"
             :key="processing.id"
-            class="selected-tag"
+            type="button"
+            class="inline-flex items-center gap-1 rounded-md bg-primary-600 px-2 py-1 text-xs text-white hover:bg-primary-700"
+            @click="removeSelection(processing.id)"
           >
             {{ processing.name }}
-            <button
-              type="button"
-              class="remove-btn"
-              @click="removeSelection(processing.id)"
-            >
-              ×
-            </button>
-          </span>
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
       </div>
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="handleClose">取消</button>
+      <button class="btn btn-secondary" type="button" @click="handleClose">取消</button>
       <button
         v-if="selectedProcessings.length > 0"
         class="btn btn-outline"
+        type="button"
         @click="handleClear"
       >
         清除
       </button>
-      <button class="btn btn-primary" @click="handleConfirm">
+      <button class="btn btn-primary" type="button" @click="handleConfirm">
         確定（{{ selectedProcessings.length }}）
       </button>
     </template>
@@ -90,13 +99,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import Modal from './Modal.vue'
 import { processingService, type Processing } from '../services/crm/processing.service'
 
 const props = defineProps<{
   show: boolean
-  modelValue: number[] // 已選擇的 processingIds
+  modelValue: number[]
 }>()
 
 const emit = defineEmits<{
@@ -105,76 +114,120 @@ const emit = defineEmits<{
   (e: 'confirm', value: { ids: number[]; processings: Processing[] }): void
 }>()
 
-// 狀態
 const loading = ref(false)
 const allProcessings = ref<Processing[]>([])
 const selectedIds = ref<number[]>([])
 const searchQuery = ref('')
+const activeIndex = ref(0)
+const listRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+const itemRefs = ref<Record<number, HTMLElement>>({})
 
-// 過濾後的加工項目
 const filteredProcessings = computed(() => {
-  if (!searchQuery.value) {
+  const keyword = searchQuery.value.trim().toLowerCase()
+  if (!keyword) {
     return allProcessings.value
   }
-  const query = searchQuery.value.toLowerCase()
-  return allProcessings.value.filter(p =>
-    p.name.toLowerCase().includes(query) ||
-    (p.vendor?.name || '').toLowerCase().includes(query)
-  )
+  return allProcessings.value.filter((processing) => {
+    const name = processing.name?.toLowerCase() ?? ''
+    const code = processing.code?.toLowerCase() ?? ''
+    const vendor = processing.vendor?.name?.toLowerCase() ?? ''
+    return name.includes(keyword) || code.includes(keyword) || vendor.includes(keyword)
+  })
 })
 
-// 已選擇的加工項目詳情
 const selectedProcessings = computed(() => {
-  return allProcessings.value.filter(p => selectedIds.value.includes(p.id))
+  return allProcessings.value.filter((processing) => selectedIds.value.includes(processing.id))
 })
 
-// 檢查是否已選擇
-const isSelected = (id: number) => {
-  return selectedIds.value.includes(id)
+const isSelected = (id: number) => selectedIds.value.includes(id)
+
+const setItemRef = (id: number, el: unknown) => {
+  if (el instanceof HTMLElement) {
+    itemRefs.value[id] = el
+    return
+  }
+  delete itemRefs.value[id]
 }
 
-// 切換選擇
+const syncActiveIndex = (preferredIndex = 0) => {
+  if (filteredProcessings.value.length === 0) {
+    activeIndex.value = -1
+    return
+  }
+  const max = filteredProcessings.value.length - 1
+  activeIndex.value = Math.min(Math.max(preferredIndex, 0), max)
+}
+
+const scrollActiveIntoView = () => {
+  const activeItem = filteredProcessings.value[activeIndex.value]
+  if (!activeItem || !listRef.value) {
+    return
+  }
+  const element = itemRefs.value[activeItem.id]
+  if (!element) {
+    return
+  }
+  element.scrollIntoView({ block: 'nearest' })
+}
+
 const toggleSelection = (processing: Processing) => {
   const index = selectedIds.value.indexOf(processing.id)
   if (index === -1) {
-    selectedIds.value.push(processing.id)
-  } else {
-    selectedIds.value.splice(index, 1)
+    selectedIds.value = [...selectedIds.value, processing.id]
+    return
   }
+  selectedIds.value = selectedIds.value.filter((id) => id !== processing.id)
 }
 
-// 移除選擇
 const removeSelection = (id: number) => {
-  const index = selectedIds.value.indexOf(id)
-  if (index !== -1) {
-    selectedIds.value.splice(index, 1)
-  }
+  selectedIds.value = selectedIds.value.filter((selectedId) => selectedId !== id)
 }
 
-// 載入加工項目
+const toggleActiveSelection = () => {
+  const activeItem = filteredProcessings.value[activeIndex.value]
+  if (!activeItem) {
+    return
+  }
+  toggleSelection(activeItem)
+}
+
 const loadProcessings = async () => {
   loading.value = true
   try {
     const data = await processingService.getAllActive()
     allProcessings.value = data
-  } catch (err: any) {
+  } catch (err) {
     console.error('載入加工項目失敗:', err)
   } finally {
     loading.value = false
   }
 }
 
-// 關閉 Modal
+const focusSearchInput = async () => {
+  await nextTick()
+  searchInputRef.value?.focus()
+  searchInputRef.value?.select()
+}
+
+const openModalSetup = async () => {
+  searchQuery.value = ''
+  selectedIds.value = [...(props.modelValue || [])]
+  syncActiveIndex(0)
+  await loadProcessings()
+  syncActiveIndex(0)
+  await focusSearchInput()
+  scrollActiveIntoView()
+}
+
 const handleClose = () => {
   emit('close')
 }
 
-// 清除所有已選
 const handleClear = () => {
   selectedIds.value = []
 }
 
-// 確認選擇
 const handleConfirm = () => {
   emit('update:modelValue', [...selectedIds.value])
   emit('confirm', {
@@ -184,203 +237,92 @@ const handleConfirm = () => {
   emit('close')
 }
 
-// 監聽 show 變化，重新載入資料
-watch(() => props.show, (newShow) => {
-  if (newShow) {
-    loadProcessings()
-    // 初始化已選擇的項目
-    selectedIds.value = [...(props.modelValue || [])]
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!props.show) {
+    return
   }
-})
 
-// 監聽 modelValue 變化
-watch(() => props.modelValue, (newValue) => {
-  if (props.show && newValue) {
-    selectedIds.value = [...newValue]
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    emit('close')
+    return
   }
-}, { deep: true })
 
-// 初始化
+  if (event.key === 'ArrowDown') {
+    if (filteredProcessings.value.length === 0) {
+      return
+    }
+    event.preventDefault()
+    syncActiveIndex(activeIndex.value + 1)
+    nextTick(scrollActiveIntoView)
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    if (filteredProcessings.value.length === 0) {
+      return
+    }
+    event.preventDefault()
+    syncActiveIndex(activeIndex.value - 1)
+    nextTick(scrollActiveIntoView)
+    return
+  }
+
+  if (event.key === ' ' || event.code === 'Space') {
+    if (filteredProcessings.value.length === 0) {
+      return
+    }
+    event.preventDefault()
+    toggleActiveSelection()
+    return
+  }
+
+  if (event.key === 'Enter' && !event.isComposing) {
+    event.preventDefault()
+    handleConfirm()
+  }
+}
+
+watch(
+  () => props.show,
+  (show) => {
+    if (!show) {
+      return
+    }
+    void openModalSetup()
+  },
+)
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (!props.show) {
+      return
+    }
+    selectedIds.value = [...(value || [])]
+  },
+  { deep: true },
+)
+
+watch(
+  () => searchQuery.value,
+  () => {
+    syncActiveIndex(0)
+    nextTick(scrollActiveIntoView)
+  },
+)
+
+watch(
+  () => filteredProcessings.value.length,
+  () => {
+    syncActiveIndex(activeIndex.value)
+    nextTick(scrollActiveIntoView)
+  },
+)
+
 onMounted(() => {
   if (props.show) {
-    loadProcessings()
-    selectedIds.value = [...(props.modelValue || [])]
+    void openModalSetup()
   }
 })
 </script>
-
-<style scoped>
-.processing-select-modal {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-height: 60vh;
-}
-
-.search-box {
-  position: sticky;
-  top: 0;
-  background: white;
-  padding-bottom: 0.5rem;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-600);
-}
-
-.processing-list {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  max-height: 300px;
-}
-
-.loading-message,
-.empty-message {
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-secondary-400);
-}
-
-.processing-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.processing-item:last-child {
-  border-bottom: none;
-}
-
-.processing-item:hover {
-  background-color: var(--secondary-50, #f8f9fa);
-}
-
-.processing-item.selected {
-  background-color: var(--primary-50, #e3f2fd);
-}
-
-.processing-checkbox {
-  flex-shrink: 0;
-}
-
-.processing-checkbox input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-.processing-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.processing-name {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.processing-vendor {
-  font-size: 0.85rem;
-}
-
-.vendor-badge {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-}
-
-.vendor-badge.internal {
-  background: var(--success-bg, #e8f5e9);
-  color: var(--success-color, #388e3c);
-}
-
-.vendor-badge.outsourced {
-  background: var(--info-bg, #e3f2fd);
-  color: var(--info-color, #1976d2);
-}
-
-.selected-items {
-  background: var(--secondary-50, #f8f9fa);
-  padding: 1rem;
-  border-radius: 8px;
-}
-
-.selected-title {
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.selected-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.selected-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--primary-600);
-  color: white;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.remove-btn {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 0 0.25rem;
-  font-size: 1rem;
-  line-height: 1;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.remove-btn:hover {
-  opacity: 1;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: var(--primary-600);
-  border-color: var(--primary-600);
-  color: white;
-}
-
-.btn-secondary {
-  background-color: var(--secondary-100);
-  border-color: var(--secondary-300);
-  color: var(--secondary-700);
-}
-</style>

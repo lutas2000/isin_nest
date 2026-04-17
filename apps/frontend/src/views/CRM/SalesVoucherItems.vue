@@ -100,6 +100,7 @@
           @new-row-show="showNewRow = true"
           @row-delete="handleRowDelete"
           @row-edit="handleRowEdit"
+          @focus-field="handleTableFocusField"
         >
           <template #cell-sequence="{ value }">{{ value }}</template>
           <template #cell-cadFile="{ value }">{{ value || '-' }}</template>
@@ -135,7 +136,7 @@
     <ProcessingSelectModal
       :show="showProcessingSelectModal"
       :model-value="selectedItem?.processingIds || []"
-      @close="showProcessingSelectModal = false"
+      @close="closeProcessingSelectModal"
       @confirm="handleProcessingConfirm"
     />
   </div>
@@ -178,6 +179,7 @@ const showNewRow = ref(false);
 const showProcessingSelectModal = ref(false);
 const selectedItem = ref<SalesVoucherItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
+const processingAutoOpenBlockedUntil = ref(0);
 
 type DisplayItem = SalesVoucherItem & { sequence: number };
 
@@ -339,7 +341,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
   { key: 'customerFile', label: '客戶檔案', editable: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, type: 'text' },
   { key: 'thickness', label: '厚度', editable: true, type: 'number' },
-  { key: 'processing', label: '加工', editable: false },
+  { key: 'processing', label: '加工', editable: false, keyboardFocusable: true },
   {
     key: 'quantity',
     label: '數量',
@@ -536,18 +538,45 @@ const goBack = () => {
 };
 
 const openProcessingSelectModal = (row: SalesVoucherItem) => {
+  if (showProcessingSelectModal.value) return;
   selectedItem.value = row;
   showProcessingSelectModal.value = true;
 };
 
+const closeProcessingSelectModal = () => {
+  processingAutoOpenBlockedUntil.value = Date.now() + 200;
+  showProcessingSelectModal.value = false;
+  selectedItem.value = null;
+};
+
+const handleTableFocusField = (payload: {
+  row: SalesVoucherItem;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+  byKeyboard: boolean;
+}) => {
+  if (!payload.byKeyboard || payload.fieldKey !== 'processing') {
+    return;
+  }
+  if (Date.now() < processingAutoOpenBlockedUntil.value || showProcessingSelectModal.value) {
+    return;
+  }
+  openProcessingSelectModal(payload.row);
+};
+
 const handleProcessingConfirm = async (value: { ids: number[] }) => {
   if (!selectedItem.value) return;
+  if (!selectedItem.value.id) {
+    selectedItem.value.processingIds = [...value.ids];
+    closeProcessingSelectModal();
+    return;
+  }
   try {
     await salesVoucherItemService.update(selectedItem.value.id, {
       processingIds: value.ids,
     });
-    showProcessingSelectModal.value = false;
-    selectedItem.value = null;
+    closeProcessingSelectModal();
     await loadAll();
   } catch (err) {
     alert(err instanceof Error ? err.message : '更新加工失敗');

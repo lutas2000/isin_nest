@@ -279,6 +279,7 @@ export type EditableColumnWidth = 'sequence' | 'short-number' | 'long-number' | 
 
 export interface EditableColumn extends Column {
   editable?: boolean;
+  keyboardFocusable?: boolean;
   required?: boolean;
   type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'date';
   options?: Array<{value: any, label: string}> | (() => Array<{value: any, label: string}>);
@@ -342,6 +343,7 @@ const emit = defineEmits<{
   'row-delete': [row: any];
   'row-view': [row: any];
   'row-edit': [row: any, index: number];
+  'focus-field': [payload: { row: any; rowIndex: number; fieldKey: string; isNewRow: boolean; byKeyboard: boolean }];
 }>();
 
 const localPageSize = ref(props.pageSize);
@@ -400,33 +402,43 @@ const totalPages = computed(() => {
 });
 
 // 可編輯欄位 keys
-const editableColumnKeys = computed(() => {
+const navigableColumnKeys = computed(() => {
   return props.columns
-    .filter(col => isColumnEditable(col))
+    .filter(col => isColumnEditable(col) || col.keyboardFocusable === true)
     .map(col => col.key);
 });
 
 // 取得第一個可編輯欄位 key
 const getFirstEditableFieldKey = (): string | null => {
-  return editableColumnKeys.value.length > 0 ? editableColumnKeys.value[0] : null;
+  return navigableColumnKeys.value.length > 0 ? navigableColumnKeys.value[0] : null;
 };
 
 // 取得下一個可編輯欄位 key
 const getNextEditableFieldKey = (currentKey: string): string | null => {
-  const currentIndex = editableColumnKeys.value.indexOf(currentKey);
-  if (currentIndex === -1 || currentIndex === editableColumnKeys.value.length - 1) {
+  const currentIndex = navigableColumnKeys.value.indexOf(currentKey);
+  if (currentIndex === -1 || currentIndex === navigableColumnKeys.value.length - 1) {
     return null;
   }
-  return editableColumnKeys.value[currentIndex + 1];
+  return navigableColumnKeys.value[currentIndex + 1];
 };
 
 // 取得上一個可編輯欄位 key
 const getPrevEditableFieldKey = (currentKey: string): string | null => {
-  const currentIndex = editableColumnKeys.value.indexOf(currentKey);
+  const currentIndex = navigableColumnKeys.value.indexOf(currentKey);
   if (currentIndex <= 0) {
     return null;
   }
-  return editableColumnKeys.value[currentIndex - 1];
+  return navigableColumnKeys.value[currentIndex - 1];
+};
+
+const emitFocusField = (fieldKey: string, row: any, rowIndex: number, isNewRow: boolean, byKeyboard: boolean) => {
+  emit('focus-field', {
+    row,
+    rowIndex,
+    fieldKey,
+    isNewRow,
+    byKeyboard,
+  });
 };
 
 const getRowKey = (row: any, index: number) => {
@@ -498,6 +510,9 @@ watch(() => props.showNewRow, (show) => {
     isNewRowFocused.value = true;
     focusedFieldKey.value = getFirstEditableFieldKey();
     focusedRowIndex.value = null;
+    if (focusedFieldKey.value) {
+      emitFocusField(focusedFieldKey.value, newRowData.value, -1, true, false);
+    }
   } else if (!show) {
     newRowData.value = {};
     isNewRowFocused.value = false;
@@ -585,6 +600,9 @@ const startEdit = (row: any, index: number) => {
   focusedRowIndex.value = index;
   focusedFieldKey.value = getFirstEditableFieldKey();
   isNewRowFocused.value = false;
+  if (focusedFieldKey.value) {
+    emitFocusField(focusedFieldKey.value, row, index, false, false);
+  }
   // 等待 DOM 更新後 focus 到第一個欄位
   nextTick(() => {
     // focus 會由 EditableCell 的 isFocused prop 處理
@@ -804,9 +822,11 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
           startEdit(row, rowIndex);
         }
         focusedFieldKey.value = nextField;
+        emitFocusField(nextField, row, rowIndex, false, true);
       } else {
         focusedFieldKey.value = nextField;
         isNewRowFocused.value = true;
+        emitFocusField(nextField, newRowData.value, -1, true, true);
       }
     } else {
       // 最後一個欄位，保存並退出編輯
@@ -825,8 +845,10 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
       if (row) {
         focusedRowIndex.value = rowIndex;
         isNewRowFocused.value = false;
+        emitFocusField(nextField, row, rowIndex, false, true);
       } else {
         isNewRowFocused.value = true;
+        emitFocusField(nextField, newRowData.value, -1, true, true);
       }
     }
   } else if (event.key === 'Tab' && event.shiftKey) {
@@ -838,8 +860,10 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: str
       if (row) {
         focusedRowIndex.value = rowIndex;
         isNewRowFocused.value = false;
+        emitFocusField(prevField, row, rowIndex, false, true);
       } else {
         isNewRowFocused.value = true;
+        emitFocusField(prevField, newRowData.value, -1, true, true);
       }
     }
   }
