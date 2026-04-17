@@ -285,7 +285,7 @@ const pageTitles: Record<string, string> = {
   '/hr/staff-segment': '上班時段管理',
   '/crm': '客戶',
   '/crm/contacts': '聯絡人',
-  '/crm/orders': '工作單',
+  '/crm/orders': '訂單管理',
   '/crm/sales-vouchers': '銷貨單',
   '/crm/quotes': '報價單',
   '/crm/vendors': '廠商管理',
