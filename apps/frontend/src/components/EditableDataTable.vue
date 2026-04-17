@@ -168,7 +168,8 @@
                   </slot>
                 </template>
                 <!-- 非編輯模式：使用下拉選單，slot 內容放入下拉選單 -->
-                <div 
+                <div
+                  v-else
                   class="actions-dropdown" 
                   :class="{ 'is-open': openDropdownIndex === index }"
                   :ref="(el) => setDropdownTriggerRef(el as HTMLElement | null, index)"
