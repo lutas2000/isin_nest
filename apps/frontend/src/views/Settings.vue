@@ -276,6 +276,7 @@ import { computed, onMounted, ref } from 'vue';
 import { EditableDataTable, CrmConfigModal, Modal, SectionHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
+import { invalidateCrmConfigCache } from '@/services/crm/crm-config-autocomplete.service';
 import { API_CONFIG } from '@/config/api';
 
 const errorStore = useErrorStore();
@@ -461,6 +462,13 @@ const handleInlineCrmSave = async (row: CrmConfig) => {
       }),
     });
     await loadCrmConfigs();
+    if (
+      row.category === 'shipping_method' ||
+      row.category === 'payment_method' ||
+      row.category === 'source_type'
+    ) {
+      invalidateCrmConfigCache(row.category);
+    }
   } catch (error) {
     errorStore.showError(error instanceof Error ? error.message : '儲存失敗');
   }
@@ -479,8 +487,16 @@ const closeDeleteCrmModal = () => {
 const confirmDeleteCrm = async () => {
   if (!deletingCrmConfig.value) return;
   try {
+    const category = deletingCrmConfig.value.category;
     await apiRequest(`/crm/configs/${deletingCrmConfig.value.id}`, { method: 'DELETE' });
     await loadCrmConfigs();
+    if (
+      category === 'shipping_method' ||
+      category === 'payment_method' ||
+      category === 'source_type'
+    ) {
+      invalidateCrmConfigCache(category);
+    }
     closeDeleteCrmModal();
   } catch (error) {
     errorStore.showError(error instanceof Error ? error.message : '刪除失敗');
@@ -501,6 +517,13 @@ const saveCrmConfig = async (formValue: { category: string; code: string; label:
 
     await apiPost('/crm/configs', formData);
     await loadCrmConfigs();
+    if (
+      formValue.category === 'shipping_method' ||
+      formValue.category === 'payment_method' ||
+      formValue.category === 'source_type'
+    ) {
+      invalidateCrmConfigCache(formValue.category);
+    }
     closeCrmModal();
   } catch (error) {
     errorStore.showError(error instanceof Error ? error.message : '儲存失敗');

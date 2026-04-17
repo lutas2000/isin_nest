@@ -72,17 +72,25 @@
               />
             </template>
             <template #edit-shippingMethod>
-              <input
-                v-model="detailDraft.shippingMethod"
-                type="text"
-                class="form-control"
+              <EditableCell
+                :column="shippingMethodDetailColumn"
+                :value="detailDraft.shippingMethod"
+                :row="detailDraft"
+                :is-new="false"
+                :is-editing="true"
+                :search-function="shippingMethodDetailColumn.searchFunction"
+                @update:value="detailDraft.shippingMethod = String($event ?? '')"
               />
             </template>
             <template #edit-paymentMethod>
-              <input
-                v-model="detailDraft.paymentMethod"
-                type="text"
-                class="form-control"
+              <EditableCell
+                :column="paymentMethodDetailColumn"
+                :value="detailDraft.paymentMethod"
+                :row="detailDraft"
+                :is-new="false"
+                :is-editing="true"
+                :search-function="paymentMethodDetailColumn.searchFunction"
+                @update:value="detailDraft.paymentMethod = String($event ?? '')"
               />
             </template>
             <template #edit-notes>
@@ -242,16 +250,18 @@ import {
   StatusBadge,
   TableHeader,
   EditableDataTable,
+  type EditableColumn,
   ShortcutHint,
   DetailFieldsPanel,
-  type EditableColumn,
   type DetailFieldItem,
 } from '@/components';
+import EditableCell from '@/components/EditableCell.vue';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderItem } from '@/services/crm/work-order.service';
 import { designWorkOrderService } from '@/services/crm/design-work-order.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
+import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import OrderPrint from './prints/OrderPrint.vue';
 import OrderWorkSheetPrint from './prints/OrderWorkSheetPrint.vue';
 
@@ -317,6 +327,24 @@ const detailDraft = ref({
   paymentMethod: '',
   notes: '',
 });
+
+const searchShippingMethod = createCrmConfigSearchFunction('shipping_method');
+const searchPaymentMethod = createCrmConfigSearchFunction('payment_method');
+const searchSourceType = createCrmConfigSearchFunction('source_type');
+
+const shippingMethodDetailColumn: EditableColumn = {
+  key: 'shippingMethod',
+  label: '運送方式',
+  type: 'search-select',
+  searchFunction: searchShippingMethod,
+};
+
+const paymentMethodDetailColumn: EditableColumn = {
+  key: 'paymentMethod',
+  label: '付款方式',
+  type: 'search-select',
+  searchFunction: searchPaymentMethod,
+};
 
 const startDetailsEdit = () => {
   if (!workOrder.value) return;
@@ -441,12 +469,8 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'source', 
     label: '來源', 
     editable: true, 
-    type: 'select',
-    options: [
-      { value: '新圖', label: '新圖' },
-      { value: '舊圖', label: '舊圖' },
-      { value: '修改', label: '修改' },
-    ]
+    type: 'search-select',
+    searchFunction: searchSourceType,
   },
   { 
     key: 'status', 

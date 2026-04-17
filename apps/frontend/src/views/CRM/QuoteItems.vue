@@ -250,6 +250,7 @@ import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
+import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import QuotePrint from './prints/QuotePrint.vue';
 
 const route = useRoute();
@@ -400,6 +401,8 @@ const newRowTemplate = () => {
   };
 };
 
+const searchSourceType = createCrmConfigSearchFunction('source_type');
+
 // 可編輯表格列定義
 const editableColumns = computed<EditableColumn[]>(() => [
   {
@@ -466,12 +469,8 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'source',
     label: '來源',
     editable: true,
-    type: 'select',
-    options: [
-      { value: '新圖', label: '新圖' },
-      { value: '舊圖', label: '舊圖' },
-      { value: '修改', label: '修改' },
-    ],
+    type: 'search-select',
+    searchFunction: searchSourceType,
   },
 ]);
 

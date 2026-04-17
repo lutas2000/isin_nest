@@ -147,6 +147,7 @@ import {
   type SalesVoucher,
 } from '@/services/crm/sales-voucher.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
+import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -204,6 +205,9 @@ const newRowTemplate = () => ({
   tax: 0,
 });
 
+const searchShippingMethod = createCrmConfigSearchFunction('shipping_method');
+const searchPaymentMethod = createCrmConfigSearchFunction('payment_method');
+
 const editableColumns = computed<EditableColumn[]>(() => [
   { key: 'id', label: '銷貨單號', editable: false, type: 'text' },
   {
@@ -253,24 +257,16 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '運送方式',
     editable: true,
     required: true,
-    type: 'select',
-    options: [
-      { value: '自取', label: '自取' },
-      { value: '快遞', label: '快遞' },
-      { value: '貨運', label: '貨運' },
-    ],
+    type: 'search-select',
+    searchFunction: searchShippingMethod,
   },
   {
     key: 'paymentMethod',
     label: '付款方式',
     editable: true,
     required: true,
-    type: 'select',
-    options: [
-      { value: '現金', label: '現金' },
-      { value: '轉帳', label: '轉帳' },
-      { value: '月結', label: '月結' },
-    ],
+    type: 'search-select',
+    searchFunction: searchPaymentMethod,
   },
   {
     key: 'amount',

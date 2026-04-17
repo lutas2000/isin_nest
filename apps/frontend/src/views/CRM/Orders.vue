@@ -141,6 +141,7 @@ import { useRouter } from 'vue-router';
 import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, ShortcutHint } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
+import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 
@@ -206,6 +207,9 @@ const newRowTemplate = () => ({
   isCompleted: false,
 });
 
+const searchShippingMethod = createCrmConfigSearchFunction('shipping_method');
+const searchPaymentMethod = createCrmConfigSearchFunction('payment_method');
+
 // 可編輯表格列定義
 const editableColumns = computed<EditableColumn[]>(() => [
   { 
@@ -264,24 +268,16 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '運送方式', 
     editable: true,
     required: true,
-    type: 'select',
-    options: [
-      { value: '自取', label: '自取' },
-      { value: '快遞', label: '快遞' },
-      { value: '貨運', label: '貨運' }
-    ]
+    type: 'search-select',
+    searchFunction: searchShippingMethod,
   },
   { 
     key: 'paymentMethod', 
     label: '付款方式', 
     editable: true,
     required: true,
-    type: 'select',
-    options: [
-      { value: '現金', label: '現金' },
-      { value: '轉帳', label: '轉帳' },
-      { value: '月結', label: '月結' }
-    ]
+    type: 'search-select',
+    searchFunction: searchPaymentMethod,
   },
   { 
     key: 'isCompleted', 

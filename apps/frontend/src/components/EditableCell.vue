@@ -452,7 +452,8 @@ const handleSearchKeyDown = (event: KeyboardEvent) => {
     if (showSearchDropdown.value && highlightedIndex.value >= 0 && searchResults.value.length > 0) {
       selectSearchOption(searchResults.value[highlightedIndex.value]);
     } else {
-      // 如果沒有高亮選項，發送 keydown 事件讓父組件處理
+      // 如果沒有高亮選項，先提交當前輸入，再讓父層處理欄位切換/保存
+      commitRawSearchInput();
       emit('keydown', event);
     }
   } else if (event.key === 'Escape') {
@@ -480,6 +481,18 @@ const selectSearchOption = (option: {value: any, label: string}) => {
   const optionValue = getOptionValue(option);
   emit('update:value', optionValue);
   selectedOptionLabel.value = getOptionLabel(option);
+  searchTerm.value = '';
+  showSearchDropdown.value = false;
+  highlightedIndex.value = -1;
+};
+
+const commitRawSearchInput = () => {
+  const rawInput = searchTerm.value.trim();
+  if (!rawInput) {
+    return;
+  }
+  emit('update:value', rawInput);
+  selectedOptionLabel.value = rawInput;
   searchTerm.value = '';
   showSearchDropdown.value = false;
   highlightedIndex.value = -1;
