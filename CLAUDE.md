@@ -1,1 +1,1 @@
-@import AGENT.md
+@import Agent.md

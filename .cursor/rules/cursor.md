@@ -3,4 +3,4 @@ globs:
 alwaysApply: true
 ---
 
-@AGENT.md
+@Agent.md
