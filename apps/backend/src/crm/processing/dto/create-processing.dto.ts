@@ -2,6 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsInt, MaxLength } from 'class-validator';
 
 export class CreateProcessingDto {
+  @ApiProperty({ description: '加工代碼', example: 'BEND', required: false })
+  @IsString()
+  @MaxLength(50)
+  @IsOptional()
+  code?: string;
+
   @ApiProperty({ description: '加工名稱', example: '折彎' })
   @IsString()
   @MaxLength(100)

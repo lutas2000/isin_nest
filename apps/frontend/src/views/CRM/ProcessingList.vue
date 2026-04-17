@@ -102,7 +102,7 @@ const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null
 
 // 新增行模板
 const newRowTemplate = () => ({
-  id: undefined as number | undefined,
+  code: '',
   name: '',
   vendorId: undefined as number | undefined,
   displayOrder: 0,
@@ -110,7 +110,7 @@ const newRowTemplate = () => ({
 
 // 表格欄位定義（支援 inline 編輯）
 const editableColumns = computed<EditableColumn[]>(() => [
-  { key: 'id', label: 'ID', editable: true, required: true, type: 'number', width: 'short-number' },
+  { key: 'code', label: '代碼', editable: true, type: 'text' },
   { key: 'name', label: '加工名稱', editable: true, required: true, type: 'text' },
   {
     key: 'vendorId',
@@ -248,27 +248,19 @@ const handleFieldChange = () => {}
 
 // 處理保存（編輯既有項目）
 const handleSave = async (row: Processing, isNew: boolean) => {
-  // EditableDataTable 在 emit('save') 之後才會清空 editingRowId，
-  // 因此可以同步取得編輯前的 id，用於支援使用者修改 id
-  const oldIdKey = editableTableRef.value?.editingRowId
-  const oldId = oldIdKey != null && oldIdKey !== '' ? Number(oldIdKey) : row.id
-  const newIdRaw = Number(row.id)
-  const newId = Number.isFinite(newIdRaw) ? newIdRaw : oldId
-
   try {
     const rawVendorId = row.vendorId as string | number | null | undefined
     const vendorId = (rawVendorId === '' || rawVendorId == null) ? undefined : Number(rawVendorId)
-    const data: { id?: number; name: string; vendorId?: number; displayOrder: number } = {
+    const data = {
+      code: row.code || undefined,
       name: row.name,
       vendorId: vendorId || undefined,
       displayOrder: row.displayOrder ?? 0,
     }
     if (isNew) {
-      if (Number.isFinite(newIdRaw)) data.id = newIdRaw
       await processingService.create(data)
     } else {
-      if (newId !== oldId) data.id = newId
-      await processingService.update(oldId, data)
+      await processingService.update(row.id, data)
     }
     await loadData()
   } catch (err: any) {
@@ -281,10 +273,8 @@ const handleNewRowSave = async (row: any) => {
   try {
     const rawVendorId = row.vendorId as string | number | null | undefined
     const vendorId = (rawVendorId === '' || rawVendorId == null) ? undefined : Number(rawVendorId)
-    const rawId = Number(row.id)
-    const idValue = Number.isFinite(rawId) && rawId > 0 ? rawId : undefined
     await processingService.create({
-      id: idValue,
+      code: row.code || undefined,
       name: row.name,
       vendorId: vendorId || undefined,
       displayOrder: row.displayOrder ?? 0,

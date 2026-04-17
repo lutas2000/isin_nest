@@ -14,6 +14,15 @@ export class Processing {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ description: '加工代碼', example: 'BEND', required: false })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    unique: true,
+  })
+  code?: string;
+
   @ApiProperty({ description: '加工名稱', example: '折彎' })
   @Column({
     type: 'varchar',

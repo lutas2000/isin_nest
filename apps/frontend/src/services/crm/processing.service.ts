@@ -8,6 +8,7 @@ import type { Vendor } from './vendor.service'
  */
 export interface Processing {
   id: number
+  code?: string
   name: string
   vendorId?: number
   vendor?: Vendor
@@ -15,14 +16,14 @@ export interface Processing {
 }
 
 export interface CreateProcessingDto {
-  id?: number
+  code?: string
   name: string
   vendorId?: number
   displayOrder?: number
 }
 
 export interface UpdateProcessingDto {
-  id?: number
+  code?: string
   name?: string
   vendorId?: number
   displayOrder?: number
