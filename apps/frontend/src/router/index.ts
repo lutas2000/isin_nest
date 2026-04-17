@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import Home from '../views/Home.vue'
-import Production from '../views/Production.vue'
 import HRStaff from '../views/HR/Staff.vue'
 import HRAttendance from '../views/HR/Attendance.vue'
 import HRManhour from '../views/HR/Manhour.vue'
@@ -48,12 +47,6 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { title: '儀表板', icon: '🏠', requiresAuth: true }
-  },
-  {
-    path: '/production',
-    name: 'Production',
-    component: Production,
-    meta: { title: '生產管理', icon: '⚙️', requiresAuth: true }
   },
   {
     path: '/hr/staff',

@@ -26,14 +26,6 @@
               <div class="nav-icon">🏠</div>
               <span v-if="!sidebarCollapsed" class="nav-text">儀表板</span>
             </router-link>
-            <router-link
-              to="/production"
-              class="nav-item"
-              active-class="active"
-            >
-              <div class="nav-icon">⚙️</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">生產管理</span>
-            </router-link>
           </div>
 
           <div class="nav-section">
@@ -286,7 +278,6 @@ const showUserMenu = ref(false); // 新增：控制用戶下拉選單的顯示
 // 頁面標題映射
 const pageTitles: Record<string, string> = {
   '/': '儀表板',
-  '/production': '生產管理',
   '/hr/staff': '員工管理',
   '/hr/attendance': '出勤管理',
   '/hr/manhour': '工時管理',
