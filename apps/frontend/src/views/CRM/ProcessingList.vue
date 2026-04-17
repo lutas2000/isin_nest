@@ -1,16 +1,5 @@
 <template>
   <div class="processing-list-page">
-    <PageHeader 
-      title="加工項目管理"
-      description="管理加工項目、執行廠商與顯示順序"
-    >
-      <template #actions>
-        <button class="btn btn-primary" @click="showNewRow = true">
-          <span class="mr-2">+</span>
-          新增加工項目
-        </button>
-      </template>
-    </PageHeader>
 
     <!-- 快捷鍵提示 -->
     <ShortcutHint
@@ -80,7 +69,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { PageHeader, CrmTableContainer, EditableDataTable, ShortcutHint, type EditableColumn } from '@/components'
+import { CrmTableContainer, EditableDataTable, ShortcutHint, type EditableColumn } from '@/components'
 import { processingService, type Processing } from '@/services/crm/processing.service'
 import { vendorService, type Vendor } from '@/services/crm/vendor.service'
 

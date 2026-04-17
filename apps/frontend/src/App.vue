@@ -289,6 +289,7 @@ const pageTitles: Record<string, string> = {
   '/crm/sales-vouchers': '銷貨單',
   '/crm/quotes': '報價單',
   '/crm/vendors': '廠商管理',
+  '/crm/processings': '加工項目管理',
   '/settings': '系統設定',
   '/profile': '個人資料',
 };
