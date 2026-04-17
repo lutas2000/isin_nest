@@ -1,21 +1,22 @@
-# Skills 索引
+# Skills Index
 
-本檔案提供 skill 的分類與觸發條件，供 agent 按需加載。
+This file maps task intent to skill folders for on-demand loading.
 
-## 後端
+## Backend Skills
 
-- `new-backend-endpoint.skill.md`
-  - 觸發：新增或調整 API endpoint
-  - 搭配規則：`../rules/backend/nestjs-module.md`、`../rules/backend/api-contract-swagger.md`
-- `entity-change-with-migration.skill.md`
-  - 觸發：Entity、欄位、關聯調整
-  - 搭配規則：`../rules/backend/typeorm-entity-migration.md`
-- `permission-change.skill.md`
-  - 觸發：角色權限、Guard、敏感操作調整
-  - 搭配規則：`../rules/backend/security-authz.md`
+- `new-backend-endpoint/SKILL.md`
+  - Trigger: add or modify backend API endpoints.
+  - Use with: `../rules/backend/nestjs-module.md`, `../rules/backend/api-contract-swagger.md`.
+- `entity-change-with-migration/SKILL.md`
+  - Trigger: update entity fields, relations, indexes, or schema-related model definitions.
+  - Use with: `../rules/backend/typeorm-entity-migration.md`.
+- `permission-change/SKILL.md`
+  - Trigger: role permission changes, guard updates, or sensitive operation access control.
+  - Use with: `../rules/backend/security-authz.md`, `../rules/backend/api-contract-swagger.md`.
 
-## 文件治理
+## Documentation Governance
 
-- 任務完成後需搭配：
-  - `../rules/quality-gates.md`
-  - `../rules/doc-update-decision-tree.md`
+After task completion, also review:
+
+- `../rules/quality-gates.md`
+- `../rules/doc-update-decision-tree.md`

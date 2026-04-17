@@ -1,39 +1,46 @@
-# Skill 模板
+# Skill Template
 
-## Skill 名稱
+Use this template in `.agent/skills/<skill-name>/SKILL.md`.
 
-`<skill-name>`
+```markdown
+---
+name: <skill-name>
+description: <WHAT this skill does>. Use when <WHEN this skill should be loaded>.
+---
 
-## 目的
+# <Skill Title>
 
-- 說明此 skill 要解決的單一問題與價值
+## Purpose
 
-## 觸發條件
+Describe the single workflow this skill standardizes and why it matters.
 
-- 何種任務類型應讀取此 skill
-- 對應建議規則文件（`.agent/rules/*`）
+## Trigger Conditions
 
-## 輸入
+- Task condition 1
+- Task condition 2
 
-- 任務必要上下文
-- 需要確認的前置條件
+## Required Rules
 
-## 執行步驟
+- `../rules/...`
 
-1. 步驟一
-2. 步驟二
-3. 步驟三
+## Inputs
 
-## 輸出
+- Required context
+- Preconditions to verify
 
-- 交付物清單
-- 最小驗證結果
+## Steps
 
-## 失敗處理
+1. Step one
+2. Step two
+3. Step three
 
-- 常見錯誤與回復動作
+## Outputs
 
-## 完成後文件更新檢查
+- Deliverable 1
+- Minimal verification evidence
 
-- 是否需更新規則：是/否條件
-- 是否需更新 skill：是/否條件
+## Post-Task Documentation Check
+
+- When to update related rules.
+- When to update this skill.
+```
