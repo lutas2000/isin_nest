@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: isin
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+      POSTGRES_DB: ${DB_NAME:-isin}
     ports:
-      - "5432:5432"
+      - "${HOST_DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d isin"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -20,19 +20,20 @@ services:
       context: .
       dockerfile: docker/backend.Dockerfile
     environment:
-      PORT: 3000
-      NODE_ENV: development
+      PORT: ${PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
 
+      # 容器網路內固定連同網段的 Postgres 服務（勿使用 .env 的 localhost）
       DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASS: postgres
-      DB_NAME: isin
-      DB_SYNC: "true"
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      DB_NAME: ${DB_NAME:-isin}
+      DB_SYNC: ${DB_SYNC:-true}
 
-      JWT_SECRET: "your-secret-key"
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key}
     ports:
-      - "3000:3000"
+      - "${HOST_BACKEND_PORT:-3000}:${PORT:-3000}"
     depends_on:
       db:
         condition: service_healthy
@@ -42,12 +43,11 @@ services:
       context: .
       dockerfile: docker/frontend.Dockerfile
       args:
-        VITE_API_BASE_URL: /api
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     ports:
-      - "3001:80"
+      - "${HOST_FRONTEND_PORT:-3001}:80"
     depends_on:
       - backend
 
 volumes:
   pgdata:
-
