@@ -24,6 +24,8 @@
       <svg
         class="h-4 w-4 transition-transform"
         :class="{ 'rotate-180': modelValue.direction === 'desc' }"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
