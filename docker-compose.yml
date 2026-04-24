@@ -29,7 +29,8 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASS: ${DB_PASS:-postgres}
       DB_NAME: ${DB_NAME:-isin}
-      DB_SYNC: ${DB_SYNC:-true}
+      DB_SYNC: ${DB_SYNC:-false}
+      DB_MIGRATIONS_RUN: ${DB_MIGRATIONS_RUN:-true}
 
       JWT_SECRET: ${JWT_SECRET:-your-secret-key}
     ports:
