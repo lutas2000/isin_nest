@@ -21,6 +21,7 @@ import { RemoveSalesVoucherItemNestingId1776110000000 } from './migrations/17761
 import { ChangeQuoteSupplyMaterialToVarchar1776200000000 } from './migrations/1776200000000-ChangeQuoteSupplyMaterialToVarchar';
 import { AddCodeToProcessing1776414821092 } from './migrations/1776414821092-AddCodeToProcessing';
 import { FixMissingColumnsFromSync1776500000000 } from './migrations/1776500000000-FixMissingColumnsFromSync';
+import { FixMissingDesignWorkOrderColumns1776600000000 } from './migrations/1776600000000-FixMissingDesignWorkOrderColumns';
 
 function parseBool(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -70,6 +71,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           ChangeQuoteSupplyMaterialToVarchar1776200000000,
           AddCodeToProcessing1776414821092,
           FixMissingColumnsFromSync1776500000000,
+          FixMissingDesignWorkOrderColumns1776600000000,
         ],
         migrationsRun: parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
         migrationsTableName: 'typeorm_migrations',
