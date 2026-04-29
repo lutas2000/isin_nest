@@ -13,6 +13,14 @@
         >
           依預設稅率帶入稅金
         </button>
+        <button
+          type="button"
+          class="btn btn-outline btn-sm"
+          :disabled="!voucher"
+          @click="handlePrintA5"
+        >
+          列印A5
+        </button>
         <button type="button" class="btn btn-outline" @click="goBack">
           <span class="mr-2">←</span>
           返回
@@ -155,6 +163,13 @@
       @close="closeProcessingSelectModal"
       @confirm="handleProcessingConfirm"
     />
+
+    <SalesVoucherPrint
+      v-if="voucher"
+      ref="salesVoucherPrintRef"
+      :voucher="voucher"
+      :items="orderedItems"
+    />
   </div>
 </template>
 
@@ -172,6 +187,7 @@ import {
 } from '@/components';
 import EditableCell from '@/components/EditableCell.vue';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
+import SalesVoucherPrint from './prints/SalesVoucherPrint.vue';
 import {
   salesVoucherService,
   salesVoucherItemService,
@@ -198,6 +214,7 @@ const showProcessingSelectModal = ref(false);
 const selectedItem = ref<SalesVoucherItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
 const processingAutoOpenBlockedUntil = ref(0);
+const salesVoucherPrintRef = ref<InstanceType<typeof SalesVoucherPrint> | null>(null);
 
 type DisplayItem = SalesVoucherItem & { sequence: number };
 
@@ -567,6 +584,10 @@ const handleShortcutClick = (action: string) => {
 
 const goBack = () => {
   router.push('/crm/sales-vouchers');
+};
+
+const handlePrintA5 = () => {
+  salesVoucherPrintRef.value?.print('A5');
 };
 
 const openProcessingSelectModal = (row: SalesVoucherItem) => {
