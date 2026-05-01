@@ -38,6 +38,33 @@ export interface SalesVoucherItem {
   updatedAt?: string
 }
 
+export type SalesStatisticsView = 'voucher' | 'item'
+
+export interface SalesStatisticsQuery {
+  view?: SalesStatisticsView
+  yearMonth?: string
+  customerId?: string
+  notes?: string
+  page?: number
+  limit?: number
+}
+
+export interface SalesStatisticsRow {
+  view: SalesStatisticsView
+  voucherId: string
+  itemId?: number | null
+  customerId: string
+  customerName?: string
+  notes?: string
+  amount?: number | null
+  tax?: number | null
+  totalAmount?: number | null
+  quantity?: number | null
+  unitPrice?: number | null
+  source?: string | null
+  createdAt: string
+}
+
 export interface CreateSalesVoucherPayload {
   sourceOrderId?: string
   staffId?: string
@@ -90,6 +117,19 @@ export const salesVoucherService = {
 
   delete: (id: string): Promise<void> => {
     return apiDelete<void>(`${API_CONFIG.CRM.SALES_VOUCHERS}/${id}`)
+  },
+
+  getStatistics: (
+    query: SalesStatisticsQuery,
+  ): Promise<PaginatedResponse<SalesStatisticsRow>> => {
+    const params: Record<string, any> = {}
+    if (query.view) params.view = query.view
+    if (query.yearMonth) params.yearMonth = query.yearMonth
+    if (query.customerId) params.customerId = query.customerId
+    if (query.notes !== undefined && query.notes.trim() !== '') params.notes = query.notes.trim()
+    if (query.page !== undefined) params.page = query.page
+    if (query.limit !== undefined) params.limit = query.limit
+    return apiGet<PaginatedResponse<SalesStatisticsRow>>(API_CONFIG.CRM.SALES_STATISTICS, params)
   },
 }
 

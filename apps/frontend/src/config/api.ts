@@ -33,6 +33,7 @@ export const API_CONFIG = {
     ORDERS: '/crm/orders',
     ORDER_ITEMS: '/crm/order-items',
     SALES_VOUCHERS: '/crm/sales-vouchers',
+    SALES_STATISTICS: '/crm/sales-vouchers/statistics',
     SALES_VOUCHER_ITEMS: '/crm/sales-voucher-items',
     // 舊端點（保持向後兼容）
     WORK_ORDERS: '/crm/orders',

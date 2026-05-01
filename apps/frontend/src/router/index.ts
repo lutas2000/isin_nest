@@ -24,6 +24,7 @@ import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
 import CRMSalesVouchers from '../views/CRM/SalesVouchers.vue'
 import CRMSalesVoucherItems from '../views/CRM/SalesVoucherItems.vue'
 import CRMVendors from '../views/CRM/Vendors.vue'
+import AccountingSalesStatistics from '../views/Accounting/SalesStatistics.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 import ResetPassword from '../views/ResetPassword.vue'
@@ -197,6 +198,12 @@ const routes = [
     name: 'CRMQuoteItems',
     component: CRMQuoteItems,
     meta: { title: '報價單詳情', icon: '💰', requiresAuth: true }
+  },
+  {
+    path: '/accounting/sales-statistics',
+    name: 'AccountingSalesStatistics',
+    component: AccountingSalesStatistics,
+    meta: { title: '銷售統計', icon: '📈', requiresAuth: true }
   },
   {
     path: '/settings',

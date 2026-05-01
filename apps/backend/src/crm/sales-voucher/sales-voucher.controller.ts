@@ -18,6 +18,8 @@ import {
 import { SalesVoucherService } from './sales-voucher.service';
 import { SalesVoucher } from './entities/sales-voucher.entity';
 import { CreateSalesVoucherDto } from './dto/create-sales-voucher.dto';
+import { SalesStatisticsQueryDto } from './dto/sales-statistics.dto';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @ApiTags('銷貨單管理')
 @Controller('crm/sales-vouchers')
@@ -34,6 +36,17 @@ export class SalesVoucherController {
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     return this.salesVoucherService.findAll(page, limit);
+  }
+
+  @ApiOperation({ summary: '取得銷售統計（銷貨單/銷貨明細）' })
+  @ApiResponse({
+    status: 200,
+    description: '成功取得銷售統計資料',
+    type: PaginatedResponseDto,
+  })
+  @Get('statistics')
+  findStatistics(@Query() query: SalesStatisticsQueryDto) {
+    return this.salesVoucherService.findStatistics(query);
   }
 
   @ApiOperation({ summary: '取得單一銷貨單' })

@@ -10,6 +10,11 @@ import { SalesVoucherItem } from '../sales-voucher-item/entities/sales-voucher-i
 import { OrderService } from '../order/order.service';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { CreateSalesVoucherDto, CreateSalesVoucherItemDto } from './dto/create-sales-voucher.dto';
+import {
+  SalesStatisticsQueryDto,
+  SalesStatisticsRowDto,
+  SalesStatisticsView,
+} from './dto/sales-statistics.dto';
 
 @Injectable()
 export class SalesVoucherService {
@@ -227,6 +232,126 @@ export class SalesVoucherService {
     });
 
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+  }
+
+  async findStatistics(
+    query: SalesStatisticsQueryDto,
+  ): Promise<PaginatedResponseDto<SalesStatisticsRowDto>> {
+    const pageNum = Number(query.page) > 0 ? Number(query.page) : 1;
+    const limitNum = Number(query.limit) > 0 ? Number(query.limit) : 50;
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+    const view = query.view ?? SalesStatisticsView.VOUCHER;
+    const startDate = this.getMonthStart(query.yearMonth);
+    const endDate = this.getMonthEnd(startDate);
+
+    if (view === SalesStatisticsView.ITEM) {
+      const itemQuery = this.itemRepository
+        .createQueryBuilder('item')
+        .leftJoinAndSelect('item.salesVoucher', 'voucher')
+        .leftJoinAndSelect('voucher.customer', 'customer')
+        .where('voucher.createdAt >= :startDate', { startDate })
+        .andWhere('voucher.createdAt < :endDate', { endDate });
+
+      if (query.customerId) {
+        itemQuery.andWhere('voucher.customerId = :customerId', {
+          customerId: query.customerId,
+        });
+      }
+      if (query.notes) {
+        itemQuery.andWhere('item.notes ILIKE :notes', {
+          notes: `%${query.notes}%`,
+        });
+      }
+
+      const [items, total] = await itemQuery
+        .orderBy('item.createdAt', 'DESC')
+        .skip(skip)
+        .take(maxLimit)
+        .getManyAndCount();
+
+      const data = items.map((item) => {
+        const unitPrice = Number(item.unitPrice ?? 0);
+        const quantity = Number(item.quantity ?? 0);
+        const customer = item.salesVoucher?.customer;
+        return {
+          view: SalesStatisticsView.ITEM,
+          voucherId: item.salesVoucherId,
+          itemId: item.id,
+          customerId: item.salesVoucher?.customerId ?? '',
+          customerName: customer?.companyShortName || customer?.companyName || '',
+          notes: item.notes,
+          amount: quantity * unitPrice,
+          tax: null,
+          totalAmount: null,
+          quantity,
+          unitPrice,
+          source: item.source,
+          createdAt: item.createdAt,
+        };
+      });
+
+      return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+    }
+
+    const voucherQuery = this.voucherRepository
+      .createQueryBuilder('voucher')
+      .leftJoinAndSelect('voucher.customer', 'customer')
+      .where('voucher.createdAt >= :startDate', { startDate })
+      .andWhere('voucher.createdAt < :endDate', { endDate });
+
+    if (query.customerId) {
+      voucherQuery.andWhere('voucher.customerId = :customerId', {
+        customerId: query.customerId,
+      });
+    }
+    if (query.notes) {
+      voucherQuery.andWhere('voucher.notes ILIKE :notes', {
+        notes: `%${query.notes}%`,
+      });
+    }
+
+    const [vouchers, total] = await voucherQuery
+      .orderBy('voucher.createdAt', 'DESC')
+      .skip(skip)
+      .take(maxLimit)
+      .getManyAndCount();
+
+    const data = vouchers.map((voucher) => {
+      const customer = voucher.customer;
+      const amount = Number(voucher.amount ?? 0);
+      const tax = Number(voucher.tax ?? 0);
+      return {
+        view: SalesStatisticsView.VOUCHER,
+        voucherId: voucher.id,
+        itemId: null,
+        customerId: voucher.customerId,
+        customerName: customer?.companyShortName || customer?.companyName || '',
+        notes: voucher.notes,
+        amount,
+        tax,
+        totalAmount: amount + tax,
+        quantity: null,
+        unitPrice: null,
+        source: null,
+        createdAt: voucher.createdAt,
+      };
+    });
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+  }
+
+  private getMonthStart(yearMonth?: string): Date {
+    if (!yearMonth) {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    const [year, month] = yearMonth.split('-').map((v) => parseInt(v, 10));
+    return new Date(year, month - 1, 1);
+  }
+
+  private getMonthEnd(startDate: Date): Date {
+    return new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1);
   }
 
   findOne(id: string): Promise<SalesVoucher | null> {
