@@ -1,10 +1,5 @@
 <template>
   <div class="mx-auto w-full">
-    <PageHeader
-      title="銷售統計"
-      description="可切換銷貨單/銷貨明細視角，並以年月、公司、備註做組合篩選"
-    />
-
     <CrmTableContainer
       :loading="loading"
       :error="error"
@@ -35,15 +30,12 @@
             />
           </datalist>
           <input
+            v-if="view === 'item'"
             v-model="notes"
             type="text"
             class="form-control max-w-[240px]"
             placeholder="備註關鍵字"
-            @keyup.enter="handleApplyFilters"
           />
-          <button type="button" class="btn btn-primary btn-sm" @click="handleApplyFilters">
-            套用篩選
-          </button>
           <button type="button" class="btn btn-outline btn-sm" @click="handleResetFilters">
             重設
           </button>
@@ -89,11 +81,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   CrmTableContainer,
   EditableDataTable,
-  PageHeader,
   type EditableColumn,
 } from '@/components';
 import {
@@ -121,6 +112,7 @@ const yearMonth = ref(currentMonth());
 const customerId = ref('');
 const customerInput = ref('');
 const notes = ref('');
+const isBulkResetting = ref(false);
 
 const customerOptions = ref<Array<{ value: string; label: string; display: string }>>([]);
 let customerSearchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -195,6 +187,7 @@ const handleCustomerInput = () => {
 };
 
 const loadStatistics = async () => {
+  customerId.value = normalizeCustomerId(customerInput.value);
   loading.value = true;
   error.value = null;
   try {
@@ -202,7 +195,7 @@ const loadStatistics = async () => {
       view: view.value,
       yearMonth: yearMonth.value,
       customerId: customerId.value || undefined,
-      notes: notes.value,
+      notes: view.value === 'item' ? notes.value : '',
       page: currentPage.value,
       limit: pageSize.value,
     });
@@ -215,13 +208,24 @@ const loadStatistics = async () => {
   }
 };
 
-const handleApplyFilters = () => {
-  customerId.value = normalizeCustomerId(customerInput.value);
-  currentPage.value = 1;
-  void loadStatistics();
+let textFilterApplyTimer: ReturnType<typeof setTimeout> | null = null;
+const TEXT_FILTER_DEBOUNCE_MS = 350;
+
+const scheduleTextFilterApply = () => {
+  if (textFilterApplyTimer) clearTimeout(textFilterApplyTimer);
+  textFilterApplyTimer = setTimeout(() => {
+    textFilterApplyTimer = null;
+    currentPage.value = 1;
+    void loadStatistics();
+  }, TEXT_FILTER_DEBOUNCE_MS);
 };
 
 const handleResetFilters = () => {
+  if (textFilterApplyTimer) {
+    clearTimeout(textFilterApplyTimer);
+    textFilterApplyTimer = null;
+  }
+  isBulkResetting.value = true;
   view.value = 'voucher';
   yearMonth.value = currentMonth();
   customerId.value = '';
@@ -229,6 +233,9 @@ const handleResetFilters = () => {
   notes.value = '';
   currentPage.value = 1;
   void loadStatistics();
+  queueMicrotask(() => {
+    isBulkResetting.value = false;
+  });
 };
 
 const handlePageChange = (page: number) => {
@@ -242,6 +249,29 @@ const handlePageSizeChange = (size: number) => {
   void loadStatistics();
 };
 
+watch(view, () => {
+  if (isBulkResetting.value) return;
+  currentPage.value = 1;
+  void loadStatistics();
+});
+
+watch(yearMonth, () => {
+  if (isBulkResetting.value) return;
+  currentPage.value = 1;
+  void loadStatistics();
+});
+
+watch(customerInput, () => {
+  if (isBulkResetting.value) return;
+  scheduleTextFilterApply();
+});
+
+watch(notes, () => {
+  if (isBulkResetting.value) return;
+  if (view.value !== 'item') return;
+  scheduleTextFilterApply();
+});
+
 onMounted(async () => {
   await loadCustomers();
   await loadStatistics();
@@ -250,6 +280,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (customerSearchTimer) {
     clearTimeout(customerSearchTimer);
+  }
+  if (textFilterApplyTimer) {
+    clearTimeout(textFilterApplyTimer);
   }
 });
 </script>
