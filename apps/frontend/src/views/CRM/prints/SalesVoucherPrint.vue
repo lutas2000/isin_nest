@@ -1,6 +1,6 @@
 <template>
   <div class="voucher-preview">
-    <h4 class="voucher-preview__title">套版預覽（底圖僅供對位，不會列印）</h4>
+    <h4 class="voucher-preview__title">列印預覽</h4>
     <div class="voucher-sheet">
       <svg class="reference-layer" viewBox="0 0 210 148" preserveAspectRatio="none" aria-hidden="true">
         <rect x="0.5" y="0.5" width="209" height="147" fill="none" stroke="#9ca3af" stroke-width="0.6" />

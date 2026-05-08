@@ -1,33 +1,5 @@
 <template>
   <div class="sales-voucher-items-page">
-    <PageHeader
-      title="銷貨單明細"
-      :description="voucher ? `單號 ${voucher.id}` : '載入中...'"
-    >
-      <template #actions>
-        <button
-          type="button"
-          class="btn btn-outline btn-sm"
-          :disabled="!voucher"
-          @click="applyDefaultVatToDraft"
-        >
-          依預設稅率帶入稅金
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline btn-sm"
-          :disabled="!voucher"
-          @click="handlePrintA5"
-        >
-          列印A5
-        </button>
-        <button type="button" class="btn btn-outline" @click="goBack">
-          <span class="mr-2">←</span>
-          返回
-        </button>
-      </template>
-    </PageHeader>
-
     <div v-if="loading" class="loading-message">載入中...</div>
     <div v-else-if="error" class="error-message">{{ error }}</div>
 
@@ -36,19 +8,40 @@
         <div class="details-content">
           <DetailFieldsPanel v-model:editing="detailsEditing" :items="detailItems">
             <template #actions>
-              <template v-if="!detailsEditing">
-                <button type="button" class="btn btn-outline btn-sm" @click="startDetailsEdit">
-                  編輯
+              <div class="details-actions">
+                <template v-if="!detailsEditing">
+                  <button type="button" class="btn btn-outline btn-sm" @click="startDetailsEdit">
+                    編輯
+                  </button>
+                </template>
+                <template v-else>
+                  <button type="button" class="btn btn-primary btn-sm" @click="saveDetailsEdit">
+                    儲存
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" @click="cancelDetailsEdit">
+                    取消
+                  </button>
+                </template>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  :disabled="!voucher"
+                  @click="applyDefaultVatToDraft"
+                >
+                  依預設稅率帶入稅金
                 </button>
-              </template>
-              <template v-else>
-                <button type="button" class="btn btn-primary btn-sm" @click="saveDetailsEdit">
-                  儲存
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  :disabled="!voucher"
+                  @click="handlePrintA5"
+                >
+                  列印
                 </button>
-                <button type="button" class="btn btn-outline btn-sm" @click="cancelDetailsEdit">
-                  取消
+                <button type="button" class="btn btn-outline details-actions-back" @click="goBack">
+                  返回
                 </button>
-              </template>
+              </div>
             </template>
             <template #edit-shippingMethod>
               <EditableCell
@@ -177,7 +170,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  PageHeader,
   TableHeader,
   EditableDataTable,
   type EditableColumn,
@@ -679,6 +671,17 @@ onMounted(() => {
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow);
   padding: 1rem 1.25rem;
+}
+
+.details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.details-actions-back {
+  margin-left: auto;
 }
 
 .details-content {
