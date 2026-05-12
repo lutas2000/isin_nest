@@ -1,10 +1,5 @@
 <template>
   <div class="vendors-page">
-    <PageHeader
-      title="廠商管理"
-      description="管理委外加工廠商、聯絡資訊與備註"
-    >
-    </PageHeader>
 
     <!-- 快捷鍵提示 -->
     <ShortcutHint
@@ -158,7 +153,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { PageHeader, EditableDataTable, type EditableColumn, CrmTableContainer, Modal, ShortcutHint } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, Modal, ShortcutHint } from '@/components';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
 
 // 廠商資料
