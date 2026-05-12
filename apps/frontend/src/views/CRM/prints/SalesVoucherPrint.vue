@@ -14,14 +14,14 @@
         <line x1="6.6" y1="139.6" x2="203.4" y2="139.6" stroke="#9ca3af" stroke-width="0.35" />
         <line x1="6.6" y1="120.6" x2="203.4" y2="120.6" stroke="#9ca3af" stroke-width="0.35" />
         <line x1="6.6" y1="130.6" x2="203.4" y2="130.6" stroke="#9ca3af" stroke-width="0.35" />
-        <line x1="18.2" y1="50.6" x2="18.2" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="34.4" y1="50.6" x2="34.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="64.4" y1="50.6" x2="64.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="79.4" y1="50.6" x2="79.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="88.4" y1="50.6" x2="88.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="96.4" y1="50.6" x2="96.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="109.6" y1="50.6" x2="109.6" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
-        <line x1="122.8" y1="50.6" x2="122.8" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="18.2" y1="44.6" x2="18.2" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="36.4" y1="44.6" x2="36.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="64.4" y1="44.6" x2="64.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="79.4" y1="44.6" x2="79.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="88.4" y1="44.6" x2="88.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="96.4" y1="44.6" x2="96.4" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="109.6" y1="44.6" x2="109.6" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
+        <line x1="123.8" y1="44.6" x2="123.8" y2="117.6" stroke="#9ca3af" stroke-width="0.25" />
         <text x="105" y="12" text-anchor="middle" font-size="5.5" fill="#6b7280">奕新雷射精機股份有限公司</text>
         <text x="105" y="19" text-anchor="middle" font-size="6" fill="#6b7280">出 貨 單</text>
         <text x="158" y="12" font-size="3" fill="#6b7280">台中市東區東光園路110號</text>
@@ -34,9 +34,9 @@
         <text x="95.6" y="30.1" font-size="3.2" fill="#6b7280">出貨日期：</text>
         <text x="95.6" y="35.1" font-size="3.2" fill="#6b7280">單據編號：</text>
         <text x="95.6" y="40.1" font-size="3.2" fill="#6b7280">訂單編號：</text>
-        <text x="10.6" y="49.4" font-size="4.2" fill="#6b7280">項次</text>
-        <text x="20.6" y="49.4" font-size="4.2" fill="#6b7280">電腦圖號</text>
-        <text x="38.6" y="49.4" font-size="4.2" fill="#6b7280">客戶型號</text>
+        <text x="8.6" y="49.4" font-size="4.2" fill="#6b7280">項次</text>
+        <text x="19.6" y="49.4" font-size="4.2" fill="#6b7280">電腦圖號</text>
+        <text x="40.6" y="49.4" font-size="4.2" fill="#6b7280">客戶型號</text>
         <text x="65.6" y="49.4" font-size="4.2" fill="#6b7280">材料</text>
         <text x="80.6" y="49.4" font-size="4.2" fill="#6b7280">厚度</text>
         <text x="89.2" y="49.4" font-size="4.2" fill="#6b7280">代料</text>
