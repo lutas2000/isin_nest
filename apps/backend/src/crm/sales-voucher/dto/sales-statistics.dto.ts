@@ -115,6 +115,21 @@ export class SalesStatisticsRowDto {
   @ApiPropertyOptional({ description: '來源（item 視角有值）' })
   source?: string | null;
 
+  @ApiPropertyOptional({ description: '電腦圖號／CAD 檔名（item 視角有值）' })
+  cadFile?: string | null;
+
+  @ApiPropertyOptional({ description: '客戶型號／客戶檔名（item 視角有值）' })
+  customerFile?: string | null;
+
+  @ApiPropertyOptional({ description: '材質（item 視角有值）' })
+  material?: string | null;
+
+  @ApiPropertyOptional({ description: '厚度（item 視角有值）' })
+  thickness?: number | null;
+
+  @ApiPropertyOptional({ description: '單位（item 視角有值）' })
+  unit?: string | null;
+
   @ApiProperty({ description: '建立時間' })
   createdAt: Date;
 }

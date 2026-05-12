@@ -25,6 +25,7 @@ import CRMSalesVouchers from '../views/CRM/SalesVouchers.vue'
 import CRMSalesVoucherItems from '../views/CRM/SalesVoucherItems.vue'
 import CRMVendors from '../views/CRM/Vendors.vue'
 import AccountingSalesStatistics from '../views/Accounting/SalesStatistics.vue'
+import AccountingSalesStatisticsItems from '../views/Accounting/SalesStatisticsItems.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 import ResetPassword from '../views/ResetPassword.vue'
@@ -203,7 +204,13 @@ const routes = [
     path: '/accounting/sales-statistics',
     name: 'AccountingSalesStatistics',
     component: AccountingSalesStatistics,
-    meta: { title: '銷售統計', icon: '📈', requiresAuth: true }
+    meta: { title: '銷貨單', icon: '📈', requiresAuth: true }
+  },
+  {
+    path: '/accounting/sales-statistics/items',
+    name: 'AccountingSalesStatisticsItems',
+    component: AccountingSalesStatisticsItems,
+    meta: { title: '銷貨明細', icon: '📋', requiresAuth: true }
   },
   {
     path: '/settings',

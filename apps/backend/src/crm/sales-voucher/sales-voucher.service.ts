@@ -289,6 +289,11 @@ export class SalesVoucherService {
           quantity,
           unitPrice,
           source: item.source,
+          cadFile: item.cadFile ?? null,
+          customerFile: item.customerFile ?? null,
+          material: item.material ?? null,
+          thickness: item.thickness != null ? Number(item.thickness) : null,
+          unit: item.unit ?? null,
           createdAt: item.createdAt,
         };
       });

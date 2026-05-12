@@ -63,6 +63,11 @@ export interface SalesStatisticsRow {
   quantity?: number | null
   unitPrice?: number | null
   source?: string | null
+  cadFile?: string | null
+  customerFile?: string | null
+  material?: string | null
+  thickness?: number | null
+  unit?: string | null
   createdAt: string
 }
 

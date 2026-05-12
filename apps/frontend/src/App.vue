@@ -148,7 +148,15 @@
               active-class="active"
             >
               <div class="nav-icon">📈</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">銷售統計</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">銷貨單</span>
+            </router-link>
+            <router-link
+              to="/accounting/sales-statistics/items"
+              class="nav-item"
+              active-class="active"
+            >
+              <div class="nav-icon">📋</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">銷貨明細</span>
             </router-link>
           </div>
 
@@ -302,7 +310,8 @@ const pageTitles: Record<string, string> = {
   '/crm/quotes': '報價單',
   '/crm/vendors': '廠商管理',
   '/crm/processings': '加工項目管理',
-  '/accounting/sales-statistics': '銷售統計',
+  '/accounting/sales-statistics': '銷貨單',
+  '/accounting/sales-statistics/items': '銷貨明細',
   '/settings': '系統設定',
   '/profile': '個人資料',
 };
