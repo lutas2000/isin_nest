@@ -52,6 +52,7 @@
             <th class="col-processing">加工</th>
             <th class="col-source">來源</th>
             <th class="col-quantity">數量</th>
+            <th class="col-unit">單位</th>
           </tr>
         </thead>
         <tbody>
@@ -68,6 +69,7 @@
             <td class="col-quantity text-right">
               {{ formatInteger(item.quantity) }}
             </td>
+            <td class="col-unit">{{ item.unit?.trim() || '片' }}</td>
           </tr>
         </tbody>
       </table>
@@ -235,7 +237,11 @@ const getOrderPrintStyles = (): string => {
     }
     
     .col-quantity {
-      width: 8%;
+      width: 7%;
+    }
+    
+    .col-unit {
+      width: 6%;
     }
     
     .total-label {

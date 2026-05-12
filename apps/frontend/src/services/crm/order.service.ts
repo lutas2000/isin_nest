@@ -21,6 +21,7 @@ export interface OrderItem {
   material?: string
   thickness?: number
   quantity: number
+  unit?: string
   substitute?: string
   source: string
   processingIds?: number[]

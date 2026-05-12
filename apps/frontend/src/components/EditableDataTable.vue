@@ -283,6 +283,8 @@ export interface EditableColumn extends Column {
   keyboardFocusable?: boolean;
   required?: boolean;
   type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'date';
+  /** 與 type=text 併用：瀏覽器 datalist 建議值（仍可自由輸入） */
+  datalistOptions?: string[];
   options?: Array<{value: any, label: string}> | (() => Array<{value: any, label: string}>);
   searchFunction?: (searchTerm: string) => Promise<Array<{value: any, label: string}>>;
   truncate?: boolean;

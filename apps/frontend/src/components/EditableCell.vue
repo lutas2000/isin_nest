@@ -1,20 +1,29 @@
 <template>
   <div class="editable-cell">
-    <!-- 文字輸入 -->
-    <input
-      v-if="column.type === 'text' || !column.type"
-      ref="inputRef"
-      type="text"
-      class="form-control"
-      :class="{ 
-        'required-field-empty': column.required && (!value || value === ''),
-        'form-control-error': column.required && (!value || value === '')
-      }"
-      :value="value"
-      @input="handleInput($event)"
-      @keydown="handleKeyDown"
-      @blur="handleBlur"
-    />
+    <!-- 文字輸入（可選 datalist 建議） -->
+    <template v-if="column.type === 'text' || !column.type">
+      <input
+        ref="inputRef"
+        type="text"
+        class="form-control"
+        :class="{ 
+          'required-field-empty': column.required && (!value || value === ''),
+          'form-control-error': column.required && (!value || value === '')
+        }"
+        :value="value"
+        :list="textDatalistId || undefined"
+        @input="handleInput($event)"
+        @keydown="handleKeyDown"
+        @blur="handleBlur"
+      />
+      <datalist v-if="textDatalistId" :id="textDatalistId">
+        <option
+          v-for="opt in (column.datalistOptions ?? [])"
+          :key="opt"
+          :value="opt"
+        />
+      </datalist>
+    </template>
 
     <!-- 數字輸入 -->
     <input
@@ -186,6 +195,13 @@ const emit = defineEmits<{
   'keydown': [event: KeyboardEvent];
   'blur': [];
 }>();
+
+const textDatalistId = computed(() => {
+  const opts = props.column.datalistOptions;
+  if (!opts?.length) return '';
+  const rowId = props.isNew ? 'new' : String(props.row?.id ?? 'row');
+  return `dl-${props.column.key}-${rowId}`;
+});
 
 const isSaving = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);

@@ -185,6 +185,7 @@ export class QuoteService {
           material: quoteItem.material,
           thickness: quoteItem.thickness,
           quantity: quoteItem.quantity,
+          unit: quoteItem.unit ?? '片',
           unitPrice: quoteItem.unitPrice,
           source: itemSource,
           processingIds: quoteItem.processingIds,

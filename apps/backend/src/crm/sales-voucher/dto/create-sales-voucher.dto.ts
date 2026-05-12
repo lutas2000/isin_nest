@@ -35,6 +35,11 @@ export class CreateSalesVoucherItemDto {
   @IsNumber()
   quantity?: number;
 
+  @ApiPropertyOptional({ description: '單位', example: '片' })
+  @IsOptional()
+  @IsString()
+  unit?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

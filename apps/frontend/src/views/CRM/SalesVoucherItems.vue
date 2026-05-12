@@ -134,6 +134,9 @@
           </template>
           <template #cell-substitute="{ value }">{{ value || '無' }}</template>
           <template #cell-quantity="{ value }">{{ value }}</template>
+          <template #cell-unit="{ value }">
+            {{ value && String(value).trim() ? value : DEFAULT_ITEM_UNIT }}
+          </template>
           <template #cell-unitPrice="{ value }">{{ formatMoney(value) }}</template>
           <template #cell-source="{ value }">{{ value || '-' }}</template>
           <template #cell-notes="{ value }">{{ value || '-' }}</template>
@@ -190,6 +193,7 @@ import { processingService, type Processing } from '@/services/crm/processing.se
 import { API_CONFIG } from '@/config/api';
 import { apiGet } from '@/services/api';
 import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
+import { DEFAULT_ITEM_UNIT, ITEM_UNIT_SUGGESTIONS } from '@/constants/crmItemUnit';
 
 const route = useRoute();
 const router = useRouter();
@@ -374,6 +378,7 @@ const newRowTemplate = () => ({
   thickness: undefined as number | undefined,
   processingIds: [] as number[],
   quantity: 0,
+  unit: DEFAULT_ITEM_UNIT,
   substitute: '',
   unitPrice: 0,
   source: '新圖',
@@ -393,6 +398,13 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true,
     required: true,
     type: 'number',
+  },
+  {
+    key: 'unit',
+    label: '單位',
+    editable: true,
+    type: 'text',
+    datalistOptions: [...ITEM_UNIT_SUGGESTIONS],
   },
   {
     key: 'substitute',
@@ -490,6 +502,7 @@ const buildItemPayload = (row: SalesVoucherItem): Partial<SalesVoucherItem> => (
   thickness: row.thickness ?? undefined,
   processingIds: row.processingIds || undefined,
   quantity: row.quantity || 0,
+  unit: (row.unit && String(row.unit).trim()) || DEFAULT_ITEM_UNIT,
   substitute: row.substitute || undefined,
   unitPrice: row.unitPrice || 0,
   source: row.source || '新圖',
@@ -522,6 +535,7 @@ const handleNewRowSave = async (row: any) => {
       thickness: row.thickness ?? undefined,
       processingIds: row.processingIds || undefined,
       quantity: row.quantity || 0,
+      unit: (row.unit && String(row.unit).trim()) || DEFAULT_ITEM_UNIT,
       substitute: row.substitute || undefined,
       unitPrice: row.unitPrice || 0,
       source: row.source || '新圖',

@@ -63,6 +63,14 @@ export class SalesVoucherItem {
   @Column({ type: 'int', default: 0 })
   quantity: number;
 
+  @ApiProperty({ description: '單位', example: '片' })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: '片',
+  })
+  unit: string;
+
   @ApiProperty({ description: '代料', required: false })
   @Column({
     type: 'varchar',

@@ -61,6 +61,7 @@ export class OrderItemService {
   async create(orderItem: Partial<OrderItem>): Promise<OrderItem> {
     const newOrderItem = this.orderItemRepository.create({
       ...orderItem,
+      unit: orderItem.unit ?? '片',
     });
     return this.orderItemRepository.save(newOrderItem);
   }
@@ -69,6 +70,7 @@ export class OrderItemService {
     const newOrderItems = orderItems.map(item => 
       this.orderItemRepository.create({
         ...item,
+        unit: item.unit ?? '片',
       })
     );
     return this.orderItemRepository.save(newOrderItems);

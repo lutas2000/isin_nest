@@ -173,6 +173,10 @@
             {{ value }}
           </template>
 
+          <template #cell-unit="{ value }">
+            {{ value && String(value).trim() ? value : DEFAULT_ITEM_UNIT }}
+          </template>
+
           <template #cell-unitPrice="{ value }">
             {{ Number(value || 0).toLocaleString('zh-TW') }}
           </template>
@@ -252,6 +256,7 @@ import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import QuotePrint from './prints/QuotePrint.vue';
+import { DEFAULT_ITEM_UNIT, ITEM_UNIT_SUGGESTIONS } from '@/constants/crmItemUnit';
 
 const route = useRoute();
 const router = useRouter();
@@ -384,6 +389,7 @@ const newRowTemplate = () => {
       processingIds: [] as number[],
       notes: '',
       quantity: 0,
+      unit: DEFAULT_ITEM_UNIT,
       unitPrice: 0,
       source: '',
     };
@@ -396,6 +402,7 @@ const newRowTemplate = () => {
     processingIds: [...(quote.value.processingIds || [])] as number[],
     notes: '',
     quantity: 0,
+    unit: DEFAULT_ITEM_UNIT,
     unitPrice: 0,
     source: '',
   };
@@ -449,6 +456,14 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true,
     required: true,
     type: 'number',
+    width: 'short-number',
+  },
+  {
+    key: 'unit',
+    label: '單位',
+    editable: true,
+    type: 'text',
+    datalistOptions: [...ITEM_UNIT_SUGGESTIONS],
     width: 'short-number',
   },
   {
@@ -590,6 +605,7 @@ const handleSave = async (row: QuoteItem, isNew: boolean) => {
       processingIds: row.processingIds || undefined,
       notes: row.notes || undefined,
       quantity,
+      unit: (row.unit && String(row.unit).trim()) || DEFAULT_ITEM_UNIT,
       unitPrice: row.unitPrice || 0,
       source: row.source || undefined,
     };
@@ -633,6 +649,7 @@ const handleNewRowSave = async (row: any) => {
       processingIds: row.processingIds || undefined,
       notes: row.notes || undefined,
       quantity,
+      unit: (row.unit && String(row.unit).trim()) || DEFAULT_ITEM_UNIT,
       unitPrice: row.unitPrice || 0,
       source: row.source || undefined,
     };

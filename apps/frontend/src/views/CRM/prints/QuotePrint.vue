@@ -57,6 +57,7 @@
             <th class="col-thickness">厚度</th>
             <th class="col-summary">摘要</th>
             <th class="col-quantity">數量</th>
+            <th class="col-unit">單位</th>
             <th class="col-unit-price">單價</th>
             <th class="col-amount">金額</th>
           </tr>
@@ -69,6 +70,7 @@
             <td class="col-thickness">{{ item.thickness || '-' }}</td>
             <td class="col-summary">{{ item.notes || '-' }}</td>
             <td class="col-quantity text-right">{{ formatInteger(item.quantity) }}</td>
+            <td class="col-unit">{{ item.unit?.trim() || '片' }}</td>
             <td class="col-unit-price text-right">{{ formatInteger(item.unitPrice) }}</td>
             <td class="col-amount text-right">
               {{ formatInteger((item.quantity || 0) * (item.unitPrice || 0)) }}
@@ -77,7 +79,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="7" class="text-right total-label">合計</td>
+            <td colspan="8" class="text-right total-label">合計</td>
             <td class="text-right total-amount">{{ formatInteger(totalAmount) }}</td>
           </tr>
         </tfoot>
@@ -257,11 +259,15 @@ const getQuotePrintStyles = (pageSize: QuotePrintPageSize = 'A4'): string => {
     }
     
     .col-quantity {
-      width: 8%;
+      width: 7%;
+    }
+    
+    .col-unit {
+      width: 6%;
     }
     
     .col-unit-price {
-      width: 8%;
+      width: 7%;
     }
     
     .col-amount {

@@ -50,7 +50,7 @@
             <td class="col-material">{{ item.material || '-' }}</td>
             <td class="col-thickness">{{ item.thickness ?? '-' }}</td>
             <td class="col-substitute">{{ item.substitute || '-' }}</td>
-            <td class="col-quantity text-right">{{ formatInteger(item.quantity) }}</td>
+            <td class="col-quantity text-right">{{ formatInteger(item.quantity) }} {{ item.unit?.trim() || '片' }}</td>
             <td class="col-processing">{{ getProcessingNames(item.processingIds) }}</td>
           </tr>
         </tbody>

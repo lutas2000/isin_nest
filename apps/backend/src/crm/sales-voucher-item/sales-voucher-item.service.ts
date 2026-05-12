@@ -71,7 +71,10 @@ export class SalesVoucherItemService {
   }
 
   async create(item: Partial<SalesVoucherItem>): Promise<SalesVoucherItem> {
-    const row = this.itemRepository.create(item);
+    const row = this.itemRepository.create({
+      ...item,
+      unit: item.unit ?? '片',
+    });
     const saved = await this.itemRepository.save(row);
     await this.syncParentAmount(saved.salesVoucherId);
     return saved;

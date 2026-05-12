@@ -253,7 +253,7 @@
                   <div v-if="item.material">材質：{{ item.material }}</div>
                   <div v-if="item.thickness">厚度：{{ item.thickness }}</div>
                   <div v-if="item.notes">備註：{{ item.notes }}</div>
-                  <div>數量：{{ item.quantity }}</div>
+                  <div>數量：{{ item.quantity }} {{ item.unit?.trim() || '片' }}</div>
                   <div>單價：{{ Number(item.unitPrice).toLocaleString('zh-TW') }}</div>
                 </div>
               </div>

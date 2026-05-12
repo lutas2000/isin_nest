@@ -145,6 +145,7 @@ export class QuoteItemService {
     const newQuoteItem = this.quoteItemRepository.create({
       ...quoteItem,
       id: newId,
+      unit: quoteItem.unit ?? '片',
     });
     
     const savedItem = await this.quoteItemRepository.save(newQuoteItem);

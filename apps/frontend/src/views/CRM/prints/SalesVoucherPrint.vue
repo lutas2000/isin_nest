@@ -40,7 +40,7 @@
         <text x="65.6" y="49.4" font-size="4.2" fill="#6b7280">材料</text>
         <text x="80.6" y="49.4" font-size="4.2" fill="#6b7280">厚度</text>
         <text x="89.2" y="49.4" font-size="4.2" fill="#6b7280">代料</text>
-        <text x="98.4" y="49.4" font-size="4.2" fill="#6b7280">數量</text>
+        <text x="98.4" y="49.4" font-size="4.2" fill="#6b7280">數量/單位</text>
         <text x="112" y="49.4" font-size="4.2" fill="#6b7280">單價</text>
         <text x="124.9" y="49.4" font-size="4.2" fill="#6b7280">金額</text>
         <text x="11.6" y="120.8" font-size="4.2" fill="#6b7280">備註</text>
@@ -209,7 +209,7 @@ const rowEntries = computed<RowEntry[]>(() =>
           value = item.substitute || '';
           break;
         case 'quantity':
-          value = formatInteger(item.quantity || 0);
+          value = `${formatInteger(item.quantity || 0)}${item.unit?.trim() ? ` ${item.unit.trim()}` : ' 片'}`;
           break;
         case 'unitPrice':
           value = formatInteger(item.unitPrice || 0);

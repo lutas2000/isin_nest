@@ -11,6 +11,7 @@ export interface QuoteItem {
   processingIds?: number[]
   notes?: string
   quantity: number
+  unit?: string
   unitPrice: number
   source?: string
   createdAt?: string
