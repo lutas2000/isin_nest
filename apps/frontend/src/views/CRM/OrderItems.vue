@@ -92,6 +92,13 @@
                 @update:value="detailDraft.paymentMethod = String($event ?? '')"
               />
             </template>
+            <template #edit-deliveryDeadline>
+              <input
+                v-model="detailDraft.deliveryDeadline"
+                type="date"
+                class="w-full max-w-[12rem] rounded-md border border-secondary-300 px-3 py-2 text-base text-secondary-900 focus:border-primary-500 focus:outline-none"
+              />
+            </template>
             <template #edit-notes>
               <textarea
                 v-model="detailDraft.notes"
@@ -316,6 +323,7 @@ const detailsEditing = ref(false);
 const detailDraft = ref({
   shippingMethod: '',
   paymentMethod: '',
+  deliveryDeadline: '',
   notes: '',
 });
 
@@ -339,9 +347,13 @@ const paymentMethodDetailColumn: EditableColumn = {
 
 const startDetailsEdit = () => {
   if (!workOrder.value) return;
+  const d = workOrder.value.deliveryDeadline;
+  const dateStr =
+    typeof d === 'string' && d.length >= 10 ? d.slice(0, 10) : d ? String(d).slice(0, 10) : '';
   detailDraft.value = {
     shippingMethod: workOrder.value.shippingMethod || '',
     paymentMethod: workOrder.value.paymentMethod || '',
+    deliveryDeadline: dateStr,
     notes: workOrder.value.notes || '',
   };
   detailsEditing.value = true;
@@ -357,6 +369,7 @@ const saveDetailsEdit = async () => {
     await workOrderService.update(workOrder.value.id, {
       shippingMethod: detailDraft.value.shippingMethod,
       paymentMethod: detailDraft.value.paymentMethod,
+      deliveryDeadline: detailDraft.value.deliveryDeadline.trim() || undefined,
       notes: detailDraft.value.notes.trim() || undefined,
     });
     detailsEditing.value = false;
@@ -410,7 +423,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
   },
   { 
     key: 'cadFile', 
-    label: 'CAD 檔案', 
+    label: '電腦圖號', 
     editable: true, 
     type: 'text' 
   },
@@ -511,6 +524,15 @@ const detailItems = computed<DetailFieldItem[]>(() => {
     { key: 'status', label: '狀態', value: workOrder.value.isCompleted ? '已完成' : '進行中' },
     { key: 'shippingMethod', label: '運送方式', value: workOrder.value.shippingMethod || '-' },
     { key: 'paymentMethod', label: '付款方式', value: workOrder.value.paymentMethod || '-' },
+    {
+      key: 'deliveryDeadline',
+      label: '交貨期限',
+      value:
+        typeof workOrder.value.deliveryDeadline === 'string' &&
+        workOrder.value.deliveryDeadline.length >= 10
+          ? workOrder.value.deliveryDeadline.slice(0, 10)
+          : workOrder.value.deliveryDeadline || '-',
+    },
     { key: 'createdAt', label: '建立時間', value: formatDateTime(workOrder.value.createdAt) },
     { key: 'endedAt', label: '完成時間', value: workOrder.value.endedAt ? formatDateTime(workOrder.value.endedAt) : '-' },
     { key: 'updatedAt', label: '更新時間', value: workOrder.value.updatedAt ? formatDateTime(workOrder.value.updatedAt) : '-' },

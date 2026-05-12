@@ -49,6 +49,8 @@ export interface Order {
   customerId: string
   shippingMethod: string
   paymentMethod: string
+  /** YYYY-MM-DD */
+  deliveryDeadline?: string
   notes?: string
   amount: number
   status: OrderStatus

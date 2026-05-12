@@ -45,7 +45,7 @@
         <thead>
           <tr>
             <th class="col-item">項次</th>
-            <th class="col-cad-file">CAD 檔案</th>
+            <th class="col-cad-file">電腦圖號</th>
             <th class="col-customer-file">客戶型號</th>
             <th class="col-material">材質</th>
             <th class="col-thickness">厚度</th>

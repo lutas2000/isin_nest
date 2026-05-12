@@ -346,12 +346,12 @@ const detailItems = computed<DetailFieldItem[]>(() => {
     },
     {
       key: 'shippingMethod',
-      label: '運送方式（條件快照）',
+      label: '運送方式',
       value: v.shippingMethod || '—',
     },
     {
       key: 'paymentMethod',
-      label: '付款方式（條件快照）',
+      label: '付款方式',
       value: v.paymentMethod || '—',
     },
     { key: 'createdAt', label: '建立時間', value: formatDateTime(v.createdAt) },

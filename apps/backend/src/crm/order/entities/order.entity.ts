@@ -72,6 +72,14 @@ export class Order {
   })
   paymentMethod: string;
 
+  @ApiProperty({
+    description: '交貨期限',
+    example: '2026-05-12',
+    required: false,
+  })
+  @Column({ type: 'date', name: 'delivery_deadline', nullable: true })
+  deliveryDeadline?: string;
+
   @ApiProperty({ description: '備註', example: '請優先處理' })
   @Column({
     type: 'text',
