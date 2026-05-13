@@ -7,12 +7,12 @@
       @retry="loadStatistics"
     >
       <template #controls>
-        <div class="flex flex-wrap items-center gap-2">
-          <input v-model="yearMonth" type="month" class="form-control max-w-[160px]" />
+        <div class="flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5">
+          <input v-model="yearMonth" type="month" class="form-control max-w-[160px] shrink-0" />
           <input
             v-model="customerInput"
             type="text"
-            class="form-control max-w-[280px]"
+            class="form-control max-w-[280px] shrink-0"
             list="accounting-sales-stats-voucher-customers"
             placeholder="輸入公司 ID 或名稱"
             @input="handleCustomerInput"
@@ -25,7 +25,17 @@
               :value="option.display"
             />
           </datalist>
-          <button type="button" class="btn btn-outline btn-sm" @click="handleResetFilters">
+          <input
+            v-model="notes"
+            type="text"
+            class="form-control max-w-[240px] shrink-0"
+            placeholder="備註關鍵字"
+          />
+          <button
+            type="button"
+            class="btn btn-outline btn-sm shrink-0 whitespace-nowrap"
+            @click="handleResetFilters"
+          >
             重設
           </button>
         </div>
@@ -90,6 +100,7 @@ const {
   pageSize,
   yearMonth,
   customerInput,
+  notes,
   customerOptions,
   loadStatistics,
   handleResetFilters,
@@ -97,5 +108,5 @@ const {
   handlePageSizeChange,
   handleCustomerInput,
   formatMoney,
-} = useSalesStatisticsList({ view: 'voucher' });
+} = useSalesStatisticsList({ view: 'voucher', includeNotesFilter: true });
 </script>
