@@ -1,6 +1,12 @@
 <template>
   <div class="customers-page">
 
+    <!-- 快捷鍵提示 -->
+    <ShortcutHint
+      :table-state="tableState"
+      @shortcut-click="handleShortcutClick"
+    />
+
     <!-- 客戶列表 -->
     <CrmTableContainer
       :loading="loading"
@@ -12,6 +18,7 @@
       @retry="loadCustomers"
     >
       <EditableDataTable
+        ref="editableTableRef"
         :columns="editableColumns"
         :data="customers"
         :show-actions="true"
@@ -24,6 +31,8 @@
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         @row-view="viewDetails"
+        @row-edit="editCustomer"
+        @row-delete="handleRowDelete"
       >
         <template #cell-id="{ row, value }">
           <button
@@ -364,7 +373,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { EditableDataTable, type EditableColumn, CrmTableContainer, Modal } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, Modal, ShortcutHint } from '@/components';
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 import { contactService } from '@/services/crm/contact.service';
 import { useAuthStore } from '@/stores/auth';
@@ -382,6 +391,22 @@ const customerSearch = ref('');
 const currentPage = ref(1);
 const pageSize = ref(50);
 const total = ref(0);
+
+// EditableDataTable ref
+const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+
+// 表格狀態（用於 ShortcutHint）
+const tableState = computed(() => {
+  const tableRef = editableTableRef.value;
+  if (!tableRef) return null;
+  return {
+    focusedRowIndex: tableRef.focusedRowIndex,
+    focusedFieldKey: tableRef.focusedFieldKey,
+    isNewRowFocused: tableRef.isNewRowFocused,
+    editingRowId: tableRef.editingRowId,
+    data: tableRef.data,
+  };
+});
 
 // Modal 控制
 const showCreateModal = ref(false);
@@ -600,6 +625,96 @@ const saveCustomer = async () => {
     await loadCustomers();
   } catch (err) {
     alert(err instanceof Error ? err.message : '儲存客戶失敗');
+  }
+};
+
+// 開啟新增客戶 Modal
+const openCreateModal = () => {
+  editingCustomer.value = null;
+  customerForm.value = {
+    id: '',
+    companyName: '',
+    invoiceTitle: '',
+    companyShortName: '',
+    phonesStr: '',
+    taxIdsStr: '',
+    postalCode: '',
+    address: '',
+    deliveryAddress: '',
+    bank: '',
+    accountNumber: '',
+    creditLimit: 0,
+    accountReceivable: 0,
+    fax: '',
+    email: '',
+    mainProducts: '',
+    notes: '',
+  };
+  showCreateModal.value = true;
+};
+
+// 刪除客戶（表格快捷鍵 / Delete）
+const handleRowDelete = async (customer: Customer) => {
+  if (!authStore.isAdmin) {
+    alert('只有管理員可以刪除客戶');
+    return;
+  }
+  if (!confirm('確定要刪除此客戶嗎？此操作無法復原。')) return;
+
+  try {
+    await customerService.delete(customer.id);
+    await loadCustomers();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '刪除客戶失敗');
+  }
+};
+
+// 處理快捷鍵點擊
+const handleShortcutClick = (action: string) => {
+  if (!editableTableRef.value || !tableState.value) return;
+
+  const state = tableState.value;
+  const data = state.data();
+  const currentRowIndex = state.focusedRowIndex;
+
+  switch (action) {
+    case 'arrow-up':
+      if (currentRowIndex !== null && currentRowIndex > 0) {
+        editableTableRef.value.focusedRowIndex = currentRowIndex - 1;
+      } else if (currentRowIndex === null && data.length > 0) {
+        editableTableRef.value.focusedRowIndex = 0;
+      }
+      break;
+
+    case 'arrow-down':
+      if (currentRowIndex !== null && currentRowIndex < data.length - 1) {
+        editableTableRef.value.focusedRowIndex = currentRowIndex + 1;
+      } else if (currentRowIndex === null && data.length > 0) {
+        editableTableRef.value.focusedRowIndex = 0;
+      }
+      break;
+
+    case 'row-view':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        viewDetails(data[currentRowIndex]);
+      }
+      break;
+
+    case 'row-edit':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        editCustomer(data[currentRowIndex]);
+      }
+      break;
+
+    case 'row-delete':
+      if (currentRowIndex !== null && data[currentRowIndex]) {
+        handleRowDelete(data[currentRowIndex]);
+      }
+      break;
+
+    case 'new-row-show':
+      openCreateModal();
+      break;
   }
 };
 
