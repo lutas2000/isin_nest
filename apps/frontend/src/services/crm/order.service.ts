@@ -130,8 +130,12 @@ export const orderItemService = {
     return apiGet<OrderItem>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}`)
   },
 
-  getDxfPreview: (id: number): Promise<OrderItemDxfPreview> => {
-    return apiGet<OrderItemDxfPreview>(`${API_CONFIG.CRM.ORDER_ITEMS}/${id}/dxf-preview`)
+  getDxfPreview: (id: number, options?: { silent?: boolean }): Promise<OrderItemDxfPreview> => {
+    return apiGet<OrderItemDxfPreview>(
+      `${API_CONFIG.CRM.ORDER_ITEMS}/${id}/dxf-preview`,
+      undefined,
+      options?.silent,
+    )
   },
 
   // 建立訂單工件

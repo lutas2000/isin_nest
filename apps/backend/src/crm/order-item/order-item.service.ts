@@ -21,7 +21,12 @@ export class OrderItemService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.orderItemRepository.findAndCount({
-      relations: ['order', 'drawingStaff', 'processingItems', 'processingItems.vendor'],
+      relations: [
+        'order',
+        'processingItems',
+        'processingItems.processing',
+        'processingItems.processing.vendor',
+      ],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip: skip,
@@ -33,7 +38,12 @@ export class OrderItemService {
   findOne(id: number): Promise<OrderItem | null> {
     return this.orderItemRepository.findOne({
       where: { id },
-      relations: ['order', 'drawingStaff', 'processingItems', 'processingItems.vendor'],
+      relations: [
+        'order',
+        'processingItems',
+        'processingItems.processing',
+        'processingItems.processing.vendor',
+      ],
     });
   }
 
@@ -49,7 +59,12 @@ export class OrderItemService {
 
     const [data, total] = await this.orderItemRepository.findAndCount({
       where: { orderId },
-      relations: ['order', 'drawingStaff', 'processingItems', 'processingItems.vendor'],
+      relations: [
+        'order',
+        'processingItems',
+        'processingItems.processing',
+        'processingItems.processing.vendor',
+      ],
       order: { createdAt: 'DESC' },
       take: maxLimit,
       skip: skip,
@@ -71,14 +86,15 @@ export class OrderItemService {
     const [data, total] = await this.orderItemRepository
       .createQueryBuilder('orderItem')
       .innerJoinAndSelect('orderItem.order', 'workOrder')
-      .leftJoinAndSelect('orderItem.drawingStaff', 'drawingStaff')
       .leftJoinAndSelect('orderItem.processingItems', 'processingItems')
-      .leftJoinAndSelect('processingItems.vendor', 'processingVendor')
-      .where('workOrder.customerId = :customerId', { customerId })
-      .orderBy(
+      .leftJoinAndSelect('processingItems.processing', 'processing')
+      .leftJoinAndSelect('processing.vendor', 'processingVendor')
+      .addSelect(
         "CASE WHEN orderItem.cadFile IS NULL OR orderItem.cadFile = '' THEN 1 ELSE 0 END",
-        'ASC',
+        'cad_file_empty_sort',
       )
+      .where('workOrder.customerId = :customerId', { customerId })
+      .orderBy('cad_file_empty_sort', 'ASC')
       .addOrderBy('orderItem.cadFile', 'ASC')
       .addOrderBy('orderItem.createdAt', 'DESC')
       .take(maxLimit)

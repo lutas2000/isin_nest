@@ -30,9 +30,12 @@ const props = withDefaults(defineProps<{
   orderItemId: number | null
   title?: string
   emptyText?: string
+  /** 為 true 時 API 失敗不觸發全域錯誤彈窗（仍顯示空白預覽） */
+  suppressApiError?: boolean
 }>(), {
   title: 'DXF 預覽',
   emptyText: '沒有可預覽的 DXF',
+  suppressApiError: false,
 })
 
 const loading = ref(false)
@@ -54,7 +57,9 @@ watch(
 
     loading.value = true
     try {
-      const preview = await orderItemService.getDxfPreview(orderItemId)
+      const preview = await orderItemService.getDxfPreview(orderItemId, {
+        silent: props.suppressApiError,
+      })
       const dataUrl = await renderDxfContentToDataUrl(preview.content, {
         width: 360,
         height: 240,

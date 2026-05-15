@@ -77,6 +77,7 @@
       <DxfPreviewPanel
         class="min-h-[28rem]"
         :order-item-id="activeItem?.id ?? null"
+        suppress-api-error
       />
     </div>
 

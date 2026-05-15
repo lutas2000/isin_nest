@@ -9,7 +9,9 @@ const getAuthToken = (): string | null => {
 // 通用 API 請求函數
 export const apiRequest = async <T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  /** 為 true 時不跳出全域錯誤（仍會 throw，供呼叫端自行處理） */
+  silent = false,
 ): Promise<T> => {
   const token = getAuthToken()
   const errorStore = useErrorStore()
@@ -42,7 +44,9 @@ export const apiRequest = async <T>(
     // 處理其他錯誤
     const errorData = await response.json().catch(() => ({ message: '請求失敗' }))
     const errorMessage = errorData.message || `HTTP error! status: ${response.status}`
-    errorStore.showError(errorMessage)
+    if (!silent) {
+      errorStore.showError(errorMessage)
+    }
     // 拋出錯誤，讓調用方知道請求失敗（錯誤已通過 modal 顯示）
     throw new Error(errorMessage)
   }
@@ -68,7 +72,11 @@ export const apiRequest = async <T>(
 }
 
 // GET 請求
-export const apiGet = <T>(endpoint: string, params?: Record<string, any>): Promise<T> => {
+export const apiGet = <T>(
+  endpoint: string,
+  params?: Record<string, any>,
+  silent?: boolean,
+): Promise<T> => {
   let url = endpoint
   if (params) {
     const queryString = new URLSearchParams(
@@ -80,7 +88,7 @@ export const apiGet = <T>(endpoint: string, params?: Record<string, any>): Promi
       url += `?${queryString}`
     }
   }
-  return apiRequest<T>(url, { method: 'GET' })
+  return apiRequest<T>(url, { method: 'GET' }, silent)
 }
 
 // POST 請求

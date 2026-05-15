@@ -3,12 +3,14 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Order } from '../../order/entities/order.entity';
+import { ProcessingWorkOrder } from '../../processing-work-order/entities/processing-work-order.entity';
 import { numericTransformer } from '../../../common/transformers/numeric.transformer';
 
 @Entity('order_item')
@@ -160,4 +162,8 @@ export class OrderItem {
   @ManyToOne(() => Order, (order) => order.orderItems, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: Order;
+
+  @OneToMany(() => ProcessingWorkOrder, (pwo) => pwo.orderItem)
+  @ApiProperty({ description: '加工工作單', type: () => [ProcessingWorkOrder], required: false })
+  processingItems?: ProcessingWorkOrder[];
 }
