@@ -13,6 +13,9 @@
  *   SKIP_COUNT — 跳過 gtable 前 N 列（可用 --skip=N 覆寫）
  *   ONLY_MODE — order | order-item（可用 --only= 覆寫）
  *
+ * 缺少 staff / customer 時會暫停並分別執行 create-resigned-staff、create-customer 後繼續。
+ * staff 對應：有 ACTOR_NO 且存在則用之；否則依 ACTOR 姓名查第一筆；皆無則用 001。
+ *
  * 用法：
  *   npm run migrate-order-from-access -- /nas/isin/order.mdb
  *   npm run migrate-order-from-access -- /nas/isin/order.mdb --only=order --skip=0
@@ -23,6 +26,8 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
+import { spawnSync } from 'child_process';
+import type { Repository } from 'typeorm';
 import MDBReader from 'mdb-reader';
 import iconv from 'iconv-lite';
 import { Order, OrderStatus } from '../apps/backend/src/crm/order/entities/order.entity';
@@ -58,6 +63,8 @@ const MIGRATION_ENTITIES = [
 
 const envPath = resolve(__dirname, '../.env');
 dotenv.config({ path: envPath });
+
+const PROJECT_ROOT = resolve(__dirname, '..');
 
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
@@ -101,6 +108,7 @@ const DEFAULT_PAYMENT =
   process.env.ORDER_MIGRATION_DEFAULT_PAYMENT_METHOD || '月結';
 
 const DEFAULT_FACTOR_NO = '111';
+const DEFAULT_STAFF_ID = '001';
 
 /** 從 gtable 列擷取與客戶（factory）相關的 Access 欄位，供錯誤時輸出。 */
 function factoryFieldsFromGtable(row: Record<string, unknown>) {
@@ -115,19 +123,6 @@ function factoryFieldsFromGtable(row: Record<string, unknown>) {
   };
 }
 
-/** customer 無法對應時中止遷移並印出 Access 來源資料。 */
-function abortOnMissingCustomer(
-  reason: string,
-  row: Record<string, unknown>,
-): never {
-  console.error(`遷移中止：${reason}`);
-  console.error('Access 來源 factory 相關欄位：');
-  console.error(JSON.stringify(factoryFieldsFromGtable(row), null, 2));
-  console.error('完整 gtable 列：');
-  console.error(JSON.stringify(row, null, 2));
-  process.exit(1);
-}
-
 /** 從 gtable 列擷取與經辦人員（staff）相關的 Access 欄位，供錯誤時輸出。 */
 function staffFieldsFromGtable(row: Record<string, unknown>) {
   return {
@@ -140,17 +135,155 @@ function staffFieldsFromGtable(row: Record<string, unknown>) {
   };
 }
 
-/** staff 無法對應時中止遷移並印出 Access 來源資料。 */
-function abortOnMissingStaff(
-  reason: string,
+/** 執行 scripts 目錄下的輔助腳本（create-resigned-staff / create-customer）。 */
+function runHelperScript(npmScript: string, args: string[]): void {
+  console.log(`\n⏸️  暫停遷移，執行 npm run ${npmScript} -- ${args.join(' ')}…`);
+  const result = spawnSync('npm', ['run', npmScript, '--', ...args], {
+    cwd: PROJECT_ROOT,
+    stdio: 'inherit',
+    env: process.env,
+  });
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error(
+      `npm run ${npmScript} 失敗（結束碼 ${result.status ?? 'unknown'}）`,
+    );
+  }
+  console.log(`✅ ${npmScript} 完成，繼續遷移…\n`);
+}
+
+async function ensureCustomerExists(
+  customerRepo: Repository<Customer>,
+  customerId: string,
   row: Record<string, unknown>,
-): never {
-  console.error(`遷移中止：${reason}`);
-  console.error('Access 來源 staff 相關欄位：');
-  console.error(JSON.stringify(staffFieldsFromGtable(row), null, 2));
-  console.error('完整 gtable 列：');
-  console.error(JSON.stringify(row, null, 2));
-  process.exit(1);
+): Promise<void> {
+  if (await customerRepo.findOne({ where: { id: customerId } })) {
+    return;
+  }
+
+  const companyName =
+    cleanString(toOptionalTrimmedString(row.FACTOR)) ||
+    toOptionalTrimmedString(row.FACTOR) ||
+    customerId;
+
+  console.log(`客戶 ${customerId} 不存在`);
+  console.log('Access 來源 factory 相關欄位：');
+  console.log(JSON.stringify(factoryFieldsFromGtable(row), null, 2));
+
+  runHelperScript('create-customer', [customerId, companyName]);
+
+  if (!(await customerRepo.findOne({ where: { id: customerId } }))) {
+    throw new Error(`執行 create-customer 後仍找不到客戶 ${customerId}`);
+  }
+}
+
+async function ensureStaffExists(
+  staffRepo: Repository<Staff>,
+  actorNo: string,
+  row: Record<string, unknown>,
+): Promise<void> {
+  if (await staffRepo.findOne({ where: { id: actorNo } })) {
+    return;
+  }
+
+  const staffName =
+    cleanString(toOptionalTrimmedString(row.ACTOR)) ||
+    toOptionalTrimmedString(row.ACTOR) ||
+    actorNo;
+
+  console.log(`員工 ${actorNo} 不存在`);
+  console.log('Access 來源 staff 相關欄位：');
+  console.log(JSON.stringify(staffFieldsFromGtable(row), null, 2));
+
+  runHelperScript('create-resigned-staff', [actorNo, staffName]);
+
+  if (!(await staffRepo.findOne({ where: { id: actorNo } }))) {
+    throw new Error(`執行 create-resigned-staff 後仍找不到員工 ${actorNo}`);
+  }
+}
+
+function actorNameFromGtable(row: Record<string, unknown>): string | undefined {
+  return (
+    cleanString(toOptionalTrimmedString(row.ACTOR)) ||
+    toOptionalTrimmedString(row.ACTOR)
+  );
+}
+
+/** 依姓名查 staff，回傳第一筆（id 升序）。 */
+async function findStaffIdByName(
+  staffRepo: Repository<Staff>,
+  actorName: string,
+): Promise<string | undefined> {
+  const name = cleanString(actorName) || actorName.trim();
+  if (!name) {
+    return undefined;
+  }
+
+  const matches = await staffRepo.find({
+    where: { name },
+    order: { id: 'ASC' },
+    take: 1,
+  });
+  return matches[0]?.id;
+}
+
+/**
+ * 決定訂單 staff_id：
+ * - ACTOR_NO 存在於 staff → 使用 ACTOR_NO
+ * - 否則有 ACTOR → 依姓名查第一筆
+ * - ACTOR_NO 存在但查無 staff、姓名也查無 → create-resigned-staff(ACTOR_NO)
+ * - 無 ACTOR_NO / ACTOR 或僅有 ACTOR 但查無 → 001（必要時建立）
+ */
+async function resolveStaffId(
+  staffRepo: Repository<Staff>,
+  row: Record<string, unknown>,
+  orderId: string,
+): Promise<string> {
+  const actorNo = toOptionalTrimmedString(row.ACTOR_NO);
+  const actorName = actorNameFromGtable(row);
+
+  if (actorNo) {
+    if (await staffRepo.findOne({ where: { id: actorNo } })) {
+      return actorNo;
+    }
+
+    if (actorName) {
+      const byName = await findStaffIdByName(staffRepo, actorName);
+      if (byName) {
+        console.log(
+          `訂單 ${orderId}: ACTOR_NO=${actorNo} 不存在，依姓名「${actorName}」改用 staff ${byName}`,
+        );
+        return byName;
+      }
+    }
+
+    await ensureStaffExists(staffRepo, actorNo, row);
+    return actorNo;
+  }
+
+  if (actorName) {
+    const byName = await findStaffIdByName(staffRepo, actorName);
+    if (byName) {
+      console.log(
+        `訂單 ${orderId}: 無 ACTOR_NO，依姓名「${actorName}」使用 staff ${byName}`,
+      );
+      return byName;
+    }
+
+    console.log(
+      `訂單 ${orderId}: 無 ACTOR_NO，姓名「${actorName}」查無員工，改用 staff ${DEFAULT_STAFF_ID}`,
+    );
+    await ensureStaffExists(staffRepo, DEFAULT_STAFF_ID, row);
+    return DEFAULT_STAFF_ID;
+  }
+
+  console.log(
+    `訂單 ${orderId}: 無 ACTOR_NO / ACTOR，改用 staff ${DEFAULT_STAFF_ID}`,
+  );
+  await ensureStaffExists(staffRepo, DEFAULT_STAFF_ID, row);
+  return DEFAULT_STAFF_ID;
 }
 
 function cleanString(value: string | null | undefined): string | undefined {
@@ -551,27 +684,9 @@ async function migrateOrderFromAccess() {
             const customerId =
               toOptionalTrimmedString(row.FACTOR_NO) ?? DEFAULT_FACTOR_NO;
 
-            const cust = await customerRepo.findOne({ where: { id: customerId } });
-            if (!cust) {
-              abortOnMissingCustomer(
-                `訂單 ${id} 的 FACTOR_NO=${customerId} 在 customer 表不存在`,
-                row,
-              );
-            }
+            await ensureCustomerExists(customerRepo, customerId, row);
 
-            const actorNo = toOptionalTrimmedString(row.ACTOR_NO);
-            if (!actorNo) {
-              abortOnMissingStaff(`訂單 ${id} 缺少 ACTOR_NO`, row);
-            }
-
-            const st = await staffRepo.findOne({ where: { id: actorNo } });
-            if (!st) {
-              abortOnMissingStaff(
-                `訂單 ${id} 的 ACTOR_NO=${actorNo} 在 staff 表不存在`,
-                row,
-              );
-            }
-            const staffId = actorNo;
+            const staffId = await resolveStaffId(staffRepo, row, id);
 
             const q = await quoteRepo.findOne({ where: { id } });
             const quoteId = q ? id : undefined;
