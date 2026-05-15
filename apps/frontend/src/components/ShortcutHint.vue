@@ -1,21 +1,40 @@
 <template>
-  <div class="shortcut-hint" :class="{ 'empty': !hasShortcuts }">
-    <div class="shortcut-list" v-if="hasShortcuts">
+  <div
+    class="mb-4 flex min-h-[50px] items-center rounded-lg border border-secondary-200 bg-secondary-50 px-3 py-2 md:min-h-[60px] md:px-4 md:py-3"
+    :class="{ 'justify-center': !hasShortcuts }"
+  >
+    <div
+      v-if="hasShortcuts"
+      class="flex w-full flex-wrap items-center gap-1.5 md:gap-2"
+    >
       <button
         v-for="shortcut in visibleShortcuts"
         :key="shortcut.key"
-        class="shortcut-button"
-        :class="{ 'disabled': shortcut.disabled }"
+        type="button"
+        class="group inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-secondary-300 bg-white px-2 py-1 text-xs text-secondary-700 transition-all duration-200 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:bg-secondary-100 disabled:opacity-40 md:px-3 md:py-1.5 md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2"
         :disabled="shortcut.disabled"
         :aria-label="shortcut.label"
         @click="handleShortcutClick(shortcut)"
       >
-        <span class="shortcut-key">{{ shortcut.display }}</span>
-        <span class="shortcut-label">{{ shortcut.label }}</span>
+        <span
+          class="inline-block min-w-5 rounded px-1 py-0.5 text-center font-mono text-xs font-semibold bg-secondary-100 group-hover:bg-primary-100 md:min-w-6 md:px-1.5 md:text-sm"
+        >
+          {{ shortcut.display }}
+        </span>
+        <span
+          class="text-xs text-secondary-600 group-hover:text-primary-700 md:text-sm"
+        >
+          {{ shortcut.label }}
+        </span>
       </button>
     </div>
-    <div v-else class="shortcut-placeholder">
-      <span class="placeholder-text">無可用快捷鍵</span>
+    <div
+      v-else
+      class="flex min-h-[50px] w-full items-center justify-center md:min-h-[60px]"
+    >
+      <span class="text-xs italic text-secondary-500 md:text-sm">
+        無可用快捷鍵
+      </span>
     </div>
   </div>
 </template>
@@ -208,128 +227,3 @@ const handleShortcutClick = (shortcut: Shortcut) => {
   emit('shortcut-click', shortcut.action, shortcut);
 };
 </script>
-
-<style scoped>
-.shortcut-hint {
-  background: var(--secondary-50);
-  border: 1px solid var(--secondary-200);
-  border-radius: var(--border-radius);
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-}
-
-.shortcut-hint.empty {
-  justify-content: center;
-}
-
-.shortcut-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  width: 100%;
-}
-
-.shortcut-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  background: white;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: all 0.2s;
-  color: var(--secondary-700);
-}
-
-.shortcut-button:hover:not(:disabled) {
-  background: var(--primary-50);
-  border-color: var(--primary-300);
-  color: var(--primary-700);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.shortcut-button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.shortcut-button:disabled,
-.shortcut-button.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  background: var(--secondary-100);
-}
-
-.shortcut-key {
-  font-weight: 600;
-  font-family: 'Courier New', monospace;
-  background: var(--secondary-100);
-  padding: 0.125rem 0.375rem;
-  border-radius: 3px;
-  font-size: 0.875rem;
-  min-width: 1.5rem;
-  text-align: center;
-  display: inline-block;
-}
-
-.shortcut-button:hover:not(:disabled) .shortcut-key {
-  background: var(--primary-100);
-}
-
-.shortcut-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.shortcut-button:hover:not(:disabled) .shortcut-label {
-  color: var(--primary-700);
-}
-
-.shortcut-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 60px;
-}
-
-.placeholder-text {
-  color: var(--secondary-500);
-  font-size: var(--font-size-sm);
-  font-style: italic;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .shortcut-hint {
-    padding: 0.5rem 0.75rem;
-    min-height: 50px;
-  }
-
-  .shortcut-list {
-    gap: 0.375rem;
-  }
-
-  .shortcut-button {
-    padding: 0.25rem 0.5rem;
-    font-size: var(--font-size-xs);
-  }
-
-  .shortcut-key {
-    font-size: 0.75rem;
-    padding: 0.125rem 0.25rem;
-    min-width: 1.25rem;
-  }
-
-  .shortcut-label {
-    font-size: var(--font-size-xs);
-  }
-}
-</style>
