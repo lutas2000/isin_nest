@@ -34,6 +34,7 @@
     "nx:affected": "nx affected:graph",
     "create-admin": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-admin.ts",
     "create-resigned-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-resigned-staff.ts",
+    "create-customer": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-customer.ts",
     "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts",
     "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
     "list-access-mdb": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/list-access-mdb.ts",
