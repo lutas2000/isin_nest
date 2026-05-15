@@ -1,20 +1,38 @@
 <template>
   <div class="home-page">
-    <!-- NAS 狀態 -->
-    <div class="section-card nas-status-card">
+    <!-- NAS 狀態（僅 admin 可見） -->
+    <div v-if="authStore.isAdmin" class="section-card nas-status-card">
       <div class="section-header">
         <h3>NAS 掛載狀態</h3>
       </div>
       <div class="section-body">
-        <div class="nas-indicator">
-          <span
-            class="status-dot"
-            :class="nasLoading ? 'loading' : nasMounted ? 'online' : 'offline'"
-          ></span>
-          <span class="nas-text" v-if="nasLoading">檢查中...</span>
-          <span class="nas-text" v-else-if="nasMounted">已掛載</span>
-          <span class="nas-text" v-else>未掛載</span>
+        <div class="nas-row">
+          <div class="nas-indicator">
+            <span
+              class="status-dot"
+              :class="nasLoading ? 'loading' : nasStatus"
+            ></span>
+            <span class="nas-text" v-if="nasLoading">檢查中...</span>
+            <span class="nas-text" v-else-if="nasStatus === 'online'">
+              已掛載（{{ nasShares.filter(s => s.mounted).length }}/{{ nasShares.length }}）
+            </span>
+            <span class="nas-text" v-else-if="nasStatus === 'partial'">
+              部分掛載（{{ nasShares.filter(s => s.mounted).length }}/{{ nasShares.length }}）
+            </span>
+            <span class="nas-text" v-else>
+              未掛載（0/{{ nasShares.length }}）
+            </span>
+          </div>
+          <button
+            v-if="!nasLoading && nasStatus !== 'online'"
+            class="btn-mount"
+            :disabled="nasMounting"
+            @click="mountNas"
+          >
+            {{ nasMounting ? '掛載中...' : '重新掛載' }}
+          </button>
         </div>
+        <div v-if="nasMountError" class="mount-error">{{ nasMountError }}</div>
       </div>
     </div>
 
@@ -109,29 +127,60 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { EditableDataTable, StatusBadge } from '@/components';
-import { apiGet } from '@/services/api';
+import { apiGet, apiPost } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
+import { useAuthStore } from '@/stores/auth';
 import { orderService, type Order } from '@/services/crm/order.service';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import type { PaginatedResponse } from '@/types/pagination';
 
-const currentDate = ref('');
+const authStore = useAuthStore();
 
 // --- NAS ---
-const nasMounted = ref(false);
-const nasLoading = ref(true);
+interface NasShare {
+  key: string;
+  url: string;
+  mountPath: string;
+  mounted: boolean;
+}
+
+const nasShares = ref<NasShare[]>([]);
+const nasLoading = ref(false);
+const nasMounting = ref(false);
+const nasMountError = ref('');
+
+const nasStatus = computed<'online' | 'partial' | 'offline'>(() => {
+  if (nasShares.value.length === 0) return 'offline';
+  const mountedCount = nasShares.value.filter((s) => s.mounted).length;
+  if (mountedCount === nasShares.value.length) return 'online';
+  if (mountedCount > 0) return 'partial';
+  return 'offline';
+});
 
 const checkNas = async () => {
+  if (!authStore.isAdmin) return;
   nasLoading.value = true;
   try {
-    const result = await apiGet<{ mounted: boolean }>(API_CONFIG.HEALTH.NAS);
-    nasMounted.value = result.mounted;
+    nasShares.value = await apiGet<NasShare[]>(API_CONFIG.SYSTEM.NAS_STATUS);
   } catch {
-    nasMounted.value = false;
+    nasShares.value = [];
   } finally {
     nasLoading.value = false;
+  }
+};
+
+const mountNas = async () => {
+  nasMounting.value = true;
+  nasMountError.value = '';
+  try {
+    await apiPost(API_CONFIG.SYSTEM.NAS_MOUNT);
+    await checkNas();
+  } catch (err) {
+    nasMountError.value = err instanceof Error ? err.message : '掛載失敗';
+  } finally {
+    nasMounting.value = false;
   }
 };
 
@@ -232,14 +281,6 @@ const handleQuotePageSizeChange = (size: number) => {
 };
 
 onMounted(() => {
-  const now = new Date();
-  currentDate.value = now.toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  });
-
   checkNas();
   loadOrders();
   loadQuotes();
@@ -280,10 +321,17 @@ onMounted(() => {
   padding: 1rem 1.5rem;
 }
 
+.nas-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .nas-indicator {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1;
 }
 
 .status-dot {
@@ -303,6 +351,11 @@ onMounted(() => {
   box-shadow: 0 0 0 4px var(--danger-100);
 }
 
+.status-dot.partial {
+  background-color: var(--warning-500);
+  box-shadow: 0 0 0 4px var(--warning-100);
+}
+
 .status-dot.loading {
   background-color: var(--secondary-400);
   box-shadow: 0 0 0 4px var(--secondary-100);
@@ -318,6 +371,34 @@ onMounted(() => {
   font-size: var(--font-size-base);
   font-weight: 500;
   color: var(--secondary-800);
+}
+
+.btn-mount {
+  padding: 0.375rem 0.875rem;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: white;
+  background-color: var(--primary-600);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-mount:hover:not(:disabled) {
+  background-color: var(--primary-700);
+}
+
+.btn-mount:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mount-error {
+  margin-top: 0.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--danger-600);
 }
 
 /* 載入 / 錯誤 / 空資料 */

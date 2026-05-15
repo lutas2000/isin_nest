@@ -4,9 +4,10 @@ export const API_CONFIG = {
   // Docker/反向代理情境建議用 `/api`（同網域轉發到後端），避免跨網域與主機名稱問題
   BASE_URL: import.meta.env.VITE_API_BASE_URL || '/api',
   
-  // 系統健康檢查
-  HEALTH: {
-    NAS: '/health/nas',
+  // 系統管理（僅限 admin）
+  SYSTEM: {
+    NAS_STATUS: '/system/nas/status',
+    NAS_MOUNT: '/system/nas/mount',
   },
 
   // 認證相關端點
