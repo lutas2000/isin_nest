@@ -132,37 +132,60 @@ npm run list-access-mdb -- /nas/isin --json
 ### 使用方法
 
 ```bash
-npm run analyze-access <access-file-path> [mysql-table-name]
+npm run analyze-access -- <access-file-path> [flags...]
+npm run analyze-access -- <path.mdb> <mysql-table-name>   # 相容舊版：第二參數 = MySQL 表名
 ```
 
-範例：
-```bash
-# 分析所有資料表
-npm run analyze-access /path/to/quote.mdb
+**常用 flags（agent / skill 建議優先使用，語意較明確）：**
 
-# 分析特定資料表並與 MySQL 對比
-npm run analyze-access /path/to/quote.mdb quote
+| Flag | 說明 |
+|------|------|
+| `--access-tables=表1,表2` | 只分析這些 Access 表；**表名須與 .mdb 內完全一致**（含大小寫）。未指定時：若設了 `--mysql-table` / `MYSQL_TABLE_NAME` 且未設本項，則沿用舊行為以 MySQL 表名做 **子字串** 篩選 Access 表；仍匹配不到則分析全部表。 |
+| `--sample-offset=N` | 樣本起始列（0-based，與 `mdb-reader` 一致）。 |
+| `--sample-limit=N` | 樣本最多 N 筆（預設 5）；`0` 表示不讀資料列。 |
+| `--sample-columns=a,b` | 只讀指定欄位（減少 I/O）；不存在的欄位會略過並警告。 |
+| `--no-samples` | 不讀任何列，只看欄位結構與 `rowCount`。 |
+| `--mysql-table=name` | 與 MySQL 做欄位對照（需 `DB_*`；主應用 DB 若為 PostgreSQL，此路徑仍為 **MySQL**）。 |
+| `--json` | **stdout 只輸出一個 JSON**（適合 agent 解析）；人類可讀 log 不會寫到 stdout。 |
+
+範例：
+
+```bash
+# 分析所有資料表（人類可讀）
+npm run analyze-access -- /path/to/quote.mdb
+
+# 只分析 Access 的 Quote 表，取第 100 列起共 10 筆樣本，並輸出 JSON
+npm run analyze-access -- /path/to/quote.mdb --access-tables=Quote --sample-offset=100 --sample-limit=10 --json
+
+# 舊版：第二參數仍可作為 MySQL 表名（並觸發子字串篩選 Access 表）
+npm run analyze-access -- /path/to/quote.mdb quote
+
+# 精確：只分析 Access 的 Quote 表，並與 MySQL 的 quote 表對照
+npm run analyze-access -- /path/to/quote.mdb --access-tables=Quote --mysql-table=quote
 ```
 
 或使用環境變數：
 
 ```bash
 ACCESS_FILE_PATH=/path/to/quote.mdb MYSQL_TABLE_NAME=quote npm run analyze-access
+ACCESS_TABLE_NAMES=Quote ACCESS_SAMPLE_ROW_OFFSET=0 ACCESS_SAMPLE_ROW_LIMIT=20 ACCESS_ANALYZE_JSON=1 npm run analyze-access
 ```
 
 ### 功能說明
 
-- **分析 Access 資料表結構**：顯示欄位名稱、類型、長度、可為空等資訊
-- **樣本資料預覽**：顯示前 5 筆資料作為參考
-- **MySQL 對比分析**：如果提供 MySQL 資料表名稱，會進行結構對比
-- **欄位對應分析**：找出共同欄位、只在 Access 中的欄位、只在 MySQL 中的欄位
+- **分析 Access 資料表結構**：顯示欄位名稱、類型、長度、可為空等資訊（欄位名 Big5 會轉成 UTF-8 顯示／JSON 內 `name`；`nameInFile` 為檔內原始名）。
+- **樣本資料**：依 `sample-offset` + `sample-limit` 讀取（預設前 5 筆）；**總筆數**使用 `mdb-reader` 的 `rowCount`，不會為了計數載入整表。
+- **MySQL 對比分析**：若提供 MySQL 表名，會查 `INFORMATION_SCHEMA` 並與 Access 欄位比對（共同／僅 Access／僅 MySQL）。
+- **JSON 模式**：單一 JSON 物件含 `tableNamesInFile`、`tablesAnalyzed`、`tables[]`（每表含 `columns`、`sampleRows`、`rowCount`、可選 `compare`）。
 
 ### 配置
 
 腳本會從**專案根目錄**的 `.env` 檔案讀取配置：
 
-- `ACCESS_FILE_PATH` - Access 檔案路徑（可通過命令列參數提供）
+- `ACCESS_FILE_PATH` - Access 檔案路徑（必須為 `.mdb` / `.accdb` **檔案**，不可為目錄；可改由命令列第一參數覆寫）
 - `ACCESS_DB_PASSWORD` - Access 資料庫密碼（如果資料庫有密碼）
+- `ACCESS_TABLE_NAMES` - 逗號分隔，只分析這些表（與 `--access-tables` 相同語意）
+- `ACCESS_SAMPLE_ROW_OFFSET` / `ACCESS_SAMPLE_ROW_LIMIT` / `ACCESS_SAMPLE_COLUMNS` / `ACCESS_SKIP_SAMPLES` / `ACCESS_ANALYZE_JSON` - 見上表 flags
 - `MYSQL_TABLE_NAME` - 要對比的 MySQL 資料表名稱（可選）
 - `DB_HOST` - MySQL 資料庫主機（預設: localhost，僅在對比時需要）
 - `DB_PORT` - MySQL 資料庫端口（預設: 3306，僅在對比時需要）

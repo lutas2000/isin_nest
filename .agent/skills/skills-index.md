@@ -17,8 +17,8 @@ This file maps task intent to skill folders for on-demand loading.
 ## Legacy / Data Analysis
 
 - `analyze-access-database/SKILL.md`
-  - Trigger: inventory all `.mdb`/`.accdb` under a NAS root (e.g. `/nas/isin`), inspect Access schema/sample data, or compare an Access table to MySQL via `scripts/analyze-access.ts` / `scripts/list-access-mdb.ts`.
-  - Use with: `scripts/README.md` (Access sections); generated `LEGACY_ACCESS_MDB_INVENTORY.md`; env key names from `.env.example` only—never read root `.env`.
+  - Trigger: NAS Access inventory, per-file schema/sample with optional row window and JSON output, or MySQL column diff via `scripts/analyze-access.ts` / `list-access-mdb.ts`.
+  - Use with: `scripts/README.md` §3; `LEGACY_ACCESS_MDB_INVENTORY.md`; `.env.example` for variable names only—never read root `.env`.
 
 ## Deployment Skills
 
