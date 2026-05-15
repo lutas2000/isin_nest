@@ -1,0 +1,792 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/quote.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "gtable",
+    "itable",
+    "jtable"
+  ],
+  "tablesAnalyzed": [
+    "gtable",
+    "itable",
+    "jtable"
+  ],
+  "tables": [
+    {
+      "name": "gtable",
+      "rowCount": 8468,
+      "columns": [
+        {
+          "name": "QNO",
+          "nameInFile": "QNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACTOR_NO",
+          "nameInFile": "ACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACTOR",
+          "nameInFile": "ACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "AMOUNT",
+          "nameInFile": "AMOUNT",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ATTEN",
+          "nameInFile": "ATTEN",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "XX",
+          "nameInFile": "XX",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "QNO": "00010301",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "AMOUNT": "5695.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010302",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "AMOUNT": "6000.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010303",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MGJ",
+          "FACTOR": "詰圳(柏祥)",
+          "AMOUNT": "5850.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010401",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.04",
+          "FACTOR_NO": "C5D",
+          "FACTOR": "宏中",
+          "AMOUNT": "1400.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010402",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.04",
+          "FACTOR_NO": "VTW",
+          "FACTOR": "協承泰",
+          "AMOUNT": "1400.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010601",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.06",
+          "FACTOR_NO": "JUB",
+          "FACTOR": "衛乙",
+          "AMOUNT": "900.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010602",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.06",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "AMOUNT": "2000.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00010603",
+          "ACTOR_NO": "001",
+          "ACTOR": "林慶豐",
+          "DATE_R": " 100.01.06",
+          "FACTOR_NO": "12B",
+          "FACTOR": "台灣柏登",
+          "AMOUNT": "32000.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00011001",
+          "ACTOR_NO": "A01",
+          "ACTOR": "周春長",
+          "DATE_R": " 100.01.10",
+          "FACTOR_NO": "C1A",
+          "FACTOR": "鴻鉑科技",
+          "AMOUNT": "28070.0000",
+          "ATTEN": "林副總",
+          "XX": null
+        },
+        {
+          "QNO": "00011002",
+          "ACTOR_NO": "001",
+          "ACTOR": "林慶豐",
+          "DATE_R": " 100.01.10",
+          "FACTOR_NO": "GGC",
+          "FACTOR": "上順機械",
+          "AMOUNT": "3999.0000",
+          "ATTEN": "張R",
+          "XX": null
+        },
+        {
+          "QNO": "00011101",
+          "ACTOR_NO": "001",
+          "ACTOR": "林慶豐",
+          "DATE_R": " 100.01.11",
+          "FACTOR_NO": "ZCC",
+          "FACTOR": "富虹科技",
+          "AMOUNT": "9555.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00011201",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.12",
+          "FACTOR_NO": "MUL",
+          "FACTOR": "源利",
+          "AMOUNT": "6000.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00011301",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.13",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "AMOUNT": "4000.0000",
+          "ATTEN": "協宏035326969",
+          "XX": null
+        },
+        {
+          "QNO": "00011401",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.14",
+          "FACTOR_NO": "5VE",
+          "FACTOR": "中信(鐵)",
+          "AMOUNT": "4160.0000",
+          "ATTEN": " ",
+          "XX": null
+        },
+        {
+          "QNO": "00011501",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.15",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "AMOUNT": "1805.0000",
+          "ATTEN": " ",
+          "XX": null
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "itable",
+      "rowCount": 24885,
+      "columns": [
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QNO",
+          "nameInFile": "QNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "SN",
+          "nameInFile": "SN",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_REF",
+          "nameInFile": "DWG_REF",
+          "type": "text",
+          "size": 40,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "METAL",
+          "nameInFile": "METAL",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "THICK",
+          "nameInFile": "THICK",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "WORK",
+          "nameInFile": "WORK",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY",
+          "nameInFile": "QTY",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PRICE",
+          "nameInFile": "PRICE",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "TOTAL",
+          "nameInFile": "TOTAL",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 1",
+          "DWG_REF": "2A005-A010-M06A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "195.0000",
+          "TOTAL": "390.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 2",
+          "DWG_REF": "2A005-A010-M07A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "195.0000",
+          "TOTAL": "390.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 3",
+          "DWG_REF": "2A005-A010-M08A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "230.0000",
+          "TOTAL": "460.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 4",
+          "DWG_REF": "2A005-A010-M09A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "230.0000",
+          "TOTAL": "460.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 5",
+          "DWG_REF": "2D004-A001-M07A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "4.0000",
+          "PRICE": "160.0000",
+          "TOTAL": "640.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 6",
+          "DWG_REF": "2D004-A001-M08A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "4.0000",
+          "PRICE": "160.0000",
+          "TOTAL": "640.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 7",
+          "DWG_REF": "2D004-A001-M09A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "4.0000",
+          "PRICE": "185.0000",
+          "TOTAL": "740.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 8",
+          "DWG_REF": "2D004-A001-M10A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "4.0000",
+          "PRICE": "185.0000",
+          "TOTAL": "740.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 9",
+          "DWG_REF": "2D004-A001-M11A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "260.0000",
+          "TOTAL": "260.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": "10",
+          "DWG_REF": "2D004-A001-M12A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "260.0000",
+          "TOTAL": "260.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": "11",
+          "DWG_REF": "2D004-A001-M13A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "130.0000",
+          "TOTAL": "130.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": "12",
+          "DWG_REF": "2D004-A001-M14A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "130.0000",
+          "TOTAL": "130.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": "13",
+          "DWG_REF": "2D004-A001-M15A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "165.0000",
+          "TOTAL": "165.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": "14",
+          "DWG_REF": "2D004-A001-M16A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "165.0000",
+          "TOTAL": "165.0000"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": "15",
+          "DWG_REF": "2D004-A001-M17A",
+          "METAL": "SUS304",
+          "THICK": "2.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "125.0000",
+          "TOTAL": "125.0000"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "jtable",
+      "rowCount": 42170,
+      "columns": [
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QNO",
+          "nameInFile": "QNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "SN",
+          "nameInFile": "SN",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_REF",
+          "nameInFile": "DWG_REF",
+          "type": "text",
+          "size": 100,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 1",
+          "DWG_REF": "一、以上報價有效期限   7   天。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 2",
+          "DWG_REF": "二、以上報價均不含５％營業稅。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 3",
+          "DWG_REF": "三、以上報價均含材料費、製圖費、切割費。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 4",
+          "DWG_REF": "四、付款條件：代料加工，請以現金支付。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1GB",
+          "FACTOR": "百士佳",
+          "QNO": "00010301",
+          "SN": " 5",
+          "DWG_REF": "五、交貨期限：自接訂貨認單後   3   日內。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "QNO": "00010302",
+          "SN": " 1",
+          "DWG_REF": "一、以上報價有效期限   7   天。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "QNO": "00010302",
+          "SN": " 2",
+          "DWG_REF": "二、以上報價均不含５％營業稅。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "QNO": "00010302",
+          "SN": " 3",
+          "DWG_REF": "三、以上報價均不含材料費、製圖費、折工、運費。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "QNO": "00010302",
+          "SN": " 4",
+          "DWG_REF": "四、付款條件：代料加工，請以現金支付。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "REB",
+          "FACTOR": "金三功",
+          "QNO": "00010302",
+          "SN": " 5",
+          "DWG_REF": "五、交貨期限：自接訂貨認單後    14  日內。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MGJ",
+          "FACTOR": "詰圳(柏祥)",
+          "QNO": "00010303",
+          "SN": " 1",
+          "DWG_REF": "一、以上報價有效期限    7  天。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MGJ",
+          "FACTOR": "詰圳(柏祥)",
+          "QNO": "00010303",
+          "SN": " 2",
+          "DWG_REF": "二、以上報價均不含５％營業稅。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MGJ",
+          "FACTOR": "詰圳(柏祥)",
+          "QNO": "00010303",
+          "SN": " 3",
+          "DWG_REF": "三、以上報價均含材料費、製圖費、切割費。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MGJ",
+          "FACTOR": "詰圳(柏祥)",
+          "QNO": "00010303",
+          "SN": " 4",
+          "DWG_REF": "四、付款條件：代料加工，請以現金支付。"
+        },
+        {
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MGJ",
+          "FACTOR": "詰圳(柏祥)",
+          "QNO": "00010303",
+          "SN": " 5",
+          "DWG_REF": "五、交貨期限：自接訂貨認單後   14   日內。"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

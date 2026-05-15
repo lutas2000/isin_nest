@@ -1,0 +1,92 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/show.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "flower"
+  ],
+  "tablesAnalyzed": [
+    "flower"
+  ],
+  "tables": [
+    {
+      "name": "flower",
+      "rowCount": 0,
+      "columns": [
+        {
+          "name": "fd1",
+          "nameInFile": "fd1",
+          "type": "long",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "fd2",
+          "nameInFile": "fd2",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fd3",
+          "nameInFile": "fd3",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fd4",
+          "nameInFile": "fd4",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fd5",
+          "nameInFile": "fd5",
+          "type": "text",
+          "size": 250,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fd6",
+          "nameInFile": "fd6",
+          "type": "text",
+          "size": 100,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fd7",
+          "nameInFile": "fd7",
+          "type": "text",
+          "size": 100,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

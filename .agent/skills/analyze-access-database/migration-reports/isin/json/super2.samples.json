@@ -1,0 +1,290 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/super2.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "itable",
+    "jtable",
+    "Âà´«¿ù»~"
+  ],
+  "tablesAnalyzed": [
+    "itable",
+    "jtable",
+    "Âà´«¿ù»~"
+  ],
+  "tables": [
+    {
+      "name": "itable",
+      "rowCount": 9,
+      "columns": [
+        {
+          "name": "graph",
+          "nameInFile": "graph",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "sn",
+          "nameInFile": "sn",
+          "type": "long",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "graph": "SECTION",
+          "sn": 1
+        },
+        {
+          "graph": "POINT",
+          "sn": 2
+        },
+        {
+          "graph": "TEXT",
+          "sn": 18
+        },
+        {
+          "graph": "INSERT",
+          "sn": 6
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": 7
+        },
+        {
+          "graph": "SEQEND",
+          "sn": 7
+        },
+        {
+          "graph": "CIRCLE",
+          "sn": 14
+        },
+        {
+          "graph": "ENDSEC",
+          "sn": 1
+        },
+        {
+          "graph": "EOF",
+          "sn": 1
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "jtable",
+      "rowCount": 197,
+      "columns": [
+        {
+          "name": "graph",
+          "nameInFile": "graph",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "sn",
+          "nameInFile": "sn",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "item",
+          "nameInFile": "item",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "kind",
+          "nameInFile": "kind",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "data",
+          "nameInFile": "data",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   1",
+          "kind": " 66",
+          "data": "1"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   2",
+          "kind": " 10",
+          "data": "0.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   3",
+          "kind": " 20",
+          "data": "0.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   4",
+          "kind": " 30",
+          "data": "0.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   5",
+          "kind": " 70",
+          "data": "1"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   6",
+          "kind": " 10",
+          "data": "10.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   7",
+          "kind": " 20",
+          "data": "270.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   8",
+          "kind": " 30",
+          "data": "0.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "   9",
+          "kind": " 10",
+          "data": "10.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "  10",
+          "kind": " 20",
+          "data": "174.004151"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "  11",
+          "kind": " 30",
+          "data": "0.0"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "  12",
+          "kind": " 42",
+          "data": "0.315299"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "  13",
+          "kind": " 10",
+          "data": "23.159597"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "  14",
+          "kind": " 20",
+          "data": "155.210298"
+        },
+        {
+          "graph": "POLYLINE",
+          "sn": "   1",
+          "item": "  15",
+          "kind": " 30",
+          "data": "0.0"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "Âà´«¿ù»~",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "物件類型",
+          "nameInFile": "ª«¥óÃþ«¬",
+          "type": "text",
+          "size": 255,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "物件名稱",
+          "nameInFile": "ª«¥ó¦WºÙ",
+          "type": "text",
+          "size": 255,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "錯誤描述",
+          "nameInFile": "¿ù»~´y­z",
+          "type": "memo",
+          "size": 0,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "ª«¥óÃþ«¬": "資料庫",
+          "ª«¥ó¦WºÙ": null,
+          "¿ù»~´y­z": "與檔案 'dao2535.tlb' 的 VBE 參照遺失或損壞。"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

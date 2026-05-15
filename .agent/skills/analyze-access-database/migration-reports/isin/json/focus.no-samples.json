@@ -1,0 +1,56 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/focus.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "focus"
+  ],
+  "tablesAnalyzed": [
+    "focus"
+  ],
+  "tables": [
+    {
+      "name": "focus",
+      "rowCount": 230,
+      "columns": [
+        {
+          "name": "fno",
+          "nameInFile": "fno",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fkey",
+          "nameInFile": "fkey",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "notes",
+          "nameInFile": "notes",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

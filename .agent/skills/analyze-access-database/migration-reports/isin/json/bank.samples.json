@@ -1,0 +1,512 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/bank.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "BANK"
+  ],
+  "tablesAnalyzed": [
+    "BANK"
+  ],
+  "tables": [
+    {
+      "name": "BANK",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "BKNO",
+          "nameInFile": "BKNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "BKNK",
+          "nameInFile": "BKNK",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "BKNAME",
+          "nameInFile": "BKNAME",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CONTACT",
+          "nameInFile": "CONTACT",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "TEL1",
+          "nameInFile": "TEL1",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "TEL2",
+          "nameInFile": "TEL2",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ADDRESS",
+          "nameInFile": "ADDRESS",
+          "type": "text",
+          "size": 60,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "BONO",
+          "nameInFile": "BONO",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "BONAME",
+          "nameInFile": "BONAME",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACNO",
+          "nameInFile": "ACNO",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACNAME",
+          "nameInFile": "ACNAME",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "Debt",
+          "nameInFile": "Debt",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "REMARK",
+          "nameInFile": "REMARK",
+          "type": "text",
+          "size": 40,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xposy",
+          "nameInFile": "xposy",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xposm",
+          "nameInFile": "xposm",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xposd",
+          "nameInFile": "xposd",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xpost",
+          "nameInFile": "xpost",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xposc",
+          "nameInFile": "xposc",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xposn",
+          "nameInFile": "xposn",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xposp",
+          "nameInFile": "xposp",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yposy",
+          "nameInFile": "yposy",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yposm",
+          "nameInFile": "yposm",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yposd",
+          "nameInFile": "yposd",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ypost",
+          "nameInFile": "ypost",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yposc",
+          "nameInFile": "yposc",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yposn",
+          "nameInFile": "yposn",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yposp",
+          "nameInFile": "yposp",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xissue1",
+          "nameInFile": "xissue1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xac1",
+          "nameInFile": "xac1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xex1",
+          "nameInFile": "xex1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xamt1",
+          "nameInFile": "xamt1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yissue1",
+          "nameInFile": "yissue1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yac1",
+          "nameInFile": "yac1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yex1",
+          "nameInFile": "yex1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yamt1",
+          "nameInFile": "yamt1",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xissue2",
+          "nameInFile": "xissue2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xac2",
+          "nameInFile": "xac2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xex2",
+          "nameInFile": "xex2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xamt2",
+          "nameInFile": "xamt2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yissue2",
+          "nameInFile": "yissue2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yac2",
+          "nameInFile": "yac2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yex2",
+          "nameInFile": "yex2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "yamt2",
+          "nameInFile": "yamt2",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "offx",
+          "nameInFile": "offx",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "offy",
+          "nameInFile": "offy",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xbkno",
+          "nameInFile": "xbkno",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ybkno",
+          "nameInFile": "ybkno",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "datexx",
+          "nameInFile": "datexx",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "BKNO": "S",
+          "BKNK": "上海商銀",
+          "BKNAME": "上海商業銀行 員林分行",
+          "CONTACT": " ",
+          "TEL1": " ",
+          "TEL2": " ",
+          "ADDRESS": "彰化縣員林鎮中山路二段360號",
+          "BONO": " ",
+          "BONAME": " ",
+          "ACNO": " ",
+          "ACNAME": " ",
+          "Debt": "0.0000",
+          "REMARK": " ",
+          "xposy": " 135",
+          "xposm": " 148",
+          "xposd": " 160",
+          "xpost": " 110",
+          "xposc": " 110",
+          "xposn": " 100",
+          "xposp": " 100",
+          "yposy": "  12",
+          "yposm": "  12",
+          "yposd": "  12",
+          "ypost": "  20",
+          "yposc": "  28",
+          "yposn": "  36",
+          "yposp": "  58",
+          "xissue1": " ",
+          "xac1": "  30",
+          "xex1": "  30",
+          "xamt1": "  30",
+          "yissue1": " ",
+          "yac1": "  33",
+          "yex1": "  22",
+          "yamt1": "  55",
+          "xissue2": " ",
+          "xac2": " ",
+          "xex2": " ",
+          "xamt2": " ",
+          "yissue2": " ",
+          "yac2": " ",
+          "yex2": " ",
+          "yamt2": " ",
+          "offx": " -10",
+          "offy": "  -2",
+          "xbkno": " 180",
+          "ybkno": "  12",
+          "datexx": " "
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

@@ -1,0 +1,800 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/workplan.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "gtable",
+    "itable",
+    "jtable"
+  ],
+  "tablesAnalyzed": [
+    "gtable",
+    "itable",
+    "jtable"
+  ],
+  "tables": [
+    {
+      "name": "gtable",
+      "rowCount": 142646,
+      "columns": [
+        {
+          "name": "QNO",
+          "nameInFile": "QNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACTOR_NO",
+          "nameInFile": "ACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACTOR",
+          "nameInFile": "ACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "RESERV",
+          "nameInFile": "RESERV",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "XX",
+          "nameInFile": "XX",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "QNO": "00010301",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "UAU",
+          "FACTOR": "焰光",
+          "RESERV": "99122916",
+          "XX": " "
+        },
+        {
+          "QNO": "00010302",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "CAD",
+          "FACTOR": "弘達",
+          "RESERV": "99123124",
+          "XX": " "
+        },
+        {
+          "QNO": "00010303",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "QZA",
+          "FACTOR": "品豐(立全)",
+          "RESERV": "99122118",
+          "XX": " "
+        },
+        {
+          "QNO": "00010304",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "DAQ",
+          "FACTOR": "凱美",
+          "RESERV": "99123028",
+          "XX": " "
+        },
+        {
+          "QNO": "00010305",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "TCI",
+          "FACTOR": "承合機械",
+          "RESERV": "99123012",
+          "XX": " "
+        },
+        {
+          "QNO": "00010306",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "S9A",
+          "FACTOR": "迺賓",
+          "RESERV": "99122314",
+          "XX": " "
+        },
+        {
+          "QNO": "00010308",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "MUL",
+          "FACTOR": "源利",
+          "RESERV": "99123016",
+          "XX": " "
+        },
+        {
+          "QNO": "00010309",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "2BC",
+          "FACTOR": "松瓚(大日)",
+          "RESERV": "99122932",
+          "XX": " "
+        },
+        {
+          "QNO": "00010310",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "1MA",
+          "FACTOR": "寶元環保",
+          "RESERV": "00010309",
+          "XX": " "
+        },
+        {
+          "QNO": "00010311",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "RESERV": "00010303",
+          "XX": " "
+        },
+        {
+          "QNO": "00010312",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "2JF",
+          "FACTOR": "德威刀模",
+          "RESERV": "99123017",
+          "XX": " "
+        },
+        {
+          "QNO": "00010313",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "DQ1",
+          "FACTOR": "康蒲環保",
+          "RESERV": "00010310",
+          "XX": " "
+        },
+        {
+          "QNO": "00010314",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "2AM",
+          "FACTOR": "大田",
+          "RESERV": "00010321",
+          "XX": " "
+        },
+        {
+          "QNO": "00010315",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "BZY",
+          "FACTOR": "潤原",
+          "RESERV": "99123111",
+          "XX": " "
+        },
+        {
+          "QNO": "00010316",
+          "ACTOR_NO": "A02",
+          "ACTOR": "楊明家",
+          "DATE_R": " 100.01.03",
+          "FACTOR_NO": "5C3",
+          "FACTOR": "志華機械",
+          "RESERV": "99123113",
+          "XX": " "
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "itable",
+      "rowCount": 429485,
+      "columns": [
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "RESERV",
+          "nameInFile": "RESERV",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QNO",
+          "nameInFile": "QNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "SN",
+          "nameInFile": "SN",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_NO",
+          "nameInFile": "DWG_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "METAL",
+          "nameInFile": "METAL",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "THICK",
+          "nameInFile": "THICK",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY",
+          "nameInFile": "QTY",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "BUY",
+          "nameInFile": "BUY",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY_OK",
+          "nameInFile": "QTY_OK",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "CNC_OK",
+          "nameInFile": "CNC_OK",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FLAG",
+          "nameInFile": "FLAG",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "OSP",
+          "nameInFile": "OSP",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072211",
+          "FACTOR_NO": "VBU",
+          "FACTOR": "新益",
+          "QNO": "09072212",
+          "SN": " 1",
+          "DWG_NO": "VBUUC004",
+          "METAL": "SPCC",
+          "THICK": "0.5",
+          "QTY": "100.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072211",
+          "FACTOR_NO": "VBU",
+          "FACTOR": "新益",
+          "QNO": "09072212",
+          "SN": " 2",
+          "DWG_NO": "VBUUC004",
+          "METAL": "SPCC",
+          "THICK": "1",
+          "QTY": "100.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072015",
+          "FACTOR_NO": "VBU",
+          "FACTOR": "新益",
+          "QNO": "09072213",
+          "SN": " 1",
+          "DWG_NO": "VBUZ5112",
+          "METAL": "SUS304",
+          "THICK": "10",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": "內方孔每邊預留2mm.孔不打點"
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072015",
+          "FACTOR_NO": "VBU",
+          "FACTOR": "新益",
+          "QNO": "09072213",
+          "SN": " 2",
+          "DWG_NO": "VBUY2005",
+          "METAL": "SUS304",
+          "THICK": "10",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072015",
+          "FACTOR_NO": "VBU",
+          "FACTOR": "新益",
+          "QNO": "09072213",
+          "SN": " 3",
+          "DWG_NO": "VBUPA182",
+          "METAL": "SUS304",
+          "THICK": "15",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": "孔打點"
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072015",
+          "FACTOR_NO": "VBU",
+          "FACTOR": "新益",
+          "QNO": "09072213",
+          "SN": " 4",
+          "DWG_NO": "VBUPC662",
+          "METAL": "SUS304",
+          "THICK": "15",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": "孔打點"
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09071350",
+          "FACTOR_NO": "VCD",
+          "FACTOR": "協德",
+          "QNO": "09072214",
+          "SN": " 1",
+          "DWG_NO": "VCD27ZB221",
+          "METAL": "SUS304",
+          "THICK": "6",
+          "QTY": "1.0000",
+          "BUY": "備",
+          "QTY_OK": "0.0000",
+          "CNC_OK": " ",
+          "FLAG": "N",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09071350",
+          "FACTOR_NO": "VCD",
+          "FACTOR": "協德",
+          "QNO": "09072214",
+          "SN": " 2",
+          "DWG_NO": "VCD27011",
+          "METAL": "SUS304",
+          "THICK": "6",
+          "QTY": "1.0000",
+          "BUY": "備",
+          "QTY_OK": "0.0000",
+          "CNC_OK": " ",
+          "FLAG": "N",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09071350",
+          "FACTOR_NO": "VCD",
+          "FACTOR": "協德",
+          "QNO": "09072214",
+          "SN": " 3",
+          "DWG_NO": "VCD27ZB222",
+          "METAL": "SUS304",
+          "THICK": "12",
+          "QTY": "1.0000",
+          "BUY": "備",
+          "QTY_OK": "0.0000",
+          "CNC_OK": " ",
+          "FLAG": "N",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09071350",
+          "FACTOR_NO": "VCD",
+          "FACTOR": "協德",
+          "QNO": "09072214",
+          "SN": " 4",
+          "DWG_NO": "VCD27ZB223",
+          "METAL": "SUS304",
+          "THICK": "12",
+          "QTY": "1.0000",
+          "BUY": "備",
+          "QTY_OK": "0.0000",
+          "CNC_OK": " ",
+          "FLAG": "N",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072135",
+          "FACTOR_NO": "RCA",
+          "FACTOR": "山國製",
+          "QNO": "09072215",
+          "SN": " 1",
+          "DWG_NO": "RCA27ZB221",
+          "METAL": "SS41",
+          "THICK": "5",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072135",
+          "FACTOR_NO": "RCA",
+          "FACTOR": "山國製",
+          "QNO": "09072215",
+          "SN": " 2",
+          "DWG_NO": "RCA27ZB222",
+          "METAL": "SS41",
+          "THICK": "5",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": " "
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072103",
+          "FACTOR_NO": "MGM",
+          "FACTOR": "永勝汽車",
+          "QNO": "09072216",
+          "SN": " 1",
+          "DWG_NO": "MGM27001",
+          "METAL": "SS41",
+          "THICK": "2",
+          "QTY": "10.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": "折,"
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072103",
+          "FACTOR_NO": "MGM",
+          "FACTOR": "永勝汽車",
+          "QNO": "09072216",
+          "SN": " 2",
+          "DWG_NO": "MGM27002",
+          "METAL": "SS41",
+          "THICK": "2.3",
+          "QTY": "10.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": "折,"
+        },
+        {
+          "DATE_R": " 109.07.22",
+          "RESERV": "09072028",
+          "FACTOR_NO": "WTD",
+          "FACTOR": "湯晟企業",
+          "QNO": "09072217",
+          "SN": " 1",
+          "DWG_NO": "WTDY9007",
+          "METAL": "SS41",
+          "THICK": "2",
+          "QTY": "1.0000",
+          "BUY": "代",
+          "QTY_OK": "0.0000",
+          "CNC_OK": "Y",
+          "FLAG": " ",
+          "OSP": "折,焊,"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "jtable",
+      "rowCount": 0,
+      "columns": [
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "RESERV",
+          "nameInFile": "RESERV",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QNO",
+          "nameInFile": "QNO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "SN",
+          "nameInFile": "SN",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_NO",
+          "nameInFile": "DWG_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "METAL",
+          "nameInFile": "METAL",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "THICK",
+          "nameInFile": "THICK",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY",
+          "nameInFile": "QTY",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "BUY",
+          "nameInFile": "BUY",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY_OK",
+          "nameInFile": "QTY_OK",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "CNC_OK",
+          "nameInFile": "CNC_OK",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FLAG",
+          "nameInFile": "FLAG",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "OSP",
+          "nameInFile": "OSP",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

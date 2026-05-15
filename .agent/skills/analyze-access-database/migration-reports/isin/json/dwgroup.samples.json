@@ -1,0 +1,486 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/dwgroup.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "gtable",
+    "itable"
+  ],
+  "tablesAnalyzed": [
+    "gtable",
+    "itable"
+  ],
+  "tables": [
+    {
+      "name": "gtable",
+      "rowCount": 23837,
+      "columns": [
+        {
+          "name": "DSETS",
+          "nameInFile": "DSETS",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_REF",
+          "nameInFile": "DWG_REF",
+          "type": "text",
+          "size": 40,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "NOTES",
+          "nameInFile": "NOTES",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "XX",
+          "nameInFile": "XX",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "DSETS": "01AJ302B",
+          "DATE_R": "  92.03.15",
+          "FACTOR_NO": "01A",
+          "FACTOR": "安邦",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": " "
+        },
+        {
+          "DSETS": "0900Z001",
+          "DATE_R": "  87.03.09",
+          "FACTOR_NO": "JUA",
+          "FACTOR": "委豔",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": " "
+        },
+        {
+          "DSETS": "0SAW3001B",
+          "DATE_R": " ",
+          "FACTOR_NO": "0SA",
+          "FACTOR": "安南",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "0SAW3002B",
+          "DATE_R": " ",
+          "FACTOR_NO": "0SA",
+          "FACTOR": "安南",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "0ZAN301B",
+          "DATE_R": " ",
+          "FACTOR_NO": "0ZA",
+          "FACTOR": "台灣安防",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "1105P010",
+          "DATE_R": "  86.10.09",
+          "FACTOR_NO": "JUA",
+          "FACTOR": "委豔",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": " "
+        },
+        {
+          "DSETS": "11121004B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11121022B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11121023B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11122007B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11122008B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11122022B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11122024B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11122026B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        },
+        {
+          "DSETS": "11122A24B",
+          "DATE_R": " ",
+          "FACTOR_NO": "111",
+          "FACTOR": "臨時",
+          "DWG_REF": " ",
+          "NOTES": " ",
+          "XX": null
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "itable",
+      "rowCount": 74998,
+      "columns": [
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DSETS",
+          "nameInFile": "DSETS",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "SN",
+          "nameInFile": "SN",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_NO",
+          "nameInFile": "DWG_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_REF",
+          "nameInFile": "DWG_REF",
+          "type": "text",
+          "size": 40,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "METAL",
+          "nameInFile": "METAL",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "THICK",
+          "nameInFile": "THICK",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY",
+          "nameInFile": "QTY",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "FLAG",
+          "nameInFile": "FLAG",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "FACTOR_NO": "01A",
+          "DSETS": "01AJ302B",
+          "SN": " 1",
+          "DWG_NO": "01AJ3021",
+          "DWG_REF": " ",
+          "METAL": "SUS304",
+          "THICK": "1.2",
+          "QTY": "1.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "01A",
+          "DSETS": "01AJ302B",
+          "SN": " 2",
+          "DWG_NO": "01AJ3022",
+          "DWG_REF": " ",
+          "METAL": "SUS304",
+          "THICK": "1.2",
+          "QTY": "8.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 1",
+          "DWG_NO": "JUAD303",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "9",
+          "QTY": "1.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 2",
+          "DWG_NO": "JUAD304",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "4",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 3",
+          "DWG_NO": "JUAD305",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "4",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 4",
+          "DWG_NO": "JUAD306",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 5",
+          "DWG_NO": "JUAD307",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 6",
+          "DWG_NO": "JUAD308",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 7",
+          "DWG_NO": "JUAD309",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 8",
+          "DWG_NO": "JUAD310",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "2.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": " 9",
+          "DWG_NO": "JUAD311",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "4.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": "10",
+          "DWG_NO": "JUAD312",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "6.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "JUA",
+          "DSETS": "0900Z001",
+          "SN": "11",
+          "DWG_NO": "JUAD313",
+          "DWG_REF": " ",
+          "METAL": "SS41",
+          "THICK": "3",
+          "QTY": "8.0000",
+          "FLAG": " "
+        },
+        {
+          "FACTOR_NO": "0SA",
+          "DSETS": "0SAW3001B",
+          "SN": " 1",
+          "DWG_NO": "0SAW30011",
+          "DWG_REF": "15",
+          "METAL": "SUS304",
+          "THICK": "3",
+          "QTY": "1.0000",
+          "FLAG": "Y"
+        },
+        {
+          "FACTOR_NO": "0SA",
+          "DSETS": "0SAW3001B",
+          "SN": " 2",
+          "DWG_NO": "0SAW30012",
+          "DWG_REF": "15",
+          "METAL": "SUS304",
+          "THICK": "3",
+          "QTY": "1.0000",
+          "FLAG": "Y"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

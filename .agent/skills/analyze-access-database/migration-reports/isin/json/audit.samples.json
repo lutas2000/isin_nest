@@ -1,0 +1,124 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/isin/audit.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "audit"
+  ],
+  "tablesAnalyzed": [
+    "audit"
+  ],
+  "tables": [
+    {
+      "name": "audit",
+      "rowCount": 5,
+      "columns": [
+        {
+          "name": "acno",
+          "nameInFile": "acno",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acname",
+          "nameInFile": "acname",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acno1",
+          "nameInFile": "acno1",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acname1",
+          "nameInFile": "acname1",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acno2",
+          "nameInFile": "acno2",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acname2",
+          "nameInFile": "acname2",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "acno": "5116-010",
+          "acname": "期末存貨",
+          "acno1": "1131-010",
+          "acname1": "商品",
+          "acno2": "5115-010",
+          "acname2": "期初存貨"
+        },
+        {
+          "acno": "5123-010",
+          "acname": "期末存料",
+          "acno1": "1134-010",
+          "acname1": "原料",
+          "acno2": "5121-010",
+          "acname2": "期初存料"
+        },
+        {
+          "acno": "5133-010",
+          "acname": "期末存料(物料)",
+          "acno1": "1135-010",
+          "acname1": "物料",
+          "acno2": "5131-010",
+          "acname2": "期初存料(物料)"
+        },
+        {
+          "acno": "5612-010",
+          "acname": "期末在製品盤存",
+          "acno1": "1133-010",
+          "acname1": "在製品(或在建工程)",
+          "acno2": "5611-010",
+          "acname2": "期初在製品盤存"
+        },
+        {
+          "acno": "5622-010",
+          "acname": "期末製成品盤存",
+          "acno1": "1132-010",
+          "acname1": "製成品",
+          "acno2": "5621-010",
+          "acname2": "期初製成品盤存"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

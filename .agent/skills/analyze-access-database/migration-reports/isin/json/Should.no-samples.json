@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/isin/Should.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "itable"
+  ],
+  "tablesAnalyzed": [
+    "itable"
+  ],
+  "tables": [
+    {
+      "name": "itable",
+      "rowCount": 147,
+      "columns": [
+        {
+          "name": "fno",
+          "nameInFile": "fno",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fname",
+          "nameInFile": "fname",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pre",
+          "nameInFile": "pre",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "this",
+          "nameInFile": "this",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

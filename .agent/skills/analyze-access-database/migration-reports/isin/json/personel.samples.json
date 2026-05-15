@@ -1,0 +1,324 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/isin/personel.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "staff"
+  ],
+  "tablesAnalyzed": [
+    "staff"
+  ],
+  "tables": [
+    {
+      "name": "staff",
+      "rowCount": 54,
+      "columns": [
+        {
+          "name": "plno",
+          "nameInFile": "plno",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "name",
+          "nameInFile": "name",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "id",
+          "nameInFile": "id",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "birth",
+          "nameInFile": "birth",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "tel",
+          "nameInFile": "tel",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "addr",
+          "nameInFile": "addr",
+          "type": "text",
+          "size": 60,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "title",
+          "nameInFile": "title",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "come",
+          "nameInFile": "come",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "quit",
+          "nameInFile": "quit",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "remark",
+          "nameInFile": "remark",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xx",
+          "nameInFile": "xx",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "plno": "001",
+          "name": "林慶豐",
+          "id": "L102707182",
+          "birth": "  42.06.01",
+          "tel": "22131402",
+          "addr": "台中市樂業路386號",
+          "title": "總經理",
+          "come": "  79.03.01",
+          "quit": " ",
+          "remark": "0932510183",
+          "xx": "＊"
+        },
+        {
+          "plno": "002",
+          "name": "總",
+          "id": " ",
+          "birth": " ",
+          "tel": " ",
+          "addr": " ",
+          "title": " ",
+          "come": " ",
+          "quit": " ",
+          "remark": " ",
+          "xx": "＊"
+        },
+        {
+          "plno": "A01",
+          "name": "周春長",
+          "id": "M120251451",
+          "birth": "  56.05.15",
+          "tel": " ",
+          "addr": "育仁路95號6F  鞋:25.5號",
+          "title": "廠長",
+          "come": "  80.11.04",
+          "quit": " ",
+          "remark": "0928922761",
+          "xx": "＊"
+        },
+        {
+          "plno": "A02",
+          "name": "楊明家",
+          "id": "Q122180752",
+          "birth": "  58.06.03",
+          "tel": "04-22799525",
+          "addr": "台中縣太平市太平路46巷62弄1號  24號",
+          "title": "業務經理",
+          "come": "  82.02.17",
+          "quit": " ",
+          "remark": "0918332829",
+          "xx": "＊"
+        },
+        {
+          "plno": "A05",
+          "name": "王義貴",
+          "id": "L121899418",
+          "birth": "  56.11.11",
+          "tel": "0987903934",
+          "addr": "台中縣太平市路號",
+          "title": "司機",
+          "come": " ",
+          "quit": "  99.06.30",
+          "remark": "0912661498",
+          "xx": "＊"
+        },
+        {
+          "plno": "A06",
+          "name": "簡文雄",
+          "id": " ",
+          "birth": "  57.06.23",
+          "tel": " ",
+          "addr": " ",
+          "title": " ",
+          "come": " 102.05.02",
+          "quit": " ",
+          "remark": " ",
+          "xx": null
+        },
+        {
+          "plno": "A08",
+          "name": "張淑娟",
+          "id": "B221497374",
+          "birth": "  65.12.02",
+          "tel": "04-22330299",
+          "addr": "台中市北屯區青島路4段249號",
+          "title": "製圖",
+          "come": "  96.08.01",
+          "quit": " ",
+          "remark": " ",
+          "xx": "＊"
+        },
+        {
+          "plno": "A09",
+          "name": "白秀櫻",
+          "id": "M221324964",
+          "birth": "  58.10.20",
+          "tel": "049925037",
+          "addr": "南投縣仁愛鄉中正村光明路46號    25.5號 0928186672",
+          "title": "現場",
+          "come": "  97.02.01",
+          "quit": " ",
+          "remark": "04-24962923",
+          "xx": "＊"
+        },
+        {
+          "plno": "A12",
+          "name": "黃雅惠",
+          "id": "B221409712",
+          "birth": "  61.06.19",
+          "tel": " ",
+          "addr": "台中縣太平市振興路119巷1弄9號",
+          "title": "會計",
+          "come": "  84.08.07",
+          "quit": " ",
+          "remark": " ",
+          "xx": "＊"
+        },
+        {
+          "plno": "A15",
+          "name": "蔡雅婷",
+          "id": " ",
+          "birth": "  58.11.05",
+          "tel": "04-24861502",
+          "addr": "台中縣大里市內新街59-5號",
+          "title": "業務助理",
+          "come": "  95.02.27",
+          "quit": " ",
+          "remark": " ",
+          "xx": "＊"
+        },
+        {
+          "plno": "A16",
+          "name": "陳振宗",
+          "id": "L122671987",
+          "birth": "  68.05.30",
+          "tel": "0926-922600",
+          "addr": "台中市太平中平九街117號",
+          "title": " ",
+          "come": "  99.06.28",
+          "quit": " ",
+          "remark": "04-22773015",
+          "xx": null
+        },
+        {
+          "plno": "A21",
+          "name": "張琬婷",
+          "id": "B221756136",
+          "birth": "  68.11.19",
+          "tel": " ",
+          "addr": " ",
+          "title": " ",
+          "come": " 102.03.03",
+          "quit": " ",
+          "remark": " ",
+          "xx": null
+        },
+        {
+          "plno": "A26",
+          "name": "盧玫妃",
+          "id": "N222967419",
+          "birth": "  66.11.04",
+          "tel": "04-24927118",
+          "addr": "台中縣大里市瑞城一街24 號",
+          "title": "製圖員",
+          "come": "  93.02.01",
+          "quit": "  99.03.31",
+          "remark": "0956-037668",
+          "xx": "＊"
+        },
+        {
+          "plno": "A28",
+          "name": "劉俊男",
+          "id": "L124469154",
+          "birth": "  79.04.10",
+          "tel": "04-22833133",
+          "addr": "台中縣大里市吉善路38-3號",
+          "title": " ",
+          "come": "  95.08.02",
+          "quit": " ",
+          "remark": " ",
+          "xx": "＊"
+        },
+        {
+          "plno": "A31",
+          "name": "廖金峻",
+          "id": "L122271987",
+          "birth": "  66.12.10",
+          "tel": "04-22262087",
+          "addr": "台中市漢口四段371號8F-3",
+          "title": " ",
+          "come": "  95.04.19",
+          "quit": " ",
+          "remark": "0958661196",
+          "xx": "＊"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

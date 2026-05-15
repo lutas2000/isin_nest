@@ -1,0 +1,204 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/uselog.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "uselog"
+  ],
+  "tablesAnalyzed": [
+    "uselog"
+  ],
+  "tables": [
+    {
+      "name": "uselog",
+      "rowCount": 982,
+      "columns": [
+        {
+          "name": "user",
+          "nameInFile": "user",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "desc",
+          "nameInFile": "desc",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "timein",
+          "nameInFile": "timein",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "timeout",
+          "nameInFile": "timeout",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "id",
+          "nameInFile": "id",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "process",
+          "nameInFile": "process",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "user": "A06",
+          "desc": "訂單登錄",
+          "timein": " 102.05.13 08:27:09 上午",
+          "timeout": " ",
+          "id": "SUPER",
+          "process": "16"
+        },
+        {
+          "user": "MASTER",
+          "desc": "客戶建檔",
+          "timein": " 102.05.13 08:12:43 上午",
+          "timeout": " 102.05.13 08:12:50 上午",
+          "id": "SERVER",
+          "process": "1"
+        },
+        {
+          "user": "D02",
+          "desc": "訂單登錄",
+          "timein": " 102.05.13 08:29:14 上午",
+          "timeout": " 102.05.13 11:15:49 上午",
+          "id": "D02",
+          "process": "16"
+        },
+        {
+          "user": "MASTER",
+          "desc": "客戶建檔",
+          "timein": " 102.05.13 08:13:43 上午",
+          "timeout": " 102.05.13 08:15:33 上午",
+          "id": "SERVER",
+          "process": "1"
+        },
+        {
+          "user": "MASTER",
+          "desc": "訂單登錄",
+          "timein": " 102.05.13 08:15:23 上午",
+          "timeout": " 102.05.13 08:15:33 上午",
+          "id": "SERVER",
+          "process": "16"
+        },
+        {
+          "user": "A02",
+          "desc": "訂單登錄",
+          "timein": " 102.05.13 08:36:02 上午",
+          "timeout": " 102.05.13 08:38:53 上午",
+          "id": "BK",
+          "process": "16"
+        },
+        {
+          "user": "A12",
+          "desc": "客戶建檔",
+          "timein": " 102.05.13 08:31:08 上午",
+          "timeout": " 102.05.13 08:31:59 上午",
+          "id": "TONY",
+          "process": "1"
+        },
+        {
+          "user": "A02",
+          "desc": "銷貨登錄",
+          "timein": " 102.05.13 08:38:55 上午",
+          "timeout": " 102.05.13 08:46:46 上午",
+          "id": "BK",
+          "process": "19"
+        },
+        {
+          "user": "A02",
+          "desc": "訂單登錄",
+          "timein": " 102.05.13 08:39:26 上午",
+          "timeout": " 102.05.13 08:39:45 上午",
+          "id": "BK",
+          "process": "16"
+        },
+        {
+          "user": "A15",
+          "desc": "銷貨登錄",
+          "timein": " 102.05.13 08:46:58 上午",
+          "timeout": " 102.05.13 09:23:11 上午",
+          "id": "BK",
+          "process": "19"
+        },
+        {
+          "user": "D03",
+          "desc": "訂單登錄",
+          "timein": " 102.05.13 08:44:08 上午",
+          "timeout": " 102.05.13 09:04:35 上午",
+          "id": "D01",
+          "process": "16"
+        },
+        {
+          "user": "A15",
+          "desc": "客戶建檔",
+          "timein": " 102.05.13 08:48:26 上午",
+          "timeout": " 102.05.13 08:53:06 上午",
+          "id": "BK",
+          "process": "1"
+        },
+        {
+          "user": "D03",
+          "desc": "貨品建檔",
+          "timein": " 102.05.13 08:44:37 上午",
+          "timeout": " 102.05.13 08:44:41 上午",
+          "id": "D01",
+          "process": "4"
+        },
+        {
+          "user": "D02",
+          "desc": "貨品建檔",
+          "timein": " 102.05.13 08:45:50 上午",
+          "timeout": " 102.05.13 11:15:49 上午",
+          "id": "D02",
+          "process": "4"
+        },
+        {
+          "user": "A15",
+          "desc": "客戶建檔",
+          "timein": " 102.05.13 08:53:42 上午",
+          "timeout": " 102.05.13 08:54:33 上午",
+          "id": "BK",
+          "process": "1"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

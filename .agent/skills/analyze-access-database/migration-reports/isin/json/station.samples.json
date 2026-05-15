@@ -1,0 +1,72 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/station.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "computer"
+  ],
+  "tablesAnalyzed": [
+    "computer"
+  ],
+  "tables": [
+    {
+      "name": "computer",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "xuser",
+          "nameInFile": "xuser",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xcomputer",
+          "nameInFile": "xcomputer",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xname",
+          "nameInFile": "xname",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xdate",
+          "nameInFile": "xdate",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "xuser": "S@G9K83GQE8;",
+          "xcomputer": "Q8I<:951XC<9",
+          "xname": "a9E$($\"!@0(\"",
+          "xdate": "@9A6<476RD>\""
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

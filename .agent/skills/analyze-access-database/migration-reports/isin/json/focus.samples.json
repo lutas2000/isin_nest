@@ -1,0 +1,132 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/focus.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "focus"
+  ],
+  "tablesAnalyzed": [
+    "focus"
+  ],
+  "tables": [
+    {
+      "name": "focus",
+      "rowCount": 230,
+      "columns": [
+        {
+          "name": "fno",
+          "nameInFile": "fno",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fkey",
+          "nameInFile": "fkey",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "notes",
+          "nameInFile": "notes",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "fno": "Print",
+          "fkey": "Space",
+          "notes": "2"
+        },
+        {
+          "fno": "FSUPP",
+          "fkey": "A02",
+          "notes": "C1L"
+        },
+        {
+          "fno": "FORDERA",
+          "fkey": "SUPER",
+          "notes": " "
+        },
+        {
+          "fno": "FPRODUCT",
+          "fkey": "SUPER",
+          "notes": " "
+        },
+        {
+          "fno": "FORDERA",
+          "fkey": "D02",
+          "notes": " "
+        },
+        {
+          "fno": "FSOLD",
+          "fkey": "SUPER",
+          "notes": " "
+        },
+        {
+          "fno": "FORDERA",
+          "fkey": "D01",
+          "notes": " "
+        },
+        {
+          "fno": "FPRODUCT",
+          "fkey": "D01",
+          "notes": " "
+        },
+        {
+          "fno": "FSOLD",
+          "fkey": "BK",
+          "notes": " "
+        },
+        {
+          "fno": "FSTAFF",
+          "fkey": "A02",
+          "notes": " "
+        },
+        {
+          "fno": "FSUPP",
+          "fkey": "BK",
+          "notes": " "
+        },
+        {
+          "fno": "FSOLD",
+          "fkey": "A02",
+          "notes": " "
+        },
+        {
+          "fno": "FPRODUCT",
+          "fkey": "A02",
+          "notes": " "
+        },
+        {
+          "fno": "FORDERA",
+          "fkey": "BK",
+          "notes": " "
+        },
+        {
+          "fno": "FPRODUCT",
+          "fkey": "BK",
+          "notes": " "
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

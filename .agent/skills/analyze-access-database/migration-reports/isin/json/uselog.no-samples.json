@@ -1,0 +1,83 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/uselog.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "uselog"
+  ],
+  "tablesAnalyzed": [
+    "uselog"
+  ],
+  "tables": [
+    {
+      "name": "uselog",
+      "rowCount": 982,
+      "columns": [
+        {
+          "name": "user",
+          "nameInFile": "user",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "desc",
+          "nameInFile": "desc",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "timein",
+          "nameInFile": "timein",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "timeout",
+          "nameInFile": "timeout",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "id",
+          "nameInFile": "id",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "process",
+          "nameInFile": "process",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

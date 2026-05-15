@@ -1,0 +1,882 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/master.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "CKind",
+    "kind",
+    "ma90",
+    "Optiona",
+    "sysctrl",
+    "sysinfo"
+  ],
+  "tablesAnalyzed": [
+    "CKind",
+    "kind",
+    "ma90",
+    "Optiona",
+    "sysctrl",
+    "sysinfo"
+  ],
+  "tables": [
+    {
+      "name": "CKind",
+      "rowCount": 6,
+      "columns": [
+        {
+          "name": "abcno",
+          "nameInFile": "abcno",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "abcname",
+          "nameInFile": "abcname",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "abcno": "代",
+          "abcname": " "
+        },
+        {
+          "abcno": "代折",
+          "abcname": " "
+        },
+        {
+          "abcno": "材料",
+          "abcname": " "
+        },
+        {
+          "abcno": "餘料",
+          "abcname": " "
+        },
+        {
+          "abcno": "備",
+          "abcname": " "
+        },
+        {
+          "abcno": "備折",
+          "abcname": " "
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "kind",
+      "rowCount": 348,
+      "columns": [
+        {
+          "name": "kno",
+          "nameInFile": "kno",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "metal",
+          "nameInFile": "metal",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "thick",
+          "nameInFile": "thick",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "remark",
+          "nameInFile": "remark",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "soul",
+          "nameInFile": "soul",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "kno": "扁鐵        09",
+          "metal": "扁鐵",
+          "thick": "9",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "方管        02",
+          "metal": "方管",
+          "thick": "2",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "方管        03",
+          "metal": "方管",
+          "thick": "3",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "方管 SS41   03",
+          "metal": "方管 SS41",
+          "thick": "3",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "合板        02",
+          "metal": "合板",
+          "thick": "2",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "合板        03",
+          "metal": "合板",
+          "thick": "3",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "合板        06",
+          "metal": "合板",
+          "thick": "6",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "合板        10",
+          "metal": "合板",
+          "thick": "10",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "夾板        02",
+          "metal": "夾板",
+          "thick": "2",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "角鐵        03",
+          "metal": "角鐵",
+          "thick": "3",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "乳白壓克力     10",
+          "metal": "乳白壓克力",
+          "thick": "10",
+          "remark": "壓克力",
+          "soul": "SS41"
+        },
+        {
+          "kno": "矽鋼        00.5",
+          "metal": "矽鋼",
+          "thick": "0.5",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "花板        03",
+          "metal": "花板",
+          "thick": "3",
+          "remark": " ",
+          "soul": "SS41"
+        },
+        {
+          "kno": "珍珠板       03",
+          "metal": "珍珠板",
+          "thick": "3",
+          "remark": "壓克力",
+          "soul": "SS41"
+        },
+        {
+          "kno": "玻纖        06",
+          "metal": "玻纖",
+          "thick": "6",
+          "remark": " ",
+          "soul": "玻纖"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "ma90",
+      "rowCount": 19,
+      "columns": [
+        {
+          "name": "f1",
+          "nameInFile": "f1",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f2",
+          "nameInFile": "f2",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f3",
+          "nameInFile": "f3",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f4",
+          "nameInFile": "f4",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f5",
+          "nameInFile": "f5",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f6",
+          "nameInFile": "f6",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f7",
+          "nameInFile": "f7",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f8",
+          "nameInFile": "f8",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "f1": "a8I$($\"!@0(\"",
+          "f2": "@(0$($\"!@0(\"",
+          "f3": "@9F$($\"!@0(\"",
+          "f4": "@9B$($\"!@0(\"",
+          "f5": "@80$($\"!@0(\"",
+          "f6": " ",
+          "f7": " ",
+          "f8": " "
+        },
+        {
+          "f1": "mIcXMV\"!@0(\"",
+          "f2": "R]eM]NIJ@0(\"",
+          "f3": "@>E4:6\"!@0(\"",
+          "f4": "@9E=86\"!@0(\"",
+          "f5": "@9E796\"!@0(\"",
+          "f6": "@9@=<=3!@0(\"",
+          "f7": "@:D7=;3!@0(\"",
+          "f8": "@=@6?49!@0(\""
+        },
+        {
+          "f1": "P<=<A685RH(\"",
+          "f2": "P<=<A685RH(\"",
+          "f3": "SA@6;751WGA5",
+          "f4": "S@EFKG56YG:3",
+          "f5": "w:[WQ7I!@0(\"",
+          "f6": "@(I9652/Q@",
+          "f7": "M:A9@5\"!@0(\"",
+          "f8": "M9H9?7\"!@0(\""
+        },
+        {
+          "f1": "a8A$($\"!@0(\"",
+          "f2": "P=B5($\"!@0(\"",
+          "f3": "@=A:?<\"!@0(\"",
+          "f4": "@9E=86\"!@0(\"",
+          "f5": "@9E796\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "a8B$($\"!@0(\"",
+          "f2": "P>@79$\"!@0(\"",
+          "f3": "@;E6A8\"!@0(\"",
+          "f4": "@9E7A4\"!@0(\"",
+          "f5": "@9E796\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "a9B$($\"!@0(\"",
+          "f2": "P>A=:$\"!@0(\"",
+          "f3": "@;H$($\"!@0(\"",
+          "f4": "@<F6>$\"!@0(\"",
+          "f5": "@9@7:4\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "a9E$($\"!@0(\"",
+          "f2": "Q9@9;$\"!@0(\"",
+          "f3": "@;B<=8\"!@0(\"",
+          "f4": "@?A=@$\"!@0(\"",
+          "f5": "@9D884\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "a:H$($\"!@0(\"",
+          "f2": "@(0$($\"!@0(\"",
+          "f3": "@:B$($\"!@0(\"",
+          "f4": "@9@78$\"!@0(\"",
+          "f5": "@9D7;:\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "P8A$($\"!@0(\"",
+          "f2": "P>@5($\"!@0(\"",
+          "f3": "@;E7::\"!@0(\"",
+          "f4": "@9E=86\"!@0(\"",
+          "f5": "@9E796\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "P8B$($\"!@0(\"",
+          "f2": "RTYMQVKJ@0(\"",
+          "f3": "@>E9;8\"!@0(\"",
+          "f4": "@9E=86\"!@0(\"",
+          "f5": "@9E796\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "P(0$($\"!@0(\"",
+          "f2": "@(0$($\"!@0(\"",
+          "f3": "@>0$($\"!@0(\"",
+          "f4": "@9@78$\"!@0(\"",
+          "f5": "@9D7;:\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "a8H$($\"!@0(\"",
+          "f2": "Q:@69$\"!@0(\"",
+          "f3": "@;B;A4\"!@0(\"",
+          "f4": "@;@=<$\"!@0(\"",
+          "f5": "@9D7;:\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "a9A$($\"!@0(\"",
+          "f2": "Q9A:9$\"!@0(\"",
+          "f3": "@:B$($\"!@0(\"",
+          "f4": "@9@7@$\"!@0(\"",
+          "f5": "@9@6<4\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "d8A$($\"!@0(\"",
+          "f2": "P@B99$\"!@0(\"",
+          "f3": "@;B;A4\"!@0(\"",
+          "f4": "@9@8>$\"!@0(\"",
+          "f5": "@9D7;:\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        },
+        {
+          "f1": "d8B$($\"!@0(\"",
+          "f2": "P@B;9$\"!@0(\"",
+          "f3": "@;B<=8\"!@0(\"",
+          "f4": "@9@7@$\"!@0(\"",
+          "f5": "@9D<<<\"!@0(\"",
+          "f6": null,
+          "f7": null,
+          "f8": null
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "Optiona",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "MaxItem",
+          "nameInFile": "MaxItem",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PageItem",
+          "nameInFile": "PageItem",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "GainBase",
+          "nameInFile": "GainBase",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ShowGain",
+          "nameInFile": "ShowGain",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "MyPageSize",
+          "nameInFile": "MyPageSize",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "DrawLine",
+          "nameInFile": "DrawLine",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ShowPDec",
+          "nameInFile": "ShowPDec",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ShowQDec",
+          "nameInFile": "ShowQDec",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ShowMDec",
+          "nameInFile": "ShowMDec",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ShowADec",
+          "nameInFile": "ShowADec",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "DiscUnder4",
+          "nameInFile": "DiscUnder4",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ShowPFont",
+          "nameInFile": "ShowPFont",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ShowEnvFont1",
+          "nameInFile": "ShowEnvFont1",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ShowEnvFont2",
+          "nameInFile": "ShowEnvFont2",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "Cncpath",
+          "nameInFile": "Cncpath",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "Midtitle",
+          "nameInFile": "Midtitle",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "AskTaxID",
+          "nameInFile": "AskTaxID",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "QtyCheck",
+          "nameInFile": "QtyCheck",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "UptoNext",
+          "nameInFile": "UptoNext",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "SimpleOne",
+          "nameInFile": "SimpleOne",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "Taiwan",
+          "nameInFile": "Taiwan",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "FiscYear",
+          "nameInFile": "FiscYear",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "UptoNextAC",
+          "nameInFile": "UptoNextAC",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "Daniel",
+          "nameInFile": "Daniel",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "AskDateType",
+          "nameInFile": "AskDateType",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "SimpleTwo",
+          "nameInFile": "SimpleTwo",
+          "type": "integer",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "Separator",
+          "nameInFile": "Separator",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "Dxfpath",
+          "nameInFile": "Dxfpath",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "EnvTitle",
+          "nameInFile": "EnvTitle",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "MaxItem": 0,
+          "PageItem": 0,
+          "GainBase": 2,
+          "ShowGain": 0,
+          "MyPageSize": 2,
+          "DrawLine": 0,
+          "ShowPDec": 0,
+          "ShowQDec": 0,
+          "ShowMDec": 0,
+          "ShowADec": 0,
+          "DiscUnder4": -1,
+          "ShowPFont": "細明體",
+          "ShowEnvFont1": "細明體",
+          "ShowEnvFont2": "細明體",
+          "Cncpath": "\\\\Server\\n\\",
+          "Midtitle": "0",
+          "AskTaxID": 1,
+          "QtyCheck": 0,
+          "UptoNext": 0,
+          "SimpleOne": -1,
+          "Taiwan": -1,
+          "FiscYear": 88,
+          "UptoNextAC": 0,
+          "Daniel": 0,
+          "AskDateType": 0,
+          "SimpleTwo": 0,
+          "Separator": ".",
+          "Dxfpath": "\\\\Server\\C\\",
+          "EnvTitle": "-1"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "sysctrl",
+      "rowCount": 5,
+      "columns": [
+        {
+          "name": "userid",
+          "nameInFile": "userid",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "userid": "SUPER"
+        },
+        {
+          "userid": "D02"
+        },
+        {
+          "userid": "D01"
+        },
+        {
+          "userid": "ISIN"
+        },
+        {
+          "userid": "My-admin"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "sysinfo",
+      "rowCount": 11,
+      "columns": [
+        {
+          "name": "f1",
+          "nameInFile": "f1",
+          "type": "text",
+          "size": 60,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "f2",
+          "nameInFile": "f2",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "f1": "奕新雷射精機股份有限公司",
+          "f2": " 1"
+        },
+        {
+          "f1": "04-22130117",
+          "f2": " 2"
+        },
+        {
+          "f1": "isin.lin@msa.hinet.net",
+          "f2": " 3"
+        },
+        {
+          "f1": "04-22130113",
+          "f2": " 4"
+        },
+        {
+          "f1": "台中市東區東光園路310號",
+          "f2": " 5"
+        },
+        {
+          "f1": "林慶豐",
+          "f2": " 6"
+        },
+        {
+          "f1": "23698606",
+          "f2": " 7"
+        },
+        {
+          "f1": "5",
+          "f2": " 8"
+        },
+        {
+          "f1": "R8B;=949TC:6",
+          "f2": " 9"
+        },
+        {
+          "f1": "@9@8<4:9QC<\"",
+          "f2": "10"
+        },
+        {
+          "f1": "40106",
+          "f2": "11"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

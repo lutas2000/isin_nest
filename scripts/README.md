@@ -114,7 +114,7 @@ npm run copy-staff
 
 ### 3.0 NAS 上 Access 檔庫存掃描 (list-access-mdb.ts)
 
-在分析大量 legacy 檔案前，可先遞迴列出某根目錄下所有 `.mdb` / `.accdb`（含副檔名大小寫變體），並可寫入 skill 附帶的庫存表。
+在分析大量 legacy 檔案前，可先遞迴列出某根目錄下所有 `.mdb` / `.accdb`（含副檔名大小寫變體），並可寫入 skill 附帶的庫存表。`--write` 時除主表格外，會自動寫入 **「同名檔主檔判定（根目錄與 `isin/`）」**：成對同名檔以 **較新修改時間** 為主，同分時比 **檔案大小**，仍同分則預設根下為主檔並建議人工覆核。
 
 ```bash
 # 預設掃描 /nas/isin，結果印到終端機
@@ -128,6 +128,9 @@ npm run list-access-mdb -- /nas/isin --json
 ```
 
 環境變數：`ACCESS_MDB_ROOT` — 未傳第一參數時作為掃描根目錄（預設 `/nas/isin`）。
+
+**`isin/` 遷移報告組版**（讀庫存主檔路徑＋`json/*.samples.json`）：專案根執行  
+`npx ts-node --project tsconfig.json -r tsconfig-paths/register scripts/generate-isin-migration-reports.ts`；若要依庫存主檔**重跑** `analyze-access` 並覆寫 JSON，加上 **`--refresh-json`**（需能讀取 NAS 上對應 `.mdb`）。
 
 ### 使用方法
 

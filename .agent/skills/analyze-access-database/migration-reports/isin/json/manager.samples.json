@@ -1,0 +1,432 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/manager.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "descript",
+    "serial"
+  ],
+  "tablesAnalyzed": [
+    "descript",
+    "serial"
+  ],
+  "tables": [
+    {
+      "name": "descript",
+      "rowCount": 9,
+      "columns": [
+        {
+          "name": "used",
+          "nameInFile": "used",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "abbr",
+          "nameInFile": "abbr",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "name",
+          "nameInFile": "name",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "no1",
+          "nameInFile": "no1",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "auto",
+          "nameInFile": "auto",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pk1",
+          "nameInFile": "pk1",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pk2",
+          "nameInFile": "pk2",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pk3",
+          "nameInFile": "pk3",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pm1",
+          "nameInFile": "pm1",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pm2",
+          "nameInFile": "pm2",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pm3",
+          "nameInFile": "pm3",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pm4",
+          "nameInFile": "pm4",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pm5",
+          "nameInFile": "pm5",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pm6",
+          "nameInFile": "pm6",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pd1",
+          "nameInFile": "pd1",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pd2",
+          "nameInFile": "pd2",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pd3",
+          "nameInFile": "pd3",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pd4",
+          "nameInFile": "pd4",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pd5",
+          "nameInFile": "pd5",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xx",
+          "nameInFile": "xx",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "used": "0",
+          "abbr": "AB",
+          "name": "入庫單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "1",
+          "pk2": "1",
+          "pk3": "1",
+          "pm1": "1",
+          "pm2": "3",
+          "pm3": "3",
+          "pm4": "3",
+          "pm5": "3",
+          "pm6": "2",
+          "pd1": "2",
+          "pd2": "2",
+          "pd3": "2",
+          "pd4": "10",
+          "pd5": "8",
+          "xx": " "
+        },
+        {
+          "used": "1",
+          "abbr": "AC",
+          "name": "領出單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "1",
+          "pk2": "1",
+          "pk3": "2",
+          "pm1": "2",
+          "pm2": " ",
+          "pm3": " ",
+          "pm4": " ",
+          "pm5": " ",
+          "pm6": "3",
+          "pd1": "2",
+          "pd2": "1",
+          "pd3": "2",
+          "pd4": "10",
+          "pd5": "8",
+          "xx": " "
+        },
+        {
+          "used": "3",
+          "abbr": "MI",
+          "name": "進貨單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "0",
+          "pk2": "2",
+          "pk3": "2",
+          "pm1": "1",
+          "pm2": "3",
+          "pm3": "3",
+          "pm4": "3",
+          "pm5": "3",
+          "pm6": "3",
+          "pd1": "2",
+          "pd2": "1",
+          "pd3": "2",
+          "pd4": "40",
+          "pd5": "20",
+          "xx": " "
+        },
+        {
+          "used": "4",
+          "abbr": "MJ",
+          "name": "進貨退出單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "0",
+          "pk2": "2",
+          "pk3": "2",
+          "pm1": "2",
+          "pm2": " ",
+          "pm3": " ",
+          "pm4": " ",
+          "pm5": " ",
+          "pm6": "3",
+          "pd1": "2",
+          "pd2": "1",
+          "pd3": "2",
+          "pd4": "40",
+          "pd5": "20",
+          "xx": " "
+        },
+        {
+          "used": "5",
+          "abbr": "PK",
+          "name": "付款憑單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": " ",
+          "pk2": " ",
+          "pk3": "2",
+          "pm1": " ",
+          "pm2": " ",
+          "pm3": " ",
+          "pm4": " ",
+          "pm5": " ",
+          "pm6": " ",
+          "pd1": " ",
+          "pd2": " ",
+          "pd3": " ",
+          "pd4": "99",
+          "pd5": " ",
+          "xx": " "
+        },
+        {
+          "used": "7",
+          "abbr": "SA",
+          "name": "出貨單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "0",
+          "pk2": "3",
+          "pk3": "1",
+          "pm1": "2",
+          "pm2": "3",
+          "pm3": "3",
+          "pm4": "3",
+          "pm5": "3",
+          "pm6": "3",
+          "pd1": "1",
+          "pd2": "1",
+          "pd3": "2",
+          "pd4": "45",
+          "pd5": "15",
+          "xx": " "
+        },
+        {
+          "used": "8",
+          "abbr": "SR",
+          "name": "退貨單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "0",
+          "pk2": "3",
+          "pk3": "2",
+          "pm1": "1",
+          "pm2": "3",
+          "pm3": "3",
+          "pm4": "3",
+          "pm5": "3",
+          "pm6": "3",
+          "pd1": "2",
+          "pd2": "1",
+          "pd3": "2",
+          "pd4": "40",
+          "pd5": "10",
+          "xx": " "
+        },
+        {
+          "used": "9",
+          "abbr": "PM",
+          "name": "收款憑單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": " ",
+          "pk2": " ",
+          "pk3": "2",
+          "pm1": " ",
+          "pm2": " ",
+          "pm3": " ",
+          "pm4": " ",
+          "pm5": " ",
+          "pm6": " ",
+          "pd1": " ",
+          "pd2": " ",
+          "pd3": " ",
+          "pd4": "99",
+          "pd5": " ",
+          "xx": " "
+        },
+        {
+          "used": "A",
+          "abbr": "AA",
+          "name": "調撥單",
+          "no1": " ",
+          "auto": "1",
+          "pk1": "0",
+          "pk2": "1",
+          "pk3": "2",
+          "pm1": "2",
+          "pm2": " ",
+          "pm3": " ",
+          "pm4": " ",
+          "pm5": " ",
+          "pm6": "1",
+          "pd1": "2",
+          "pd2": "1",
+          "pd3": "2",
+          "pd4": "30",
+          "pd5": "10",
+          "xx": " "
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    },
+    {
+      "name": "serial",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "sn",
+          "nameInFile": "sn",
+          "type": "long",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "sn": 0
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

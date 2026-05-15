@@ -1,0 +1,83 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/isin/audit.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "audit"
+  ],
+  "tablesAnalyzed": [
+    "audit"
+  ],
+  "tables": [
+    {
+      "name": "audit",
+      "rowCount": 5,
+      "columns": [
+        {
+          "name": "acno",
+          "nameInFile": "acno",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acname",
+          "nameInFile": "acname",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acno1",
+          "nameInFile": "acno1",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acname1",
+          "nameInFile": "acname1",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acno2",
+          "nameInFile": "acno2",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "acname2",
+          "nameInFile": "acname2",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

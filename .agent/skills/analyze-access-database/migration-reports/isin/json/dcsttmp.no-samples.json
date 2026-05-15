@@ -1,0 +1,254 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/dcsttmp.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "dcst"
+  ],
+  "tablesAnalyzed": [
+    "dcst"
+  ],
+  "tables": [
+    {
+      "name": "dcst",
+      "rowCount": 0,
+      "columns": [
+        {
+          "name": "DWG_NO",
+          "nameInFile": "DWG_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_NAME",
+          "nameInFile": "DWG_NAME",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_REF",
+          "nameInFile": "DWG_REF",
+          "type": "text",
+          "size": 40,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CUST_NO",
+          "nameInFile": "CUST_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CUST",
+          "nameInFile": "CUST",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "METAL",
+          "nameInFile": "METAL",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "THICK",
+          "nameInFile": "THICK",
+          "type": "text",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "UNIT",
+          "nameInFile": "UNIT",
+          "type": "text",
+          "size": 2,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "PR_REF",
+          "nameInFile": "PR_REF",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PR_REF1",
+          "nameInFile": "PR_REF1",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PR_REF2",
+          "nameInFile": "PR_REF2",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PR_REF3",
+          "nameInFile": "PR_REF3",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PR_REF4",
+          "nameInFile": "PR_REF4",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PR_REF5",
+          "nameInFile": "PR_REF5",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "ACTOR_NO",
+          "nameInFile": "ACTOR_NO",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "ACTOR",
+          "nameInFile": "ACTOR",
+          "type": "text",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_DATE",
+          "nameInFile": "DWG_DATE",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DISK",
+          "nameInFile": "DISK",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CNC1",
+          "nameInFile": "CNC1",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CNC2",
+          "nameInFile": "CNC2",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CNC3",
+          "nameInFile": "CNC3",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CNC4",
+          "nameInFile": "CNC4",
+          "type": "text",
+          "size": 12,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "CNC5",
+          "nameInFile": "CNC5",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "REMARK",
+          "nameInFile": "REMARK",
+          "type": "text",
+          "size": 50,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "XX",
+          "nameInFile": "XX",
+          "type": "text",
+          "size": 1,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

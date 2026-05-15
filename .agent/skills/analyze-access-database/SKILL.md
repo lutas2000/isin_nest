@@ -9,7 +9,7 @@ description: NAS .mdb/.accdb inventory (list-access-mdb), then analyze-access wi
 
 Standardize how the agent inspects Access in this repo:
 
-1. **庫存**：`scripts/list-access-mdb.ts` 掃描根目錄（預設 `/nas/isin`），`--write` 更新 `LEGACY_ACCESS_MDB_INVENTORY.md`。
+1. **庫存**：`scripts/list-access-mdb.ts` 掃描根目錄（預設 `/nas/isin`），`--write` 更新 `LEGACY_ACCESS_MDB_INVENTORY.md`（含自動產生之 **同名檔主檔判定** 一節）。
 2. **單檔分析**：`scripts/analyze-access.ts` — **精確選表**、**樣本列視窗**（offset/limit）、可選 **僅 stdout JSON**、**rowCount 不載入全表**；可選 MySQL 欄位對照。
 3. 遵守憑證衛生（不讀、不貼 root `.env` 內容）。
 
@@ -34,7 +34,7 @@ Standardize how the agent inspects Access in this repo:
 
 | 腳本 | 用途 |
 |------|------|
-| `list-access-mdb.ts` | 遞迴列出 `.mdb`/`.accdb`；`--write` → `LEGACY_ACCESS_MDB_INVENTORY.md`；`--json`。 |
+| `list-access-mdb.ts` | 遞迴列出 `.mdb`/`.accdb`；`--write` → `LEGACY_ACCESS_MDB_INVENTORY.md`（含同名主檔判定）；`--json`。 |
 | `analyze-access.ts` | 讀單一檔；`--access-tables` 精確選表；`--sample-offset` / `--sample-limit`；`--sample-columns`；`--no-samples`；`--mysql-table` + `DB_*`；`--json`（**stdout 僅一個 JSON**）。 |
 
 詳細 flag／環境變數以 **`scripts/README.md` §3** 為準。
@@ -50,7 +50,7 @@ Standardize how the agent inspects Access in this repo:
 
 ## Recorded inventory
 
-- `LEGACY_ACCESS_MDB_INVENTORY.md`（`npm run list-access-mdb -- /nas/isin --write` 產生）。
+- `LEGACY_ACCESS_MDB_INVENTORY.md`（`npm run list-access-mdb -- /nas/isin --write` 產生；內含 **根目錄 vs `isin/` 同名主檔** 判定表）。
 
 ## 子技能：遷移盤點報告結構
 

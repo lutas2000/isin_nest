@@ -1,0 +1,141 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/super2.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "itable",
+    "jtable",
+    "Âà´«¿ù»~"
+  ],
+  "tablesAnalyzed": [
+    "itable",
+    "jtable",
+    "Âà´«¿ù»~"
+  ],
+  "tables": [
+    {
+      "name": "itable",
+      "rowCount": 9,
+      "columns": [
+        {
+          "name": "graph",
+          "nameInFile": "graph",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "sn",
+          "nameInFile": "sn",
+          "type": "long",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    },
+    {
+      "name": "jtable",
+      "rowCount": 197,
+      "columns": [
+        {
+          "name": "graph",
+          "nameInFile": "graph",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "sn",
+          "nameInFile": "sn",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "item",
+          "nameInFile": "item",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "kind",
+          "nameInFile": "kind",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "data",
+          "nameInFile": "data",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    },
+    {
+      "name": "Âà´«¿ù»~",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "物件類型",
+          "nameInFile": "ª«¥óÃþ«¬",
+          "type": "text",
+          "size": 255,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "物件名稱",
+          "nameInFile": "ª«¥ó¦WºÙ",
+          "type": "text",
+          "size": 255,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "錯誤描述",
+          "nameInFile": "¿ù»~´y­z",
+          "type": "memo",
+          "size": 0,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

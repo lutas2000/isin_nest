@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/phrase.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "phrase"
+  ],
+  "tablesAnalyzed": [
+    "phrase"
+  ],
+  "tables": [
+    {
+      "name": "phrase",
+      "rowCount": 89,
+      "columns": [
+        {
+          "name": "phno",
+          "nameInFile": "phno",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "phrase",
+          "nameInFile": "phrase",
+          "type": "text",
+          "size": 100,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

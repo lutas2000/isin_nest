@@ -1,0 +1,108 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/zip.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "zip"
+  ],
+  "tablesAnalyzed": [
+    "zip"
+  ],
+  "tables": [
+    {
+      "name": "zip",
+      "rowCount": 357,
+      "columns": [
+        {
+          "name": "zipno",
+          "nameInFile": "zipno",
+          "type": "text",
+          "size": 5,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "zipname",
+          "nameInFile": "zipname",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "zipno": "100",
+          "zipname": "台北市中正區"
+        },
+        {
+          "zipno": "103",
+          "zipname": "台北市大同區"
+        },
+        {
+          "zipno": "104",
+          "zipname": "台北市中山區"
+        },
+        {
+          "zipno": "105",
+          "zipname": "台北市松山區"
+        },
+        {
+          "zipno": "106",
+          "zipname": "台北市大安區"
+        },
+        {
+          "zipno": "108",
+          "zipname": "台北市萬華區"
+        },
+        {
+          "zipno": "110",
+          "zipname": "台北市信義區"
+        },
+        {
+          "zipno": "111",
+          "zipname": "台北市士林區"
+        },
+        {
+          "zipno": "112",
+          "zipname": "台北市北投區"
+        },
+        {
+          "zipno": "114",
+          "zipname": "台北市內湖區"
+        },
+        {
+          "zipno": "115",
+          "zipname": "台北市南港區"
+        },
+        {
+          "zipno": "116",
+          "zipname": "台北市文山區"
+        },
+        {
+          "zipno": "200",
+          "zipname": "基隆市仁愛區"
+        },
+        {
+          "zipno": "201",
+          "zipname": "基隆市信義區"
+        },
+        {
+          "zipno": "202",
+          "zipname": "基隆市中正區"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

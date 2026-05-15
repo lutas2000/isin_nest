@@ -1,0 +1,108 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/phrase.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "phrase"
+  ],
+  "tablesAnalyzed": [
+    "phrase"
+  ],
+  "tables": [
+    {
+      "name": "phrase",
+      "rowCount": 89,
+      "columns": [
+        {
+          "name": "phno",
+          "nameInFile": "phno",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "phrase",
+          "nameInFile": "phrase",
+          "type": "text",
+          "size": 100,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "phno": "0",
+          "phrase": "Θ"
+        },
+        {
+          "phno": "00",
+          "phrase": "Θ*Θ*PCDΘ*Θ孔"
+        },
+        {
+          "phno": "000",
+          "phrase": "Θ*Θ"
+        },
+        {
+          "phno": "001",
+          "phrase": "折,"
+        },
+        {
+          "phno": "002",
+          "phrase": "焊,"
+        },
+        {
+          "phno": "0021",
+          "phrase": "衝孔"
+        },
+        {
+          "phno": "0022",
+          "phrase": "全工程"
+        },
+        {
+          "phno": "00221",
+          "phrase": "全工程(不焊)"
+        },
+        {
+          "phno": "0023",
+          "phrase": "折𡟻"
+        },
+        {
+          "phno": "003",
+          "phrase": "鑽孔,"
+        },
+        {
+          "phno": "004",
+          "phrase": "攻牙,"
+        },
+        {
+          "phno": "005",
+          "phrase": "車床,"
+        },
+        {
+          "phno": "006",
+          "phrase": "電鍍,"
+        },
+        {
+          "phno": "007",
+          "phrase": "噴底漆"
+        },
+        {
+          "phno": "0071",
+          "phrase": "染黑"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

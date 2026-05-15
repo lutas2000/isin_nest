@@ -1,0 +1,156 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/isin/Should.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "itable"
+  ],
+  "tablesAnalyzed": [
+    "itable"
+  ],
+  "tables": [
+    {
+      "name": "itable",
+      "rowCount": 147,
+      "columns": [
+        {
+          "name": "fno",
+          "nameInFile": "fno",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "fname",
+          "nameInFile": "fname",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "pre",
+          "nameInFile": "pre",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "this",
+          "nameInFile": "this",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "fno": "A003",
+          "fname": "大大圖書",
+          "pre": " ",
+          "this": " 34753"
+        },
+        {
+          "fno": "A004",
+          "fname": "一泰電腦",
+          "pre": "   569",
+          "this": " "
+        },
+        {
+          "fno": "A006",
+          "fname": "新緯文化",
+          "pre": "  8118",
+          "this": " "
+        },
+        {
+          "fno": "A007",
+          "fname": "宥雷有限",
+          "pre": "  1935",
+          "this": "  -466"
+        },
+        {
+          "fno": "A010",
+          "fname": "上課族書",
+          "pre": " 20482",
+          "this": "  8945"
+        },
+        {
+          "fno": "A011",
+          "fname": "新水玩具",
+          "pre": " ",
+          "this": " 31750"
+        },
+        {
+          "fno": "A014",
+          "fname": "大學成",
+          "pre": " 19293",
+          "this": "  1718"
+        },
+        {
+          "fno": "A017",
+          "fname": "成碩資訊",
+          "pre": " ",
+          "this": "  8155"
+        },
+        {
+          "fno": "A020",
+          "fname": "大立漫畫",
+          "pre": "    14",
+          "this": " "
+        },
+        {
+          "fno": "A024",
+          "fname": "台壹書總",
+          "pre": " 14794",
+          "this": "  1966"
+        },
+        {
+          "fno": "A025",
+          "fname": "尚鑫遊樂",
+          "pre": "  5193",
+          "this": "  3007"
+        },
+        {
+          "fno": "A026",
+          "fname": "123玩具 ",
+          "pre": " 47725",
+          "this": " 43898"
+        },
+        {
+          "fno": "A028",
+          "fname": "藍田書店",
+          "pre": "   314",
+          "this": " -3695"
+        },
+        {
+          "fno": "A030",
+          "fname": "華峰書局",
+          "pre": "   200",
+          "this": " "
+        },
+        {
+          "fno": "A060",
+          "fname": "建國書局",
+          "pre": "  4167",
+          "this": " -6190"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

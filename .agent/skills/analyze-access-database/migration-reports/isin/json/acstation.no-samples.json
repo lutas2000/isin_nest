@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/acstation.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "computer"
+  ],
+  "tablesAnalyzed": [
+    "computer"
+  ],
+  "tables": [
+    {
+      "name": "computer",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "xuser",
+          "nameInFile": "xuser",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xcomputer",
+          "nameInFile": "xcomputer",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xname",
+          "nameInFile": "xname",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "xdate",
+          "nameInFile": "xdate",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

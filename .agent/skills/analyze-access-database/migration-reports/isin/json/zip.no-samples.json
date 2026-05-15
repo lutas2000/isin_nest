@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/zip.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "zip"
+  ],
+  "tablesAnalyzed": [
+    "zip"
+  ],
+  "tables": [
+    {
+      "name": "zip",
+      "rowCount": 357,
+      "columns": [
+        {
+          "name": "zipno",
+          "nameInFile": "zipno",
+          "type": "text",
+          "size": 5,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "zipname",
+          "nameInFile": "zipname",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/quotehis.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "itable"
+  ],
+  "tablesAnalyzed": [
+    "itable"
+  ],
+  "tables": [
+    {
+      "name": "itable",
+      "rowCount": 22950,
+      "columns": [
+        {
+          "name": "FACTOR_NO",
+          "nameInFile": "FACTOR_NO",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "FACTOR",
+          "nameInFile": "FACTOR",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DATE_R",
+          "nameInFile": "DATE_R",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "DWG_REF",
+          "nameInFile": "DWG_REF",
+          "type": "text",
+          "size": 40,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "METAL",
+          "nameInFile": "METAL",
+          "type": "text",
+          "size": 10,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "THICK",
+          "nameInFile": "THICK",
+          "type": "text",
+          "size": 6,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "WORK",
+          "nameInFile": "WORK",
+          "type": "text",
+          "size": 30,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "QTY",
+          "nameInFile": "QTY",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        },
+        {
+          "name": "PRICE",
+          "nameInFile": "PRICE",
+          "type": "currency",
+          "size": 8,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "FACTOR_NO": "儀興科技",
+          "FACTOR": " ",
+          "DATE_R": " 101.08.13",
+          "DWG_REF": "BRACKET-A",
+          "METAL": "SPCC",
+          "THICK": "1.2",
+          "WORK": "未鍍鎳",
+          "QTY": "10.0000",
+          "PRICE": "50.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-28",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "150.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-29",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "350.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-30",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "300.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-31",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "290.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-32",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": "以下皆為備料價",
+          "QTY": "1.0000",
+          "PRICE": "100.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-33",
+          "METAL": "SUS304 2B",
+          "THICK": "2",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "280.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-34",
+          "METAL": "SUS304 2B",
+          "THICK": "2",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "210.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-35",
+          "METAL": "SUS304 2B",
+          "THICK": "1",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "2480.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-35-1",
+          "METAL": "SUS304 2B",
+          "THICK": "1",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "260.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-39",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": " ",
+          "QTY": "2.0000",
+          "PRICE": "40.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-40",
+          "METAL": "SUS304 2B",
+          "THICK": "3",
+          "WORK": " ",
+          "QTY": "4.0000",
+          "PRICE": "40.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-41",
+          "METAL": "SUS304 2B",
+          "THICK": "1.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "260.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-42",
+          "METAL": "SUS304 2B",
+          "THICK": "1.5",
+          "WORK": " ",
+          "QTY": "1.0000",
+          "PRICE": "260.0000"
+        },
+        {
+          "FACTOR_NO": "大普",
+          "FACTOR": " ",
+          "DATE_R": " 100.04.07",
+          "DWG_REF": "TVMM-2000N-43",
+          "METAL": "SUS304 2B",
+          "THICK": "1.5",
+          "WORK": "以上皆為代料價",
+          "QTY": "2.0000",
+          "PRICE": "50.0000"
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

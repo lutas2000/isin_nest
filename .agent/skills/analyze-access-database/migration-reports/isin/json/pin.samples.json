@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/pin.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 15,
+    "sampleColumns": null,
+    "skipSamples": false,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "water"
+  ],
+  "tablesAnalyzed": [
+    "water"
+  ],
+  "tables": [
+    {
+      "name": "water",
+      "rowCount": 1,
+      "columns": [
+        {
+          "name": "pinno",
+          "nameInFile": "pinno",
+          "type": "long",
+          "size": 4,
+          "nullable": true,
+          "fixedLength": true,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [
+        {
+          "pinno": 41407
+        }
+      ],
+      "sampleOffset": 0,
+      "sampleLimit": 15
+    }
+  ]
+}

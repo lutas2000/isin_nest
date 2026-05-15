@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "accessFilePath": "/nas/isin/plan.mdb",
+  "options": {
+    "accessTableNames": null,
+    "sampleOffset": 0,
+    "sampleLimit": 5,
+    "sampleColumns": null,
+    "skipSamples": true,
+    "mysqlTableName": null
+  },
+  "tableNamesInFile": [
+    "plan"
+  ],
+  "tablesAnalyzed": [
+    "plan"
+  ],
+  "tables": [
+    {
+      "name": "plan",
+      "rowCount": 0,
+      "columns": [
+        {
+          "name": "qno",
+          "nameInFile": "qno",
+          "type": "text",
+          "size": 15,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        },
+        {
+          "name": "notes",
+          "nameInFile": "notes",
+          "type": "text",
+          "size": 20,
+          "nullable": true,
+          "fixedLength": false,
+          "autoLong": false
+        }
+      ],
+      "sampleRows": [],
+      "sampleOffset": 0,
+      "sampleLimit": 5
+    }
+  ]
+}
