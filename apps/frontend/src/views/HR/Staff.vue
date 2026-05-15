@@ -178,6 +178,7 @@
             <template v-if="!isEditing">
               <span class="dropdown-item" @click="viewStaff(row)">查看詳情</span>
               <span class="dropdown-item" @click="editStaff(row)">編輯</span>
+              <span class="dropdown-item danger" @click="openDeleteStaff(row)">刪除</span>
             </template>
           </template>
         </EditableDataTable>
@@ -561,8 +562,57 @@
           <button type="button" class="btn btn-outline" @click="showViewModal = false">
             關閉
           </button>
+          <button type="button" class="btn btn-danger" @click="openDeleteFromView">
+            刪除員工
+          </button>
           <button type="button" class="btn btn-primary" @click="openEditFromView">
             編輯員工
+          </button>
+        </template>
+      </Modal>
+
+      <Modal
+        :show="showDeleteModal"
+        title="刪除員工"
+        max-width-class="max-w-md"
+        :close-on-overlay="!deleteLoading"
+        @close="closeDeleteModal"
+      >
+        <div class="space-y-4">
+          <p class="text-sm text-secondary-700">
+            確定要刪除員工「{{ deletingStaffTarget?.name }}」（{{ deletingStaffTarget?.id }}）嗎？此操作無法復原。
+          </p>
+          <div class="flex flex-col gap-1">
+            <label class="form-label">解鎖密碼 *</label>
+            <input
+              v-model="deletePassword"
+              type="password"
+              class="form-control"
+              placeholder="請輸入解鎖密碼以確認刪除"
+              :disabled="deleteLoading"
+              @keyup.enter="confirmDeleteStaff"
+            />
+            <p v-if="deletePasswordError" class="text-sm text-danger-600">
+              {{ deletePasswordError }}
+            </p>
+          </div>
+        </div>
+        <template #footer>
+          <button
+            type="button"
+            class="btn btn-outline"
+            :disabled="deleteLoading"
+            @click="closeDeleteModal"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            :disabled="deleteLoading"
+            @click="confirmDeleteStaff"
+          >
+            {{ deleteLoading ? '刪除中...' : '確認刪除' }}
           </button>
         </template>
       </Modal>
@@ -690,6 +740,11 @@ const hideSensitiveInfo = ref(true);
 const showAddModal = ref(false);
 const showEditModal = ref(false);
 const showViewModal = ref(false);
+const showDeleteModal = ref(false);
+const deletingStaffTarget = ref<Staff | null>(null);
+const deletePassword = ref('');
+const deletePasswordError = ref('');
+const deleteLoading = ref(false);
 
 
 // 新增員工表單（包含用戶資訊）
@@ -1045,6 +1100,74 @@ const openEditFromView = () => {
   if (!viewingStaff.value?.id) return;
   showViewModal.value = false;
   editStaff(viewingStaff.value);
+};
+
+const resetDeleteModal = () => {
+  deletePassword.value = '';
+  deletePasswordError.value = '';
+  deleteLoading.value = false;
+};
+
+const openDeleteStaff = (staff: Staff) => {
+  deletingStaffTarget.value = staff;
+  resetDeleteModal();
+  showDeleteModal.value = true;
+};
+
+const openDeleteFromView = () => {
+  if (!viewingStaff.value?.id) return;
+  showViewModal.value = false;
+  openDeleteStaff(viewingStaff.value);
+};
+
+const closeDeleteModal = () => {
+  if (deleteLoading.value) return;
+  showDeleteModal.value = false;
+  deletingStaffTarget.value = null;
+  resetDeleteModal();
+};
+
+const confirmDeleteStaff = async () => {
+  if (!deletingStaffTarget.value?.id) return;
+
+  deletePasswordError.value = '';
+  if (!deletePassword.value) {
+    deletePasswordError.value = '請輸入解鎖密碼';
+    return;
+  }
+
+  deleteLoading.value = true;
+  try {
+    const response = await fetch(`/api/staffs/${deletingStaffTarget.value.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: deletePassword.value }),
+    });
+
+    if (response.ok) {
+      const deletedId = deletingStaffTarget.value.id;
+      showDeleteModal.value = false;
+      deletingStaffTarget.value = null;
+      resetDeleteModal();
+      staffList.value = staffList.value.filter((staff) => staff.id !== deletedId);
+      return;
+    }
+
+    if (response.status === 401) {
+      deletePasswordError.value = '解鎖密碼錯誤，請再試一次';
+      return;
+    }
+
+    const errorData = await response.json().catch(() => ({}));
+    errorStore.showError(errorData.message || '刪除員工失敗，請稍後再試');
+  } catch (error) {
+    console.error('刪除員工失敗:', error);
+    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
+  } finally {
+    deleteLoading.value = false;
+  }
 };
 
 // 格式化日期

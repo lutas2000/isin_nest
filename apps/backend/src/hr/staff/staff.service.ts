@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Staff } from './entities/staff.entity';
@@ -61,8 +65,20 @@ export class StaffService {
     return this.staffRepository.save(newStaff); // 儲存到資料庫
   }
 
-  async remove(id: string): Promise<void> {
-    await this.staffRepository.delete(id);
+  verifyLockPassword(password: string): boolean {
+    const correct = process.env.STAFF_PAGE_LOCK_PASSWORD || '0323L';
+    return password === correct;
+  }
+
+  async remove(id: string, password: string): Promise<void> {
+    if (!this.verifyLockPassword(password)) {
+      throw new UnauthorizedException('解鎖密碼錯誤');
+    }
+
+    const result = await this.staffRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException('員工不存在');
+    }
   }
 
   async update(id: string, staff: Partial<Staff>): Promise<Staff | null> {

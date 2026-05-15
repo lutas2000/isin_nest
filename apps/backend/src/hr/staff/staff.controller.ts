@@ -53,8 +53,11 @@ export class StaffController {
   @ApiResponse({ status: 200, description: '成功删除员工' })
   @ApiResponse({ status: 404, description: '员工不存在' })
   @Delete(':id') // 處理 DELETE 請求，刪除用戶
-  remove(@Param('id') id: string): Promise<void> {
-    return this.usersService.remove(id);
+  remove(
+    @Param('id') id: string,
+    @Body('password') password: string,
+  ): Promise<void> {
+    return this.usersService.remove(id, password);
   }
 
   @ApiOperation({ summary: '更新員工資料' })
@@ -75,7 +78,6 @@ export class StaffController {
   verifyLockPassword(
     @Body('password') password: string,
   ): { valid: boolean } {
-    const correct = process.env.STAFF_PAGE_LOCK_PASSWORD || '0323L';
-    return { valid: password === correct };
+    return { valid: this.usersService.verifyLockPassword(password) };
   }
 }
