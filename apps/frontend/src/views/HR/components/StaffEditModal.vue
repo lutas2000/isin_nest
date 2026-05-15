@@ -192,8 +192,13 @@
       <button type="button" class="btn btn-outline" @click="handleClose">
         取消
       </button>
-      <button type="submit" class="btn btn-primary" form="staff-edit-form">
-        更新員工
+      <button
+        type="submit"
+        class="btn btn-primary"
+        form="staff-edit-form"
+        :disabled="saving"
+      >
+        {{ saving ? '更新中...' : '更新員工' }}
       </button>
     </template>
   </Modal>
@@ -222,6 +227,7 @@ export interface StaffEditRecord {
   begain_work: string | null;
   stop_work: string | null;
   have_fake: boolean;
+  userId?: number | null;
 }
 
 const props = defineProps<{
@@ -258,12 +264,40 @@ const emptyStaff = (): StaffEditRecord => ({
 });
 
 const editingStaff = ref<StaffEditRecord>(emptyStaff());
+const saving = ref(false);
+
+const formatDateForInput = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const getTodayDateKey = (): string => {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const isStopWorkOnOrBeforeToday = (stopWork: string | null): boolean => {
+  if (!stopWork) return false;
+  return stopWork <= getTodayDateKey();
+};
 
 watch(
   () => [props.show, props.staff] as const,
   ([show, staff]) => {
     if (show && staff) {
-      editingStaff.value = { ...staff };
+      editingStaff.value = {
+        ...staff,
+        begain_work: formatDateForInput(staff.begain_work),
+        stop_work: formatDateForInput(staff.stop_work),
+      };
     }
   },
 );
@@ -278,33 +312,70 @@ const handleDateChange = (field: 'begain_work' | 'stop_work') => {
   }
 };
 
+const buildUpdatePayload = (staff: StaffEditRecord) => {
+  const payload = { ...staff };
+  if (payload.begain_work === '') payload.begain_work = null;
+  if (payload.stop_work === '') payload.stop_work = null;
+  delete payload.userId;
+  return payload;
+};
+
 const updateStaff = async () => {
   errorStore.clearError();
 
-  const staffData: StaffEditRecord = { ...editingStaff.value };
-  if (staffData.begain_work === '') staffData.begain_work = null;
-  if (staffData.stop_work === '') staffData.stop_work = null;
+  const staffId = editingStaff.value.id;
+  const hasLinkedUser = editingStaff.value.userId != null;
+  const shouldPromptDeleteUser =
+    hasLinkedUser && isStopWorkOnOrBeforeToday(editingStaff.value.stop_work);
 
+  let deleteUserAfterUpdate = false;
+  if (shouldPromptDeleteUser) {
+    deleteUserAfterUpdate = window.confirm(
+      '離職日期為今天或更早，是否要刪除該員工的系統登入帳號？\n（員工資料仍會保留）',
+    );
+  }
+
+  saving.value = true;
   try {
-    const response = await fetch(`/api/staffs/${editingStaff.value.id}`, {
+    const response = await fetch(`/api/staffs/${staffId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(staffData),
+      body: JSON.stringify(buildUpdatePayload(editingStaff.value)),
     });
 
-    if (response.ok) {
-      const updatedStaff = await response.json();
-      emit('updated', updatedStaff);
-      emit('close');
-    } else {
+    if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       errorStore.showError(errorData.message || '更新員工失敗，請稍後再試');
+      return;
     }
+
+    let updatedStaff: StaffEditRecord = await response.json();
+
+    if (deleteUserAfterUpdate && updatedStaff.userId != null) {
+      const deleteUserResponse = await fetch(`/api/staffs/${staffId}/delete-user`, {
+        method: 'POST',
+      });
+
+      if (deleteUserResponse.ok) {
+        updatedStaff = await deleteUserResponse.json();
+      } else {
+        const errorData = await deleteUserResponse.json().catch(() => ({}));
+        errorStore.showError(
+          errorData.message ||
+            '員工資料已更新，但刪除登入帳號失敗，請稍後再試',
+        );
+      }
+    }
+
+    emit('updated', updatedStaff);
+    emit('close');
   } catch (error) {
     console.error('更新員工失敗:', error);
     errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
+  } finally {
+    saving.value = false;
   }
 };
 </script>

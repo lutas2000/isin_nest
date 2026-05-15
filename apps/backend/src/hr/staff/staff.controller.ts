@@ -60,6 +60,15 @@ export class StaffController {
     return this.usersService.remove(id, password);
   }
 
+  @ApiOperation({ summary: '刪除員工關聯的登入帳號（保留員工資料）' })
+  @ApiParam({ name: 'id', description: '員工ID', example: 'STAFF001' })
+  @ApiResponse({ status: 200, description: '成功刪除登入帳號', type: Staff })
+  @ApiResponse({ status: 404, description: '員工不存在' })
+  @Post(':id/delete-user')
+  deleteUser(@Param('id') id: string): Promise<Staff | null> {
+    return this.usersService.deleteUserForStaff(id);
+  }
+
   @ApiOperation({ summary: '更新員工資料' })
   @ApiParam({ name: 'id', description: '員工ID', example: 'STAFF001' })
   @ApiResponse({ status: 200, description: '成功更新員工資料', type: Staff })

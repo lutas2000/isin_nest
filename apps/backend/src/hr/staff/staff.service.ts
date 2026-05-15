@@ -1,10 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AuthService } from '../../auth/auth.service';
 import { Staff } from './entities/staff.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
@@ -13,6 +10,7 @@ export class StaffService {
   constructor(
     @InjectRepository(Staff)
     private staffRepository: Repository<Staff>, // 注入 Repository
+    private readonly authService: AuthService,
   ) {}
 
   /**
@@ -75,10 +73,7 @@ export class StaffService {
       throw new UnauthorizedException('解鎖密碼錯誤');
     }
 
-    const result = await this.staffRepository.delete(id);
-    if (!result.affected) {
-      throw new NotFoundException('員工不存在');
-    }
+    await this.authService.deleteStaffWithUser(id);
   }
 
   async update(id: string, staff: Partial<Staff>): Promise<Staff | null> {
@@ -88,5 +83,9 @@ export class StaffService {
       return this.staffRepository.save(updatedStaff);
     }
     return null;
+  }
+
+  async deleteUserForStaff(staffId: string): Promise<Staff | null> {
+    return this.authService.deleteUserForStaff(staffId);
   }
 }

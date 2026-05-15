@@ -35,10 +35,21 @@ export const apiRequest = async <T>(
   if (!response.ok) {
     // 處理 401 錯誤（未授權）
     if (response.status === 401) {
-      errorStore.showLogoutError()
-      // 不拋出錯誤，讓調用方正常繼續（錯誤已通過 modal 顯示）
-      // 返回一個 rejected promise，但不會觸發 catch（因為錯誤已通過 modal 顯示）
-      return Promise.reject(new Error('Unauthorized'))
+      const errorData = await response.json().catch(() => ({ message: '' }))
+      const errorMessage =
+        typeof errorData.message === 'string' ? errorData.message : ''
+
+      // 僅在 JWT／登入失效時視為登出；業務錯誤誤回 401 時仍顯示實際訊息
+      const isAuthFailure =
+        !errorMessage ||
+        /token|jwt|登入|密碼|權限不足|admin|管理員/i.test(errorMessage)
+
+      if (isAuthFailure) {
+        errorStore.showLogoutError()
+      } else if (!silent) {
+        errorStore.showError(errorMessage || '未授權，請重新登入')
+      }
+      return Promise.reject(new Error(errorMessage || 'Unauthorized'))
     }
     
     // 處理其他錯誤

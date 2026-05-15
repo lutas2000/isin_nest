@@ -1,5 +1,8 @@
 import {
+  BadRequestException,
+  ConflictException,
   Controller,
+  HttpException,
   Post,
   Body,
   UnauthorizedException,
@@ -21,6 +24,31 @@ import {
 } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
+
+/** 將 service 拋出的業務錯誤轉成正確 HTTP 狀態，避免誤用 401 */
+function rethrowAuthBusinessError(error: unknown, fallback: string): never {
+  if (error instanceof HttpException) {
+    throw error;
+  }
+
+  const message = error instanceof Error ? error.message : fallback;
+
+  if (
+    message === '使用者已存在' ||
+    message === '員工編號已存在'
+  ) {
+    throw new ConflictException(message);
+  }
+
+  if (
+    message === '員工編號不可為空' ||
+    message === '員工編號不可超過 10 個字元'
+  ) {
+    throw new BadRequestException(message);
+  }
+
+  throw new BadRequestException(message);
+}
 
 @ApiTags('认证')
 @Controller('auth')
@@ -67,8 +95,7 @@ export class AuthController {
         user: userWithoutPassword,
       };
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '註冊失敗';
-      throw new UnauthorizedException(message);
+      rethrowAuthBusinessError(error, '註冊失敗');
     }
   }
 
@@ -188,9 +215,7 @@ export class AuthController {
         staff: result.staff,
       };
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : '創建用戶和員工失敗';
-      throw new UnauthorizedException(message);
+      rethrowAuthBusinessError(error, '創建用戶和員工失敗');
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -279,44 +279,39 @@ export class AuthService {
     staffData: Partial<Staff>,
     isAdmin?: boolean,
   ): Promise<{ user: User; staff: Staff }> {
-    // 檢查使用者是否已存在
-    const existingUser = await this.userRepository.findOne({
-      where: { userName },
-    });
+    const staffId = userName.trim();
+    if (!staffId) {
+      throw new Error('員工編號不可為空');
+    }
+    if (staffId.length > 10) {
+      throw new Error('員工編號不可超過 10 個字元');
+    }
 
+    const existingUser = await this.userRepository.findOne({
+      where: { userName: staffId },
+    });
     if (existingUser) {
       throw new Error('使用者已存在');
     }
 
-    // 產生鹽值並雜湊密碼
+    const existingStaff = await this.staffRepository.findOne({
+      where: { id: staffId },
+    });
+    if (existingStaff) {
+      throw new Error('員工編號已存在');
+    }
+
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // 建立新使用者物件
     const newUser = this.userRepository.create({
-      userName,
+      userName: staffId,
       password: hashedPassword,
       isAdmin: isAdmin ?? false,
     });
 
-    // 儲存使用者
     const savedUser = await this.userRepository.save(newUser);
 
-    // 使用 user.id 作為 staff.id（轉換為字符串，確保長度不超過 10）
-    const staffId = String(savedUser.id).padStart(10, '0').slice(0, 10);
-
-    // 檢查 staff.id 是否已存在
-    const existingStaff = await this.staffRepository.findOne({
-      where: { id: staffId },
-    });
-
-    if (existingStaff) {
-      // 如果 staff 已存在，刪除剛創建的 user
-      await this.userRepository.delete(savedUser.id);
-      throw new Error('員工編號已存在');
-    }
-
-    // 建立新員工物件
     const newStaff = this.staffRepository.create({
       id: staffId,
       userId: savedUser.id,
@@ -356,6 +351,54 @@ export class AuthService {
       user: userWithRelations,
       staff: savedStaff,
     };
+  }
+
+  /** 刪除員工關聯的登入帳號，保留 staff 紀錄 */
+  async deleteUserForStaff(staffId: string): Promise<Staff | null> {
+    const staff = await this.staffRepository.findOneBy({ id: staffId });
+    if (!staff) {
+      throw new NotFoundException('員工不存在');
+    }
+
+    if (staff.userId == null) {
+      return staff;
+    }
+
+    const userId = staff.userId;
+
+    await this.staffRepository.manager.transaction(async (manager) => {
+      // 須先解除 staff → users 外鍵，才能刪除 user
+      await manager
+        .createQueryBuilder()
+        .update(Staff)
+        .set({ userId: null })
+        .where('id = :id', { id: staffId })
+        .execute();
+
+      await manager.delete(UserFeature, { user: { id: userId } });
+      await manager.delete(User, { id: userId });
+    });
+
+    return this.staffRepository.findOneBy({ id: staffId });
+  }
+
+  /** 刪除員工並一併刪除關聯的 user（含 user_features） */
+  async deleteStaffWithUser(staffId: string): Promise<void> {
+    const staff = await this.staffRepository.findOneBy({ id: staffId });
+    if (!staff) {
+      throw new NotFoundException('員工不存在');
+    }
+
+    const userId = staff.userId;
+
+    await this.staffRepository.manager.transaction(async (manager) => {
+      await manager.delete(Staff, { id: staffId });
+
+      if (userId != null) {
+        await manager.delete(UserFeature, { user: { id: userId } });
+        await manager.delete(User, { id: userId });
+      }
+    });
   }
 
   // 根據職稱應用預設權限

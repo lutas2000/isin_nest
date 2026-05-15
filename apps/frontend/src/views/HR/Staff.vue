@@ -203,10 +203,13 @@
                   class="form-control"
                   v-model="newStaff.userName"
                   required
+                  maxlength="10"
                   placeholder="請輸入員工編號"
                   @input="handleUserNameInput"
                 />
-                <small class="mt-1 block text-xs italic text-secondary-600">用於登入系統的ID</small>
+                <small class="mt-1 block text-xs italic text-secondary-600">
+                  同時作為登入帳號與列表中的員工編號（最多 10 字）
+                </small>
               </div>
               <div class="flex flex-col gap-1">
                 <label class="form-label">密碼 *</label>
@@ -654,6 +657,7 @@ interface Staff {
   begain_work: string | null;
   stop_work: string | null;
   have_fake: boolean;
+  userId?: number | null;
 }
 
 // 頁面鎖定相關
@@ -1035,8 +1039,10 @@ const addStaff = async () => {
     return;
   }
 
-  // 處理日期欄位，將空字串轉換為 null 或 Date 對象
-  const requestData: CreateStaffWithUser = { ...newStaff.value };
+  const requestData: CreateStaffWithUser = {
+    ...newStaff.value,
+    userName: newStaff.value.userName.trim(),
+  };
   if (requestData.begain_work === '') {
     requestData.begain_work = null;
   } else if (requestData.begain_work) {
