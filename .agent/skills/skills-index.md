@@ -19,6 +19,9 @@ This file maps task intent to skill folders for on-demand loading.
 - `prod-deploy-update-run/SKILL.md`
   - Trigger: update and run production services using git pull, DB migration, Docker builds, and Docker Compose.
   - Use with: `../rules/docker/deployment-baseline.md`, `../rules/backend/typeorm-entity-migration.md`.
+- `deploy-and-run/SKILL.md`
+  - Trigger: build and start services from the current working tree without git operations (code already in place).
+  - Use with: `../rules/docker/deployment-baseline.md`, `../rules/backend/typeorm-entity-migration.md`.
 
 ## Documentation Governance
 
