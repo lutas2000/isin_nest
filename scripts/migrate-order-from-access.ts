@@ -100,6 +100,34 @@ const DEFAULT_SHIPPING =
 const DEFAULT_PAYMENT =
   process.env.ORDER_MIGRATION_DEFAULT_PAYMENT_METHOD || '月結';
 
+const DEFAULT_FACTOR_NO = '111';
+
+/** 從 gtable 列擷取與客戶（factory）相關的 Access 欄位，供錯誤時輸出。 */
+function factoryFieldsFromGtable(row: Record<string, unknown>) {
+  return {
+    QNO: toOptionalTrimmedString(row.QNO),
+    FACTOR_NO: toOptionalTrimmedString(row.FACTOR_NO),
+    FACTOR: toOptionalTrimmedString(row.FACTOR),
+    DATE_R: toOptionalTrimmedString(row.DATE_R),
+    DATE_E: toOptionalTrimmedString(row.DATE_E),
+    ACTOR_NO: toOptionalTrimmedString(row.ACTOR_NO),
+    ACTOR: toOptionalTrimmedString(row.ACTOR),
+  };
+}
+
+/** customer 無法對應時中止遷移並印出 Access 來源資料。 */
+function abortOnMissingCustomer(
+  reason: string,
+  row: Record<string, unknown>,
+): never {
+  console.error(`遷移中止：${reason}`);
+  console.error('Access 來源 factory 相關欄位：');
+  console.error(JSON.stringify(factoryFieldsFromGtable(row), null, 2));
+  console.error('完整 gtable 列：');
+  console.error(JSON.stringify(row, null, 2));
+  process.exit(1);
+}
+
 /** 從 gtable 列擷取與經辦人員（staff）相關的 Access 欄位，供錯誤時輸出。 */
 function staffFieldsFromGtable(row: Record<string, unknown>) {
   return {
@@ -520,18 +548,15 @@ async function migrateOrderFromAccess() {
               continue;
             }
 
-            const customerId = toOptionalTrimmedString(row.FACTOR_NO);
-            if (!customerId) {
-              console.log(`略過訂單（無 FACTOR_NO）: ${id}`);
-              orderSkip++;
-              continue;
-            }
+            const customerId =
+              toOptionalTrimmedString(row.FACTOR_NO) ?? DEFAULT_FACTOR_NO;
 
             const cust = await customerRepo.findOne({ where: { id: customerId } });
             if (!cust) {
-              console.log(`略過訂單（customer 不存在）: ${id} FACTOR_NO=${customerId}`);
-              orderSkip++;
-              continue;
+              abortOnMissingCustomer(
+                `訂單 ${id} 的 FACTOR_NO=${customerId} 在 customer 表不存在`,
+                row,
+              );
             }
 
             const actorNo = toOptionalTrimmedString(row.ACTOR_NO);
