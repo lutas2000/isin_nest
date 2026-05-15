@@ -14,19 +14,7 @@
       :show-search="true"
       :search="orderSearch"
       search-placeholder="搜尋訂單編號或客戶..."
-      :filters="[
-        {
-          key: 'status',
-          placeholder: '全部狀態',
-          options: [
-            { value: 'active', label: '進行中' },
-            { value: 'completed', label: '已完成' }
-          ]
-        }
-      ]"
-      :filter-values="{ status: orderStatusFilter }"
       @update:search="orderSearch = $event"
-      @update:filters="handleContainerFilterUpdate"
       @retry="loadOrders"
     >
       <EditableDataTable
@@ -79,13 +67,6 @@
           <span v-else>{{ row.staff?.name || value }}</span>
         </template>
 
-        <template #cell-isCompleted="{ value }">
-          <StatusBadge 
-            :text="value ? '已完成' : '進行中'" 
-            :variant="value ? 'success' : 'info'"
-          />
-        </template>
-        
         <template #cell-notes="{ value }">
           <span v-if="value && value.length > 50" :title="value">
             {{ value.substring(0, 50) }}...
@@ -138,7 +119,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, ShortcutHint } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, ShortcutHint } from '@/components';
 import { workOrderService, type WorkOrder } from '@/services/crm/work-order.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
@@ -155,7 +136,6 @@ const currentPage = ref(1);
 const pageSize = ref(50);
 const total = ref(0);
 const orderSearch = ref('');
-const orderStatusFilter = ref('');
 
 // 客戶和員工資料（用於下拉選單）
 const customers = ref<Customer[]>([]);
@@ -280,16 +260,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
     searchFunction: searchPaymentMethod,
   },
   { 
-    key: 'isCompleted', 
-    label: '狀態', 
-    editable: true, 
-    type: 'select',
-    options: [
-      { value: false, label: '進行中' },
-      { value: true, label: '已完成' }
-    ]
-  },
-  { 
     key: 'notes', 
     label: '備註', 
     editable: true, 
@@ -318,22 +288,8 @@ const filteredOrders = computed(() => {
     );
   }
 
-  // 狀態篩選
-  if (orderStatusFilter.value === 'completed') {
-    filtered = filtered.filter((order) => order.isCompleted);
-  } else if (orderStatusFilter.value === 'active') {
-    filtered = filtered.filter((order) => !order.isCompleted);
-  }
-
   return filtered;
 });
-
-// 處理篩選器更新
-const handleContainerFilterUpdate = (filters: Record<string, string>) => {
-  if ('status' in filters) {
-    orderStatusFilter.value = filters.status;
-  }
-};
 
 // 載入訂單資料
 const loadOrders = async () => {
