@@ -1,0 +1,124 @@
+/**
+ * 遞迴列出指定根目錄下所有 .mdb / .accdb（唯讀），可選寫入庫存 Markdown。
+ *
+ * 用法（專案根目錄）：
+ *   npm run list-access-mdb [根目錄]
+ *   npm run list-access-mdb -- /nas/isin --write
+ *   ACCESS_MDB_ROOT=/nas/isin npm run list-access-mdb
+ *
+ * 選項：
+ *   --write   將結果寫入預設庫存檔（見 DEFAULT_INVENTORY_REL）
+ *   --json    僅輸出 JSON 陣列至 stdout（不寫檔）
+ */
+
+import { readdirSync, statSync, writeFileSync } from 'fs';
+import { join, extname, relative, resolve } from 'path';
+
+const DEFAULT_ROOT = process.env.ACCESS_MDB_ROOT || '/nas/isin';
+/** 相對於專案根目錄的庫存輸出路徑 */
+const DEFAULT_INVENTORY_REL =
+  '.agent/skills/analyze-access-database/LEGACY_ACCESS_MDB_INVENTORY.md';
+
+const exts = new Set(['.mdb', '.accdb']);
+
+function walk(dir: string, out: string[]): void {
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`無法讀取目錄: ${dir}\n${msg}`);
+    process.exitCode = 1;
+    return;
+  }
+  for (const ent of entries) {
+    if (ent.name.startsWith('.')) continue;
+    const p = join(dir, ent.name);
+    if (ent.isDirectory()) {
+      walk(p, out);
+      continue;
+    }
+    if (exts.has(extname(ent.name).toLowerCase())) out.push(p);
+  }
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  const u = ['KB', 'MB', 'GB'];
+  let v = n / 1024;
+  let i = 0;
+  while (v >= 1024 && i < u.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(i === 0 ? 0 : 1)} ${u[i]}`;
+}
+
+function main() {
+  const raw = process.argv.slice(2);
+  const flags = new Set(raw.filter((a) => a.startsWith('--')));
+  const positionals = raw.filter((a) => !a.startsWith('--'));
+  const wantWrite = flags.has('--write');
+  const wantJson = flags.has('--json');
+  const root = resolve(positionals[0] || DEFAULT_ROOT);
+
+  const paths: string[] = [];
+  walk(root, paths);
+  paths.sort();
+
+  const rows = paths.map((abs) => {
+    const st = statSync(abs);
+    return {
+      path: abs,
+      rel: relative(root, abs) || '.',
+      size: st.size,
+      mtimeMs: st.mtimeMs,
+    };
+  });
+
+  if (wantJson) {
+    console.log(JSON.stringify(rows, null, 2));
+    return;
+  }
+
+  const iso = new Date().toISOString();
+  console.log(`根目錄: ${root}`);
+  console.log(`掃描時間 (UTC): ${iso}`);
+  console.log(`檔案數: ${rows.length}`);
+  console.log('');
+  for (const r of rows) {
+    console.log(`${r.path}\t${formatBytes(r.size)}\t${new Date(r.mtimeMs).toISOString()}`);
+  }
+
+  if (wantWrite) {
+    const projectRoot = resolve(__dirname, '..');
+    const outPath = resolve(projectRoot, DEFAULT_INVENTORY_REL);
+    const md = [
+      '# Legacy Access 檔案庫存（.mdb / .accdb）',
+      '',
+      '此檔由 `npm run list-access-mdb -- --write` 產生，請勿手動維護內容表體；要更新請重跑指令。',
+      '',
+      `| 根目錄 | \`${root}\` |`,
+      `| 掃描時間 (UTC) | ${iso} |`,
+      `| 檔案數 | ${rows.length} |`,
+      '',
+      '| 相對路徑 | 大小 | 修改時間 (UTC) |',
+      '| --- | --- | --- |',
+      ...rows.map(
+        (r) =>
+          `| \`${r.rel.replace(/\\/g, '/')}\` | ${formatBytes(r.size)} | ${new Date(r.mtimeMs).toISOString()} |`,
+      ),
+      '',
+      '## 說明',
+      '',
+      '- 若 NAS 掛載於其他路徑，請設 `ACCESS_MDB_ROOT` 或傳入第一個參數。',
+      '- `/nas/isin/` 與 `/nas/isin/isin/` 底下可能各有同名檔案，大小與時間未必相同；分析前請依業務確認要以哪一組為準。',
+      '',
+    ].join('\n');
+    writeFileSync(outPath, md, 'utf-8');
+    console.log('');
+    console.log(`已寫入: ${outPath}`);
+  }
+}
+
+main();

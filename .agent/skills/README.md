@@ -44,5 +44,6 @@ Rules:
 - `new-backend-endpoint/SKILL.md`
 - `entity-change-with-migration/SKILL.md`
 - `permission-change/SKILL.md`
+- `analyze-access-database/SKILL.md`
 - `SKILL_TEMPLATE.md`
 - `skills-index.md`

@@ -112,6 +112,23 @@ npm run copy-staff
 
 這個腳本用於分析 Microsoft Access 資料庫（.mdb 或 .accdb 格式）的結構，並可選地與 MySQL 資料表進行對比。
 
+### 3.0 NAS 上 Access 檔庫存掃描 (list-access-mdb.ts)
+
+在分析大量 legacy 檔案前，可先遞迴列出某根目錄下所有 `.mdb` / `.accdb`（含副檔名大小寫變體），並可寫入 skill 附帶的庫存表。
+
+```bash
+# 預設掃描 /nas/isin，結果印到終端機
+npm run list-access-mdb
+
+# 指定根目錄並更新 .agent/skills/analyze-access-database/LEGACY_ACCESS_MDB_INVENTORY.md
+npm run list-access-mdb -- /nas/isin --write
+
+# 僅輸出 JSON（給其他工具消化）
+npm run list-access-mdb -- /nas/isin --json
+```
+
+環境變數：`ACCESS_MDB_ROOT` — 未傳第一參數時作為掃描根目錄（預設 `/nas/isin`）。
+
 ### 使用方法
 
 ```bash
