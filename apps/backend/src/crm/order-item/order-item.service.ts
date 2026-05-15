@@ -58,6 +58,36 @@ export class OrderItemService {
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
+  async findByCustomerId(
+    customerId: string,
+    page?: number,
+    limit?: number,
+  ): Promise<OrderItem[] | PaginatedResponseDto<OrderItem>> {
+    const pageNum = page ?? 1;
+    const limitNum = limit ?? 50;
+    const maxLimit = Math.min(limitNum, 100);
+    const skip = (pageNum - 1) * maxLimit;
+
+    const [data, total] = await this.orderItemRepository
+      .createQueryBuilder('orderItem')
+      .innerJoinAndSelect('orderItem.order', 'workOrder')
+      .leftJoinAndSelect('orderItem.drawingStaff', 'drawingStaff')
+      .leftJoinAndSelect('orderItem.processingItems', 'processingItems')
+      .leftJoinAndSelect('processingItems.vendor', 'processingVendor')
+      .where('workOrder.customerId = :customerId', { customerId })
+      .orderBy(
+        "CASE WHEN orderItem.cadFile IS NULL OR orderItem.cadFile = '' THEN 1 ELSE 0 END",
+        'ASC',
+      )
+      .addOrderBy('orderItem.cadFile', 'ASC')
+      .addOrderBy('orderItem.createdAt', 'DESC')
+      .take(maxLimit)
+      .skip(skip)
+      .getManyAndCount();
+
+    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+  }
+
   async create(orderItem: Partial<OrderItem>): Promise<OrderItem> {
     const newOrderItem = this.orderItemRepository.create({
       ...orderItem,

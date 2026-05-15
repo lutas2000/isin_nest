@@ -111,9 +111,15 @@ export const orderService = {
 
 export const orderItemService = {
   // 獲取所有訂單工件（支援分頁）
-  getAll: (orderId?: string, page?: number, limit?: number): Promise<OrderItem[] | PaginatedResponse<OrderItem>> => {
+  getAll: (
+    orderId?: string,
+    page?: number,
+    limit?: number,
+    filters?: { customerId?: string },
+  ): Promise<OrderItem[] | PaginatedResponse<OrderItem>> => {
     const params: Record<string, any> = {}
     if (orderId) params.orderId = orderId
+    if (filters?.customerId) params.customerId = filters.customerId
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
     return apiGet<OrderItem[] | PaginatedResponse<OrderItem>>(API_CONFIG.CRM.ORDER_ITEMS, params)

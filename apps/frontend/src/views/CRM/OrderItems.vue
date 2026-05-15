@@ -134,6 +134,7 @@
           @row-delete="handleRowDelete"
           @row-edit="handleRowEdit"
           @focus-field="handleTableFocusField"
+          @field-hotkey="handleTableFieldHotkey"
         >
           <template #cell-sequence="{ value }">
             {{ value }}
@@ -242,6 +243,13 @@
       @close="closeProcessingSelectModal"
       @confirm="handleProcessingConfirm"
     />
+    <CustomerModelSearchModal
+      :show="showCustomerModelSearchModal"
+      :customer-id="workOrder?.customerId"
+      :initial-query="customerModelSearchInitialQuery"
+      @close="closeCustomerModelSearchModal"
+      @confirm="handleCustomerModelConfirm"
+    />
   </div>
 </template>
 
@@ -256,6 +264,7 @@ import {
   ShortcutHint,
   DetailFieldsPanel,
   type DetailFieldItem,
+  CustomerModelSearchModal,
 } from '@/components';
 import EditableCell from '@/components/EditableCell.vue';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
@@ -280,8 +289,13 @@ type DisplayWorkOrderItem = WorkOrderItem & {
   sequence: number;
 };
 
+type EditableTableInstance = InstanceType<typeof EditableDataTable> & {
+  patchEditingField: (row: WorkOrderItem | null, index: number, field: string, value: unknown) => void;
+  getResolvedEditingRow: (row: WorkOrderItem | null, index: number) => Partial<WorkOrderItem>;
+};
+
 // EditableDataTable ref
-const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
+const editableTableRef = ref<EditableTableInstance | null>(null);
 
 // Processing Modal 相關
 const showProcessingSelectModal = ref(false);
@@ -289,6 +303,14 @@ const selectedWorkOrderItem = ref<WorkOrderItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
 const vendors = ref<Vendor[]>([]);
 const processingAutoOpenBlockedUntil = ref(0);
+
+// 客戶型號搜尋 Modal 相關
+const showCustomerModelSearchModal = ref(false);
+const customerModelSearchInitialQuery = ref('');
+const customerModelSearchContext = ref<{
+  row: WorkOrderItem | null;
+  rowIndex: number;
+} | null>(null);
 
 // 列印組件 ref
 const workOrderPrintRef = ref<InstanceType<typeof OrderPrint> | null>(null);
@@ -438,7 +460,8 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'customerFile', 
     label: '客戶檔案', 
     editable: true, 
-    type: 'text' 
+    type: 'text',
+    hotkeys: { f10: true },
   },
   { 
     key: 'material', 
@@ -785,6 +808,19 @@ const handleShortcutClick = (action: string) => {
       // 這些操作由表格內部處理
       break;
 
+    case 'customer-model-search': {
+      if (state.focusedFieldKey !== 'customerFile' || !workOrder.value?.customerId) {
+        break;
+      }
+      const row = state.isNewRowFocused ? null : currentRowIndex !== null ? data[currentRowIndex] : null;
+      const rowIndex = state.isNewRowFocused ? -1 : currentRowIndex ?? -1;
+      const resolvedRow = editableTableRef.value.getResolvedEditingRow(row, rowIndex);
+      customerModelSearchContext.value = { row, rowIndex };
+      customerModelSearchInitialQuery.value = String(resolvedRow.customerFile ?? '');
+      showCustomerModelSearchModal.value = true;
+      break;
+    }
+
     case 'cancel-new-row':
       editableTableRef.value.cancelNewRow();
       break;
@@ -852,6 +888,47 @@ const handleTableFocusField = (payload: {
     return;
   }
   openProcessingSelectModal(payload.row);
+};
+
+const handleTableFieldHotkey = (payload: {
+  key: 'F10';
+  row: WorkOrderItem;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+  resolvedRow: Partial<WorkOrderItem>;
+}) => {
+  if (payload.key !== 'F10' || payload.fieldKey !== 'customerFile') {
+    return;
+  }
+  if (!workOrder.value?.customerId) {
+    return;
+  }
+
+  customerModelSearchContext.value = {
+    row: payload.isNewRow ? null : payload.row,
+    rowIndex: payload.rowIndex,
+  };
+  customerModelSearchInitialQuery.value = String(payload.resolvedRow.customerFile ?? '');
+  showCustomerModelSearchModal.value = true;
+};
+
+const closeCustomerModelSearchModal = () => {
+  showCustomerModelSearchModal.value = false;
+  customerModelSearchContext.value = null;
+};
+
+const handleCustomerModelConfirm = (value: { customerFile: string; item: WorkOrderItem | null }) => {
+  const context = customerModelSearchContext.value;
+  if (!context) return;
+
+  editableTableRef.value?.patchEditingField(
+    context.row,
+    context.rowIndex,
+    'customerFile',
+    value.customerFile,
+  );
+  closeCustomerModelSearchModal();
 };
 
 // 確認加工選擇

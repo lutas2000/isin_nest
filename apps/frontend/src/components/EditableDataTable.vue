@@ -59,7 +59,7 @@
                 :options="getColumnOptions(column)"
                 :search-function="column.searchFunction"
                 @update:value="handleNewRowFieldChange(column.key, $event)"
-                @keydown="handleFieldKeyDown($event, null, column.key, -1)"
+                @keydown="handleFieldKeyDown($event, null, column, -1)"
                 @blur="handleNewRowBlur"
               />
               <slot 
@@ -124,7 +124,7 @@
                 :options="getColumnOptions(column)"
                 :search-function="column.searchFunction"
                 @update:value="handleFieldChange(row, column.key, $event, index)"
-                @keydown="handleFieldKeyDown($event, row, column.key, index)"
+                @keydown="handleFieldKeyDown($event, row, column, index)"
                 @blur="handleFieldBlur(row, column.key, index)"
               />
               <slot 
@@ -281,6 +281,9 @@ export type EditableColumnWidth = 'sequence' | 'short-number' | 'long-number' | 
 export interface EditableColumn extends Column {
   editable?: boolean;
   keyboardFocusable?: boolean;
+  hotkeys?: {
+    f10?: boolean;
+  };
   required?: boolean;
   type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'date';
   /** 與 type=text 併用：瀏覽器 datalist 建議值（仍可自由輸入） */
@@ -347,6 +350,7 @@ const emit = defineEmits<{
   'row-view': [row: any];
   'row-edit': [row: any, index: number];
   'focus-field': [payload: { row: any; rowIndex: number; fieldKey: string; isNewRow: boolean; byKeyboard: boolean }];
+  'field-hotkey': [payload: { key: 'F10'; row: any; rowIndex: number; fieldKey: string; isNewRow: boolean; resolvedRow: any }];
 }>();
 
 const localPageSize = ref(props.pageSize);
@@ -468,6 +472,30 @@ const getEditingValue = (row: any, field: string, index: number) => {
     return editingData.value[key][field];
   }
   return row[field];
+};
+
+const getResolvedEditingRow = (row: any | null, index: number) => {
+  if (!row) {
+    return { ...newRowData.value };
+  }
+  const key = getRowKey(row, index);
+  return {
+    ...row,
+    ...(editingData.value[key] ?? {}),
+  };
+};
+
+const patchEditingField = (row: any | null, index: number, field: string, value: any) => {
+  if (!row) {
+    newRowData.value[field] = value;
+    return;
+  }
+
+  const key = getRowKey(row, index);
+  if (!editingData.value[key]) {
+    editingData.value[key] = { ...row };
+  }
+  editingData.value[key][field] = value;
 };
 
 const getColumnOptions = (column: EditableColumn): Array<{value: any, label: string}> => {
@@ -798,7 +826,22 @@ const handleTableKeyDown = (event: KeyboardEvent) => {
 };
 
 // 處理欄位層級的快捷鍵
-const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, fieldKey: string, rowIndex: number) => {
+const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, column: EditableColumn, rowIndex: number) => {
+  const fieldKey = column.key;
+  if (event.key === 'F10' && column.hotkeys?.f10 === true && props.editable) {
+    event.preventDefault();
+    event.stopPropagation();
+    emit('field-hotkey', {
+      key: 'F10',
+      row: row ?? newRowData.value,
+      rowIndex,
+      fieldKey,
+      isNewRow: row === null,
+      resolvedRow: getResolvedEditingRow(row, rowIndex),
+    });
+    return;
+  }
+
   if (event.key === 'Escape') {
     event.preventDefault();
     event.stopPropagation(); // 阻止事件冒泡到表格層級
@@ -958,6 +1001,8 @@ defineExpose({
   saveRow,
   saveNewRow,
   cancelNewRow,
+  patchEditingField,
+  getResolvedEditingRow,
 });
 </script>
 

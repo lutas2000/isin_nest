@@ -5,7 +5,7 @@
     @click="handleOverlayClick"
   >
     <div
-      class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-lg"
+      :class="['max-h-[90vh] w-full overflow-y-auto rounded-lg bg-white shadow-lg', maxWidthClass]"
       @click.stop
     >
       <div class="flex items-center justify-between border-b border-secondary-200 px-8 py-5 md:px-6 md:py-4">
@@ -37,10 +37,12 @@ interface Props {
   show: boolean;
   title: string;
   closeOnOverlay?: boolean;
+  maxWidthClass?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  closeOnOverlay: true
+  closeOnOverlay: true,
+  maxWidthClass: 'max-w-2xl',
 });
 
 const emit = defineEmits<{

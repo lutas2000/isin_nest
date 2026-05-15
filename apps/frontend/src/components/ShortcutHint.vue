@@ -178,6 +178,15 @@ const allShortcuts = computed<Shortcut[]>(() => {
         action: 'cancel-edit'
       }
     );
+
+    if (props.tableState?.focusedFieldKey === 'customerFile') {
+      shortcuts.push({
+        key: 'f10',
+        display: 'F10',
+        label: '搜尋客戶型號',
+        action: 'customer-model-search'
+      });
+    }
   } else if (isNewRowLevel.value) {
     // New Row 層級快捷鍵
     shortcuts.push(
