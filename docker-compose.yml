@@ -19,6 +19,9 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+    privileged: true
+    volumes:
+      - /etc/auto_nas:/etc/auto_nas:ro
     environment:
       PORT: ${PORT:-3000}
       NODE_ENV: ${NODE_ENV:-development}

@@ -20,7 +20,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # LibreOffice：匯入 DOCX 時將 word/media 內 EMF/WMF 轉成 PNG 用
-RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community libreoffice
+# cifs-utils：NAS SMB 掛載用
+RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community libreoffice && \
+    apk add --no-cache cifs-utils
 ENV LIBREOFFICE_PATH=/usr/bin/soffice
 
 # 只安裝 production dependencies
