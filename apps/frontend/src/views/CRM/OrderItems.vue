@@ -64,12 +64,6 @@
                 </button>
               </template>
             </template>
-            <template #value-status>
-              <StatusBadge
-                :text="workOrder.isCompleted ? '已完成' : '進行中'"
-                :variant="workOrder.isCompleted ? 'success' : 'info'"
-              />
-            </template>
             <template #edit-shippingMethod>
               <EditableCell
                 :column="shippingMethodDetailColumn"
@@ -184,10 +178,6 @@
             {{ value || '-' }}
           </template>
 
-          <template #cell-status="{ value }">
-            <StatusBadge :text="value || '-'" variant="secondary" size="sm" />
-          </template>
-
           <template #cell-notes="{ value }">
             {{ value || '-' }}
           </template>
@@ -258,7 +248,6 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   CrmTableContainer,
-  StatusBadge,
   EditableDataTable,
   type EditableColumn,
   ShortcutHint,
@@ -514,17 +503,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
     searchFunction: searchSourceType,
   },
   { 
-    key: 'status', 
-    label: '狀態', 
-    editable: true, 
-    type: 'select',
-    options: [
-      { value: '待處理', label: '待處理' },
-      { value: '處理中', label: '處理中' },
-      { value: '已完成', label: '已完成' },
-    ]
-  },
-  { 
     key: 'notes', 
     label: '備註', 
     editable: true, 
@@ -558,7 +536,6 @@ const detailItems = computed<DetailFieldItem[]>(() => {
       label: '客戶',
       value: workOrder.value.customer?.companyName || workOrder.value.customer?.companyShortName || '未指定',
     },
-    { key: 'status', label: '狀態', value: workOrder.value.isCompleted ? '已完成' : '進行中' },
     { key: 'shippingMethod', label: '運送方式', value: workOrder.value.shippingMethod || '-' },
     { key: 'paymentMethod', label: '付款方式', value: workOrder.value.paymentMethod || '-' },
     {
