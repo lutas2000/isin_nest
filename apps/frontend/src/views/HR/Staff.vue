@@ -1,11 +1,20 @@
 <template>
   <div class="mx-auto w-full">
     <!-- 上鎖畫面 -->
-    <div v-if="isLocked" class="staff-lock-overlay">
-      <div class="staff-lock-card">
-        <h2 class="staff-lock-title">員工管理 - 已上鎖</h2>
-        <p class="staff-lock-desc">請輸入解鎖密碼以檢視員工資料</p>
-        <div class="staff-lock-form">
+    <div
+      v-if="isLocked"
+      class="flex min-h-[60vh] items-center justify-center px-4"
+    >
+      <div
+        class="w-full max-w-md rounded-lg border border-secondary-200 bg-white p-8 shadow-lg"
+      >
+        <h2 class="m-0 text-xl font-semibold text-secondary-900">
+          員工管理 - 已上鎖
+        </h2>
+        <p class="mb-6 mt-2 text-secondary-600">
+          請輸入解鎖密碼以檢視員工資料
+        </p>
+        <div class="flex flex-col gap-3">
           <label class="form-label">解鎖密碼</label>
           <input
             v-model="passwordInput"
@@ -14,15 +23,15 @@
             placeholder="請輸入解鎖密碼"
             @keyup.enter="tryUnlock"
           />
-          <p v-if="passwordError" class="staff-lock-error">
+          <p v-if="passwordError" class="text-sm text-danger-600">
             {{ passwordError }}
           </p>
-          <div class="form-actions">
+          <div class="form-actions !mt-4 !border-t-0 !pt-0">
             <button class="btn btn-primary" type="button" @click="tryUnlock">
               解鎖
             </button>
           </div>
-          <p class="staff-lock-hint">
+          <p class="mt-2 text-xs text-secondary-500">
             此頁面若超過 5 分鐘未操作，將自動再次上鎖。
           </p>
         </div>
@@ -30,130 +39,127 @@
     </div>
 
     <!-- 主要內容（解鎖後顯示） -->
-    <div v-else>
-      <!-- 員工列表 -->
-      <div class="staff-content overflow-hidden rounded-lg bg-white shadow">
-      <TableHeader title="員工列表">
-        <template #actions>
-          <button class="btn btn-primary" @click="showAddModal = true">
-            <span class="mr-2">👤</span>
-            新增員工
-          </button>
-          <div class="search-box min-w-[240px]">
+    <div v-else class="space-y-0">
+      <div class="overflow-hidden rounded-lg bg-white shadow">
+        <TableHeader title="員工列表">
+          <template #actions>
+            <button class="btn btn-primary" type="button" @click="showAddModal = true">
+              <span class="mr-2">👤</span>
+              新增員工
+            </button>
             <input
-              type="text"
-              class="form-control"
-              placeholder="搜尋員工姓名或編號..."
               v-model="staffSearch"
+              type="text"
+              class="form-control min-w-[200px] md:min-w-0"
+              placeholder="搜尋員工姓名或編號..."
             />
-          </div>
-          <select class="form-control" v-model="departmentFilter">
-            <option value="">全部部門</option>
-            <option value="技術部">技術部</option>
-            <option value="生產部">生產部</option>
-            <option value="業務部">業務部</option>
-            <option value="人資部">人資部</option>
-            <option value="財務部">財務部</option>
-          </select>
-          <select class="form-control" v-model="statusFilter">
-            <option value="">全部狀態</option>
-            <option value="active">在職</option>
-            <option value="resigned">離職</option>
-          </select>
-        </template>
-      </TableHeader>
-
-      <EditableDataTable
-        :columns="tableColumns"
-        :data="filteredStaff"
-        :show-actions="true"
-        :editable="false"
-        @row-view="viewStaff"
-        @row-edit="editStaff"
-      >
-        <template #cell-id="{ row }">
-          <span class="clickable-cell" @click="viewStaff(row)">
-            {{ row.id }}
-          </span>
-        </template>
-
-        <template #cell-name="{ row }">
-          <div class="staff-info">
-            <div class="staff-avatar">{{ row.name.charAt(0) }}</div>
-            <div class="staff-details">
-              <div
-                class="staff-name clickable-cell"
-                @click="viewStaff(row)"
+            <select v-model="departmentFilter" class="form-control min-w-[140px] md:min-w-0">
+              <option value="">全部部門</option>
+              <option
+                v-for="dept in departmentOptions"
+                :key="dept"
+                :value="dept"
               >
-                {{ row.name }}
-              </div>
-              <div class="staff-status">
-                <span v-if="row.is_foreign" class="badge badge-warning">
+                {{ dept }}
+              </option>
+            </select>
+            <select v-model="statusFilter" class="form-control min-w-[120px] md:min-w-0">
+              <option value="">全部狀態</option>
+              <option value="active">在職</option>
+              <option value="resigned">離職</option>
+            </select>
+          </template>
+        </TableHeader>
+
+        <EditableDataTable
+          row-key="id"
+          :columns="tableColumns"
+          :data="filteredStaff"
+          :show-actions="true"
+          :editable="false"
+          :auto-focus-on-mount="false"
+          @row-view="viewStaff"
+          @row-edit="(row) => editStaff(row)"
+        >
+          <template #cell-id="{ row, value }">
+            <button
+              type="button"
+              class="cursor-pointer border-0 bg-transparent p-0 font-medium text-primary-600 underline-offset-2 hover:text-primary-700 hover:underline"
+              @click="viewStaff(row)"
+            >
+              {{ value }}
+            </button>
+          </template>
+
+          <template #cell-name="{ row }">
+            <div class="flex items-center gap-3">
+              <span
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-500 text-lg font-semibold text-white"
+              >
+                {{ row.name.charAt(0) }}
+              </span>
+              <div class="min-w-0">
+                <button
+                  type="button"
+                  class="block cursor-pointer border-0 bg-transparent p-0 text-left font-medium text-secondary-900 hover:text-primary-600 hover:underline"
+                  @click="viewStaff(row)"
+                >
+                  {{ row.name }}
+                </button>
+                <span
+                  v-if="row.is_foreign"
+                  class="mt-0.5 block text-xs text-secondary-500"
+                >
                   外勞
                 </span>
               </div>
             </div>
-          </div>
-        </template>
+          </template>
 
-        <template #cell-post="{ value }">
-          {{ value || '-' }}
-        </template>
+          <template #cell-post="{ value }">
+            <span class="text-secondary-700">{{ value || '-' }}</span>
+          </template>
 
-        <template #cell-department="{ value }">
-          {{ value || '-' }}
-        </template>
+          <template #cell-department="{ value }">
+            <span class="text-secondary-700">{{ value || '-' }}</span>
+          </template>
 
-        <template #cell-work_group="{ value }">
-          {{ value || '-' }}
-        </template>
+          <template #cell-work_group="{ value }">
+            <span class="text-secondary-700">{{ value || '-' }}</span>
+          </template>
 
-        <template #cell-wage="{ value }">
-          {{ value?.toLocaleString() || '-' }}
-        </template>
+          <template #cell-wage="{ value }">
+            <span class="tabular-nums text-secondary-900">
+              {{ value != null ? Number(value).toLocaleString() : '-' }}
+            </span>
+          </template>
 
-        <template #cell-begain_work="{ value }">
-          {{ formatDate(value) }}
-        </template>
+          <template #cell-begain_work="{ value }">
+            <span class="text-secondary-700">{{ formatDate(value) }}</span>
+          </template>
 
-        <template #cell-status="{ row }">
-          <span class="badge" :class="getStatusBadgeClass(row)">
-            {{ getStatusText(row) }}
-          </span>
-        </template>
-
-        <template #actions="{ row }">
-          <div class="action-buttons">
-            <button
-              class="btn btn-sm btn-primary"
-              @click="editStaff(row)"
-            >
-              編輯
-            </button>
-          </div>
-        </template>
-      </EditableDataTable>
+          <template #actions="{ row, isEditing }">
+            <template v-if="!isEditing">
+              <span class="dropdown-item" @click="viewStaff(row)">查看詳情</span>
+              <span class="dropdown-item" @click="editStaff(row)">編輯</span>
+            </template>
+          </template>
+        </EditableDataTable>
       </div>
 
-      <!-- 新增員工模態框 -->
-      <div
-      v-if="showAddModal"
-      class="modal-overlay"
-      @click="showAddModal = false"
-    >
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>新增員工</h3>
-          <button class="modal-close" @click="showAddModal = false">×</button>
-        </div>
-
-        <form class="modal-form" @submit.prevent="addStaff">
+      <Modal
+        :show="showAddModal"
+        title="新增員工"
+        max-width-class="max-w-3xl"
+        @close="showAddModal = false"
+      >
+        <form id="staff-add-form" class="space-y-6" @submit.prevent="addStaff">
 
           <!-- 用戶資訊區塊 -->
-          <div class="form-section">
-            <h4 class="section-title">用戶資訊</h4>
-            <div class="form-row">
-              <div class="form-group">
+          <div class="space-y-4 border-b border-secondary-200 pb-6 last:border-b-0">
+            <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">用戶資訊</h4>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">員工編號 *</label>
                 <input
                   type="text"
@@ -163,9 +169,9 @@
                   placeholder="請輸入員工編號"
                   @input="handleUserNameInput"
                 />
-                <small class="form-hint">用於登入系統的ID</small>
+                <small class="mt-1 block text-xs italic text-secondary-600">用於登入系統的ID</small>
               </div>
-              <div class="form-group">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">密碼 *</label>
                 <input
                   type="password"
@@ -175,11 +181,11 @@
                   placeholder="請輸入密碼"
                   minlength="6"
                 />
-                <small class="form-hint">至少 6 個字符</small>
+                <small class="mt-1 block text-xs italic text-secondary-600">至少 6 個字符</small>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">是否為管理員</label>
                 <select class="form-control" v-model="newStaff.isAdmin">
                   <option :value="false">否</option>
@@ -190,10 +196,10 @@
           </div>
 
           <!-- 員工資訊區塊 -->
-          <div class="form-section">
-            <h4 class="section-title">員工資訊</h4>
-            <div class="form-row">
-              <div class="form-group">
+          <div class="space-y-4 border-b border-secondary-200 pb-6 last:border-b-0">
+            <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">員工資訊</h4>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">姓名 *</label>
                 <input
                   type="text"
@@ -203,7 +209,7 @@
                   maxlength="50"
                 />
               </div>
-              <div class="form-group">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">職稱</label>
                 <input
                   type="text"
@@ -214,8 +220,8 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">工作組別</label>
                 <input
                   type="text"
@@ -224,9 +230,9 @@
                   maxlength="20"
                   placeholder="例如：A組、B組"
                 />
-                <small class="form-hint">將根據工作組別自動分配預設權限</small>
+                <small class="mt-1 block text-xs italic text-secondary-600">將根據工作組別自動分配預設權限</small>
               </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">部門</label>
               <!-- 可手動輸入或從目前已存在部門中選擇 -->
               <input
@@ -246,8 +252,8 @@
             </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1">
                 <label class="form-label">到職日期</label>
                 <input
                   type="date"
@@ -260,11 +266,11 @@
           </div>
 
           <!-- 薪資資訊區塊 -->
-          <div class="form-section">
-            <h4 class="section-title">薪資資訊</h4>
+          <div class="space-y-4 border-b border-secondary-200 pb-6 last:border-b-0">
+            <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">薪資資訊</h4>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">本薪 *</label>
               <input
                 type="number"
@@ -274,7 +280,7 @@
                 min="0"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">勤務津貼</label>
               <input
                 type="number"
@@ -285,8 +291,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">幹部加給</label>
               <input
                 type="number"
@@ -295,7 +301,7 @@
                 min="0"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">勞保</label>
               <input
                 type="number"
@@ -306,8 +312,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">健保</label>
               <input
                 type="number"
@@ -316,7 +322,7 @@
                 min="0"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">退休提撥</label>
               <input
                 type="number"
@@ -327,15 +333,15 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否為外勞</label>
               <select class="form-control" v-model="newStaff.is_foreign">
                 <option :value="false">否</option>
                 <option :value="true">是</option>
               </select>
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否參加福委會</label>
               <select class="form-control" v-model="newStaff.benifit">
                 <option :value="false">否</option>
@@ -344,15 +350,15 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否需要打卡</label>
               <select class="form-control" v-model="newStaff.need_check">
                 <option :value="true">是</option>
                 <option :value="false">否</option>
               </select>
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否需要外帳</label>
               <select class="form-control" v-model="newStaff.have_fake">
                 <option :value="false">否</option>
@@ -362,36 +368,32 @@
           </div>
           </div>
 
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn btn-outline"
-              @click="showAddModal = false"
-            >
-              取消
-            </button>
-            <button type="submit" class="btn btn-primary">新增員工</button>
-          </div>
         </form>
-      </div>
-      </div>
+        <template #footer>
+          <button
+            type="button"
+            class="btn btn-outline"
+            @click="showAddModal = false"
+          >
+            取消
+          </button>
+          <button type="submit" class="btn btn-primary" form="staff-add-form">
+            新增員工
+          </button>
+        </template>
+      </Modal>
 
       <!-- 編輯員工模態框 -->
-      <div
-      v-if="showEditModal"
-      class="modal-overlay"
-      @click="showEditModal = false"
-    >
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>編輯員工</h3>
-          <button class="modal-close" @click="showEditModal = false">×</button>
-        </div>
+      <Modal
+        :show="showEditModal"
+        title="編輯員工"
+        max-width-class="max-w-3xl"
+        @close="showEditModal = false"
+      >
+        <form id="staff-edit-form" class="space-y-6" @submit.prevent="updateStaff">
 
-        <form class="modal-form" @submit.prevent="updateStaff">
-
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">員工編號</label>
               <input
                 type="text"
@@ -400,7 +402,7 @@
                 readonly
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">姓名 *</label>
               <input
                 type="text"
@@ -412,8 +414,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">職稱</label>
               <input
                 type="text"
@@ -422,7 +424,7 @@
                 maxlength="50"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">工作組別</label>
               <input
                 type="text"
@@ -433,8 +435,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">部門</label>
               <!-- 可手動輸入或從目前已存在部門中選擇 -->
               <input
@@ -445,7 +447,7 @@
                 placeholder="輸入或選擇部門"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">到職日期</label>
               <input
                 type="date"
@@ -456,8 +458,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">離職日期</label>
               <input
                 type="date"
@@ -466,7 +468,7 @@
                 @change="handleEditDateChange('stop_work')"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">本薪 *</label>
               <input
                 type="number"
@@ -478,8 +480,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">勤務津貼</label>
               <input
                 type="number"
@@ -488,7 +490,7 @@
                 min="0"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">幹部加給</label>
               <input
                 type="number"
@@ -499,8 +501,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">勞保</label>
               <input
                 type="number"
@@ -509,7 +511,7 @@
                 min="0"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">健保</label>
               <input
                 type="number"
@@ -520,8 +522,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">退休提撥</label>
               <input
                 type="number"
@@ -530,7 +532,7 @@
                 min="0"
               />
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否為外勞</label>
               <select class="form-control" v-model="editingStaff.is_foreign">
                 <option :value="false">否</option>
@@ -539,15 +541,15 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否參加福委會</label>
               <select class="form-control" v-model="editingStaff.benifit">
                 <option :value="false">否</option>
                 <option :value="true">是</option>
               </select>
             </div>
-            <div class="form-group">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否需要打卡</label>
               <select class="form-control" v-model="editingStaff.need_check">
                 <option :value="true">是</option>
@@ -556,8 +558,8 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
               <label class="form-label">是否需要外帳</label>
               <select class="form-control" v-model="editingStaff.have_fake">
                 <option :value="false">否</option>
@@ -566,116 +568,111 @@
             </div>
           </div>
 
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn btn-outline"
-              @click="showEditModal = false"
-            >
-              取消
-            </button>
-            <button type="submit" class="btn btn-primary">更新員工</button>
-          </div>
         </form>
-      </div>
-      </div>
+        <template #footer>
+          <button
+            type="button"
+            class="btn btn-outline"
+            @click="showEditModal = false"
+          >
+            取消
+          </button>
+          <button type="submit" class="btn btn-primary" form="staff-edit-form">
+            更新員工
+          </button>
+        </template>
+      </Modal>
 
       <!-- 查看員工詳情模態框 -->
-      <div
-      v-if="showViewModal"
-      class="modal-overlay"
-      @click="showViewModal = false"
-    >
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>員工詳情</h3>
-          <button class="modal-close" @click="showViewModal = false">×</button>
-        </div>
-
-        <div class="modal-body">
-          <div class="staff-detail-grid">
+      <Modal
+        :show="showViewModal"
+        title="員工詳情"
+        max-width-class="max-w-4xl"
+        @close="showViewModal = false"
+      >
+          <div class="grid gap-6 md:grid-cols-2">
             <!-- 基本資訊 -->
-            <div class="detail-section">
-              <h4 class="section-title">基本資訊</h4>
-              <div class="detail-row">
-                <div class="detail-label">員工編號</div>
-                <div class="detail-value">{{ viewingStaff.id }}</div>
+            <div class="rounded-lg border border-secondary-200 bg-secondary-50 p-4">
+              <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">基本資訊</h4>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">員工編號</div>
+                <div class="text-right font-medium text-secondary-900">{{ viewingStaff.id }}</div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">姓名</div>
-                <div class="detail-value">{{ viewingStaff.name }}</div>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">姓名</div>
+                <div class="text-right font-medium text-secondary-900">{{ viewingStaff.name }}</div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">職稱</div>
-                <div class="detail-value">{{ viewingStaff.post || '-' }}</div>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">職稱</div>
+                <div class="text-right font-medium text-secondary-900">{{ viewingStaff.post || '-' }}</div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">工作組別</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">工作組別</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.work_group || '-' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">部門</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">部門</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.department || '-' }}
                 </div>
               </div>
             </div>
 
             <!-- 薪資資訊 -->
-            <div class="detail-section">
-              <h4 class="section-title">薪資資訊</h4>
-              <div class="detail-row">
-                <div class="detail-label">本薪</div>
-                <div class="detail-value">
+            <div class="rounded-lg border border-secondary-200 bg-secondary-50 p-4">
+              <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">薪資資訊</h4>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">本薪</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.wage?.toLocaleString() || '-' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">勤務津貼</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">勤務津貼</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.allowance?.toLocaleString() || '-' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">幹部加給</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">幹部加給</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.organizer?.toLocaleString() || '-' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">勞保</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">勞保</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.labor_insurance?.toLocaleString() || '-' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">健保</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">健保</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.health_insurance?.toLocaleString() || '-' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">退休提撥</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">退休提撥</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ viewingStaff.pension?.toLocaleString() || '-' }}
                 </div>
               </div>
             </div>
 
             <!-- 工作資訊 -->
-            <div class="detail-section">
-              <h4 class="section-title">工作資訊</h4>
-              <div class="detail-row">
-                <div class="detail-label">到職日期</div>
-                <div class="detail-value">
+            <div class="rounded-lg border border-secondary-200 bg-secondary-50 p-4">
+              <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">工作資訊</h4>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">到職日期</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{ formatDate(viewingStaff.begain_work) }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">離職日期</div>
-                <div class="detail-value">
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">離職日期</div>
+                <div class="text-right font-medium text-secondary-900">
                   {{
                     viewingStaff.stop_work
                       ? formatDate(viewingStaff.stop_work)
@@ -683,86 +680,59 @@
                   }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">狀態</div>
-                <div class="detail-value">
-                  <span
-                    class="badge"
-                    :class="getStatusBadgeClass(viewingStaff)"
-                  >
-                    {{ getStatusText(viewingStaff) }}
-                  </span>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">狀態</div>
+                <div class="text-right font-medium text-secondary-900">
+                  {{ getStatusText(viewingStaff) }}
                 </div>
               </div>
             </div>
 
             <!-- 其他設定 -->
-            <div class="detail-section">
-              <h4 class="section-title">其他設定</h4>
-              <div class="detail-row">
-                <div class="detail-label">是否為外勞</div>
-                <div class="detail-value">
-                  <span
-                    class="badge"
-                    :class="
-                      viewingStaff.is_foreign
-                        ? 'badge-warning'
-                        : 'badge-success'
-                    "
-                  >
-                    {{ viewingStaff.is_foreign ? '是' : '否' }}
-                  </span>
+            <div class="rounded-lg border border-secondary-200 bg-secondary-50 p-4">
+              <h4 class="mb-4 border-b-2 border-primary-500 pb-2 text-lg font-semibold text-secondary-800">其他設定</h4>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">是否為外勞</div>
+                <div class="text-right font-medium text-secondary-900">
+                  {{ viewingStaff.is_foreign ? '是' : '否' }}
                 </div>
               </div>
-              <div class="detail-row">
-                <div class="detail-label">是否參加福委會</div>
-                <div class="detail-value">
-                  <span
-                    class="badge"
-                    :class="
-                      viewingStaff.benifit ? 'badge-success' : 'badge-secondary'
-                    "
-                  >
-                    {{ viewingStaff.benifit ? '是' : '否' }}
-                  </span>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">是否參加福委會</div>
+                <div class="text-right font-medium text-secondary-900">
+                  {{ viewingStaff.benifit ? '是' : '否' }}
                 </div>
               </div>
 
-              <div class="detail-row">
-                <div class="detail-label">是否需要打卡</div>
-                <div class="detail-value">
-                  <span
-                    class="badge"
-                    :class="
-                      viewingStaff.need_check ? 'badge-info' : 'badge-secondary'
-                    "
-                  >
-                    {{ viewingStaff.need_check ? '是' : '否' }}
-                  </span>
+              <div class="flex items-center justify-between gap-4 border-b border-secondary-200 py-3 last:border-b-0">
+                <div class="shrink-0 font-medium text-secondary-700">是否需要打卡</div>
+                <div class="text-right font-medium text-secondary-900">
+                  {{ viewingStaff.need_check ? '是' : '否' }}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn btn-outline" @click="showViewModal = false">
+        <template #footer>
+          <button type="button" class="btn btn-outline" @click="showViewModal = false">
             關閉
           </button>
-          <button class="btn btn-primary" @click="editStaff(viewingStaff)">
+          <button type="button" class="btn btn-primary" @click="openEditFromView">
             編輯員工
           </button>
-        </div>
-      </div>
-      </div>
+        </template>
+      </Modal>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { TableHeader } from '@/components';
-import EditableDataTable from '@/components/EditableDataTable.vue';
+import {
+  EditableDataTable,
+  Modal,
+  TableHeader,
+  type EditableColumn,
+} from '@/components';
 import { useErrorStore } from '@/stores/error';
 import { apiPost } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
@@ -1098,15 +1068,14 @@ const filteredStaff = computed(() => {
 });
 
 // 表格欄位定義
-const tableColumns = [
-  { key: 'id', label: '員工編號' },
-  { key: 'name', label: '姓名' },
-  { key: 'post', label: '職稱' },
-  { key: 'department', label: '部門' },
-  { key: 'work_group', label: '工作組別' },
-  { key: 'wage', label: '本薪' },
-  { key: 'begain_work', label: '到職日期' },
-  { key: 'status', label: '狀態' },
+const tableColumns: EditableColumn[] = [
+  { key: 'id', label: '員工編號', editable: false, width: 'sequence' },
+  { key: 'name', label: '姓名', editable: false },
+  { key: 'post', label: '職稱', editable: false },
+  { key: 'department', label: '部門', editable: false },
+  { key: 'work_group', label: '工作組別', editable: false },
+  { key: 'wage', label: '本薪', editable: false, width: 'long-number' },
+  { key: 'begain_work', label: '到職日期', editable: false },
 ];
 
 // 查看員工詳情
@@ -1257,12 +1226,10 @@ const getStatusText = (staff: Staff) => {
   return '在職';
 };
 
-// 取得狀態徽章樣式
-const getStatusBadgeClass = (staff: Staff) => {
-  if (staff.stop_work) {
-    return 'badge-danger';
-  }
-  return 'badge-success';
+const openEditFromView = () => {
+  if (!viewingStaff.value?.id) return;
+  showViewModal.value = false;
+  editStaff(viewingStaff.value);
 };
 
 // 格式化日期
@@ -1290,423 +1257,3 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-.staff-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* 上鎖畫面樣式 */
-.staff-lock-overlay {
-  min-height: 60vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.staff-lock-card {
-  width: 100%;
-  max-width: 420px;
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 2rem;
-  border: 1px solid var(--secondary-200);
-}
-
-.staff-lock-title {
-  margin: 0 0 0.5rem 0;
-  font-size: var(--font-size-xl);
-  color: var(--secondary-900);
-}
-
-.staff-lock-desc {
-  margin: 0 0 1.5rem 0;
-  color: var(--secondary-600);
-}
-
-.staff-lock-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.staff-lock-error {
-  color: var(--danger-600);
-  font-size: var(--font-size-sm);
-}
-
-.staff-lock-hint {
-  margin-top: 0.75rem;
-  font-size: var(--font-size-xs);
-  color: var(--secondary-500);
-}
-
-
-/* 員工列表 */
-.staff-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-/* content-header 樣式已移至 SectionHeader 組件 */
-
-.search-box {
-  min-width: 300px;
-}
-
-/* 員工資訊 */
-.staff-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.staff-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--primary-500);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: var(--font-size-lg);
-}
-
-.staff-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.staff-name {
-  font-weight: 500;
-  color: var(--secondary-900);
-}
-
-.staff-status {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.25rem;
-}
-
-.badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.badge-success {
-  background-color: var(--success-100);
-  color: var(--success-700);
-}
-
-.badge-danger {
-  background-color: var(--danger-100);
-  color: var(--danger-700);
-}
-
-.badge-warning {
-  background-color: var(--warning-100);
-  color: var(--warning-700);
-}
-
-.badge-info {
-  background-color: var(--info-100);
-  color: var(--info-700);
-}
-
-/* 表格容器 */
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.table th {
-  background-color: var(--secondary-50);
-  font-weight: 600;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table tbody tr:hover {
-  background-color: var(--secondary-50);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* 模態框 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-body {
-  padding: 2rem;
-}
-
-.modal-footer {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-/* 員工詳情樣式 */
-.staff-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.detail-section {
-  background: var(--secondary-50);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--secondary-200);
-}
-
-.section-title {
-  margin: 0 0 1rem 0;
-  color: var(--secondary-800);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  border-bottom: 2px solid var(--primary-500);
-  padding-bottom: 0.5rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.detail-row:last-child {
-  border-bottom: none;
-}
-
-.detail-label {
-  font-weight: 500;
-  color: var(--secondary-700);
-  min-width: 120px;
-}
-
-.detail-value {
-  color: var(--secondary-900);
-  font-weight: 500;
-  text-align: right;
-  flex: 1;
-}
-
-.badge-secondary {
-  background-color: var(--secondary-100);
-  color: var(--secondary-700);
-}
-
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.form-section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
-.form-section .section-title {
-  margin: 0 0 1rem 0;
-  color: var(--secondary-800);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--primary-500);
-}
-
-.form-hint {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: var(--font-size-xs);
-  color: var(--secondary-600);
-  font-style: italic;
-}
-
-
-/* 可點擊欄位樣式 */
-.clickable-cell {
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.clickable-cell:hover {
-  color: var(--primary-600);
-  text-decoration: underline;
-}
-
-.modal-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--secondary-200);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--secondary-500);
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
-}
-
-.modal-close:hover {
-  background-color: var(--secondary-100);
-}
-
-.modal-form {
-  padding: 2rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-label {
-  font-weight: 500;
-  color: var(--secondary-700);
-  margin-bottom: 0.5rem;
-}
-
-.form-control {
-  padding: 0.75rem;
-  border: 1px solid var(--secondary-300);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-base);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--secondary-200);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .header-actions {
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* content-header 響應式設計已移至 SectionHeader 組件 */
-
-  .search-box {
-    min-width: auto;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .table-container {
-    font-size: var(--font-size-sm);
-  }
-
-  .table th,
-  .table td {
-    padding: 0.5rem;
-  }
-
-  .modal-content {
-    width: 95%;
-    margin: 1rem;
-  }
-
-  .modal-form {
-    padding: 1rem;
-  }
-}
-</style>
