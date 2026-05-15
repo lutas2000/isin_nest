@@ -465,7 +465,45 @@ ONLY_MODE=quote-item ACCESS_FILE_PATH=/path/to/quote.mdb npm run migrate-quote-f
    - `--only=quote-item`：只需要 `itable` 和 `jtable`
    - 未指定：需要 `gtable`、`itable`、`jtable` 三個資料表
 
-## 6. PostgreSQL 資料庫備份腳本 (backup-db.ts)
+## 6. Access 訂單資料遷移腳本 (migrate-order-from-access.ts)
+
+從 **order.mdb** 的 `gtable`（訂單表頭）、`itable`（明細）寫入 PostgreSQL 的 **`order`**、**`order_item`**。不依賴空的 `jtable`。讀取採**分批**（避免一次載入十萬級列）。
+
+**主檔路徑**：請依庫存「同名檔主檔判定」；常見為 `/nas/isin/order.mdb`（見 `LEGACY_ACCESS_MDB_INVENTORY.md`）。
+
+**前置**：已遷移 **Customer**；**Staff**：`ACTOR_NO` 須對應 `staff.id`，否則設 `ORDER_MIGRATION_DEFAULT_STAFF_ID`，否則該筆訂單會略過。
+
+### 使用方法
+
+```bash
+npm run migrate-order-from-access -- <access-file-path> [--only=order|order-item] [--skip=n]
+```
+
+- 第一個**非** `--` 開頭的參數為 `.mdb` 路徑；未傳則用 `ACCESS_FILE_PATH` 或預設 `/nas/isin/order.mdb`。
+- `--only=order`：只寫入 `order`（gtable）。
+- `--only=order-item`：只寫入 `order_item`（僅當對應 `order.id` 已存在）。
+- `--skip=n`：略過 **gtable** 前 n 列（0-based 累計；僅在跑訂單階段生效）。
+
+### 環境變數（補充）
+
+| 變數 | 說明 |
+|------|------|
+| `ORDER_MIGRATION_DEFAULT_SHIPPING_METHOD` | `order.shipping_method`（預設：`客戶取件`） |
+| `ORDER_MIGRATION_DEFAULT_PAYMENT_METHOD` | `order.payment_method`（預設：`月結`） |
+| `ORDER_MIGRATION_DEFAULT_STAFF_ID` | `ACTOR_NO` 無對應 staff 時改填此員編 |
+| `ORDER_MIGRATION_BATCH_SIZE` | 每批自 Access 讀取列數（預設 `3000`） |
+
+### 欄位對應（摘要）
+
+- **gtable**：`QNO`→`order.id`；`FACTOR_NO`→`customer_id`；`ACTOR_NO`→`staff_id`；`DATE_R`/`DATE_E`→`created_at`/`delivery_deadline`；`PCON`+`NOTES`+`NOTE2`→`notes`；若存在同 id 之 **Quote** 則填 `quote_id`。
+- **itable**：`QNO`→`order_item.order_id`；`DWG_NO`→`drawing_number`；`DWG_REF`→`customer_file`；`METAL`/`THICK`/`QTY`/`UNIT`/`SOURCE`/`BUY` 等→對應欄位；**單價**優先 `SOOK`，其次 `PRICE`，再不然 `0`。結束後依 `SUM(quantity*unit_price)` **回填**本批曾插入明細之訂單 `amount`。
+
+### 注意事項
+
+1. **訂單已存在**（同 `id`）會略過；**明細**無自然鍵去重，重跑 `--only=order-item` 可能**重複插入**，請避免重複執行或先清 `order_item`。
+2. **order.mdb** 明細通常 **無 `PRICE`**，金額依 `SOOK` 與數量推算，需業務確認。
+
+## 7. PostgreSQL 資料庫備份腳本 (backup-db.ts)
 
 這個腳本用於備份 PostgreSQL 資料庫，支援只備份結構、只備份資料或兩者一起。
 
@@ -505,7 +543,7 @@ npm run db:backup 1 backups/isin-full.sql
 
 > 備份時會透過環境變數 `PGPASSWORD` 將密碼傳給 `pg_dump`。
 
-## 7. PostgreSQL 資料庫恢復腳本 (restore-db.ts)
+## 8. PostgreSQL 資料庫恢復腳本 (restore-db.ts)
 
 這個腳本用於從 `pg_dump` 產生的 `.sql` 檔案恢復 PostgreSQL 資料庫。
 
