@@ -52,6 +52,10 @@ Standardize how the agent inspects Access in this repo:
 
 - `LEGACY_ACCESS_MDB_INVENTORY.md`（`npm run list-access-mdb -- /nas/isin --write` 產生）。
 
+## 子技能：遷移盤點報告結構
+
+撰寫或審閱單檔 **Access 遷移盤點** markdown（例：`*_MIGRATION_REPORT.md`）時，請讀 **`access-migration-report/SKILL.md`**：定義章節順序、中繼資料表、§3 欄位表格式與選用子小節。
+
 ## Post-Task Documentation Check
 
 - 腳本或 `scripts/README.md` 行為變更時，同步更新本 skill。
