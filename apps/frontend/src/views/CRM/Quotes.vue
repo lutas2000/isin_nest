@@ -132,7 +132,7 @@
               class="dropdown-item"
               @click="markQuoteAsSigned(row.id)"
             >
-              已簽名
+              訂貨確認
             </span>
             <span 
               v-if="row.isSigned"
