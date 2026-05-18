@@ -184,7 +184,16 @@ const allShortcuts = computed<Shortcut[]>(() => {
         key: 'f10',
         display: 'F10',
         label: '搜尋客戶型號',
-        action: 'customer-model-search'
+        action: 'order-item-search',
+      });
+    }
+
+    if (props.tableState?.focusedFieldKey === 'drawingNumber') {
+      shortcuts.push({
+        key: 'f10',
+        display: 'F10',
+        label: '搜尋電腦圖號',
+        action: 'order-item-search',
       });
     }
   } else if (isNewRowLevel.value) {

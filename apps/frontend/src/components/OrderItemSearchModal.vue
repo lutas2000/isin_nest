@@ -1,7 +1,7 @@
 <template>
   <Modal
     :show="show"
-    title="搜尋客戶型號"
+    :title="modalTitle"
     max-width-class="max-w-7xl"
     @close="handleClose"
   >
@@ -9,16 +9,16 @@
       <div class="flex min-h-0 flex-col gap-3">
         <div class="space-y-2">
           <input
-            id="customer-model-search-input"
+            id="order-item-search-input"
             ref="searchInputRef"
             v-model="searchQuery"
             type="text"
-            placeholder="輸入客戶型號..."
+            :placeholder="searchPlaceholder"
             autocomplete="off"
             class="w-full rounded-lg border border-secondary-300 px-3 py-2 text-sm text-secondary-900 transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
           />
           <p class="text-xs text-secondary-500">
-            ↑↓ 移動　Enter 套用客戶型號　Esc 關閉
+            ↑↓ 移動　Enter 套用　Esc 關閉
           </p>
         </div>
 
@@ -29,7 +29,7 @@
             載入中...
           </div>
           <div v-else-if="!customerId" class="px-4 py-10 text-center text-sm text-secondary-500">
-            此訂單沒有客戶資料，無法搜尋客戶型號
+            此訂單沒有客戶資料，無法搜尋歷史工件
           </div>
           <div v-else-if="items.length === 0" class="px-4 py-10 text-center text-sm text-secondary-500">
             沒有符合的歷史工件
@@ -48,7 +48,6 @@
             :total="total"
             :auto-focus-on-mount="false"
             @update:page="handlePageChange"
-            @update:page-size="handlePageSizeChange"
             @row-view="handleRowView"
           >
             <template #cell-customerFile="{ value }">
@@ -77,10 +76,10 @@
         <button
           class="btn btn-primary"
           type="button"
-          :disabled="!confirmValue"
+          :disabled="!canConfirm"
           @click="handleConfirm"
         >
-          套用客戶型號
+          套用
         </button>
       </div>
     </template>
@@ -95,15 +94,23 @@ import EditableDataTable, { type EditableColumn } from './EditableDataTable.vue'
 import { orderItemService, type OrderItem } from '@/services/crm/order.service'
 import type { PaginatedResponse } from '@/types/pagination'
 
-const props = defineProps<{
-  show: boolean
-  customerId?: string | null
-  initialQuery?: string
-}>()
+export type OrderItemSearchMode = 'customerFile' | 'drawingNumber'
+
+const props = withDefaults(
+  defineProps<{
+    show: boolean
+    customerId?: string | null
+    initialQuery?: string
+    searchMode?: OrderItemSearchMode
+  }>(),
+  {
+    searchMode: 'customerFile',
+  },
+)
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'confirm', value: { customerFile: string; item: OrderItem | null }): void
+  (e: 'confirm', value: { customerFile: string; drawingNumber: string; item: OrderItem | null }): void
 }>()
 
 const loading = ref(false)
@@ -114,7 +121,7 @@ const activeIndex = ref(0)
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const tableRef = ref<(InstanceType<typeof EditableDataTable> & { focusedRowIndex: number | null }) | null>(null)
 const currentPage = ref(1)
-const pageSize = ref(25)
+const pageSize = ref(10)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 let loadSequence = 0
@@ -126,8 +133,20 @@ const columns: EditableColumn[] = [
   { key: 'orderId', label: '訂單編號', editable: false, truncate: true },
 ]
 
+const modalTitle = computed(() =>
+  props.searchMode === 'drawingNumber' ? '搜尋電腦圖號' : '搜尋客戶型號',
+)
+
+const searchPlaceholder = computed(() =>
+  props.searchMode === 'drawingNumber' ? '輸入電腦圖號...' : '輸入客戶型號...',
+)
+
 const activeItem = computed(() => items.value[activeIndex.value] ?? null)
-const confirmValue = computed(() => activeItem.value?.customerFile?.trim() || searchQuery.value.trim())
+
+const canConfirm = computed(() => {
+  if (activeItem.value) return true
+  return searchQuery.value.trim().length > 0
+})
 
 const setActiveIndex = (index: number) => {
   if (items.value.length === 0) {
@@ -157,6 +176,27 @@ const extractItems = (response: OrderItem[] | PaginatedResponse<OrderItem>) => {
   return response.data
 }
 
+const buildFilters = () => {
+  const trimmedQuery = searchQuery.value.trim()
+  const filters: {
+    customerId: string
+    customerFile?: string
+    drawingNumber?: string
+  } = {
+    customerId: props.customerId!,
+  }
+
+  if (trimmedQuery) {
+    if (props.searchMode === 'drawingNumber') {
+      filters.drawingNumber = trimmedQuery
+    } else {
+      filters.customerFile = trimmedQuery
+    }
+  }
+
+  return filters
+}
+
 const loadItems = async () => {
   const sequence = ++loadSequence
 
@@ -169,10 +209,12 @@ const loadItems = async () => {
 
   loading.value = true
   try {
-    const response = await orderItemService.getAll(undefined, currentPage.value, pageSize.value, {
-      customerId: props.customerId,
-      customerFile: searchQuery.value.trim() || undefined,
-    })
+    const response = await orderItemService.getAll(
+      undefined,
+      currentPage.value,
+      pageSize.value,
+      buildFilters(),
+    )
     if (sequence !== loadSequence) return
 
     items.value = extractItems(response)
@@ -181,7 +223,7 @@ const loadItems = async () => {
   } catch (err) {
     if (sequence !== loadSequence) return
 
-    console.error('載入客戶型號清單失敗:', err)
+    console.error('載入歷史工件清單失敗:', err)
     items.value = []
     total.value = 0
     setActiveIndex(-1)
@@ -196,13 +238,37 @@ const handleClose = () => {
   emit('close')
 }
 
+const buildConfirmPayload = (item: OrderItem | null = activeItem.value) => {
+  if (item) {
+    return {
+      customerFile: item.customerFile?.trim() ?? '',
+      drawingNumber: item.drawingNumber?.trim() ?? '',
+      item,
+    }
+  }
+
+  const query = searchQuery.value.trim()
+  if (!query) return null
+
+  if (props.searchMode === 'drawingNumber') {
+    return {
+      customerFile: '',
+      drawingNumber: query,
+      item: null,
+    }
+  }
+
+  return {
+    customerFile: query,
+    drawingNumber: '',
+    item: null,
+  }
+}
+
 const confirmItem = (item: OrderItem | null = activeItem.value) => {
-  const value = item?.customerFile?.trim() || searchQuery.value.trim()
-  if (!value) return
-  emit('confirm', {
-    customerFile: value,
-    item,
-  })
+  const payload = buildConfirmPayload(item)
+  if (!payload) return
+  emit('confirm', payload)
 }
 
 const handleConfirm = () => {
@@ -225,12 +291,6 @@ const moveActive = async (delta: number) => {
 
 const handlePageChange = async (page: number) => {
   currentPage.value = page
-  await loadItems()
-}
-
-const handlePageSizeChange = async (newPageSize: number) => {
-  pageSize.value = newPageSize
-  currentPage.value = 1
   await loadItems()
 }
 
@@ -291,6 +351,15 @@ watch(
     if (props.show) {
       searchQuery.value = value ?? ''
     }
+  },
+)
+
+watch(
+  () => props.searchMode,
+  () => {
+    if (!props.show) return
+    currentPage.value = 1
+    void loadItems()
   },
 )
 

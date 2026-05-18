@@ -13,7 +13,7 @@ export { default as FilterControl } from './FilterControl.vue';
 export type { FilterDefinition, FilterOption as FilterOptionType } from './FilterControl.vue';
 export { default as StatusBadge } from './StatusBadge.vue';
 export { default as Modal } from './Modal.vue';
-export { default as CustomerModelSearchModal } from './CustomerModelSearchModal.vue';
+export { default as OrderItemSearchModal } from './OrderItemSearchModal.vue';
 export { default as CrmConfigModal } from './CrmConfigModal.vue';
 export { default as ErrorModal } from './ErrorModal.vue';
 export { default as FormField } from './FormField.vue';

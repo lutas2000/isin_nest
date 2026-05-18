@@ -115,12 +115,13 @@ export const orderItemService = {
     orderId?: string,
     page?: number,
     limit?: number,
-    filters?: { customerId?: string; customerFile?: string },
+    filters?: { customerId?: string; customerFile?: string; drawingNumber?: string },
   ): Promise<OrderItem[] | PaginatedResponse<OrderItem>> => {
     const params: Record<string, any> = {}
     if (orderId) params.orderId = orderId
     if (filters?.customerId) params.customerId = filters.customerId
     if (filters?.customerFile) params.customerFile = filters.customerFile
+    if (filters?.drawingNumber) params.drawingNumber = filters.drawingNumber
     if (page !== undefined) params.page = page
     if (limit !== undefined) params.limit = limit
     return apiGet<OrderItem[] | PaginatedResponse<OrderItem>>(API_CONFIG.CRM.ORDER_ITEMS, params)

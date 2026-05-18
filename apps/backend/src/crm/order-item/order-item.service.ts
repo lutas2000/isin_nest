@@ -78,6 +78,7 @@ export class OrderItemService {
     page?: number,
     limit?: number,
     customerFile?: string,
+    drawingNumber?: string,
   ): Promise<OrderItem[] | PaginatedResponseDto<OrderItem>> {
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
@@ -104,6 +105,12 @@ export class OrderItemService {
     if (customerFile?.trim()) {
       queryBuilder.andWhere('orderItem.customerFile ILIKE :customerFile', {
         customerFile: `%${customerFile.trim()}%`,
+      });
+    }
+
+    if (drawingNumber?.trim()) {
+      queryBuilder.andWhere('orderItem.drawingNumber ILIKE :drawingNumber', {
+        drawingNumber: `%${drawingNumber.trim()}%`,
       });
     }
 

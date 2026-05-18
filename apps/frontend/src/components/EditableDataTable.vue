@@ -241,6 +241,7 @@
           @change="handlePageSizeChange"
           class="page-size-select cursor-pointer rounded border border-secondary-300 bg-white px-3 py-1.5 text-sm"
         >
+          <option :value="10">10 筆/頁</option>
           <option :value="25">25 筆/頁</option>
           <option :value="50">50 筆/頁</option>
           <option :value="100">100 筆/頁</option>
