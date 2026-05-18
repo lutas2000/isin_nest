@@ -106,7 +106,7 @@ export class SalesVoucherItem {
   })
   unitPrice: number;
 
-  @ApiProperty({ description: '圖號', required: false })
+  @ApiProperty({ description: '電腦圖號', required: false })
   @Column({
     type: 'varchar',
     length: 100,

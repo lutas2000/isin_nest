@@ -134,7 +134,7 @@
             {{ value }}
           </template>
 
-          <template #cell-cadFile="{ value }">
+          <template #cell-drawingNumber="{ value }">
             {{ value || '-' }}
           </template>
 
@@ -402,7 +402,7 @@ const showNewRow = ref(false);
 const newRowTemplate = () => {
   if (!workOrder.value) {
     return {
-      cadFile: '',
+      drawingNumber: '',
       customerFile: '',
       material: '',
       thickness: undefined as number | undefined,
@@ -417,7 +417,7 @@ const newRowTemplate = () => {
   }
   return {
     workOrderId: workOrder.value.id,
-    cadFile: '',
+    drawingNumber: '',
     customerFile: '',
     material: '',
     thickness: undefined as number | undefined,
@@ -440,7 +440,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: false
   },
   { 
-    key: 'cadFile', 
+    key: 'drawingNumber', 
     label: '電腦圖號', 
     editable: true, 
     type: 'text' 
@@ -612,7 +612,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
   try {
     const data: Partial<WorkOrderItem> = {
       orderId: workOrder.value.id,
-      cadFile: row.cadFile || undefined,
+      drawingNumber: row.drawingNumber || undefined,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness || undefined,
@@ -640,6 +640,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
         await designWorkOrderService.create({
           orderId: workOrder.value.id,
           orderItemId: savedItem.id,
+          drawingNumber: savedItem.drawingNumber,
           customerFile: savedItem.customerFile,
           notes: savedItem.notes,
         });
@@ -665,7 +666,7 @@ const handleNewRowSave = async (row: any) => {
   try {
     const data: Partial<WorkOrderItem> = {
       orderId: workOrder.value.id,
-      cadFile: row.cadFile || undefined,
+      drawingNumber: row.drawingNumber || undefined,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness || undefined,
@@ -687,6 +688,7 @@ const handleNewRowSave = async (row: any) => {
         await designWorkOrderService.create({
           orderId: workOrder.value.id,
           orderItemId: savedItem.id,
+          drawingNumber: savedItem.drawingNumber,
           customerFile: savedItem.customerFile,
           notes: savedItem.notes,
         });

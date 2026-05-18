@@ -228,6 +228,7 @@ export class QuoteService {
       await this.designWorkOrderService.create({
         orderId: order.id,
         orderItemId: orderItem.id,
+        drawingNumber: orderItem.drawingNumber,
         customerFile: orderItem.customerFile,
         status: 'pending' as any,
       });

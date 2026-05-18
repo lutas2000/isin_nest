@@ -121,6 +121,7 @@
         >
           <template #cell-sequence="{ value }">{{ value }}</template>
           <template #cell-cadFile="{ value }">{{ value || '-' }}</template>
+          <template #cell-drawingNumber="{ value }">{{ value || '-' }}</template>
           <template #cell-customerFile="{ value }">{{ value || '-' }}</template>
           <template #cell-material="{ value }">{{ value || '-' }}</template>
           <template #cell-thickness="{ value }">{{ value ?? '-' }}</template>
@@ -373,6 +374,7 @@ const detailItems = computed<DetailFieldItem[]>(() => {
 const newRowTemplate = () => ({
   salesVoucherId: voucher.value?.id || '',
   cadFile: '',
+  drawingNumber: '',
   customerFile: '',
   material: '',
   thickness: undefined as number | undefined,
@@ -388,6 +390,7 @@ const newRowTemplate = () => ({
 const editableColumns = computed<EditableColumn[]>(() => [
   { key: 'sequence', label: '項次', editable: false },
   { key: 'cadFile', label: 'CAD 檔案', editable: true, type: 'text' },
+  { key: 'drawingNumber', label: '電腦圖號', editable: true, type: 'text' },
   { key: 'customerFile', label: '客戶檔案', editable: true, type: 'text' },
   { key: 'material', label: '材料', editable: true, type: 'text' },
   { key: 'thickness', label: '厚度', editable: true, type: 'number' },
@@ -497,6 +500,7 @@ const handleFieldChange = () => {};
 const buildItemPayload = (row: SalesVoucherItem): Partial<SalesVoucherItem> => ({
   salesVoucherId: voucher.value!.id,
   cadFile: row.cadFile || undefined,
+  drawingNumber: row.drawingNumber || undefined,
   customerFile: row.customerFile || undefined,
   material: row.material || undefined,
   thickness: row.thickness ?? undefined,
@@ -530,6 +534,7 @@ const handleNewRowSave = async (row: any) => {
     await salesVoucherItemService.create({
       salesVoucherId: voucher.value.id,
       cadFile: row.cadFile || undefined,
+      drawingNumber: row.drawingNumber || undefined,
       customerFile: row.customerFile || undefined,
       material: row.material || undefined,
       thickness: row.thickness ?? undefined,

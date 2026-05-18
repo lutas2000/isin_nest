@@ -72,7 +72,7 @@ export class OrderItemController {
     return this.orderItemService.update(+id, data);
   }
 
-  @ApiOperation({ summary: '取得訂單工件 DXF 預覽內容（使用 DWG_PATH + cadFile）' })
+  @ApiOperation({ summary: '取得訂單工件 DXF 預覽內容（使用 DWG_PATH + drawingNumber）' })
   @ApiParam({ name: 'id', description: '訂單工件ID', example: 1 })
   @ApiResponse({
     status: 200,

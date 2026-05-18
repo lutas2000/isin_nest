@@ -290,6 +290,7 @@ export class SalesVoucherService {
           unitPrice,
           source: item.source,
           cadFile: item.cadFile ?? null,
+          drawingNumber: item.drawingNumber ?? null,
           customerFile: item.customerFile ?? null,
           material: item.material ?? null,
           thickness: item.thickness != null ? Number(item.thickness) : null,

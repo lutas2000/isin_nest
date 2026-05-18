@@ -58,7 +58,7 @@
         <tbody>
           <tr v-for="(item, index) in items" :key="item.id">
             <td class="col-item">{{ index + 1 }}</td>
-            <td class="col-cad-file">{{ item.cadFile || '-' }}</td>
+            <td class="col-cad-file">{{ item.drawingNumber || '-' }}</td>
             <td class="col-customer-file">{{ item.customerFile || '-' }}</td>
             <td class="col-material">{{ item.material || '-' }}</td>
             <td class="col-thickness">{{ item.thickness || '-' }}</td>

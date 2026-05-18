@@ -27,7 +27,7 @@ export class OrderItem {
   })
   orderId: string;
 
-  @ApiProperty({ description: 'CAD 檔案（檔案名稱）', example: 'design.dxf' })
+  @ApiProperty({ description: '電腦圖檔（CAD 檔案名稱）', example: 'design.dxf' })
   @Column({
     type: 'varchar',
     length: 500,
@@ -112,7 +112,7 @@ export class OrderItem {
   @Column({ type: 'int', nullable: true, name: 'estimated_cutting_time' })
   estimatedCuttingTime?: number;
 
-  @ApiProperty({ description: '圖號', example: 'DWG-2024-001', required: false })
+  @ApiProperty({ description: '電腦圖號', example: '2AMR101', required: false })
   @Column({
     type: 'varchar',
     length: 100,

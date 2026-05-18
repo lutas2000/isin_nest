@@ -6,7 +6,7 @@ export interface PrintPoint {
 export interface PrintColumn {
   key:
     | 'sequence'
-    | 'cadFile'
+    | 'drawingNumber'
     | 'customerFile'
     | 'material'
     | 'thickness'
@@ -47,7 +47,7 @@ export const voucherA5Layout = {
   },
   columns: [
     { key: 'sequence', x: 4.8, width: 7.5, align: 'center' },
-    { key: 'cadFile', x: 13.5, width: 16.5, align: 'left' },
+    { key: 'drawingNumber', x: 13.5, width: 16.5, align: 'left' },
     { key: 'customerFile', x: 31.4, width: 26.5, align: 'left' },
     { key: 'material', x: 59.4, width: 14, align: 'left' },
     { key: 'thickness', x: 74.3, width: 8.2, align: 'center' },

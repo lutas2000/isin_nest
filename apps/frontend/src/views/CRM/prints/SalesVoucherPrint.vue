@@ -193,8 +193,8 @@ const rowEntries = computed<RowEntry[]>(() =>
         case 'sequence':
           value = String(index + 1);
           break;
-        case 'cadFile':
-          value = item.cadFile || '';
+        case 'drawingNumber':
+          value = item.drawingNumber || '';
           break;
         case 'customerFile':
           value = item.customerFile || '';

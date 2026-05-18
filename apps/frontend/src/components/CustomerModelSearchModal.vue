@@ -57,7 +57,7 @@
             <span class="min-w-0">
               <span class="block text-xs text-secondary-500">電腦圖號</span>
               <span class="block truncate text-sm text-secondary-800">
-                {{ item.cadFile || '-' }}
+                {{ item.drawingNumber || '-' }}
               </span>
             </span>
             <span class="min-w-0">
@@ -129,9 +129,9 @@ const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? ''
 const filteredItems = computed(() => {
   const keyword = normalize(searchQuery.value)
   const sortedItems = [...items.value].sort((a, b) => {
-    const aCad = a.cadFile?.trim() || '\uffff'
-    const bCad = b.cadFile?.trim() || '\uffff'
-    return aCad.localeCompare(bCad, 'zh-TW', { numeric: true })
+    const aDrawing = a.drawingNumber?.trim() || '\uffff'
+    const bDrawing = b.drawingNumber?.trim() || '\uffff'
+    return aDrawing.localeCompare(bDrawing, 'zh-TW', { numeric: true })
   })
 
   if (!keyword) return sortedItems

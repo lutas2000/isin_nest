@@ -49,7 +49,7 @@
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
       >
-        <template #cell-cadFile="{ value }">
+        <template #cell-drawingNumber="{ value }">
           {{ value ? String(value) : '—' }}
         </template>
         <template #cell-customerFile="{ value }">
@@ -84,7 +84,7 @@ import {
 import { useSalesStatisticsList } from './useSalesStatisticsList';
 
 const columns: EditableColumn[] = [
-  { key: 'cadFile', label: '電腦圖號', editable: false, truncate: true, width: 'notes' },
+  { key: 'drawingNumber', label: '電腦圖號', editable: false, truncate: true, width: 'notes' },
   { key: 'customerFile', label: '客戶型號', editable: false, truncate: true, width: 'notes' },
   { key: 'material', label: '材質', editable: false },
   { key: 'thickness', label: '厚度', editable: false, width: 'short-number' },

@@ -46,7 +46,7 @@
         <tbody>
           <tr v-for="(item, index) in items" :key="item.id">
             <td class="col-item">{{ index + 1 }}</td>
-            <td class="col-drawing">{{ item.cadFile || '-' }}</td>
+            <td class="col-drawing">{{ item.drawingNumber || '-' }}</td>
             <td class="col-material">{{ item.material || '-' }}</td>
             <td class="col-thickness">{{ item.thickness ?? '-' }}</td>
             <td class="col-substitute">{{ item.substitute || '-' }}</td>
@@ -188,7 +188,7 @@ const loadPreviewSizes = async () => {
   const nextMap: Record<number, { width: number | null; height: number | null; imageDataUrl: string | null }> = {};
 
   for (const item of previewEntries) {
-    if (!item.cadFile?.trim()) {
+    if (!item.drawingNumber?.trim()) {
       nextMap[item.id] = { width: null, height: null, imageDataUrl: null };
       continue;
     }

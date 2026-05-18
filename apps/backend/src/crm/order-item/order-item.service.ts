@@ -90,12 +90,12 @@ export class OrderItemService {
       .leftJoinAndSelect('processingItems.processing', 'processing')
       .leftJoinAndSelect('processing.vendor', 'processingVendor')
       .addSelect(
-        "CASE WHEN orderItem.cadFile IS NULL OR orderItem.cadFile = '' THEN 1 ELSE 0 END",
-        'cad_file_empty_sort',
+        "CASE WHEN orderItem.drawingNumber IS NULL OR orderItem.drawingNumber = '' THEN 1 ELSE 0 END",
+        'drawing_number_empty_sort',
       )
       .where('workOrder.customerId = :customerId', { customerId })
-      .orderBy('cad_file_empty_sort', 'ASC')
-      .addOrderBy('orderItem.cadFile', 'ASC')
+      .orderBy('drawing_number_empty_sort', 'ASC')
+      .addOrderBy('orderItem.drawingNumber', 'ASC')
       .addOrderBy('orderItem.createdAt', 'DESC')
       .take(maxLimit)
       .skip(skip)
@@ -153,9 +153,9 @@ export class OrderItemService {
       throw new NotFoundException(`訂單工件 ID ${id} 不存在`);
     }
 
-    const cadFile = orderItem.cadFile?.trim();
-    if (!cadFile) {
-      throw new NotFoundException(`訂單工件 ID ${id} 沒有 cadFile，無法預覽 DXF`);
+    const drawingNumber = orderItem.drawingNumber?.trim() || orderItem.cadFile?.trim();
+    if (!drawingNumber) {
+      throw new NotFoundException(`訂單工件 ID ${id} 沒有電腦圖號，無法預覽 DXF`);
     }
 
     const dwgPath = process.env.DWG_PATH;
@@ -163,8 +163,7 @@ export class OrderItemService {
       throw new NotFoundException('DWG_PATH 未設定');
     }
 
-    // 假設 DXF 檔名與 cadFile 主檔名相同，依照 CNC 類似規則分層
-    const baseName = cadFile.replace(/\.[^/.]+$/, '');
+    const baseName = drawingNumber.replace(/\.[^/.]+$/, '');
     const { join: pathJoin } = await import('path');
     const { access, readFile } = await import('fs/promises');
 
@@ -192,7 +191,7 @@ export class OrderItemService {
     }
 
     if (!selectedFile) {
-      throw new NotFoundException(`找不到 cadFile ${cadFile} 對應的 DXF 檔案`);
+      throw new NotFoundException(`找不到圖號 ${drawingNumber} 對應的 DXF 檔案`);
     }
 
     const content = await readFile(selectedFile.path, 'utf8');

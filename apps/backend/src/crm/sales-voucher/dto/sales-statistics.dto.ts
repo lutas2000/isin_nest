@@ -115,8 +115,11 @@ export class SalesStatisticsRowDto {
   @ApiPropertyOptional({ description: '來源（item 視角有值）' })
   source?: string | null;
 
-  @ApiPropertyOptional({ description: '電腦圖號／CAD 檔名（item 視角有值）' })
+  @ApiPropertyOptional({ description: '電腦圖檔（CAD 檔名，item 視角有值）' })
   cadFile?: string | null;
+
+  @ApiPropertyOptional({ description: '電腦圖號（item 視角有值）' })
+  drawingNumber?: string | null;
 
   @ApiPropertyOptional({ description: '客戶型號／客戶檔名（item 視角有值）' })
   customerFile?: string | null;
