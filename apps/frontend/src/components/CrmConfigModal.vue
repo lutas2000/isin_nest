@@ -86,7 +86,6 @@ const emit = defineEmits<{
 const crmCategories = [
   { value: 'shipping_method', label: '運送方式' },
   { value: 'payment_method', label: '付款方式' },
-  { value: 'source_type', label: '來源類型' },
   { value: 'source', label: '來源' },
   { value: 'substitute', label: '代料' },
   { value: 'unit', label: '單位' },

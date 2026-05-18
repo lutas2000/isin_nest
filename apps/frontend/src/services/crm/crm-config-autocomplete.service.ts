@@ -4,7 +4,6 @@ import { apiGet } from '@/services/api';
 export type CrmConfigCategory =
   | 'shipping_method'
   | 'payment_method'
-  | 'source_type'
   | 'source'
   | 'substitute'
   | 'unit';

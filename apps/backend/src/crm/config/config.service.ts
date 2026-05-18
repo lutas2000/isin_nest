@@ -16,12 +16,11 @@ const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = 
     { code: 'T', label: '轉帳' },
     { code: 'M', label: '月結' },
   ],
-  source_type: [
+  source: [
     { code: 'N', label: '新圖' },
     { code: 'O', label: '舊圖' },
     { code: 'D', label: '修改' },
   ],
-  source: [{ code: 'N', label: '訂單新增' }],
   substitute: [
     { code: 'S', label: '代料' },
     { code: 'D', label: '代折' },

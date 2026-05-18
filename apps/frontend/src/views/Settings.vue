@@ -316,7 +316,6 @@ const crmForm = ref({
 type CrmFilterType =
   | 'shipping_method'
   | 'payment_method'
-  | 'source_type'
   | 'source'
   | 'substitute'
   | 'unit';
@@ -324,10 +323,9 @@ type CrmFilterType =
 const crmCategorySortOrder: Record<string, number> = {
   shipping_method: 0,
   payment_method: 1,
-  source_type: 2,
-  source: 3,
-  substitute: 4,
-  unit: 5,
+  source: 2,
+  substitute: 3,
+  unit: 4,
 };
 
 const selectedCrmFilter = ref<CrmFilterType>('shipping_method');
@@ -335,7 +333,6 @@ const selectedCrmFilter = ref<CrmFilterType>('shipping_method');
 const crmFilterOptions: Array<{ label: string; value: CrmFilterType }> = [
   { label: '運送方式', value: 'shipping_method' },
   { label: '付款方式', value: 'payment_method' },
-  { label: '來源類型', value: 'source_type' },
   { label: '來源', value: 'source' },
   { label: '代料', value: 'substitute' },
   { label: '單位', value: 'unit' },
@@ -350,7 +347,6 @@ const getCategoryLabel = (category: string) => {
   const labels: Record<string, string> = {
     shipping_method: '運送方式',
     payment_method: '付款方式',
-    source_type: '來源類型',
     source: '來源',
     substitute: '代料',
     unit: '單位',
@@ -479,7 +475,6 @@ const handleInlineCrmSave = async (row: CrmConfig) => {
     if (
       row.category === 'shipping_method' ||
       row.category === 'payment_method' ||
-      row.category === 'source_type' ||
       row.category === 'source' ||
       row.category === 'substitute' ||
       row.category === 'unit'
@@ -510,7 +505,6 @@ const confirmDeleteCrm = async () => {
     if (
       category === 'shipping_method' ||
       category === 'payment_method' ||
-      category === 'source_type' ||
       category === 'source' ||
       category === 'substitute' ||
       category === 'unit'
@@ -540,7 +534,6 @@ const saveCrmConfig = async (formValue: { category: string; code: string; label:
     if (
       formValue.category === 'shipping_method' ||
       formValue.category === 'payment_method' ||
-      formValue.category === 'source_type' ||
       formValue.category === 'source' ||
       formValue.category === 'substitute' ||
       formValue.category === 'unit'
