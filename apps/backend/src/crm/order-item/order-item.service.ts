@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrderItem } from './entities/order-item.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { OrderItem } from './entities/order-item.entity';
 
 @Injectable()
 export class OrderItemService {

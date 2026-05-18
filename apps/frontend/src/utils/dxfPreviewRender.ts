@@ -62,10 +62,33 @@ const convertCanvasToBlackOnWhiteDataUrl = (
   return outputCanvas.toDataURL('image/png')
 }
 
+export interface DxfPreviewRenderResult {
+  imageDataUrl: string | null
+  width: number | null
+  height: number | null
+}
+
+const getViewerBoundsSize = (viewer: {
+  bounds?: { minX: number; maxX: number; minY: number; maxY: number } | null
+}): { width: number | null; height: number | null } => {
+  const bounds = viewer.bounds
+  if (!bounds) return { width: null, height: null }
+
+  const { minX, maxX, minY, maxY } = bounds
+  if ([minX, maxX, minY, maxY].some((v) => typeof v !== 'number' || Number.isNaN(v))) {
+    return { width: null, height: null }
+  }
+
+  const width = maxX - minX
+  const height = maxY - minY
+  if (width < 0 || height < 0) return { width: null, height: null }
+  return { width, height }
+}
+
 export const renderDxfContentToDataUrl = async (
   content: string,
   options: { width?: number; height?: number } = {},
-): Promise<string | null> => {
+): Promise<DxfPreviewRenderResult> => {
   const host = document.createElement('div')
   host.style.position = 'fixed'
   host.style.left = '-99999px'
@@ -76,8 +99,9 @@ export const renderDxfContentToDataUrl = async (
   host.style.opacity = '0'
   document.body.appendChild(host)
 
+  let viewer: any = null
   try {
-    const viewer: any = new DxfViewer(host, {
+    viewer = new DxfViewer(host, {
       autoResize: false,
       clearColor: new ThreeColor('#ffffff'),
       clearAlpha: 1.0,
@@ -99,13 +123,22 @@ export const renderDxfContentToDataUrl = async (
     const canvas = host.querySelector('canvas') as HTMLCanvasElement | null
     if (!canvas) {
       console.warn('DXF 預覽找不到 canvas')
-      return null
+      return { imageDataUrl: null, width: null, height: null }
     }
-    return convertCanvasToBlackOnWhiteDataUrl(canvas)
+
+    const { width, height } = getViewerBoundsSize(viewer)
+    return {
+      imageDataUrl: convertCanvasToBlackOnWhiteDataUrl(canvas),
+      width,
+      height,
+    }
   } catch (err) {
     console.error('渲染 DXF 圖片失敗:', err)
-    return null
+    return { imageDataUrl: null, width: null, height: null }
   } finally {
+    if (viewer?.Destroy) {
+      viewer.Destroy()
+    }
     host.remove()
   }
 }

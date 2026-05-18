@@ -194,12 +194,11 @@ const loadPreviewSizes = async () => {
     }
     try {
       const preview = await orderItemService.getDxfPreview(item.id);
-      const imageDataUrl = await renderDxfContentToDataUrl(preview.content);
+      const rendered = await renderDxfContentToDataUrl(preview.content);
       nextMap[item.id] = {
-        // DXF 目前沒有計算寬高，先顯示為 null，只用圖形 preview
-        width: null,
-        height: null,
-        imageDataUrl,
+        width: rendered.width,
+        height: rendered.height,
+        imageDataUrl: rendered.imageDataUrl,
       };
     } catch (err) {
       console.error(`載入 DXF preview 失敗 (itemId=${item.id}):`, err);

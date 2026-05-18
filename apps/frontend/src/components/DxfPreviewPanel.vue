@@ -3,6 +3,7 @@
     <div class="border-b border-secondary-200 px-4 py-3">
       <p class="text-sm font-medium text-secondary-900">{{ title }}</p>
       <p v-if="fileName" class="mt-1 truncate text-xs text-secondary-500">{{ fileName }}</p>
+      <p v-if="dimensionsLabel" class="mt-1 text-xs text-secondary-600">{{ dimensionsLabel }}</p>
     </div>
 
     <div class="flex min-h-0 flex-1 items-center justify-center bg-secondary-50 p-4">
@@ -22,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { orderItemService } from '@/services/crm/order.service'
 import { renderDxfContentToDataUrl } from '@/utils/dxfPreviewRender'
 
@@ -41,7 +42,18 @@ const props = withDefaults(defineProps<{
 const loading = ref(false)
 const imageDataUrl = ref<string | null>(null)
 const fileName = ref('')
+const width = ref<number | null>(null)
+const height = ref<number | null>(null)
 let requestToken = 0
+
+const dimensionsLabel = computed(() => {
+  const w = width.value
+  const h = height.value
+  if (typeof w !== 'number' || typeof h !== 'number' || Number.isNaN(w) || Number.isNaN(h)) {
+    return ''
+  }
+  return `W ${w.toFixed(3)} × H ${h.toFixed(3)} mm`
+})
 
 watch(
   () => props.orderItemId,
@@ -49,6 +61,8 @@ watch(
     const token = ++requestToken
     imageDataUrl.value = null
     fileName.value = ''
+    width.value = null
+    height.value = null
 
     if (!orderItemId) {
       loading.value = false
@@ -60,19 +74,23 @@ watch(
       const preview = await orderItemService.getDxfPreview(orderItemId, {
         silent: props.suppressApiError,
       })
-      const dataUrl = await renderDxfContentToDataUrl(preview.content, {
+      const rendered = await renderDxfContentToDataUrl(preview.content, {
         width: 360,
         height: 240,
       })
 
       if (token !== requestToken) return
-      imageDataUrl.value = dataUrl
+      imageDataUrl.value = rendered.imageDataUrl
       fileName.value = preview.fileName
+      width.value = rendered.width
+      height.value = rendered.height
     } catch (err) {
       console.warn(`載入 DXF preview 失敗 (itemId=${orderItemId}):`, err)
       if (token !== requestToken) return
       imageDataUrl.value = null
       fileName.value = ''
+      width.value = null
+      height.value = null
     } finally {
       if (token === requestToken) {
         loading.value = false
