@@ -28,7 +28,7 @@
         :current-page="currentPage"
         :page-size="pageSize"
         :total="total"
-        :dbl-click-to-edit="false"
+        edit-mode="add-only"
         :show-new-row="showNewRow"
         :new-row-template="newRowTemplate"
         @update:page="handlePageChange"

@@ -204,7 +204,8 @@
                             :cancel="() => cancelEdit(row, index)"
                             :start-edit="() => { startEdit(row, index); closeDropdown(); }"
                           >
-                            <span 
+                            <span
+                              v-if="canEditExistingRow(row)"
                               class="dropdown-item"
                               @click="startEdit(row, index)"
                             >
@@ -320,7 +321,12 @@ interface Props {
   pageSize?: number;
   total?: number;
   editable?: boolean;
-  /** 為 false 時，雙擊列與 F2 不會進入行內編輯（選單「編輯」等仍可用） */
+  /**
+   * full：可新增、可編輯既有列
+   * add-only：可新增，不可編輯既有列（F2、雙擊、操作選單「編輯」皆不可用）
+   */
+  editMode?: 'full' | 'add-only';
+  /** 為 false 時，雙擊列與 F2 不會進入行內編輯（僅 editMode=full 時有效；選單「編輯」等仍可用） */
   dblClickToEdit?: boolean;
   /** 控制元件掛載後是否自動聚焦表格容器 */
   autoFocusOnMount?: boolean;
@@ -336,6 +342,7 @@ const props = withDefaults(defineProps<Props>(), {
   pageSize: 50,
   total: 0,
   editable: true,
+  editMode: 'full',
   dblClickToEdit: true,
   autoFocusOnMount: true,
   showNewRow: false,
@@ -465,6 +472,16 @@ const isNewRow = (row: any) => {
   return row.__isNew === true;
 };
 
+const canEditExistingRow = (row: any) => {
+  if (!props.editable) {
+    return false;
+  }
+  if (props.editMode === 'full') {
+    return true;
+  }
+  return row.__isNew === true || row.__isDraft === true;
+};
+
 const isColumnEditable = (column: EditableColumn) => {
   return props.editable && (column.editable !== false);
 };
@@ -522,15 +539,23 @@ const handleRowClick = (_row: any, index: number) => {
   isNewRowFocused.value = false;
 };
 
-// 滑鼠雙擊 row 進入編輯模式；唯讀表格則視為查看/選取該列
+// 滑鼠雙擊 row：可編輯則進入編輯；唯讀或 add-only 既有列則觸發 row-view
 const handleRowDblClick = (row: any, index: number) => {
   if (!props.editable) {
     emit('row-view', row);
     return;
   }
 
-  // 若已關閉雙擊編輯，或該列已在編輯中，就不處理
-  if (!props.dblClickToEdit || isEditing(row, index)) {
+  if (isEditing(row, index)) {
+    return;
+  }
+
+  if (!canEditExistingRow(row)) {
+    emit('row-view', row);
+    return;
+  }
+
+  if (!props.dblClickToEdit) {
     return;
   }
 
@@ -637,7 +662,7 @@ const handlePageSizeChange = () => {
 };
 
 const startEdit = (row: any, index: number) => {
-  if (!props.editable) {
+  if (!canEditExistingRow(row)) {
     return;
   }
   const key = getRowKey(row, index);
@@ -821,7 +846,12 @@ const handleTableKeyDown = (event: KeyboardEvent) => {
     }
   } else if (event.key === 'F2') {
     // 只有在非編輯狀態時才允許進入編輯
-    if (props.editable && props.dblClickToEdit && !isEditingCurrentRow) {
+    if (
+      props.editable &&
+      props.editMode === 'full' &&
+      props.dblClickToEdit &&
+      !isEditingCurrentRow
+    ) {
       event.preventDefault();
       startEdit(currentRow, currentIndex);
       emit('row-edit', currentRow, currentIndex);
@@ -1013,7 +1043,10 @@ defineExpose({
   editingRowId,
   data: () => props.data,
   isTableEditable: () => props.editable,
-  canKeyboardRowEdit: () => props.editable && props.dblClickToEdit,
+  isAddOnlyMode: () => props.editable && props.editMode === 'add-only',
+  canEditExistingRow,
+  canKeyboardRowEdit: () =>
+    props.editable && props.editMode === 'full' && props.dblClickToEdit,
   startEdit,
   cancelEdit,
   saveRow,

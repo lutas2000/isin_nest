@@ -8,8 +8,10 @@ export interface EditableTableShortcutState {
   data: () => any[];
   /** 對應 EditableDataTable 的 editable */
   editable: boolean;
-  /** 對應 editable && dblClickToEdit，F2 行內編輯是否可用 */
+  /** 對應 editMode=full 且 dblClickToEdit，F2 行內編輯是否可用 */
   canKeyboardRowEdit: boolean;
+  /** 對應 editMode=add-only */
+  isAddOnlyMode: boolean;
 }
 
 export function buildEditableTableShortcutState(
@@ -26,5 +28,6 @@ export function buildEditableTableShortcutState(
     data: options?.data ?? tableRef.data,
     editable: tableRef.isTableEditable(),
     canKeyboardRowEdit: tableRef.canKeyboardRowEdit(),
+    isAddOnlyMode: tableRef.isAddOnlyMode(),
   };
 }

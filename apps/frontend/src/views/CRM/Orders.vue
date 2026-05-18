@@ -27,6 +27,7 @@
         :page-size="pageSize"
         :total="total"
         :editable="true"
+        edit-mode="add-only"
         :show-new-row="showNewRow"
         :new-row-template="newRowTemplate"
         @update:page="handlePageChange"
