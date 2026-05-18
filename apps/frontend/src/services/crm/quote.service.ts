@@ -30,6 +30,8 @@ export interface Quote {
   shippingFee: number
   isSupplyMaterial?: string
   quoteDeadline?: string
+  deliveryDays: number
+  orderConfirmedAt?: string
   quoteItems?: QuoteItem[]
   staff?: any
   customer?: any

@@ -97,6 +97,16 @@
                 class="form-control"
               />
             </template>
+            <template #edit-deliveryDays>
+              <input
+                v-model.number="detailDraft.deliveryDays"
+                type="number"
+                min="1"
+                step="1"
+                class="form-control"
+                required
+              />
+            </template>
             <template #edit-notes>
               <textarea
                 v-model="detailDraft.notes"
@@ -322,6 +332,7 @@ const detailDraft = ref({
   isSigned: false,
   isSupplyMaterial: '',
   quoteDeadline: '',
+  deliveryDays: 7,
   processingIds: [] as number[],
 });
 
@@ -334,6 +345,7 @@ const startDetailsEdit = () => {
     quoteDeadline: quote.value.quoteDeadline
       ? String(quote.value.quoteDeadline).slice(0, 10)
       : '',
+    deliveryDays: quote.value.deliveryDays ?? 7,
     processingIds: [...(quote.value.processingIds || [])],
   };
   detailsEditing.value = true;
@@ -351,6 +363,7 @@ const saveDetailsEdit = async () => {
       isSigned: detailDraft.value.isSigned,
       isSupplyMaterial: detailDraft.value.isSupplyMaterial.trim() || undefined,
       quoteDeadline: detailDraft.value.quoteDeadline.trim() || undefined,
+      deliveryDays: Number(detailDraft.value.deliveryDays) || 7,
       processingIds: [...detailDraft.value.processingIds],
     });
     detailsEditing.value = false;
@@ -507,6 +520,18 @@ const detailItems = computed<DetailFieldItem[]>(() => {
       key: 'quoteDeadline',
       label: '報價期限',
       value: formatDateOnly(quote.value.quoteDeadline),
+    },
+    {
+      key: 'deliveryDays',
+      label: '交貨期限（天）',
+      value: quote.value.deliveryDays != null ? `${quote.value.deliveryDays} 天` : '7 天',
+    },
+    {
+      key: 'orderConfirmedAt',
+      label: '訂貨確認時間',
+      value: quote.value.orderConfirmedAt
+        ? formatDateTime(quote.value.orderConfirmedAt)
+        : '-',
     },
     { key: 'totalAmount', label: '總計金額', value: Number(quote.value.totalAmount).toLocaleString('zh-TW') },
     { key: 'createdAt', label: '建立時間', value: formatDateTime(quote.value.createdAt) },

@@ -78,6 +78,10 @@
         <template #cell-createdAt="{ value }">
           {{ value ? new Date(value).toLocaleDateString('zh-TW') : '' }}
         </template>
+
+        <template #cell-deliveryDeadline="{ value }">
+          <span>{{ value ? String(value).replace(/-/g, '/') : '-' }}</span>
+        </template>
         
         <template #actions="{ row, isEditing, save, cancel }">
           <!-- 編輯模式：顯示保存和取消按鈕 -->
@@ -250,6 +254,12 @@ const editableColumns = computed<EditableColumn[]>(() => [
     type: 'search-select',
     searchFunction: searchPaymentMethod,
   },
+  {
+    key: 'deliveryDeadline',
+    label: '交貨期限',
+    editable: true,
+    type: 'date',
+  },
   { 
     key: 'notes', 
     label: '備註', 
@@ -361,6 +371,7 @@ const handleSave = async (row: WorkOrder, isNew: boolean) => {
         customerId: row.customerId,
         shippingMethod: row.shippingMethod,
         paymentMethod: row.paymentMethod,
+        deliveryDeadline: row.deliveryDeadline || undefined,
         notes: row.notes || undefined,
         amount: row.amount || 0,
       };
@@ -372,6 +383,7 @@ const handleSave = async (row: WorkOrder, isNew: boolean) => {
         customerId: row.customerId,
         shippingMethod: row.shippingMethod,
         paymentMethod: row.paymentMethod,
+        deliveryDeadline: row.deliveryDeadline || undefined,
         notes: row.notes || undefined,
         amount: row.amount || 0,
         isCompleted: row.isCompleted,
@@ -393,6 +405,7 @@ const handleNewRowSave = async (row: any) => {
       customerId: row.customerId,
       shippingMethod: row.shippingMethod,
       paymentMethod: row.paymentMethod,
+      deliveryDeadline: row.deliveryDeadline || undefined,
       notes: row.notes || undefined,
       amount: row.amount || 0,
     };

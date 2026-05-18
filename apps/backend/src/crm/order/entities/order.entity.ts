@@ -73,7 +73,7 @@ export class Order {
   paymentMethod: string;
 
   @ApiProperty({
-    description: '交貨期限',
+    description: '交貨期限（日期）',
     example: '2026-05-12',
     required: false,
   })

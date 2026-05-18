@@ -109,6 +109,17 @@ export class Quote {
   @Column({ type: 'date', name: 'quote_deadline', nullable: true })
   quoteDeadline?: string;
 
+  @ApiProperty({ description: '交貨期限（天）', example: 7 })
+  @Column({ type: 'int', name: 'delivery_days', default: 7 })
+  deliveryDays: number;
+
+  @ApiProperty({
+    description: '訂貨確認時間（後端依簽名狀態自動寫入）',
+    required: false,
+  })
+  @Column({ type: 'timestamptz', name: 'order_confirmed_at', nullable: true })
+  orderConfirmedAt?: Date | null;
+
   @CreateDateColumn({
     type: 'timestamptz',
     name: 'created_at',

@@ -109,6 +109,14 @@
           <span>{{ value ? String(value).replace(/-/g, '/') : '' }}</span>
         </template>
 
+        <template #cell-deliveryDays="{ value }">
+          <span>{{ value != null ? `${value} 天` : '-' }}</span>
+        </template>
+
+        <template #cell-orderConfirmedAt="{ value }">
+          <span>{{ value ? new Date(value).toLocaleString('zh-TW') : '-' }}</span>
+        </template>
+
         <template #actions="{ row, isEditing, save, cancel }">
           <!-- 編輯模式：顯示保存和取消按鈕（這些會直接顯示，不在下拉選單中） -->
           <template v-if="isEditing">
@@ -184,6 +192,16 @@
                     :text="selectedQuote.isSigned ? '已簽名' : '待簽名'" 
                     :variant="selectedQuote.isSigned ? 'success' : 'warning'"
                   />
+                </span>
+              </div>
+              <div class="details-item">
+                <span class="details-label">交貨期限（天）：</span>
+                <span class="details-value">{{ selectedQuote.deliveryDays ?? 7 }}</span>
+              </div>
+              <div v-if="selectedQuote.orderConfirmedAt" class="details-item">
+                <span class="details-label">訂貨確認時間：</span>
+                <span class="details-value">
+                  {{ new Date(selectedQuote.orderConfirmedAt).toLocaleString('zh-TW') }}
                 </span>
               </div>
             </div>
@@ -465,6 +483,7 @@ const newRowTemplate = () => ({
   totalAmount: 0,
   isSupplyMaterial: '',
   quoteDeadline: getTodayDateString(),
+  deliveryDays: 7,
   notes: '',
   processingIds: [] as number[],
   isSigned: false,
@@ -547,6 +566,18 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '報價期限',
     editable: true,
     type: 'date'
+  },
+  {
+    key: 'deliveryDays',
+    label: '交貨期限（天）',
+    editable: true,
+    required: true,
+    type: 'number',
+  },
+  {
+    key: 'orderConfirmedAt',
+    label: '訂貨確認時間',
+    editable: false,
   },
   { 
     key: 'processing', 
@@ -697,6 +728,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         totalAmount: row.totalAmount || 0,
         isSupplyMaterial: row.isSupplyMaterial?.trim() || undefined,
         quoteDeadline: row.quoteDeadline || undefined,
+        deliveryDays: Number(row.deliveryDays) || 7,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
       };
@@ -709,6 +741,7 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         totalAmount: row.totalAmount || 0,
         isSupplyMaterial: row.isSupplyMaterial?.trim() || undefined,
         quoteDeadline: row.quoteDeadline || undefined,
+        deliveryDays: Number(row.deliveryDays) || 7,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
       };
@@ -728,6 +761,7 @@ const handleNewRowSave = async (row: any) => {
       totalAmount: row.totalAmount || 0,
       isSupplyMaterial: row.isSupplyMaterial?.trim() || undefined,
       quoteDeadline: row.quoteDeadline || undefined,
+      deliveryDays: Number(row.deliveryDays) || 7,
       notes: row.notes || undefined,
       processingIds: row.processingIds || [],
     };

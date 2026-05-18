@@ -165,6 +165,16 @@ const printNotes = computed(() => {
     lines.push(`報價期限：${formatQuoteDeadline(props.quote.quoteDeadline)}`);
   }
 
+  if (props.quote.deliveryDays != null) {
+    lines.push(`交貨期限：${props.quote.deliveryDays} 天`);
+  }
+
+  if (props.quote.orderConfirmedAt) {
+    lines.push(
+      `訂貨確認：${formatQuoteDeadline(String(props.quote.orderConfirmedAt).slice(0, 10))}`,
+    );
+  }
+
   return lines.join('\n');
 });
 

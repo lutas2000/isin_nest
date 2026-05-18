@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { BadRequestException, Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Quote } from './entities/quote.entity';
@@ -12,6 +12,12 @@ import { ProcessingWorkOrderService } from '../processing-work-order/processing-
 import { DeliveryWorkOrderService } from '../delivery-work-order/delivery-work-order.service';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { SourceType } from '../enums/source-type.enum';
+
+function computeDeliveryDeadline(confirmedAt: Date, days: number): string {
+  const d = new Date(confirmedAt);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 @Injectable()
 export class QuoteService {
@@ -113,18 +119,34 @@ export class QuoteService {
     });
   }
 
+  private validateDeliveryDays(deliveryDays: unknown, required = false): number {
+    if (deliveryDays === undefined || deliveryDays === null) {
+      if (required) {
+        throw new BadRequestException('交貨期限（天）為必填欄位');
+      }
+      return 7;
+    }
+    const n = Number(deliveryDays);
+    if (!Number.isInteger(n) || n < 1) {
+      throw new BadRequestException('交貨期限須為正整數（天）');
+    }
+    return n;
+  }
+
   async create(quote: Partial<Quote>): Promise<Quote> {
-    // 驗證 customerId 是否存在
     if (!quote.customerId) {
       throw new Error('客戶 ID 為必填欄位');
     }
 
+    const { orderConfirmedAt: _, ...quoteData } = quote;
+    const deliveryDays = this.validateDeliveryDays(quote.deliveryDays, true);
+
     const newQuote = this.quoteRepository.create({
-      ...quote,
-      // 不再接受外部指定 ID，統一由系統依規則產生
+      ...quoteData,
+      deliveryDays,
       id: await this.generateQuoteId(),
     });
-    
+
     return this.quoteRepository.save(newQuote);
   }
 
@@ -134,13 +156,35 @@ export class QuoteService {
 
   async update(id: string, quote: Partial<Quote>): Promise<Quote | null> {
     const existingQuote = await this.quoteRepository.findOneBy({ id });
-    if (existingQuote) {
-      // 只排除 ID，允許修改 customerId 和其他欄位
-      const { id: _, ...updateData } = quote;
-      Object.assign(existingQuote, updateData);
-      return this.quoteRepository.save(existingQuote);
+    if (!existingQuote) {
+      return null;
     }
-    return null;
+
+    const {
+      id: _id,
+      orderConfirmedAt: _orderConfirmedAt,
+      ...updateData
+    } = quote;
+
+    if (updateData.deliveryDays !== undefined) {
+      updateData.deliveryDays = this.validateDeliveryDays(updateData.deliveryDays);
+    }
+
+    const previousSigned = existingQuote.isSigned;
+    const newSigned =
+      updateData.isSigned !== undefined ? updateData.isSigned : previousSigned;
+
+    Object.assign(existingQuote, updateData);
+
+    if (newSigned !== previousSigned) {
+      if (!previousSigned && newSigned) {
+        existingQuote.orderConfirmedAt = new Date();
+      } else if (previousSigned && !newSigned) {
+        existingQuote.orderConfirmedAt = null;
+      }
+    }
+
+    return this.quoteRepository.save(existingQuote);
   }
 
   async convertToOrder(
@@ -150,15 +194,19 @@ export class QuoteService {
   ): Promise<Order | null> {
     const quote = await this.findOne(quoteId);
     if (!quote || !quote.isSigned) {
-      return null; // 報價單不存在或未簽名
+      return null;
     }
 
-    // 驗證必填欄位
     if (!shippingMethod || !paymentMethod) {
       throw new Error('運送方式和付款方式為必填欄位');
     }
 
-    // 建立訂單，使用訂單自己的自動編號規則（不再沿用報價單 ID）
+    if (!quote.orderConfirmedAt) {
+      throw new BadRequestException('報價單尚未完成訂貨確認');
+    }
+
+    const deliveryDays = this.validateDeliveryDays(quote.deliveryDays, true);
+
     const orderData: Partial<Order> = {
       quoteId: quote.id,
       customerId: quote.customerId,
@@ -168,6 +216,10 @@ export class QuoteService {
       paymentMethod,
       status: OrderStatus.PENDING,
       notes: quote.notes,
+      deliveryDeadline: computeDeliveryDeadline(
+        quote.orderConfirmedAt,
+        deliveryDays,
+      ),
     };
 
     const order = await this.orderService.create(orderData);

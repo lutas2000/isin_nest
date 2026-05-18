@@ -25,6 +25,7 @@ import { FixMissingDesignWorkOrderColumns1776600000000 } from './migrations/1776
 import { AddDeliveryDeadlineToOrder1776700000000 } from './migrations/1776700000000-AddDeliveryDeadlineToOrder';
 import { AddUnitToCrmLineItems1776800000000 } from './migrations/1776800000000-AddUnitToCrmLineItems';
 import { CrmConfigCodeSingleChar1776900000000 } from './migrations/1776900000000-CrmConfigCodeSingleChar';
+import { AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000 } from './migrations/1777000000000-AddQuoteDeliveryDaysAndOrderConfirmedAt';
 import { SystemModule } from './system/system.module';
 
 function parseBool(value: string | undefined): boolean | undefined {
@@ -79,6 +80,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           AddDeliveryDeadlineToOrder1776700000000,
           AddUnitToCrmLineItems1776800000000,
           CrmConfigCodeSingleChar1776900000000,
+          AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000,
         ],
         migrationsRun: parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
         migrationsTableName: 'typeorm_migrations',
