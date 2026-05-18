@@ -7,7 +7,7 @@ import * as path from 'path';
 const execFileAsync = promisify(execFile);
 
 const AUTO_NAS_PATH = '/etc/auto_nas';
-const MOUNT_BASE = '/Volumes/NAS';
+const MOUNT_BASE = process.platform === 'darwin' ? '/Volumes/NAS' : '/nas';
 
 export interface NasShare {
   key: string;
@@ -57,7 +57,9 @@ export class NasService {
       if (parts.length < 2) continue;
 
       const key = parts[0];
-      const url = parts[parts.length - 1];
+      const rawUrl = parts[parts.length - 1];
+      // auto_nas 格式可能為 ://user:pass@host/share，去掉前置 ':'
+      const url = rawUrl.startsWith('://') ? rawUrl.slice(1) : rawUrl;
       if (!url.startsWith('//')) continue;
 
       shares.push({

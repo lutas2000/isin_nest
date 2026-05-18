@@ -37,6 +37,11 @@ services:
       DB_MIGRATIONS_RUN: ${DB_MIGRATIONS_RUN:-true}
 
       JWT_SECRET: ${JWT_SECRET:-your-secret-key}
+      STAFF_PAGE_LOCK_PASSWORD: ${STAFF_PAGE_LOCK_PASSWORD:-}
+      DWG_PATH: ${DWG_PATH:-}
+      CNC_PATH: ${CNC_PATH:-}
+      NESTING_PATH: ${NESTING_PATH:-}
+      LIBREOFFICE_PATH: ${LIBREOFFICE_PATH:-}
     ports:
       - "${HOST_BACKEND_PORT:-3000}:${PORT:-3000}"
     depends_on:
