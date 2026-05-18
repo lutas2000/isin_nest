@@ -19,8 +19,8 @@ export class CrmConfig {
   @Column({ type: 'varchar', length: 50 })
   category: string;
 
-  @ApiProperty({ description: '代碼', example: 'EXPRESS' })
-  @Column({ type: 'varchar', length: 50 })
+  @ApiProperty({ description: '快捷鍵代碼（單一字元）', example: 'E' })
+  @Column({ type: 'varchar', length: 1 })
   code: string;
 
   @ApiProperty({ description: '顯示名稱', example: '快遞' })

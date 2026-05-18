@@ -112,6 +112,18 @@
       <option :value="false">否</option>
     </select>
 
+    <!-- CRM Config 下拉選單（可自由輸入、快捷鍵 code） -->
+    <CrmConfigSelectCell
+      v-else-if="column.type === 'crm-config-select' && column.crmConfigCategory"
+      :category="column.crmConfigCategory"
+      :value="String(value ?? '')"
+      :required="column.required"
+      :is-focused="isFocused"
+      @update:value="emit('update:value', $event)"
+      @keydown="handleKeyDown"
+      @blur="handleBlur"
+    />
+
     <!-- 可搜尋的下拉選單 -->
     <div
       v-else-if="column.type === 'search-select'"
@@ -173,6 +185,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue';
+import CrmConfigSelectCell from './CrmConfigSelectCell.vue';
 import type { EditableColumn } from './EditableDataTable.vue';
 
 interface Props {

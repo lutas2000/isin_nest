@@ -3,6 +3,12 @@ import { apiGet } from '@/services/api';
 
 export type CrmConfigCategory = 'shipping_method' | 'payment_method' | 'source_type' | 'source' | 'substitute';
 
+export interface CrmConfigOption {
+  value: string;
+  label: string;
+  code: string;
+}
+
 interface CrmConfigRecord {
   id: number;
   category: string;
@@ -23,14 +29,11 @@ const normalize = (value: unknown) => String(value ?? '').trim().toLowerCase();
 
 const getDisplayLabel = (record: CrmConfigRecord): string => record.label?.trim() || '';
 
-const matchesKeyword = (record: CrmConfigRecord, keyword: string): boolean => {
-  if (!keyword) return true;
-  return (
-    normalize(record.id).includes(keyword) ||
-    normalize(record.code).includes(keyword) ||
-    normalize(record.label).includes(keyword)
-  );
-};
+const toOption = (record: CrmConfigRecord): CrmConfigOption => ({
+  value: getDisplayLabel(record),
+  label: getDisplayLabel(record),
+  code: record.code?.trim() || '',
+});
 
 const sortRecords = (records: CrmConfigRecord[]): CrmConfigRecord[] =>
   records.slice().sort((a, b) => {
@@ -56,27 +59,62 @@ const fetchCategoryRecords = async (category: CrmConfigCategory): Promise<CrmCon
   return records;
 };
 
+const filterRecords = (
+  records: CrmConfigRecord[],
+  keyword: string,
+  showAll: boolean,
+): CrmConfigRecord[] => {
+  if (showAll || !keyword) {
+    return records;
+  }
+
+  return records.filter((record) => {
+    const code = normalize(record.code);
+    const label = normalize(record.label);
+    return code === keyword || code.includes(keyword) || label.includes(keyword);
+  });
+};
+
+export const fetchCrmConfigOptions = async (
+  category: CrmConfigCategory,
+  searchTerm: string,
+  showAll = false,
+): Promise<CrmConfigOption[]> => {
+  const keyword = normalize(searchTerm);
+  const records = await fetchCategoryRecords(category);
+  const seen = new Set<string>();
+
+  return filterRecords(records, keyword, showAll)
+    .filter((record) => {
+      const key = normalize(record.label);
+      if (!key || seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .map(toOption);
+};
+
+export const findCrmConfigByCode = async (
+  category: CrmConfigCategory,
+  code: string,
+): Promise<CrmConfigOption | null> => {
+  const normalizedCode = String(code ?? '').trim();
+  if (!normalizedCode) {
+    return null;
+  }
+
+  const records = await fetchCategoryRecords(category);
+  const record = records.find((item) => item.code === normalizedCode);
+  return record ? toOption(record) : null;
+};
+
 export const createCrmConfigSearchFunction =
   (category: CrmConfigCategory) =>
   async (searchTerm: string): Promise<Array<{ value: string; label: string }>> => {
-    const keyword = normalize(searchTerm);
-    const records = await fetchCategoryRecords(category);
-    const seen = new Set<string>();
-
-    return records
-      .filter((record) => matchesKeyword(record, keyword))
-      .filter((record) => {
-        const key = normalize(record.label);
-        if (!key || seen.has(key)) {
-          return false;
-        }
-        seen.add(key);
-        return true;
-      })
-      .map((record) => ({
-        value: record.label,
-        label: getDisplayLabel(record),
-      }));
+    const options = await fetchCrmConfigOptions(category, searchTerm, !normalize(searchTerm));
+    return options.map(({ value, label }) => ({ value, label }));
   };
 
 export const invalidateCrmConfigCache = (category?: CrmConfigCategory) => {

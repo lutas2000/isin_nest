@@ -71,7 +71,6 @@
                 :row="detailDraft"
                 :is-new="false"
                 :is-editing="true"
-                :search-function="shippingMethodDetailColumn.searchFunction"
                 @update:value="detailDraft.shippingMethod = String($event ?? '')"
               />
             </template>
@@ -82,7 +81,6 @@
                 :row="detailDraft"
                 :is-new="false"
                 :is-editing="true"
-                :search-function="paymentMethodDetailColumn.searchFunction"
                 @update:value="detailDraft.paymentMethod = String($event ?? '')"
               />
             </template>
@@ -261,7 +259,6 @@ import { workOrderService, workOrderItemService, type WorkOrder, type WorkOrderI
 import { designWorkOrderService } from '@/services/crm/design-work-order.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
-import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import OrderPrint from './prints/OrderPrint.vue';
 import OrderWorkSheetPrint from './prints/OrderWorkSheetPrint.vue';
 import { DEFAULT_ITEM_UNIT, ITEM_UNIT_SUGGESTIONS } from '@/constants/crmItemUnit';
@@ -343,22 +340,18 @@ const detailDraft = ref({
   notes: '',
 });
 
-const searchShippingMethod = createCrmConfigSearchFunction('shipping_method');
-const searchPaymentMethod = createCrmConfigSearchFunction('payment_method');
-const searchSource = createCrmConfigSearchFunction('source');
-
 const shippingMethodDetailColumn: EditableColumn = {
   key: 'shippingMethod',
   label: '運送方式',
-  type: 'search-select',
-  searchFunction: searchShippingMethod,
+  type: 'crm-config-select',
+  crmConfigCategory: 'shipping_method',
 };
 
 const paymentMethodDetailColumn: EditableColumn = {
   key: 'paymentMethod',
   label: '付款方式',
-  type: 'search-select',
-  searchFunction: searchPaymentMethod,
+  type: 'crm-config-select',
+  crmConfigCategory: 'payment_method',
 };
 
 const startDetailsEdit = () => {
@@ -488,19 +481,15 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'substitute',
     label: '代料',
     editable: true,
-    type: 'select',
-    options: [
-      { value: '代料', label: '代料' },
-      { value: '代折', label: '代折' },
-      { value: null, label: '無' },
-    ]
+    type: 'crm-config-select',
+    crmConfigCategory: 'substitute',
   },
-  { 
-    key: 'source', 
-    label: '來源', 
-    editable: true, 
-    type: 'search-select',
-    searchFunction: searchSource,
+  {
+    key: 'source',
+    label: '來源',
+    editable: true,
+    type: 'crm-config-select',
+    crmConfigCategory: 'source',
   },
   { 
     key: 'notes', 

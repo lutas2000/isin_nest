@@ -26,8 +26,8 @@
           type="text"
           class="form-control"
           required
-          maxlength="50"
-          placeholder="例如：EXPRESS"
+          maxlength="1"
+          placeholder="例如：E"
         />
       </div>
 

@@ -7,26 +7,32 @@ import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 // TODO: 根據目前的db重寫預設值
 const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = {
   shipping_method: [
-    { code: 'PICKUP', label: '自取' },
-    { code: 'EXPRESS', label: '快遞' },
-    { code: 'FREIGHT', label: '貨運' },
+    { code: 'P', label: '自取' },
+    { code: 'E', label: '快遞' },
+    { code: 'F', label: '貨運' },
   ],
   payment_method: [
-    { code: 'CASH', label: '現金' },
-    { code: 'TRANSFER', label: '轉帳' },
-    { code: 'MONTHLY', label: '月結' },
+    { code: 'C', label: '現金' },
+    { code: 'T', label: '轉帳' },
+    { code: 'M', label: '月結' },
   ],
   source_type: [
-    { code: 'NEW', label: '新圖' },
-    { code: 'OLD', label: '舊圖' },
-    { code: 'MODIFIED', label: '修改' },
+    { code: 'N', label: '新圖' },
+    { code: 'O', label: '舊圖' },
+    { code: 'D', label: '修改' },
   ],
-  source: [{ code: 'ORDER_NEW', label: '訂單新增' }],
+  source: [{ code: 'N', label: '訂單新增' }],
   substitute: [
-    { code: 'SUBSTITUTE', label: '代料' },
-    { code: 'SUB_DISCOUNT', label: '代折' },
+    { code: 'S', label: '代料' },
+    { code: 'D', label: '代折' },
   ],
-  vat_rate: [{ code: 'default', label: '5' }],
+  vat_rate: [{ code: '5', label: '5' }],
+};
+
+const assertSingleCharCode = (code: string): void => {
+  if (!/^.$/u.test(code)) {
+    throw new Error('代碼必須為單一字元');
+  }
 };
 
 @Injectable()
@@ -86,9 +92,12 @@ export class CrmConfigService implements OnModuleInit {
   }
 
   async create(createDto: { category: string; code: string; label: string; displayOrder?: number }): Promise<CrmConfig> {
+    const code = createDto.code.trim();
+    assertSingleCharCode(code);
+
     // 檢查是否已存在
     const existing = await this.crmConfigRepository.findOne({
-      where: { category: createDto.category, code: createDto.code },
+      where: { category: createDto.category, code },
     });
 
     if (existing) {
@@ -97,7 +106,7 @@ export class CrmConfigService implements OnModuleInit {
 
     const config = this.crmConfigRepository.create({
       category: createDto.category,
-      code: createDto.code,
+      code,
       label: createDto.label,
       displayOrder: createDto.displayOrder ?? 0,
     });
@@ -128,8 +137,12 @@ export class CrmConfigService implements OnModuleInit {
       }
     }
 
+    if (updateDto.code !== undefined) {
+      assertSingleCharCode(updateDto.code.trim());
+    }
+
     if (updateDto.category !== undefined) config.category = updateDto.category;
-    if (updateDto.code !== undefined) config.code = updateDto.code;
+    if (updateDto.code !== undefined) config.code = updateDto.code.trim();
     if (updateDto.label !== undefined) config.label = updateDto.label;
     if (updateDto.displayOrder !== undefined) config.displayOrder = updateDto.displayOrder;
 

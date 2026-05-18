@@ -269,6 +269,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import type { CrmConfigCategory } from '@/services/crm/crm-config-autocomplete.service';
 import EditableCell from './EditableCell.vue';
 
 interface Column {
@@ -286,7 +287,9 @@ export interface EditableColumn extends Column {
     f10?: boolean;
   };
   required?: boolean;
-  type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'date';
+  type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'crm-config-select' | 'date';
+  /** 與 type=crm-config-select 併用：銷管設定分類 */
+  crmConfigCategory?: CrmConfigCategory;
   /** 與 type=text 併用：瀏覽器 datalist 建議值（仍可自由輸入） */
   datalistOptions?: string[];
   options?: Array<{value: any, label: string}> | (() => Array<{value: any, label: string}>);
