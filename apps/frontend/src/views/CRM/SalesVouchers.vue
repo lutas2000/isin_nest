@@ -150,6 +150,7 @@ import { customerService, type Customer } from '@/services/crm/customer.service'
 import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 interface Staff {
   id: string;
@@ -172,17 +173,7 @@ const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null
 const fromOrderId = ref('');
 const fromOrderTax = ref(0);
 
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 const formatMoney = (v: unknown) => {
   const n = Number(v);

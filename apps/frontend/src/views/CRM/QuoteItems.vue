@@ -251,6 +251,7 @@ import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import QuotePrint from './prints/QuotePrint.vue';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 const route = useRoute();
 const router = useRouter();
@@ -312,18 +313,7 @@ const formatDateOnly = (value?: string | Date | null) => {
 };
 
 // 表格狀態（用於 ShortcutHint）
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 // 報價單詳情區塊編輯
 const detailsEditing = ref(false);

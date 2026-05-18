@@ -1012,6 +1012,8 @@ defineExpose({
   isNewRowFocused,
   editingRowId,
   data: () => props.data,
+  isTableEditable: () => props.editable,
+  canKeyboardRowEdit: () => props.editable && props.dblClickToEdit,
   startEdit,
   cancelEdit,
   saveRow,

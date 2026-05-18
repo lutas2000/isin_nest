@@ -86,6 +86,7 @@ import { ref, computed, onMounted } from 'vue'
 import { CrmTableContainer, EditableDataTable, ShortcutHint, type EditableColumn } from '@/components'
 import { processingService, type Processing } from '@/services/crm/processing.service'
 import { vendorService, type Vendor } from '@/services/crm/vendor.service'
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState'
 
 // 狀態
 const loading = ref(false)
@@ -125,17 +126,11 @@ const editableColumns = computed<EditableColumn[]>(() => [
 ])
 
 // 提供給 ShortcutHint 使用的表格狀態
-const editableTableState = computed(() => {
-  const tableRef = editableTableRef.value
-  if (!tableRef) return null
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
+const editableTableState = computed(() =>
+  buildEditableTableShortcutState(editableTableRef.value, {
     data: () => filteredProcessings.value,
-  }
-})
+  }),
+)
 
 // 處理 ShortcutHint 觸發的快捷操作
 const handleShortcutClick = (action: string) => {

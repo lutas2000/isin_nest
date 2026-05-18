@@ -263,6 +263,7 @@ import { processingService, type Processing } from '@/services/crm/processing.se
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
 import OrderPrint from './prints/OrderPrint.vue';
 import OrderWorkSheetPrint from './prints/OrderWorkSheetPrint.vue';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 const route = useRoute();
 const router = useRouter();
@@ -320,18 +321,7 @@ const formatDateTime = (value?: string | Date | null) => {
 };
 
 // 表格狀態（用於 ShortcutHint）
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 // 訂單詳情區塊編輯
 const detailsEditing = ref(false);

@@ -155,6 +155,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { EditableDataTable, type EditableColumn, CrmTableContainer, Modal, ShortcutHint } from '@/components';
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 // 廠商資料
 const vendors = ref<Vendor[]>([]);
@@ -176,17 +177,7 @@ const showNewRow = ref(false);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
 // 表格狀態（用於 ShortcutHint）
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 // 新增行模板
 const newRowTemplate = () => ({

@@ -41,14 +41,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-
-interface TableState {
-  focusedRowIndex: number | null;
-  focusedFieldKey: string | null;
-  isNewRowFocused: boolean;
-  editingRowId: string | null;
-  data: () => any[];
-}
+import type { EditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 interface Shortcut {
   key: string;
@@ -59,10 +52,14 @@ interface Shortcut {
 }
 
 interface Props {
-  tableState: TableState | null;
+  tableState: EditableTableShortcutState | null;
+  /** 不顯示的快捷鍵 key（如 'f2'） */
+  hiddenKeys?: string[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  hiddenKeys: () => [],
+});
 
 const emit = defineEmits<{
   'shortcut-click': [action: string, shortcut: Shortcut];
@@ -87,6 +84,9 @@ const isEditing = computed(() =>
   props.tableState?.editingRowId !== null
 );
 
+const isTableEditable = computed(() => props.tableState?.editable ?? true);
+const canKeyboardRowEdit = computed(() => props.tableState?.canKeyboardRowEdit ?? true);
+
 // 定義所有快捷鍵
 const allShortcuts = computed<Shortcut[]>(() => {
   const shortcuts: Shortcut[] = [];
@@ -95,15 +95,18 @@ const allShortcuts = computed<Shortcut[]>(() => {
     // Row 層級快捷鍵
     const hasData = props.tableState?.data() && props.tableState.data().length > 0;
     const currentRowIndex = props.tableState?.focusedRowIndex ?? null;
-    
-    shortcuts.push(
-      {
+
+    if (isTableEditable.value) {
+      shortcuts.push({
         key: 'insert',
         display: 'Insert / F7',
         label: '新增',
         disabled: isEditing.value,
-        action: 'new-row-show'
-      },
+        action: 'new-row-show',
+      });
+    }
+
+    shortcuts.push(
       {
         key: 'arrow-up',
         display: '↑',
@@ -125,24 +128,28 @@ const allShortcuts = computed<Shortcut[]>(() => {
         disabled: !hasData || currentRowIndex === null || isEditing.value,
         action: 'row-view'
       },
-      {
+    );
+
+    if (canKeyboardRowEdit.value) {
+      shortcuts.push({
         key: 'f2',
         display: 'F2',
         label: '編輯',
         disabled: !hasData || currentRowIndex === null || isEditing.value,
-        action: 'row-edit'
-      },
-      {
-        key: 'delete',
-        display: 'Delete',
-        label: '刪除',
-        disabled: !hasData || currentRowIndex === null || isEditing.value,
-        action: 'row-delete'
-      }
-    );
+        action: 'row-edit',
+      });
+    }
+
+    shortcuts.push({
+      key: 'delete',
+      display: 'Delete',
+      label: '刪除',
+      disabled: !hasData || currentRowIndex === null || isEditing.value,
+      action: 'row-delete',
+    });
 
     // 如果正在編輯，顯示 Escape
-    if (isEditing.value) {
+    if (isEditing.value && isTableEditable.value) {
       shortcuts.push({
         key: 'escape',
         display: 'Esc',
@@ -150,7 +157,7 @@ const allShortcuts = computed<Shortcut[]>(() => {
         action: 'cancel-edit'
       });
     }
-  } else if (isFieldLevel.value) {
+  } else if (isFieldLevel.value && isTableEditable.value) {
     // Field 層級快捷鍵
     shortcuts.push(
       {
@@ -196,7 +203,7 @@ const allShortcuts = computed<Shortcut[]>(() => {
         action: 'order-item-search',
       });
     }
-  } else if (isNewRowLevel.value) {
+  } else if (isNewRowLevel.value && isTableEditable.value) {
     // New Row 層級快捷鍵
     shortcuts.push(
       {
@@ -231,7 +238,8 @@ const allShortcuts = computed<Shortcut[]>(() => {
 
 // 過濾出可見且未禁用的快捷鍵
 const visibleShortcuts = computed(() => {
-  return allShortcuts.value.filter(s => !s.disabled);
+  const hidden = new Set(props.hiddenKeys);
+  return allShortcuts.value.filter(s => !s.disabled && !hidden.has(s.key));
 });
 
 // 是否有快捷鍵可顯示

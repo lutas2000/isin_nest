@@ -1,8 +1,8 @@
 <template>
   <div class="quotes-page">
     <!-- 快捷鍵提示 -->
-    <ShortcutHint 
-      :table-state="tableState" 
+    <ShortcutHint
+      :table-state="tableState"
       @shortcut-click="handleShortcutClick"
     />
 
@@ -328,6 +328,7 @@ import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
 import { matchesDateRange } from '@/utils/crmFilter';
 import type { CrmFilterDefinition } from '@/types/crm-filter';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 // 報價單資料
 const quotes = ref<Quote[]>([]);
@@ -432,20 +433,7 @@ const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null
 
 // 表格狀態（用於 ShortcutHint）
 // 使用 computed 來確保響應式更新
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  
-  // 訪問 ref 屬性以觸發響應式追蹤
-  // 這些屬性本身是 ref，Vue 會自動追蹤它們的變化
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 const getTodayDateString = () => {
   const now = new Date();

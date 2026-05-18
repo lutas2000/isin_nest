@@ -377,6 +377,7 @@ import { EditableDataTable, type EditableColumn, CrmTableContainer, Modal, Short
 import { customerService, type Customer, type Contact } from '@/services/crm/customer.service';
 import { contactService } from '@/services/crm/contact.service';
 import { useAuthStore } from '@/stores/auth';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -396,17 +397,7 @@ const total = ref(0);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
 // 表格狀態（用於 ShortcutHint）
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 // Modal 控制
 const showCreateModal = ref(false);

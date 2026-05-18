@@ -194,6 +194,7 @@ import { processingService, type Processing } from '@/services/crm/processing.se
 import { API_CONFIG } from '@/config/api';
 import { apiGet } from '@/services/api';
 import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 const route = useRoute();
 const router = useRouter();
@@ -234,17 +235,7 @@ const formatMoney = (v: unknown) => {
   return n.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 const detailsEditing = ref(false);
 const detailDraft = ref({

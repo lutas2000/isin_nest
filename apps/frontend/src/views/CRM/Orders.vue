@@ -125,6 +125,7 @@ import { customerService, type Customer } from '@/services/crm/customer.service'
 import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
+import { buildEditableTableShortcutState } from '@/utils/editableTableShortcutState';
 
 // 訂單資料
 const orders = ref<WorkOrder[]>([]);
@@ -162,18 +163,7 @@ const showNewRow = ref(false);
 const editableTableRef = ref<InstanceType<typeof EditableDataTable> | null>(null);
 
 // 表格狀態（用於 ShortcutHint）
-const tableState = computed(() => {
-  const tableRef = editableTableRef.value;
-  if (!tableRef) return null;
-  
-  return {
-    focusedRowIndex: tableRef.focusedRowIndex,
-    focusedFieldKey: tableRef.focusedFieldKey,
-    isNewRowFocused: tableRef.isNewRowFocused,
-    editingRowId: tableRef.editingRowId,
-    data: tableRef.data,
-  };
-});
+const tableState = computed(() => buildEditableTableShortcutState(editableTableRef.value));
 
 // 新增行模板
 const newRowTemplate = () => ({
