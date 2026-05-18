@@ -42,6 +42,8 @@ services:
       CNC_PATH: ${CNC_PATH:-}
       NESTING_PATH: ${NESTING_PATH:-}
       LIBREOFFICE_PATH: ${LIBREOFFICE_PATH:-}
+      # 啟動時由 NasService.mountAll() 掛載 /etc/auto_nas 內所有 SMB 分享
+      NAS_AUTO_MOUNT: ${NAS_AUTO_MOUNT:-true}
     ports:
       - "${HOST_BACKEND_PORT:-3000}:${PORT:-3000}"
     depends_on:

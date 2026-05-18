@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
@@ -41,8 +41,34 @@ function parseSmbUrl(url: string): SmbParts {
 }
 
 @Injectable()
-export class NasService {
+export class NasService implements OnModuleInit {
   private readonly logger = new Logger(NasService.name);
+
+  async onModuleInit(): Promise<void> {
+    if (process.env.NAS_AUTO_MOUNT !== 'true') {
+      return;
+    }
+
+    try {
+      await fs.access(AUTO_NAS_PATH);
+    } catch {
+      this.logger.warn(
+        `NAS_AUTO_MOUNT is enabled but ${AUTO_NAS_PATH} is missing, skipping auto mount`,
+      );
+      return;
+    }
+
+    this.logger.log('NAS_AUTO_MOUNT: mounting all NAS shares...');
+    const results = await this.mountAll();
+    for (const result of results) {
+      const msg = `NAS ${result.key} (${result.mountPath}): ${result.message}`;
+      if (result.success) {
+        this.logger.log(msg);
+      } else {
+        this.logger.warn(msg);
+      }
+    }
+  }
 
   private async parseAutoNas(): Promise<NasShare[]> {
     const content = await fs.readFile(AUTO_NAS_PATH, 'utf-8');
