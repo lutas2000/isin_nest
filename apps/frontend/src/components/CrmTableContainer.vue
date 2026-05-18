@@ -44,8 +44,18 @@
           v-if="chipFilters.length > 0"
           :filters="chipFilters"
           :model-value="chipFilterValues"
+          :show-clear-button="false"
           @update:model-value="handleChipFilterUpdate"
         />
+
+        <button
+          v-if="showToolbarClear"
+          type="button"
+          class="rounded-full border border-danger-200 bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700 transition-colors hover:border-danger-300 hover:bg-danger-100 focus:outline-none focus:ring-2 focus:ring-danger-100"
+          @click="clearToolbar"
+        >
+          清除
+        </button>
 
         <FilterControl
           v-else-if="filters.length > 0"
@@ -108,6 +118,7 @@ import FilterChipControl from './FilterChipControl.vue';
 import FilterControl, { type FilterDefinition } from './FilterControl.vue';
 import SortControl, { type SortOption, type SortValue } from './SortControl.vue';
 import type { CrmFilterDefinition } from '@/types/crm-filter';
+import { getDefaultChipFilterValues, hasActiveChipFilters } from '@/utils/crmFilter';
 
 interface Props {
   title?: string;
@@ -158,6 +169,31 @@ const showToolbar = computed(
     props.filters.length > 0 ||
     props.sortOptions.length > 0,
 );
+
+const showToolbarClear = computed(() => {
+  const hasSearch = props.showSearch && props.search.trim() !== '';
+  const hasChipFilters =
+    props.chipFilters.length > 0 &&
+    hasActiveChipFilters(props.chipFilters, props.chipFilterValues);
+
+  return hasSearch || hasChipFilters;
+});
+
+const clearToolbar = () => {
+  if (props.showSearch && props.search.trim() !== '') {
+    emit('update:search', '');
+  }
+
+  if (
+    props.chipFilters.length > 0 &&
+    hasActiveChipFilters(props.chipFilters, props.chipFilterValues)
+  ) {
+    emit(
+      'update:chipFilterValues',
+      getDefaultChipFilterValues(props.chipFilters, props.chipFilterValues),
+    );
+  }
+};
 
 const handleChipFilterUpdate = (value: Record<string, string>) => {
   emit('update:chipFilterValues', value);

@@ -335,6 +335,8 @@ Chip 篩選控制元件，通常由 `CrmTableContainer` 內部使用，也可單
 - `select`：下拉頂部可搜尋選項，支援「全部」清除該條件。
 - `date-range`：開始／結束日期輸入，可「清除日期」。
 - 已選條件時 chip 以 primary 色高亮，並顯示摘要文字。
+- 任一 chip 條件非預設（有選值或日期區間）時，右側顯示「清除」按鈕，一次重設所有 chip 篩選（`showClearButton` 預設 `true`）。
+- 透過 `CrmTableContainer` 使用時，容器會隱藏 `FilterChipControl` 內建的「清除」，改在 toolbar 顯示統一的「清除」：當搜尋框有內容或任一 chip 篩選非預設時出現，點擊後同時清空搜尋與 chip 篩選。
 
 ### 14. SearchField
 

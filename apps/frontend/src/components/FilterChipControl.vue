@@ -133,22 +133,37 @@
         </template>
       </div>
     </div>
+
+    <button
+      v-if="showClearButton && hasActiveFilters"
+      type="button"
+      class="rounded-full border border-danger-200 bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700 transition-colors hover:border-danger-300 hover:bg-danger-100 focus:outline-none focus:ring-2 focus:ring-danger-100"
+      @click="clearAllFilters"
+    >
+      清除
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import type { CrmDateRangeFilterDefinition, CrmFilterDefinition, CrmSelectFilterDefinition } from '@/types/crm-filter';
-import { hasDateRangeValue } from '@/utils/crmFilter';
+import {
+  getDefaultChipFilterValues,
+  hasActiveChipFilters,
+  hasDateRangeValue,
+} from '@/utils/crmFilter';
 
 interface Props {
   filters: CrmFilterDefinition[];
   modelValue: Record<string, string>;
+  showClearButton?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   filters: () => [],
   modelValue: () => ({}),
+  showClearButton: true,
 });
 
 const emit = defineEmits<{
@@ -158,6 +173,15 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLElement | null>(null);
 const openFilterId = ref<string | null>(null);
 const optionSearchTerms = reactive<Record<string, string>>({});
+
+const hasActiveFilters = computed(() =>
+  hasActiveChipFilters(props.filters, props.modelValue),
+);
+
+const clearAllFilters = () => {
+  openFilterId.value = null;
+  emit('update:modelValue', getDefaultChipFilterValues(props.filters, props.modelValue));
+};
 
 const getFilterId = (filter: CrmFilterDefinition) =>
   filter.type === 'select' ? filter.key : `${filter.fromKey}:${filter.toKey}`;
