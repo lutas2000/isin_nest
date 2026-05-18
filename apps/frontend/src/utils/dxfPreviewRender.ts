@@ -17,19 +17,29 @@ const waitForAnimationFrames = (count: number) =>
     step(count)
   })
 
-const convertCanvasToBlackOnWhiteDataUrl = (
-  sourceCanvas: HTMLCanvasElement,
-): string => {
+const formatDimensionLabel = (width: number | null, height: number | null): string | null => {
+  if (
+    typeof width !== 'number' ||
+    typeof height !== 'number' ||
+    Number.isNaN(width) ||
+    Number.isNaN(height)
+  ) {
+    return null
+  }
+  return `${Math.round(width)} x ${Math.round(height)}`
+}
+
+const convertCanvasToBlackOnWhite = (sourceCanvas: HTMLCanvasElement): HTMLCanvasElement => {
   const width = sourceCanvas.width
   const height = sourceCanvas.height
-  if (!width || !height) return sourceCanvas.toDataURL('image/png')
+  if (!width || !height) return sourceCanvas
 
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = width
   outputCanvas.height = height
 
   const outputCtx = outputCanvas.getContext('2d')
-  if (!outputCtx) return sourceCanvas.toDataURL('image/png')
+  if (!outputCtx) return sourceCanvas
 
   outputCtx.fillStyle = '#ffffff'
   outputCtx.fillRect(0, 0, width, height)
@@ -59,7 +69,93 @@ const convertCanvasToBlackOnWhiteDataUrl = (
   }
 
   outputCtx.putImageData(imageData, 0, 0)
-  return outputCanvas.toDataURL('image/png')
+  return outputCanvas
+}
+
+export interface DxfPreviewLabelStyle {
+  /** 標籤字體大小（px）；未指定時依 label 區域高度自動計算 */
+  fontSize?: number
+  /** 標籤字體粗細，例如 400、600、'bold' */
+  fontWeight?: number | string
+}
+
+const LABEL_FONT_FAMILY = 'system-ui, -apple-system, sans-serif'
+/** 標籤上下留白，相對於 fontSize */
+const LABEL_VERTICAL_PADDING_RATIO = 0.35
+
+interface LabelLayout {
+  fontSize: number
+  fontWeight: number | string
+  bandHeight: number
+}
+
+const measureLabelTextHeight = (
+  metrics: TextMetrics,
+  fontSize: number,
+): number => {
+  const ascent = metrics.actualBoundingBoxAscent ?? metrics.fontBoundingBoxAscent
+  const descent = metrics.actualBoundingBoxDescent ?? metrics.fontBoundingBoxDescent
+  if (typeof ascent === 'number' && typeof descent === 'number') {
+    return ascent + descent
+  }
+  return fontSize * 1.2
+}
+
+const resolveLabelLayout = (
+  ctx: CanvasRenderingContext2D,
+  label: string,
+  labelStyle: DxfPreviewLabelStyle,
+  drawingHeight: number,
+): LabelLayout => {
+  const fontWeight = labelStyle.fontWeight ?? 600
+  const fontSize = labelStyle.fontSize ?? Math.max(12, Math.round(drawingHeight * 0.06))
+
+  ctx.font = `${fontWeight} ${fontSize}px ${LABEL_FONT_FAMILY}`
+  const textHeight = measureLabelTextHeight(ctx.measureText(label), fontSize)
+  const verticalPadding = fontSize * LABEL_VERTICAL_PADDING_RATIO
+  const bandHeight = Math.ceil(textHeight + verticalPadding * 2)
+
+  return { fontSize, fontWeight, bandHeight }
+}
+
+const composePreviewWithDimensionLabel = (
+  drawingCanvas: HTMLCanvasElement,
+  boundsWidth: number | null,
+  boundsHeight: number | null,
+  labelStyle: DxfPreviewLabelStyle = {},
+): string => {
+  const drawing = convertCanvasToBlackOnWhite(drawingCanvas)
+  const label = formatDimensionLabel(boundsWidth, boundsHeight)
+  if (!label) {
+    return drawing.toDataURL('image/png')
+  }
+
+  const composite = document.createElement('canvas')
+  composite.width = drawing.width
+  composite.height = drawing.height
+
+  const ctx = composite.getContext('2d')
+  if (!ctx) {
+    return drawing.toDataURL('image/png')
+  }
+
+  const layout = resolveLabelLayout(ctx, label, labelStyle, drawing.height)
+  composite.height = drawing.height + layout.bandHeight
+
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, composite.width, composite.height)
+
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, composite.width, layout.bandHeight)
+
+  ctx.fillStyle = '#000000'
+  ctx.font = `${layout.fontWeight} ${layout.fontSize}px ${LABEL_FONT_FAMILY}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(label, composite.width / 2, layout.bandHeight / 2)
+
+  ctx.drawImage(drawing, 0, layout.bandHeight)
+  return composite.toDataURL('image/png')
 }
 
 export interface DxfPreviewRenderResult {
@@ -85,9 +181,16 @@ const getViewerBoundsSize = (viewer: {
   return { width, height }
 }
 
+export interface DxfPreviewRenderOptions extends DxfPreviewLabelStyle {
+  /** 預覽容器寬度（px） */
+  width?: number
+  /** 預覽容器高度（px） */
+  height?: number
+}
+
 export const renderDxfContentToDataUrl = async (
   content: string,
-  options: { width?: number; height?: number } = {},
+  options: DxfPreviewRenderOptions = {},
 ): Promise<DxfPreviewRenderResult> => {
   const host = document.createElement('div')
   host.style.position = 'fixed'
@@ -128,7 +231,10 @@ export const renderDxfContentToDataUrl = async (
 
     const { width, height } = getViewerBoundsSize(viewer)
     return {
-      imageDataUrl: convertCanvasToBlackOnWhiteDataUrl(canvas),
+      imageDataUrl: composePreviewWithDimensionLabel(canvas, width, height, {
+        fontSize: options.fontSize,
+        fontWeight: options.fontWeight,
+      }),
       width,
       height,
     }

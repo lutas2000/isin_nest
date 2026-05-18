@@ -194,7 +194,10 @@ const loadPreviewSizes = async () => {
     }
     try {
       const preview = await orderItemService.getDxfPreview(item.id);
-      const rendered = await renderDxfContentToDataUrl(preview.content);
+      const rendered = await renderDxfContentToDataUrl(preview.content, {
+        fontSize: 16,
+        fontWeight: 300,
+      });
       nextMap[item.id] = {
         width: rendered.width,
         height: rendered.height,
