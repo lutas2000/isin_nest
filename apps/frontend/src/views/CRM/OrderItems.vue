@@ -243,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   CrmTableContainer,
@@ -280,6 +280,12 @@ type DisplayWorkOrderItem = WorkOrderItem & {
 type EditableTableInstance = InstanceType<typeof EditableDataTable> & {
   patchEditingField: (row: WorkOrderItem | null, index: number, field: string, value: unknown) => void;
   getResolvedEditingRow: (row: WorkOrderItem | null, index: number) => Partial<WorkOrderItem>;
+  focusEditingField: (params: {
+    row: WorkOrderItem | null;
+    rowIndex: number;
+    fieldKey: string;
+    isNewRow?: boolean;
+  }) => void;
 };
 
 // EditableDataTable ref
@@ -299,6 +305,8 @@ const orderItemSearchMode = ref<OrderItemSearchMode>('customerFile');
 const orderItemSearchContext = ref<{
   row: WorkOrderItem | null;
   rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
 } | null>(null);
 
 // 列印組件 ref
@@ -785,7 +793,14 @@ const handleShortcutClick = (action: string) => {
         mode === 'drawingNumber'
           ? String(resolvedRow.drawingNumber ?? '')
           : String(resolvedRow.customerFile ?? '');
-      openOrderItemSearchModal({ row, rowIndex, mode, initialQuery });
+      openOrderItemSearchModal({
+        row,
+        rowIndex,
+        fieldKey,
+        isNewRow: state.isNewRowFocused,
+        mode,
+        initialQuery,
+      });
       break;
     }
 
@@ -861,6 +876,8 @@ const handleTableFocusField = (payload: {
 const openOrderItemSearchModal = (params: {
   row: WorkOrderItem | null;
   rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
   mode: OrderItemSearchMode;
   initialQuery: string;
 }) => {
@@ -869,10 +886,25 @@ const openOrderItemSearchModal = (params: {
   orderItemSearchContext.value = {
     row: params.row,
     rowIndex: params.rowIndex,
+    fieldKey: params.fieldKey,
+    isNewRow: params.isNewRow,
   };
   orderItemSearchMode.value = params.mode;
   orderItemSearchInitialQuery.value = params.initialQuery;
   showOrderItemSearchModal.value = true;
+};
+
+const restoreOrderItemSearchFieldFocus = (
+  context: NonNullable<typeof orderItemSearchContext.value>,
+) => {
+  nextTick(() => {
+    editableTableRef.value?.focusEditingField({
+      row: context.row,
+      rowIndex: context.rowIndex,
+      fieldKey: context.fieldKey,
+      isNewRow: context.isNewRow,
+    });
+  });
 };
 
 const handleTableFieldHotkey = (payload: {
@@ -903,14 +935,20 @@ const handleTableFieldHotkey = (payload: {
   openOrderItemSearchModal({
     row: payload.isNewRow ? null : payload.row,
     rowIndex: payload.rowIndex,
+    fieldKey: payload.fieldKey,
+    isNewRow: payload.isNewRow,
     mode,
     initialQuery,
   });
 };
 
 const closeOrderItemSearchModal = () => {
+  const context = orderItemSearchContext.value;
   showOrderItemSearchModal.value = false;
   orderItemSearchContext.value = null;
+  if (context) {
+    restoreOrderItemSearchFieldFocus(context);
+  }
 };
 
 const handleOrderItemSearchConfirm = (value: {
