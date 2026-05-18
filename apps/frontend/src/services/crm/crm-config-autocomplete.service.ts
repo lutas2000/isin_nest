@@ -1,7 +1,13 @@
 import { API_CONFIG } from '@/config/api';
 import { apiGet } from '@/services/api';
 
-export type CrmConfigCategory = 'shipping_method' | 'payment_method' | 'source_type' | 'source' | 'substitute';
+export type CrmConfigCategory =
+  | 'shipping_method'
+  | 'payment_method'
+  | 'source_type'
+  | 'source'
+  | 'substitute'
+  | 'unit';
 
 export interface CrmConfigOption {
   value: string;

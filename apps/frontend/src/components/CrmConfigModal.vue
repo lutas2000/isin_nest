@@ -89,6 +89,7 @@ const crmCategories = [
   { value: 'source_type', label: '來源類型' },
   { value: 'source', label: '來源' },
   { value: 'substitute', label: '代料' },
+  { value: 'unit', label: '單位' },
 ];
 
 const form = reactive<CrmConfigFormData>(emptyForm());

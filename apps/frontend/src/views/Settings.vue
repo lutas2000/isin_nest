@@ -313,7 +313,13 @@ const crmForm = ref({
   label: '',
 });
 
-type CrmFilterType = 'shipping_method' | 'payment_method' | 'source_type' | 'source' | 'substitute';
+type CrmFilterType =
+  | 'shipping_method'
+  | 'payment_method'
+  | 'source_type'
+  | 'source'
+  | 'substitute'
+  | 'unit';
 
 const crmCategorySortOrder: Record<string, number> = {
   shipping_method: 0,
@@ -321,6 +327,7 @@ const crmCategorySortOrder: Record<string, number> = {
   source_type: 2,
   source: 3,
   substitute: 4,
+  unit: 5,
 };
 
 const selectedCrmFilter = ref<CrmFilterType>('shipping_method');
@@ -331,6 +338,7 @@ const crmFilterOptions: Array<{ label: string; value: CrmFilterType }> = [
   { label: '來源類型', value: 'source_type' },
   { label: '來源', value: 'source' },
   { label: '代料', value: 'substitute' },
+  { label: '單位', value: 'unit' },
 ];
 
 const crmTableColumns = [
@@ -345,6 +353,7 @@ const getCategoryLabel = (category: string) => {
     source_type: '來源類型',
     source: '來源',
     substitute: '代料',
+    unit: '單位',
   };
   return labels[category] || category;
 };
@@ -472,7 +481,8 @@ const handleInlineCrmSave = async (row: CrmConfig) => {
       row.category === 'payment_method' ||
       row.category === 'source_type' ||
       row.category === 'source' ||
-      row.category === 'substitute'
+      row.category === 'substitute' ||
+      row.category === 'unit'
     ) {
       invalidateCrmConfigCache(row.category);
     }
@@ -502,7 +512,8 @@ const confirmDeleteCrm = async () => {
       category === 'payment_method' ||
       category === 'source_type' ||
       category === 'source' ||
-      category === 'substitute'
+      category === 'substitute' ||
+      category === 'unit'
     ) {
       invalidateCrmConfigCache(category);
     }
@@ -531,7 +542,8 @@ const saveCrmConfig = async (formValue: { category: string; code: string; label:
       formValue.category === 'payment_method' ||
       formValue.category === 'source_type' ||
       formValue.category === 'source' ||
-      formValue.category === 'substitute'
+      formValue.category === 'substitute' ||
+      formValue.category === 'unit'
     ) {
       invalidateCrmConfigCache(formValue.category as CrmFilterType);
     }

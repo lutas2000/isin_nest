@@ -169,7 +169,7 @@
           </template>
 
           <template #cell-unit="{ value }">
-            {{ value && String(value).trim() ? value : DEFAULT_ITEM_UNIT }}
+            {{ value && String(value).trim() ? value : '片' }}
           </template>
 
           <template #cell-source="{ value }">
@@ -261,7 +261,6 @@ import { processingService, type Processing } from '@/services/crm/processing.se
 import { vendorService, type Vendor } from '@/services/crm/vendor.service';
 import OrderPrint from './prints/OrderPrint.vue';
 import OrderWorkSheetPrint from './prints/OrderWorkSheetPrint.vue';
-import { DEFAULT_ITEM_UNIT, ITEM_UNIT_SUGGESTIONS } from '@/constants/crmItemUnit';
 
 const route = useRoute();
 const router = useRouter();
@@ -401,7 +400,7 @@ const newRowTemplate = () => {
       thickness: undefined as number | undefined,
       processingIds: [] as number[],
       quantity: 0,
-      unit: DEFAULT_ITEM_UNIT,
+      unit: '片',
       substitute: '',
       unitPrice: 0,
       status: '待處理',
@@ -416,10 +415,10 @@ const newRowTemplate = () => {
     thickness: undefined as number | undefined,
     processingIds: [] as number[],
     quantity: 0,
-    unit: DEFAULT_ITEM_UNIT,
+    unit: '片',
     substitute: '',
     unitPrice: 0,
-    source: '訂單新增',
+    source: '新圖',
     status: '待處理',
     notes: '',
   };
@@ -474,8 +473,8 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'unit',
     label: '單位',
     editable: true,
-    type: 'text',
-    datalistOptions: [...ITEM_UNIT_SUGGESTIONS],
+    type: 'crm-config-select',
+    crmConfigCategory: 'unit',
   },
   {
     key: 'substitute',
@@ -607,7 +606,7 @@ const handleSave = async (row: WorkOrderItem, isNew: boolean) => {
       thickness: row.thickness || undefined,
       processingIds: row.processingIds || undefined,
       quantity: row.quantity || 0,
-      unit: (row.unit && String(row.unit).trim()) || DEFAULT_ITEM_UNIT,
+      unit: (row.unit && String(row.unit).trim()) || '片',
       substitute: row.substitute || undefined,
       unitPrice: row.unitPrice || 0,
       source: row.source || '訂單新增',
@@ -661,7 +660,7 @@ const handleNewRowSave = async (row: any) => {
       thickness: row.thickness || undefined,
       processingIds: row.processingIds || undefined,
       quantity: row.quantity || 0,
-      unit: (row.unit && String(row.unit).trim()) || DEFAULT_ITEM_UNIT,
+      unit: (row.unit && String(row.unit).trim()) || '片',
       substitute: (row as any).substitute || undefined,
       unitPrice: row.unitPrice || 0,
       source: row.source || '訂單新增',

@@ -26,6 +26,11 @@ const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = 
     { code: 'S', label: '代料' },
     { code: 'D', label: '代折' },
   ],
+  unit: [
+    { code: 'P', label: '片' },
+    { code: 'G', label: '組' },
+    { code: 'Z', label: '只' },
+  ],
   vat_rate: [{ code: '5', label: '5' }],
 };
 
