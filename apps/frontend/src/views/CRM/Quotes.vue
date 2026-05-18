@@ -135,6 +135,13 @@
           </template>
           <!-- 非編輯模式：顯示下拉選單項目（純文字） -->
           <template v-else>
+            <span
+              v-if="!row.isSigned"
+              class="dropdown-item"
+              @click="markQuoteAsSigned(row.id)"
+            >
+              已簽名
+            </span>
             <span 
               v-if="row.isSigned"
               class="dropdown-item" 
@@ -475,21 +482,12 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: false, 
     type: 'number' 
   },
-  { 
-    key: 'isSigned', 
-    label: '是否簽名', 
-    editable: true, 
-    type: 'select',
-    options: [
-      { value: false, label: '待簽名' },
-      { value: true, label: '已簽名' }
-    ]
-  },
   {
     key: 'isSupplyMaterial',
     label: '代料',
     editable: true,
-    type: 'text'
+    type: 'crm-config-select',
+    crmConfigCategory: 'substitute',
   },
   {
     key: 'quoteDeadline',
@@ -509,6 +507,11 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true, 
     type: 'text',
     truncate: true
+  },
+  {
+    key: 'isSigned',
+    label: '狀態',
+    editable: false,
   },
 ]);
 
@@ -640,7 +643,6 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         quoteDeadline: row.quoteDeadline || undefined,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
-        isSigned: row.isSigned || false,
       };
       await quoteService.create(data);
       await loadQuotes();
@@ -653,7 +655,6 @@ const handleSave = async (row: Quote, isNew: boolean) => {
         quoteDeadline: row.quoteDeadline || undefined,
         notes: row.notes || undefined,
         processingIds: row.processingIds || [],
-        isSigned: row.isSigned || false,
       };
       await quoteService.update(row.id, data);
       await loadQuotes();
@@ -673,13 +674,24 @@ const handleNewRowSave = async (row: any) => {
       quoteDeadline: row.quoteDeadline || undefined,
       notes: row.notes || undefined,
       processingIds: row.processingIds || [],
-      isSigned: row.isSigned || false,
     };
     await quoteService.create(data);
     showNewRow.value = false;
     await loadQuotes();
   } catch (err) {
     alert(err instanceof Error ? err.message : '建立報價單失敗');
+  }
+};
+
+// 標記為已簽名
+const markQuoteAsSigned = async (id: string) => {
+  if (!confirm('確定標記為已簽名？')) return;
+
+  try {
+    await quoteService.update(id, { isSigned: true });
+    await loadQuotes();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '標記已簽名失敗');
   }
 };
 
@@ -797,10 +809,6 @@ const handleShortcutClick = (action: string) => {
       break;
 
     case 'row-edit':
-      if (currentRowIndex !== null && data[currentRowIndex]) {
-        editableTableRef.value.startEdit(data[currentRowIndex], currentRowIndex);
-        handleRowEdit(data[currentRowIndex], currentRowIndex);
-      }
       break;
 
     case 'row-delete':

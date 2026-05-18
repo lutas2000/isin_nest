@@ -320,7 +320,7 @@ interface Props {
   pageSize?: number;
   total?: number;
   editable?: boolean;
-  /** 為 false 時，雙擊列不會進入編輯（仍可用 F2、選單「編輯」等） */
+  /** 為 false 時，雙擊列與 F2 不會進入行內編輯（選單「編輯」等仍可用） */
   dblClickToEdit?: boolean;
   /** 控制元件掛載後是否自動聚焦表格容器 */
   autoFocusOnMount?: boolean;
@@ -821,7 +821,7 @@ const handleTableKeyDown = (event: KeyboardEvent) => {
     }
   } else if (event.key === 'F2') {
     // 只有在非編輯狀態時才允許進入編輯
-    if (props.editable && !isEditingCurrentRow) {
+    if (props.editable && props.dblClickToEdit && !isEditingCurrentRow) {
       event.preventDefault();
       startEdit(currentRow, currentIndex);
       emit('row-edit', currentRow, currentIndex);
