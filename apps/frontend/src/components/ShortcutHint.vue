@@ -203,6 +203,15 @@ const allShortcuts = computed<Shortcut[]>(() => {
         action: 'order-item-search',
       });
     }
+
+    if (props.tableState?.focusedFieldKey === 'customerId') {
+      shortcuts.push({
+        key: 'f10',
+        display: 'F10',
+        label: '搜尋客戶',
+        action: 'customer-search',
+      });
+    }
   } else if (isNewRowLevel.value && isTableEditable.value) {
     // New Row 層級快捷鍵
     shortcuts.push(
@@ -231,6 +240,15 @@ const allShortcuts = computed<Shortcut[]>(() => {
         action: 'cancel-new-row'
       }
     );
+
+    if (props.tableState?.focusedFieldKey === 'customerId') {
+      shortcuts.push({
+        key: 'f10',
+        display: 'F10',
+        label: '搜尋客戶',
+        action: 'customer-search',
+      });
+    }
   }
 
   return shortcuts;

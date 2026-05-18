@@ -362,7 +362,7 @@ const emit = defineEmits<{
   'row-view': [row: any];
   'row-edit': [row: any, index: number];
   'focus-field': [payload: { row: any; rowIndex: number; fieldKey: string; isNewRow: boolean; byKeyboard: boolean }];
-  'field-hotkey': [payload: { key: 'F10'; row: any; rowIndex: number; fieldKey: string; isNewRow: boolean; resolvedRow: any }];
+  'field-hotkey': [payload: { key: 'F10'; row: any; rowIndex: number; fieldKey: string; isNewRow: boolean; resolvedRow: any; fieldInputText?: string }];
 }>();
 
 const localPageSize = ref(props.pageSize);
@@ -877,6 +877,10 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, column: Edita
   if (event.key === 'F10' && column.hotkeys?.f10 === true && props.editable) {
     event.preventDefault();
     event.stopPropagation();
+    const fieldInputText =
+      event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement
+        ? event.target.value
+        : undefined;
     emit('field-hotkey', {
       key: 'F10',
       row: row ?? newRowData.value,
@@ -884,6 +888,7 @@ const handleFieldKeyDown = (event: KeyboardEvent, row: any | null, column: Edita
       fieldKey,
       isNewRow: row === null,
       resolvedRow: getResolvedEditingRow(row, rowIndex),
+      fieldInputText,
     });
     return;
   }

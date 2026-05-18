@@ -21,6 +21,7 @@ export type { FilterDefinition, FilterOption as FilterOptionType } from './Filte
 export { default as StatusBadge } from './StatusBadge.vue';
 export { default as Modal } from './Modal.vue';
 export { default as OrderItemSearchModal } from './OrderItemSearchModal.vue';
+export { default as CustomerSearchModal } from './CustomerSearchModal.vue';
 export { default as CrmConfigModal } from './CrmConfigModal.vue';
 export { default as ErrorModal } from './ErrorModal.vue';
 export { default as FormField } from './FormField.vue';

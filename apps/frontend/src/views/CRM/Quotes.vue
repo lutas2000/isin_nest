@@ -42,6 +42,7 @@
         @row-view="handleRowView"
         @row-edit="handleRowEdit"
         @focus-field="handleTableFocusField"
+        @field-hotkey="handleTableFieldHotkey"
       >
         <template #cell-id="{ row, value }">
           <button 
@@ -313,13 +314,20 @@
       @close="closeProcessingSelectModal"
       @confirm="handleProcessingConfirm"
     />
+
+    <CustomerSearchModal
+      :show="showCustomerSearchModal"
+      :initial-query="customerSearchInitialQuery"
+      @close="closeCustomerSearchModal"
+      @confirm="handleCustomerSearchConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint } from '@/components';
+import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint, CustomerSearchModal } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, quoteItemService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
@@ -419,6 +427,9 @@ const router = useRouter();
 const showDetailsModal = ref(false);
 const showConvertModal = ref(false);
 const showProcessingSelectModal = ref(false);
+const showCustomerSearchModal = ref(false);
+const customerSearchInitialQuery = ref('');
+const customerSearchContext = ref<{ row: Quote | null; rowIndex: number } | null>(null);
 const selectedQuote = ref<Quote | null>(null);
 const selectedQuoteForProcessing = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
@@ -473,6 +484,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true, 
     required: true, 
     type: 'search-select',
+    hotkeys: { f10: true },
     searchFunction: async (searchTerm: string) => {
       try {
         const response = await customerService.getAll(undefined, undefined, searchTerm);
@@ -876,6 +888,19 @@ const handleShortcutClick = (action: string) => {
     case 'cancel-new-row':
       editableTableRef.value.cancelNewRow();
       break;
+
+    case 'customer-search': {
+      const fieldKey = state.focusedFieldKey;
+      if (fieldKey !== 'customerId') {
+        break;
+      }
+      const row = state.isNewRowFocused ? null : currentRowIndex !== null ? data[currentRowIndex] : null;
+      const rowIndex = state.isNewRowFocused ? -1 : currentRowIndex ?? -1;
+      const resolvedRow = editableTableRef.value.getResolvedEditingRow(row, rowIndex);
+      const initialQuery = String(resolvedRow.customerId ?? '');
+      openCustomerSearchModal({ row, rowIndex, initialQuery });
+      break;
+    }
   }
 };
 
@@ -916,6 +941,61 @@ const handleTableFocusField = (payload: {
     return;
   }
   openProcessingSelectModal(payload.row);
+};
+
+const openCustomerSearchModal = (params: {
+  row: Quote | null;
+  rowIndex: number;
+  initialQuery: string;
+}) => {
+  if (showCustomerSearchModal.value) return;
+  customerSearchContext.value = {
+    row: params.row,
+    rowIndex: params.rowIndex,
+  };
+  customerSearchInitialQuery.value = params.initialQuery;
+  showCustomerSearchModal.value = true;
+};
+
+const closeCustomerSearchModal = () => {
+  showCustomerSearchModal.value = false;
+  customerSearchContext.value = null;
+};
+
+const handleTableFieldHotkey = (payload: {
+  key: 'F10';
+  row: Quote;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+  resolvedRow: Partial<Quote>;
+  fieldInputText?: string;
+}) => {
+  if (payload.key !== 'F10' || payload.fieldKey !== 'customerId') {
+    return;
+  }
+
+  const initialQuery =
+    payload.fieldInputText?.trim() || String(payload.resolvedRow.customerId ?? '');
+
+  openCustomerSearchModal({
+    row: payload.isNewRow ? null : payload.row,
+    rowIndex: payload.rowIndex,
+    initialQuery,
+  });
+};
+
+const handleCustomerSearchConfirm = (value: { id: string }) => {
+  const context = customerSearchContext.value;
+  if (!context || !editableTableRef.value) return;
+
+  editableTableRef.value.patchEditingField(
+    context.row,
+    context.rowIndex,
+    'customerId',
+    value.id,
+  );
+  closeCustomerSearchModal();
 };
 
 // 確認加工選擇
