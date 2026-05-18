@@ -24,7 +24,7 @@
             <button
               type="button"
               class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-primary-700"
-              @click="showAddCrmModal = true"
+              @click="openAddCrmModal"
             >
               <span class="mr-1.5">➕</span>
               新增設定
@@ -313,12 +313,13 @@ const crmForm = ref({
   label: '',
 });
 
-type CrmFilterType = 'shipping_method' | 'payment_method' | 'source_type';
+type CrmFilterType = 'shipping_method' | 'payment_method' | 'source_type' | 'substitute';
 
 const crmCategorySortOrder: Record<string, number> = {
   shipping_method: 0,
   payment_method: 1,
   source_type: 2,
+  substitute: 3,
 };
 
 const selectedCrmFilter = ref<CrmFilterType>('shipping_method');
@@ -327,6 +328,7 @@ const crmFilterOptions: Array<{ label: string; value: CrmFilterType }> = [
   { label: '運送方式', value: 'shipping_method' },
   { label: '付款方式', value: 'payment_method' },
   { label: '來源類型', value: 'source_type' },
+  { label: '代料', value: 'substitute' },
 ];
 
 const crmTableColumns = [
@@ -339,7 +341,7 @@ const getCategoryLabel = (category: string) => {
     shipping_method: '運送方式',
     payment_method: '付款方式',
     source_type: '來源類型',
-    processing_type: '加工類型',
+    substitute: '代料',
   };
   return labels[category] || category;
 };
@@ -465,7 +467,8 @@ const handleInlineCrmSave = async (row: CrmConfig) => {
     if (
       row.category === 'shipping_method' ||
       row.category === 'payment_method' ||
-      row.category === 'source_type'
+      row.category === 'source_type' ||
+      row.category === 'substitute'
     ) {
       invalidateCrmConfigCache(row.category);
     }
@@ -493,7 +496,8 @@ const confirmDeleteCrm = async () => {
     if (
       category === 'shipping_method' ||
       category === 'payment_method' ||
-      category === 'source_type'
+      category === 'source_type' ||
+      category === 'substitute'
     ) {
       invalidateCrmConfigCache(category);
     }
@@ -520,14 +524,24 @@ const saveCrmConfig = async (formValue: { category: string; code: string; label:
     if (
       formValue.category === 'shipping_method' ||
       formValue.category === 'payment_method' ||
-      formValue.category === 'source_type'
+      formValue.category === 'source_type' ||
+      formValue.category === 'substitute'
     ) {
-      invalidateCrmConfigCache(formValue.category);
+      invalidateCrmConfigCache(formValue.category as CrmFilterType);
     }
     closeCrmModal();
   } catch (error) {
     errorStore.showError(error instanceof Error ? error.message : '儲存失敗');
   }
+};
+
+const openAddCrmModal = () => {
+  crmForm.value = {
+    category: selectedCrmFilter.value,
+    code: '',
+    label: '',
+  };
+  showAddCrmModal.value = true;
 };
 
 const closeCrmModal = () => {

@@ -20,19 +20,11 @@ const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = 
     { code: 'OLD', label: '舊圖' },
     { code: 'MODIFIED', label: '修改' },
   ],
-  vat_rate: [{ code: 'default', label: '5' }],
-  processing_type: [
-    { code: 'LASER_CUT', label: '雷射切割' },
-    { code: 'BENDING', label: '折彎' },
-    { code: 'WELDING', label: '焊接' },
-    { code: 'GRINDING', label: '研磨' },
-    { code: 'PAINTING', label: '烤漆' },
-    { code: 'PLATING', label: '電鍍' },
-    { code: 'TAPPING', label: '攻牙' },
-    { code: 'DRILLING', label: '鑽孔' },
-    { code: 'ASSEMBLY', label: '組裝' },
-    { code: 'OTHER', label: '其他' },
+  substitute: [
+    { code: 'SUBSTITUTE', label: '代料' },
+    { code: 'SUB_DISCOUNT', label: '代折' },
   ],
+  vat_rate: [{ code: 'default', label: '5' }],
 };
 
 @Injectable()

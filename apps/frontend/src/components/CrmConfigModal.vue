@@ -87,7 +87,7 @@ const crmCategories = [
   { value: 'shipping_method', label: '運送方式' },
   { value: 'payment_method', label: '付款方式' },
   { value: 'source_type', label: '來源類型' },
-  { value: 'processing_type', label: '加工類型' },
+  { value: 'substitute', label: '代料' },
 ];
 
 const form = reactive<CrmConfigFormData>(emptyForm());
