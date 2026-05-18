@@ -103,6 +103,35 @@
         </template>
 
         <template v-else>
+          <div
+            v-if="filter.showMonthShortcuts"
+            class="flex items-center gap-1.5 border-b border-secondary-100 p-3"
+          >
+            <button
+              type="button"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-secondary-200 bg-white text-secondary-600 transition-colors hover:border-secondary-300 hover:bg-secondary-50"
+              aria-label="上月"
+              @click="shiftMonth(filter, -1)"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              class="h-8 flex-1 rounded-lg border border-primary-200 bg-primary-50 text-sm font-medium text-primary-700 transition-colors hover:border-primary-300 hover:bg-primary-100"
+              @click="applyThisMonth(filter)"
+            >
+              本月
+            </button>
+            <button
+              type="button"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-secondary-200 bg-white text-secondary-600 transition-colors hover:border-secondary-300 hover:bg-secondary-50"
+              aria-label="下月"
+              @click="shiftMonth(filter, 1)"
+            >
+              ›
+            </button>
+          </div>
+
           <div class="space-y-3 p-4">
             <div>
               <label class="mb-1.5 block text-xs font-medium text-secondary-500">開始日期</label>
@@ -149,9 +178,11 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import type { CrmDateRangeFilterDefinition, CrmFilterDefinition, CrmSelectFilterDefinition } from '@/types/crm-filter';
 import {
+  getCurrentMonthDateRange,
   getDefaultChipFilterValues,
   hasActiveChipFilters,
   hasDateRangeValue,
+  shiftMonthDateRange,
 } from '@/utils/crmFilter';
 
 interface Props {
@@ -268,6 +299,27 @@ const clearDateRange = (filter: CrmDateRangeFilterDefinition) => {
     [filter.fromKey]: '',
     [filter.toKey]: '',
   });
+};
+
+const applyMonthRange = (
+  filter: CrmDateRangeFilterDefinition,
+  range: { from: string; to: string },
+) => {
+  emit('update:modelValue', {
+    ...props.modelValue,
+    [filter.fromKey]: range.from,
+    [filter.toKey]: range.to,
+  });
+};
+
+const applyThisMonth = (filter: CrmDateRangeFilterDefinition) => {
+  applyMonthRange(filter, getCurrentMonthDateRange());
+};
+
+const shiftMonth = (filter: CrmDateRangeFilterDefinition, deltaMonths: number) => {
+  const from = props.modelValue[filter.fromKey] ?? '';
+  const to = props.modelValue[filter.toKey] ?? '';
+  applyMonthRange(filter, shiftMonthDateRange(from, to, deltaMonths));
 };
 
 const handleOptionSearchInput = (filter: CrmSelectFilterDefinition, event: Event) => {

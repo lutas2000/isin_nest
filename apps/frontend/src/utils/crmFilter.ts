@@ -44,6 +44,48 @@ export function getDefaultChipFilterValues(
   return next;
 }
 
+function formatDateYmd(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function getMonthDateRange(year: number, month: number): { from: string; to: string } {
+  const from = new Date(year, month, 1);
+  const to = new Date(year, month + 1, 0);
+  return { from: formatDateYmd(from), to: formatDateYmd(to) };
+}
+
+export function getCurrentMonthDateRange(): { from: string; to: string } {
+  const now = new Date();
+  return getMonthDateRange(now.getFullYear(), now.getMonth());
+}
+
+export function getReferenceMonthFromRange(
+  from: string,
+  to: string,
+): { year: number; month: number } {
+  const source = from || to;
+  if (source) {
+    const [year, month] = source.slice(0, 7).split('-').map(Number);
+    return { year, month: month - 1 };
+  }
+
+  const now = new Date();
+  return { year: now.getFullYear(), month: now.getMonth() };
+}
+
+export function shiftMonthDateRange(
+  from: string,
+  to: string,
+  deltaMonths: number,
+): { from: string; to: string } {
+  const { year, month } = getReferenceMonthFromRange(from, to);
+  const target = new Date(year, month + deltaMonths, 1);
+  return getMonthDateRange(target.getFullYear(), target.getMonth());
+}
+
 export function hasActiveChipFilters(
   filters: CrmFilterDefinition[],
   values: Record<string, string>,

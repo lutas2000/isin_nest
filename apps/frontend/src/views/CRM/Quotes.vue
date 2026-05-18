@@ -342,6 +342,7 @@ const quoteSearch = ref('');
 const quoteFilterValues = ref<Record<string, string>>({
   customerId: '',
   staffId: '',
+  status: '',
   createdAtFrom: '',
   createdAtTo: '',
 });
@@ -389,10 +390,22 @@ const quoteChipFilters = computed<CrmFilterDefinition[]>(() => [
     })),
   },
   {
+    type: 'select',
+    key: 'status',
+    label: '狀態',
+    placeholder: '選擇狀態...',
+    searchable: false,
+    options: [
+      { value: 'pending', label: '待簽名' },
+      { value: 'signed', label: '已簽名' },
+    ],
+  },
+  {
     type: 'date-range',
     label: '建立時間',
     fromKey: 'createdAtFrom',
     toKey: 'createdAtTo',
+    showMonthShortcuts: true,
   },
 ]);
 
@@ -559,7 +572,7 @@ const filteredQuotes = computed(() => {
     filtered = filtered.filter((quote) => quote.id.toString().toLowerCase().includes(search));
   }
 
-  const { customerId, staffId, createdAtFrom, createdAtTo } = quoteFilterValues.value;
+  const { customerId, staffId, status, createdAtFrom, createdAtTo } = quoteFilterValues.value;
 
   if (customerId) {
     filtered = filtered.filter((quote) => quote.customerId === customerId);
@@ -567,6 +580,12 @@ const filteredQuotes = computed(() => {
 
   if (staffId) {
     filtered = filtered.filter((quote) => quote.staffId === staffId);
+  }
+
+  if (status === 'signed') {
+    filtered = filtered.filter((quote) => quote.isSigned);
+  } else if (status === 'pending') {
+    filtered = filtered.filter((quote) => !quote.isSigned);
   }
 
   if (createdAtFrom || createdAtTo) {
