@@ -325,7 +325,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint, CustomerSearchModal } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
@@ -429,7 +429,12 @@ const showConvertModal = ref(false);
 const showProcessingSelectModal = ref(false);
 const showCustomerSearchModal = ref(false);
 const customerSearchInitialQuery = ref('');
-const customerSearchContext = ref<{ row: Quote | null; rowIndex: number } | null>(null);
+const customerSearchContext = ref<{
+  row: Quote | null;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
+} | null>(null);
 const selectedQuote = ref<Quote | null>(null);
 const selectedQuoteForProcessing = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
@@ -898,7 +903,13 @@ const handleShortcutClick = (action: string) => {
       const rowIndex = state.isNewRowFocused ? -1 : currentRowIndex ?? -1;
       const resolvedRow = editableTableRef.value.getResolvedEditingRow(row, rowIndex);
       const initialQuery = String(resolvedRow.customerId ?? '');
-      openCustomerSearchModal({ row, rowIndex, initialQuery });
+      openCustomerSearchModal({
+        row,
+        rowIndex,
+        fieldKey: 'customerId',
+        isNewRow: state.isNewRowFocused,
+        initialQuery,
+      });
       break;
     }
   }
@@ -946,20 +957,39 @@ const handleTableFocusField = (payload: {
 const openCustomerSearchModal = (params: {
   row: Quote | null;
   rowIndex: number;
+  fieldKey: string;
+  isNewRow: boolean;
   initialQuery: string;
 }) => {
   if (showCustomerSearchModal.value) return;
   customerSearchContext.value = {
     row: params.row,
     rowIndex: params.rowIndex,
+    fieldKey: params.fieldKey,
+    isNewRow: params.isNewRow,
   };
   customerSearchInitialQuery.value = params.initialQuery;
   showCustomerSearchModal.value = true;
 };
 
+const restoreCustomerSearchFieldFocus = (context: NonNullable<typeof customerSearchContext.value>) => {
+  nextTick(() => {
+    editableTableRef.value?.focusEditingField({
+      row: context.row,
+      rowIndex: context.rowIndex,
+      fieldKey: context.fieldKey,
+      isNewRow: context.isNewRow,
+    });
+  });
+};
+
 const closeCustomerSearchModal = () => {
+  const context = customerSearchContext.value;
   showCustomerSearchModal.value = false;
   customerSearchContext.value = null;
+  if (context) {
+    restoreCustomerSearchFieldFocus(context);
+  }
 };
 
 const handleTableFieldHotkey = (payload: {
@@ -981,6 +1011,8 @@ const handleTableFieldHotkey = (payload: {
   openCustomerSearchModal({
     row: payload.isNewRow ? null : payload.row,
     rowIndex: payload.rowIndex,
+    fieldKey: payload.fieldKey,
+    isNewRow: payload.isNewRow,
     initialQuery,
   });
 };

@@ -520,6 +520,48 @@ const patchEditingField = (row: any | null, index: number, field: string, value:
   editingData.value[key][field] = value;
 };
 
+/** 將焦點還原至指定編輯欄位（例如 Modal 關閉後） */
+const focusEditingField = (params: {
+  row: any | null;
+  rowIndex: number;
+  fieldKey: string;
+  isNewRow?: boolean;
+}) => {
+  const { row, rowIndex, fieldKey } = params;
+  const isNewRow = params.isNewRow ?? row === null;
+
+  // 先清除再設定，確保 EditableCell 的 isFocused watch 會重新 focus input
+  focusedFieldKey.value = null;
+
+  nextTick(() => {
+    if (isNewRow) {
+      isNewRowFocused.value = true;
+      focusedRowIndex.value = null;
+      focusedFieldKey.value = fieldKey;
+      emitFocusField(fieldKey, newRowData.value, -1, true, false);
+    } else if (row !== null) {
+      isNewRowFocused.value = false;
+      focusedRowIndex.value = rowIndex;
+      focusedFieldKey.value = fieldKey;
+
+      if (props.editable && canEditExistingRow(row)) {
+        const key = getRowKey(row, rowIndex);
+        if (editingRowId.value !== key) {
+          editingRowId.value = key;
+          if (!editingData.value[key]) {
+            editingData.value[key] = { ...row };
+          }
+        }
+      }
+      emitFocusField(fieldKey, row, rowIndex, false, false);
+    }
+
+    nextTick(() => {
+      tableRef.value?.focus();
+    });
+  });
+};
+
 const getColumnOptions = (column: EditableColumn): Array<{value: any, label: string}> => {
   if (!column.options) return [];
   if (typeof column.options === 'function') {
@@ -1058,6 +1100,7 @@ defineExpose({
   saveNewRow,
   cancelNewRow,
   patchEditingField,
+  focusEditingField,
   getResolvedEditingRow,
 });
 </script>
