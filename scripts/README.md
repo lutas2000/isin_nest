@@ -543,7 +543,32 @@ npm run db:backup 1 backups/isin-full.sql
 
 > 備份時會透過環境變數 `PGPASSWORD` 將密碼傳給 `pg_dump`。
 
-## 8. PostgreSQL 資料庫恢復腳本 (restore-db.ts)
+## 8. 部署腳本 (deploy.sh)
+
+Build Docker image 並啟動服務，不含 git 操作。適用於本地代碼已確認、只需重建 image 並重啟容器的情境。Migration 由 backend 容器啟動時自動執行（`DB_MIGRATIONS_RUN=true`）。
+
+### 使用方法
+
+```bash
+./scripts/deploy.sh
+```
+
+### 流程說明
+
+1. 檢查 `.env` 存在且 `DB_USER`、`DB_PASS`、`JWT_SECRET` 已設定
+2. 確認 Docker daemon 正在運行
+3. Build backend image：`docker compose build backend`
+4. Build frontend image：`docker compose build frontend`
+5. 啟動服務：`docker compose up -d`（migration 於 backend 啟動時自動執行）
+6. 等待 15 秒後顯示容器狀態與 backend 最後 30 行 logs，並偵測 migration 錯誤
+
+### Log 輸出
+
+所有輸出同時寫入 `~/Library/Logs/isin-nest-deploy.log`。
+
+---
+
+## 9. PostgreSQL 資料庫恢復腳本 (restore-db.ts)
 
 這個腳本用於從 `pg_dump` 產生的 `.sql` 檔案恢復 PostgreSQL 資料庫。
 
