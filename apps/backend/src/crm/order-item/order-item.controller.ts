@@ -11,6 +11,7 @@ export class OrderItemController {
   @ApiOperation({ summary: '獲取所有訂單工件' })
   @ApiQuery({ name: 'orderId', required: false, description: '訂單ID' })
   @ApiQuery({ name: 'customerId', required: false, description: '客戶ID，用於查詢該客戶所有訂單工件' })
+  @ApiQuery({ name: 'customerFile', required: false, description: '客戶型號模糊搜尋（搭配 customerId 使用）' })
   @ApiQuery({ name: 'page', required: false, description: '頁碼 (預設: 1)', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每頁筆數 (預設: 50, 最大: 100)', example: 50 })
   @ApiResponse({ status: 200, description: '成功返回訂單工件列表', type: [OrderItem] })
@@ -19,6 +20,7 @@ export class OrderItemController {
   findAll(
     @Query('orderId') orderId?: string,
     @Query('customerId') customerId?: string,
+    @Query('customerFile') customerFile?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
@@ -26,7 +28,7 @@ export class OrderItemController {
       throw new BadRequestException('orderId 與 customerId 不可同時使用');
     }
     if (customerId) {
-      return this.orderItemService.findByCustomerId(customerId, page, limit);
+      return this.orderItemService.findByCustomerId(customerId, page, limit, customerFile);
     }
     if (orderId) {
       return this.orderItemService.findByOrderId(orderId, page, limit);

@@ -77,13 +77,14 @@ export class OrderItemService {
     customerId: string,
     page?: number,
     limit?: number,
+    customerFile?: string,
   ): Promise<OrderItem[] | PaginatedResponseDto<OrderItem>> {
     const pageNum = page ?? 1;
     const limitNum = limit ?? 50;
     const maxLimit = Math.min(limitNum, 100);
     const skip = (pageNum - 1) * maxLimit;
 
-    const [data, total] = await this.orderItemRepository
+    const queryBuilder = this.orderItemRepository
       .createQueryBuilder('orderItem')
       .innerJoinAndSelect('orderItem.order', 'workOrder')
       .leftJoinAndSelect('orderItem.processingItems', 'processingItems')
@@ -98,8 +99,15 @@ export class OrderItemService {
       .addOrderBy('orderItem.drawingNumber', 'ASC')
       .addOrderBy('orderItem.createdAt', 'DESC')
       .take(maxLimit)
-      .skip(skip)
-      .getManyAndCount();
+      .skip(skip);
+
+    if (customerFile?.trim()) {
+      queryBuilder.andWhere('orderItem.customerFile ILIKE :customerFile', {
+        customerFile: `%${customerFile.trim()}%`,
+      });
+    }
+
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }

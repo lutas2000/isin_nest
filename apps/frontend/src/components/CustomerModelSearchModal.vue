@@ -2,10 +2,10 @@
   <Modal
     :show="show"
     title="搜尋客戶型號"
-    max-width-class="max-w-5xl"
+    max-width-class="max-w-7xl"
     @close="handleClose"
   >
-    <div class="grid max-h-[70vh] grid-cols-[minmax(0,1fr)_22rem] gap-4 md:grid-cols-1" @keydown="handleKeydown">
+    <div class="grid h-[70vh] max-h-[70vh] grid-cols-[minmax(0,1fr)_22rem] gap-4" @keydown="handleKeydown">
       <div class="flex min-h-0 flex-col gap-3">
         <div class="space-y-2">
           <input
@@ -23,8 +23,7 @@
         </div>
 
         <div
-          ref="listRef"
-          class="min-h-0 flex-1 overflow-y-auto rounded-lg border border-secondary-200"
+          class="min-h-0 flex-1 overflow-hidden [&_.table-container]:max-h-[28rem] [&_.table-container]:overflow-y-auto"
         >
           <div v-if="loading" class="px-4 py-10 text-center text-sm text-secondary-500">
             載入中...
@@ -32,50 +31,41 @@
           <div v-else-if="!customerId" class="px-4 py-10 text-center text-sm text-secondary-500">
             此訂單沒有客戶資料，無法搜尋客戶型號
           </div>
-          <div v-else-if="filteredItems.length === 0" class="px-4 py-10 text-center text-sm text-secondary-500">
+          <div v-else-if="items.length === 0" class="px-4 py-10 text-center text-sm text-secondary-500">
             沒有符合的歷史工件
           </div>
-          <button
-            v-for="(item, index) in filteredItems"
-            :key="item.id"
-            type="button"
-            :ref="el => setItemRef(item.id, el)"
-            :class="[
-              'grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_7rem] gap-3 border-b border-secondary-100 px-4 py-3 text-left transition last:border-b-0 md:grid-cols-1 md:gap-1',
-              activeIndex === index ? 'bg-primary-50 ring-1 ring-inset ring-primary-200' : 'bg-white hover:bg-secondary-50',
-            ]"
-            @mouseenter="activeIndex = index"
-            @click="activeIndex = index"
-            @dblclick="handleConfirm"
+          <EditableDataTable
+            v-else
+            ref="tableRef"
+            :columns="columns"
+            :data="items"
+            :show-actions="false"
+            :editable="false"
+            :dbl-click-to-edit="false"
+            :pagination="total > 0"
+            :current-page="currentPage"
+            :page-size="pageSize"
+            :total="total"
+            :auto-focus-on-mount="false"
+            @update:page="handlePageChange"
+            @update:page-size="handlePageSizeChange"
+            @row-view="handleRowView"
           >
-            <span class="min-w-0">
-              <span class="block text-xs text-secondary-500">客戶型號</span>
-              <span class="block truncate text-sm font-medium text-secondary-900">
-                {{ item.customerFile || '-' }}
-              </span>
-            </span>
-            <span class="min-w-0">
-              <span class="block text-xs text-secondary-500">電腦圖號</span>
-              <span class="block truncate text-sm text-secondary-800">
-                {{ item.drawingNumber || '-' }}
-              </span>
-            </span>
-            <span class="min-w-0">
-              <span class="block text-xs text-secondary-500">訂單編號</span>
-              <span class="block truncate text-sm text-secondary-800">
-                {{ item.orderId || '-' }}
-              </span>
-            </span>
-          </button>
+            <template #cell-customerFile="{ value }">
+              {{ value ? String(value) : '-' }}
+            </template>
+            <template #cell-drawingNumber="{ value }">
+              {{ value ? String(value) : '-' }}
+            </template>
+            <template #cell-orderId="{ value }">
+              {{ value ? String(value) : '-' }}
+            </template>
+          </EditableDataTable>
         </div>
-
-        <p v-if="total > items.length" class="text-xs text-secondary-500">
-          目前顯示前 {{ items.length }} 筆，共 {{ total }} 筆。
-        </p>
       </div>
 
       <DxfPreviewPanel
-        class="min-h-[28rem]"
+        class="h-full min-h-0"
         :order-item-id="activeItem?.id ?? null"
         suppress-api-error
       />
@@ -101,6 +91,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import Modal from './Modal.vue'
 import DxfPreviewPanel from './DxfPreviewPanel.vue'
+import EditableDataTable, { type EditableColumn } from './EditableDataTable.vue'
 import { orderItemService, type OrderItem } from '@/services/crm/order.service'
 import type { PaginatedResponse } from '@/types/pagination'
 
@@ -120,52 +111,41 @@ const items = ref<OrderItem[]>([])
 const total = ref(0)
 const searchQuery = ref('')
 const activeIndex = ref(0)
-const listRef = ref<HTMLElement | null>(null)
 const searchInputRef = ref<HTMLInputElement | null>(null)
-const itemRefs = ref<Record<number, HTMLElement>>({})
+const tableRef = ref<(InstanceType<typeof EditableDataTable> & { focusedRowIndex: number | null }) | null>(null)
+const currentPage = ref(1)
+const pageSize = ref(25)
 
-const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? ''
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+let loadSequence = 0
+let ignoreNextSearchChange = false
 
-const filteredItems = computed(() => {
-  const keyword = normalize(searchQuery.value)
-  const sortedItems = [...items.value].sort((a, b) => {
-    const aDrawing = a.drawingNumber?.trim() || '\uffff'
-    const bDrawing = b.drawingNumber?.trim() || '\uffff'
-    return aDrawing.localeCompare(bDrawing, 'zh-TW', { numeric: true })
-  })
+const columns: EditableColumn[] = [
+  { key: 'customerFile', label: '客戶型號', editable: false, truncate: true, width: 'notes' },
+  { key: 'drawingNumber', label: '電腦圖號', editable: false, truncate: true, width: 'notes' },
+  { key: 'orderId', label: '訂單編號', editable: false, truncate: true },
+]
 
-  if (!keyword) return sortedItems
-
-  return sortedItems.filter((item) => {
-    return normalize(item.customerFile).includes(keyword)
-  })
-})
-
-const activeItem = computed(() => filteredItems.value[activeIndex.value] ?? null)
+const activeItem = computed(() => items.value[activeIndex.value] ?? null)
 const confirmValue = computed(() => activeItem.value?.customerFile?.trim() || searchQuery.value.trim())
 
-const setItemRef = (id: number, el: unknown) => {
-  if (el instanceof HTMLElement) {
-    itemRefs.value[id] = el
-    return
-  }
-  delete itemRefs.value[id]
-}
-
-const syncActiveIndex = (preferredIndex = 0) => {
-  if (filteredItems.value.length === 0) {
+const setActiveIndex = (index: number) => {
+  if (items.value.length === 0) {
     activeIndex.value = -1
+    if (tableRef.value) tableRef.value.focusedRowIndex = null
     return
   }
-  const max = filteredItems.value.length - 1
-  activeIndex.value = Math.min(Math.max(preferredIndex, 0), max)
+
+  const max = items.value.length - 1
+  const nextIndex = Math.min(Math.max(index, 0), max)
+  activeIndex.value = nextIndex
+  if (tableRef.value) tableRef.value.focusedRowIndex = nextIndex
 }
 
-const scrollActiveIntoView = () => {
-  const item = activeItem.value
-  if (!item || !listRef.value) return
-  const element = itemRefs.value[item.id]
-  element?.scrollIntoView({ block: 'nearest' })
+const clearSearchTimer = () => {
+  if (!searchTimer) return
+  clearTimeout(searchTimer)
+  searchTimer = null
 }
 
 const extractItems = (response: OrderItem[] | PaginatedResponse<OrderItem>) => {
@@ -178,27 +158,37 @@ const extractItems = (response: OrderItem[] | PaginatedResponse<OrderItem>) => {
 }
 
 const loadItems = async () => {
+  const sequence = ++loadSequence
+
   if (!props.customerId) {
     items.value = []
     total.value = 0
+    setActiveIndex(-1)
     return
   }
 
   loading.value = true
   try {
-    const response = await orderItemService.getAll(undefined, 1, 100, {
+    const response = await orderItemService.getAll(undefined, currentPage.value, pageSize.value, {
       customerId: props.customerId,
+      customerFile: searchQuery.value.trim() || undefined,
     })
+    if (sequence !== loadSequence) return
+
     items.value = extractItems(response)
-    syncActiveIndex(0)
     await nextTick()
-    scrollActiveIntoView()
+    setActiveIndex(0)
   } catch (err) {
+    if (sequence !== loadSequence) return
+
     console.error('載入客戶型號清單失敗:', err)
     items.value = []
     total.value = 0
+    setActiveIndex(-1)
   } finally {
-    loading.value = false
+    if (sequence === loadSequence) {
+      loading.value = false
+    }
   }
 }
 
@@ -206,21 +196,42 @@ const handleClose = () => {
   emit('close')
 }
 
-const handleConfirm = () => {
-  const value = confirmValue.value
+const confirmItem = (item: OrderItem | null = activeItem.value) => {
+  const value = item?.customerFile?.trim() || searchQuery.value.trim()
   if (!value) return
   emit('confirm', {
     customerFile: value,
-    item: activeItem.value,
+    item,
   })
 }
 
+const handleConfirm = () => {
+  confirmItem()
+}
+
+const handleRowView = (row: OrderItem) => {
+  const rowIndex = items.value.findIndex((item) => item.id === row.id)
+  if (rowIndex >= 0) {
+    setActiveIndex(rowIndex)
+  }
+  confirmItem(row)
+}
+
 const moveActive = async (delta: number) => {
-  if (filteredItems.value.length === 0) return
-  const max = filteredItems.value.length - 1
-  activeIndex.value = Math.min(Math.max(activeIndex.value + delta, 0), max)
+  if (items.value.length === 0) return
+  setActiveIndex(activeIndex.value + delta)
   await nextTick()
-  scrollActiveIntoView()
+}
+
+const handlePageChange = async (page: number) => {
+  currentPage.value = page
+  await loadItems()
+}
+
+const handlePageSizeChange = async (newPageSize: number) => {
+  pageSize.value = newPageSize
+  currentPage.value = 1
+  await loadItems()
 }
 
 const handleKeydown = (event: KeyboardEvent) => {
@@ -232,19 +243,24 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
+  const isSearchInputEvent = event.target === searchInputRef.value
+
   if (event.key === 'ArrowDown') {
+    if (!isSearchInputEvent) return
     event.preventDefault()
     void moveActive(1)
     return
   }
 
   if (event.key === 'ArrowUp') {
+    if (!isSearchInputEvent) return
     event.preventDefault()
     void moveActive(-1)
     return
   }
 
   if (event.key === 'Enter') {
+    if (!isSearchInputEvent) return
     event.preventDefault()
     handleConfirm()
   }
@@ -253,10 +269,15 @@ const handleKeydown = (event: KeyboardEvent) => {
 watch(
   () => props.show,
   async (show) => {
-    if (!show) return
-    searchQuery.value = props.initialQuery ?? ''
+    if (!show) {
+      clearSearchTimer()
+      return
+    }
+    const nextSearchQuery = props.initialQuery ?? ''
+    ignoreNextSearchChange = nextSearchQuery !== searchQuery.value
+    searchQuery.value = nextSearchQuery
     activeIndex.value = 0
-    itemRefs.value = {}
+    currentPage.value = 1
     await loadItems()
     await nextTick()
     searchInputRef.value?.focus()
@@ -273,9 +294,32 @@ watch(
   },
 )
 
-watch(filteredItems, async () => {
-  syncActiveIndex(activeIndex.value)
-  await nextTick()
-  scrollActiveIntoView()
+watch(searchQuery, () => {
+  if (!props.show) return
+  if (ignoreNextSearchChange) {
+    ignoreNextSearchChange = false
+    return
+  }
+
+  clearSearchTimer()
+  searchTimer = setTimeout(() => {
+    currentPage.value = 1
+    void loadItems()
+  }, 300)
+})
+
+watch(
+  () => tableRef.value?.focusedRowIndex,
+  (focusedRowIndex) => {
+    if (typeof focusedRowIndex === 'number') {
+      activeIndex.value = focusedRowIndex
+    }
+  },
+)
+
+watch(items, () => {
+  if (items.value.length === 0) {
+    setActiveIndex(-1)
+  }
 })
 </script>

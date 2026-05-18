@@ -103,6 +103,7 @@
               'new-row': isNewRow(row),
               'focused-row': focusedRowIndex === index && !isEditing(row, index)
             }"
+            @click="handleRowClick(row, index)"
             @dblclick="handleRowDblClick(row, index)"
           >
             <td
@@ -511,10 +512,21 @@ const truncateText = (text: string, maxLength: number) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// 滑鼠雙擊 row 進入編輯模式
+const handleRowClick = (_row: any, index: number) => {
+  focusedRowIndex.value = index;
+  focusedFieldKey.value = null;
+  isNewRowFocused.value = false;
+};
+
+// 滑鼠雙擊 row 進入編輯模式；唯讀表格則視為查看/選取該列
 const handleRowDblClick = (row: any, index: number) => {
-  // 若整個表格不可編輯、已關閉雙擊編輯，或該列已在編輯中，就不處理
-  if (!props.editable || !props.dblClickToEdit || isEditing(row, index)) {
+  if (!props.editable) {
+    emit('row-view', row);
+    return;
+  }
+
+  // 若已關閉雙擊編輯，或該列已在編輯中，就不處理
+  if (!props.dblClickToEdit || isEditing(row, index)) {
     return;
   }
 
