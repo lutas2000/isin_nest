@@ -12,20 +12,11 @@
       :error="error"
       :show-search="true"
       :search="quoteSearch"
-      search-placeholder="搜尋報價單編號或客戶..."
-      :filters="[
-        {
-          key: 'status',
-          placeholder: '全部狀態',
-          options: [
-            { value: 'pending', label: '待簽名' },
-            { value: 'signed', label: '已簽名' }
-          ]
-        }
-      ]"
-      :filter-values="{ status: quoteStatusFilter }"
+      search-placeholder="搜尋報價單編號..."
+      :chip-filters="quoteChipFilters"
+      :chip-filter-values="quoteFilterValues"
       @update:search="quoteSearch = $event"
-      @update:filters="handleContainerFilterUpdate"
+      @update:chip-filter-values="handleQuoteFilterUpdate"
       @retry="loadQuotes"
     >
       <EditableDataTable
@@ -335,6 +326,8 @@ import { customerService, type Customer } from '@/services/crm/customer.service'
 import { processingService, type Processing } from '@/services/crm/processing.service';
 import { apiGet } from '@/services/api';
 import { useAuthStore } from '@/stores/auth';
+import { matchesDateRange } from '@/utils/crmFilter';
+import type { CrmFilterDefinition } from '@/types/crm-filter';
 
 // 報價單資料
 const quotes = ref<Quote[]>([]);
@@ -346,7 +339,16 @@ const currentPage = ref(1);
 const pageSize = ref(50);
 const total = ref(0);
 const quoteSearch = ref('');
-const quoteStatusFilter = ref('');
+const quoteFilterValues = ref<Record<string, string>>({
+  customerId: '',
+  staffId: '',
+  createdAtFrom: '',
+  createdAtTo: '',
+});
+
+const handleQuoteFilterUpdate = (values: Record<string, string>) => {
+  quoteFilterValues.value = values;
+};
 
 // 客戶和員工資料（用於下拉選單）
 const customers = ref<Customer[]>([]);
@@ -360,6 +362,39 @@ interface Staff {
 }
 
 const staffList = ref<Staff[]>([]); // 銷管部員工列表
+
+const quoteChipFilters = computed<CrmFilterDefinition[]>(() => [
+  {
+    type: 'select',
+    key: 'customerId',
+    label: '客戶',
+    placeholder: '搜尋客戶...',
+    searchable: true,
+    options: customers.value.map((customer) => ({
+      value: customer.id,
+      label: customer.companyShortName
+        ? `${customer.id}(${customer.companyShortName})`
+        : customer.companyName || customer.id,
+    })),
+  },
+  {
+    type: 'select',
+    key: 'staffId',
+    label: '業務',
+    placeholder: '搜尋業務...',
+    searchable: true,
+    options: staffList.value.map((staff) => ({
+      value: staff.id,
+      label: staff.name,
+    })),
+  },
+  {
+    type: 'date-range',
+    label: '建立時間',
+    fromKey: 'createdAtFrom',
+    toKey: 'createdAtTo',
+  },
+]);
 
 const authStore = useAuthStore();
 
@@ -519,21 +554,25 @@ const editableColumns = computed<EditableColumn[]>(() => [
 const filteredQuotes = computed(() => {
   let filtered = quotes.value;
 
-  // 文字搜尋
-  if (quoteSearch.value) {
-    const search = quoteSearch.value.toLowerCase();
-      filtered = filtered.filter(
-        (quote) =>
-          quote.id.toString().includes(search) ||
-          quote.customer?.companyShortName?.toLowerCase().includes(search),
-      );
+  const search = quoteSearch.value.trim().toLowerCase();
+  if (search) {
+    filtered = filtered.filter((quote) => quote.id.toString().toLowerCase().includes(search));
   }
 
-  // 狀態篩選
-  if (quoteStatusFilter.value === 'signed') {
-    filtered = filtered.filter((quote) => quote.isSigned);
-  } else if (quoteStatusFilter.value === 'pending') {
-    filtered = filtered.filter((quote) => !quote.isSigned);
+  const { customerId, staffId, createdAtFrom, createdAtTo } = quoteFilterValues.value;
+
+  if (customerId) {
+    filtered = filtered.filter((quote) => quote.customerId === customerId);
+  }
+
+  if (staffId) {
+    filtered = filtered.filter((quote) => quote.staffId === staffId);
+  }
+
+  if (createdAtFrom || createdAtTo) {
+    filtered = filtered.filter((quote) =>
+      matchesDateRange(quote.createdAt, createdAtFrom, createdAtTo),
+    );
   }
 
   return filtered;
@@ -550,13 +589,6 @@ const getProcessingNames = (processingIds?: number[]) => {
   return processingIds
     .map(id => allProcessings.value.find(p => p.id === id)?.name || `ID:${id}`)
     .join('、');
-};
-
-// 處理篩選器更新
-const handleContainerFilterUpdate = (filters: Record<string, string>) => {
-  if ('status' in filters) {
-    quoteStatusFilter.value = filters.status;
-  }
 };
 
 // 載入報價單資料

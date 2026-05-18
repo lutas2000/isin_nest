@@ -10,32 +10,65 @@
     <!-- Toolbar: search + filters + sort + custom controls -->
     <div
       v-if="showToolbar || $slots.controls"
-      class="flex flex-wrap items-center gap-3 border-b border-secondary-100 !px-6 !py-4 md:!px-4 md:!py-3"
+      class="border-b border-secondary-100 !px-6 !py-4 md:!px-4 md:!py-3"
     >
-      <SearchField
-        v-if="showSearch"
-        class="w-[320px] shrink-0 max-w-full"
-        :model-value="search"
-        :placeholder="searchPlaceholder"
-        @update:model-value="emit('update:search', $event)"
-      />
+      <div class="flex w-full flex-wrap items-center gap-2">
+        <div
+          v-if="showSearch"
+          class="relative min-w-[220px] flex-1 max-w-md"
+        >
+          <svg
+            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <SearchField
+            inline
+            class="w-full [&_input]:!pl-9"
+            :model-value="search"
+            :placeholder="searchPlaceholder"
+            @update:model-value="emit('update:search', $event)"
+          />
+        </div>
 
-      <FilterControl
-        v-if="filters.length > 0"
-        :filters="filters"
-        :model-value="filterValues"
-        @update:model-value="handleFilterUpdate"
-      />
+        <FilterChipControl
+          v-if="chipFilters.length > 0"
+          :filters="chipFilters"
+          :model-value="chipFilterValues"
+          @update:model-value="handleChipFilterUpdate"
+        />
 
-      <SortControl
-        v-if="sortOptions.length > 0"
-        :options="sortOptions"
-        :model-value="sortValue"
-        @update:model-value="handleSortUpdate"
-      />
+        <FilterControl
+          v-else-if="filters.length > 0"
+          :filters="filters"
+          :model-value="filterValues"
+          @update:model-value="handleFilterUpdate"
+        />
+      </div>
 
-      <div v-if="$slots.controls" class="ml-auto flex items-center gap-2">
-        <slot name="controls" />
+      <div
+        v-if="sortOptions.length > 0 || $slots.controls"
+        class="mt-3 flex flex-wrap items-center gap-2"
+      >
+        <SortControl
+          v-if="sortOptions.length > 0"
+          :options="sortOptions"
+          :model-value="sortValue"
+          @update:model-value="handleSortUpdate"
+        />
+
+        <div v-if="$slots.controls" class="ml-auto flex items-center gap-2">
+          <slot name="controls" />
+        </div>
       </div>
     </div>
 
@@ -71,8 +104,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import SearchField from './SearchField.vue';
+import FilterChipControl from './FilterChipControl.vue';
 import FilterControl, { type FilterDefinition } from './FilterControl.vue';
 import SortControl, { type SortOption, type SortValue } from './SortControl.vue';
+import type { CrmFilterDefinition } from '@/types/crm-filter';
 
 interface Props {
   title?: string;
@@ -83,6 +118,8 @@ interface Props {
   showSearch?: boolean;
   search?: string;
   searchPlaceholder?: string;
+  chipFilters?: CrmFilterDefinition[];
+  chipFilterValues?: Record<string, string>;
   filters?: FilterDefinition[];
   filterValues?: Record<string, string>;
   sortOptions?: SortOption[];
@@ -98,6 +135,8 @@ const props = withDefaults(defineProps<Props>(), {
   showSearch: false,
   search: '',
   searchPlaceholder: '搜尋...',
+  chipFilters: () => [],
+  chipFilterValues: () => ({}),
   filters: () => [],
   filterValues: () => ({}),
   sortOptions: () => [],
@@ -106,6 +145,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:search': [value: string];
+  'update:chipFilterValues': [value: Record<string, string>];
   'update:filters': [value: Record<string, string>];
   'update:sort': [value: SortValue];
   retry: [];
@@ -114,9 +154,14 @@ const emit = defineEmits<{
 const showToolbar = computed(
   () =>
     props.showSearch ||
+    props.chipFilters.length > 0 ||
     props.filters.length > 0 ||
     props.sortOptions.length > 0,
 );
+
+const handleChipFilterUpdate = (value: Record<string, string>) => {
+  emit('update:chipFilterValues', value);
+};
 
 const handleFilterUpdate = (value: Record<string, string>) => {
   emit('update:filters', value);

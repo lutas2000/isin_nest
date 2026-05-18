@@ -186,10 +186,6 @@
               {{ Number((row.unitPrice || 0) * (row.quantity || 0)).toLocaleString('zh-TW') }}
             </span>
           </template>
-
-          <template #cell-source="{ value }">
-            {{ value || '-' }}
-          </template>
           
           <template #actions="{ row, isEditing, save, cancel }">
             <!-- 編輯模式：顯示保存和取消按鈕（這些會直接顯示，不在下拉選單中） -->
@@ -254,7 +250,6 @@ import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
-import { createCrmConfigSearchFunction } from '@/services/crm/crm-config-autocomplete.service';
 import QuotePrint from './prints/QuotePrint.vue';
 
 const route = useRoute();
@@ -390,7 +385,6 @@ const newRowTemplate = () => {
       quantity: 0,
       unit: '片',
       unitPrice: 0,
-      source: '',
     };
   }
   return {
@@ -403,11 +397,8 @@ const newRowTemplate = () => {
     quantity: 0,
     unit: '片',
     unitPrice: 0,
-    source: '',
   };
 };
-
-const searchSource = createCrmConfigSearchFunction('source');
 
 // 可編輯表格列定義
 const editableColumns = computed<EditableColumn[]>(() => [
@@ -478,13 +469,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '小計',
     editable: false,
     width: 'long-number',
-  },
-  {
-    key: 'source',
-    label: '來源',
-    editable: true,
-    type: 'search-select',
-    searchFunction: searchSource,
   },
 ]);
 
@@ -606,7 +590,6 @@ const handleSave = async (row: QuoteItem, isNew: boolean) => {
       quantity,
       unit: (row.unit && String(row.unit).trim()) || '片',
       unitPrice: row.unitPrice || 0,
-      source: row.source || undefined,
     };
 
     if (isNew) {
@@ -650,7 +633,6 @@ const handleNewRowSave = async (row: any) => {
       quantity,
       unit: (row.unit && String(row.unit).trim()) || '片',
       unitPrice: row.unitPrice || 0,
-      source: row.source || undefined,
     };
     await quoteItemService.create(data);
     showNewRow.value = false;

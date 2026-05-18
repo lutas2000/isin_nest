@@ -6,7 +6,14 @@ export { default as EditableDataTable } from './EditableDataTable.vue';
 export type { EditableColumn } from './EditableDataTable.vue';
 export { default as SearchField } from './SearchField.vue';
 export { default as SearchFilters } from './SearchFilters.vue';
+export { default as FilterChipControl } from './FilterChipControl.vue';
 export { default as CrmTableContainer } from './CrmTableContainer.vue';
+export type {
+  CrmFilterDefinition,
+  CrmFilterOption,
+  CrmSelectFilterDefinition,
+  CrmDateRangeFilterDefinition,
+} from '@/types/crm-filter';
 export { default as SortControl } from './SortControl.vue';
 export type { SortOption, SortValue } from './SortControl.vue';
 export { default as FilterControl } from './FilterControl.vue';

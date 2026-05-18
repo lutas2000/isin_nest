@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 py-1">
+  <div :class="inline ? '' : 'px-4 py-1'">
     <input
       type="text"
       class="h-10 w-full rounded-xl border border-[var(--secondary-200)] bg-secondary-50 !px-3 py-2 text-sm text-secondary-800 transition-colors placeholder:text-secondary-400 hover:border-[var(--secondary-300)] hover:bg-white focus:border-[var(--primary-500)] focus:bg-white focus:outline-none"
@@ -14,10 +14,12 @@
 interface Props {
   modelValue: string;
   placeholder?: string;
+  inline?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
   placeholder: '搜尋...',
+  inline: false,
 });
 
 const emit = defineEmits<{
