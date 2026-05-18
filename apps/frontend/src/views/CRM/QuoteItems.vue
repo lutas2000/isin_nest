@@ -408,7 +408,7 @@ const newRowTemplate = () => {
   };
 };
 
-const searchSourceType = createCrmConfigSearchFunction('source_type');
+const searchSource = createCrmConfigSearchFunction('source');
 
 // 可編輯表格列定義
 const editableColumns = computed<EditableColumn[]>(() => [
@@ -485,7 +485,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '來源',
     editable: true,
     type: 'search-select',
-    searchFunction: searchSourceType,
+    searchFunction: searchSource,
   },
 ]);
 

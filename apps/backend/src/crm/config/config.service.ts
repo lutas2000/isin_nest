@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CrmConfig } from './entities/crm-config.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
+// TODO: 根據目前的db重寫預設值
 const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = {
   shipping_method: [
     { code: 'PICKUP', label: '自取' },
@@ -20,6 +21,7 @@ const DEFAULT_CONFIGS: Record<string, Array<{ code: string; label: string }>> = 
     { code: 'OLD', label: '舊圖' },
     { code: 'MODIFIED', label: '修改' },
   ],
+  source: [{ code: 'ORDER_NEW', label: '訂單新增' }],
   substitute: [
     { code: 'SUBSTITUTE', label: '代料' },
     { code: 'SUB_DISCOUNT', label: '代折' },

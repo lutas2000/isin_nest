@@ -257,7 +257,7 @@ const detailDraft = ref({
 
 const searchShippingMethod = createCrmConfigSearchFunction('shipping_method');
 const searchPaymentMethod = createCrmConfigSearchFunction('payment_method');
-const searchSourceType = createCrmConfigSearchFunction('source_type');
+const searchSource = createCrmConfigSearchFunction('source');
 
 const shippingMethodDetailColumn: EditableColumn = {
   key: 'shippingMethod',
@@ -431,7 +431,7 @@ const editableColumns = computed<EditableColumn[]>(() => [
     label: '來源',
     editable: true,
     type: 'search-select',
-    searchFunction: searchSourceType,
+    searchFunction: searchSource,
   },
   { key: 'notes', label: '備註', editable: true, type: 'text' },
 ]);

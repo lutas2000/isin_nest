@@ -313,13 +313,14 @@ const crmForm = ref({
   label: '',
 });
 
-type CrmFilterType = 'shipping_method' | 'payment_method' | 'source_type' | 'substitute';
+type CrmFilterType = 'shipping_method' | 'payment_method' | 'source_type' | 'source' | 'substitute';
 
 const crmCategorySortOrder: Record<string, number> = {
   shipping_method: 0,
   payment_method: 1,
   source_type: 2,
-  substitute: 3,
+  source: 3,
+  substitute: 4,
 };
 
 const selectedCrmFilter = ref<CrmFilterType>('shipping_method');
@@ -328,6 +329,7 @@ const crmFilterOptions: Array<{ label: string; value: CrmFilterType }> = [
   { label: '運送方式', value: 'shipping_method' },
   { label: '付款方式', value: 'payment_method' },
   { label: '來源類型', value: 'source_type' },
+  { label: '來源', value: 'source' },
   { label: '代料', value: 'substitute' },
 ];
 
@@ -341,6 +343,7 @@ const getCategoryLabel = (category: string) => {
     shipping_method: '運送方式',
     payment_method: '付款方式',
     source_type: '來源類型',
+    source: '來源',
     substitute: '代料',
   };
   return labels[category] || category;
@@ -468,6 +471,7 @@ const handleInlineCrmSave = async (row: CrmConfig) => {
       row.category === 'shipping_method' ||
       row.category === 'payment_method' ||
       row.category === 'source_type' ||
+      row.category === 'source' ||
       row.category === 'substitute'
     ) {
       invalidateCrmConfigCache(row.category);
@@ -497,6 +501,7 @@ const confirmDeleteCrm = async () => {
       category === 'shipping_method' ||
       category === 'payment_method' ||
       category === 'source_type' ||
+      category === 'source' ||
       category === 'substitute'
     ) {
       invalidateCrmConfigCache(category);
@@ -525,6 +530,7 @@ const saveCrmConfig = async (formValue: { category: string; code: string; label:
       formValue.category === 'shipping_method' ||
       formValue.category === 'payment_method' ||
       formValue.category === 'source_type' ||
+      formValue.category === 'source' ||
       formValue.category === 'substitute'
     ) {
       invalidateCrmConfigCache(formValue.category as CrmFilterType);
