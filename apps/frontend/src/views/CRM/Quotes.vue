@@ -113,10 +113,6 @@
           <span>{{ value != null ? `${value} 天` : '-' }}</span>
         </template>
 
-        <template #cell-orderConfirmedAt="{ value }">
-          <span>{{ value ? new Date(value).toLocaleString('zh-TW') : '-' }}</span>
-        </template>
-
         <template #actions="{ row, isEditing, save, cancel }">
           <!-- 編輯模式：顯示保存和取消按鈕（這些會直接顯示，不在下拉選單中） -->
           <template v-if="isEditing">
@@ -197,12 +193,6 @@
               <div class="details-item">
                 <span class="details-label">交貨期限（天）：</span>
                 <span class="details-value">{{ selectedQuote.deliveryDays ?? 7 }}</span>
-              </div>
-              <div v-if="selectedQuote.orderConfirmedAt" class="details-item">
-                <span class="details-label">訂貨確認時間：</span>
-                <span class="details-value">
-                  {{ new Date(selectedQuote.orderConfirmedAt).toLocaleString('zh-TW') }}
-                </span>
               </div>
             </div>
           </div>
@@ -592,11 +582,6 @@ const editableColumns = computed<EditableColumn[]>(() => [
     editable: true,
     required: true,
     type: 'number',
-  },
-  {
-    key: 'orderConfirmedAt',
-    label: '訂貨確認時間',
-    editable: false,
   },
   { 
     key: 'processing', 
