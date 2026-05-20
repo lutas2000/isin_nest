@@ -13,6 +13,7 @@ const parsePort = (value: string | undefined, fallback: number): number => {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, repoRoot, '')
   const frontendDevPort = parsePort(env.FRONTEND_DEV_PORT, 3001)
+  const backendApiHost = (env.BACKEND_API_HOST ?? 'localhost').trim() || 'localhost'
   const backendPort = parsePort(env.PORT, 3000)
 
   return {
@@ -27,7 +28,7 @@ export default defineConfig(({ mode }) => {
       port: frontendDevPort,
       proxy: {
         '/api': {
-          target: `http://localhost:${backendPort}`,
+          target: `http://${backendApiHost}:${backendPort}`,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },

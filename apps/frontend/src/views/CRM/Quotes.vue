@@ -339,6 +339,14 @@
       @close="closeCustomerSearchModal"
       @confirm="handleCustomerSearchConfirm"
     />
+
+    <QuoteNotesTemplateModal
+      :show="showQuoteNotesModal"
+      :initial-notes="quoteNotesModalInitialNotes"
+      :default-work-days="quoteNotesModalDefaultWorkDays"
+      @close="closeQuoteNotesModal"
+      @apply="applyQuoteNotesModal"
+    />
   </div>
 </template>
 
@@ -347,6 +355,8 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { EditableDataTable, type EditableColumn, CrmTableContainer, StatusBadge, Modal, ShortcutHint, CustomerSearchModal } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
+import QuoteNotesTemplateModal from '@/components/QuoteNotesTemplateModal.vue';
+import { DEFAULT_QUOTE_NOTES_WORK_DAYS } from '@/utils/quoteNotesTemplate';
 import { quoteService, quoteItemService, type Quote } from '@/services/crm/quote.service';
 import { customerService, type Customer } from '@/services/crm/customer.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
@@ -457,7 +467,16 @@ const selectedQuote = ref<Quote | null>(null);
 const selectedQuoteForProcessing = ref<Quote | null>(null);
 const convertingQuoteId = ref<string | null>(null);
 const showNewRow = ref(false);
+const showQuoteNotesModal = ref(false);
+const quoteNotesModalInitialNotes = ref<string | null>(null);
+const quoteNotesModalDefaultWorkDays = ref(7);
+const quoteNotesModalContext = ref<{
+  isNewRow: boolean;
+  rowIndex: number;
+  row: Quote | null;
+} | null>(null);
 const processingAutoOpenBlockedUntil = ref(0);
+const quoteNotesModalBlockedUntil = ref(0);
 
 // 加工項目相關
 const allProcessings = ref<Processing[]>([]);
@@ -589,8 +608,10 @@ const editableColumns = computed<EditableColumn[]>(() => [
     key: 'notes', 
     label: '備註', 
     editable: true, 
-    type: 'text',
-    truncate: true
+    type: 'textarea',
+    textareaRows: 3,
+    truncate: true,
+    hotkeys: { f10: true },
   },
   {
     key: 'isSigned',
@@ -959,6 +980,69 @@ const loadAllProcessings = async () => {
   }
 };
 
+const isQuoteNotesEmpty = (v: unknown) =>
+  v == null || (typeof v === 'string' && v.trim() === '');
+
+const closeQuoteNotesModal = () => {
+  quoteNotesModalBlockedUntil.value = Date.now() + 200;
+  showQuoteNotesModal.value = false;
+  quoteNotesModalContext.value = null;
+};
+
+const applyQuoteNotesModal = (text: string) => {
+  const ctx = quoteNotesModalContext.value;
+  const table = editableTableRef.value;
+  if (ctx && table) {
+    if (ctx.isNewRow) {
+      table.patchEditingField(null, -1, 'notes', text);
+    } else if (ctx.row != null) {
+      table.patchEditingField(ctx.row, ctx.rowIndex, 'notes', text);
+    }
+  }
+  closeQuoteNotesModal();
+};
+
+/** 備註欄開啟範本 Modal：F10 一律開啟；focus 僅在備註為空時開啟 */
+const openQuoteNotesModalForEditingRow = (
+  payload: {
+    isNewRow: boolean;
+    rowIndex: number;
+    row: Quote | null;
+  },
+  options: { requireEmptyNotes: boolean },
+) => {
+  if (
+    showQuoteNotesModal.value ||
+    showProcessingSelectModal.value ||
+    Date.now() < quoteNotesModalBlockedUntil.value ||
+    Date.now() < processingAutoOpenBlockedUntil.value
+  ) {
+    return;
+  }
+  const table = editableTableRef.value;
+  if (!table) {
+    return;
+  }
+  const resolved = payload.isNewRow
+    ? table.getResolvedEditingRow(null, -1)
+    : table.getResolvedEditingRow(payload.row as Quote, payload.rowIndex);
+  if (!resolved) {
+    return;
+  }
+  if (options.requireEmptyNotes && !isQuoteNotesEmpty(resolved.notes)) {
+    return;
+  }
+  quoteNotesModalDefaultWorkDays.value = DEFAULT_QUOTE_NOTES_WORK_DAYS;
+  quoteNotesModalInitialNotes.value =
+    resolved.notes == null ? null : String(resolved.notes);
+  quoteNotesModalContext.value = {
+    isNewRow: payload.isNewRow,
+    rowIndex: payload.rowIndex,
+    row: payload.isNewRow ? null : payload.row,
+  };
+  showQuoteNotesModal.value = true;
+};
+
 // 開啟加工選擇 Modal
 const openProcessingSelectModal = (quote: Quote) => {
   if (showProcessingSelectModal.value) return;
@@ -979,6 +1063,18 @@ const handleTableFocusField = (payload: {
   isNewRow: boolean;
   byKeyboard: boolean;
 }) => {
+  if (payload.fieldKey === 'notes') {
+    openQuoteNotesModalForEditingRow(
+      {
+        isNewRow: payload.isNewRow,
+        rowIndex: payload.rowIndex,
+        row: payload.isNewRow ? null : payload.row,
+      },
+      { requireEmptyNotes: true },
+    );
+    return;
+  }
+
   if (!payload.byKeyboard || payload.fieldKey !== 'processing') {
     return;
   }
@@ -1035,7 +1131,21 @@ const handleTableFieldHotkey = (payload: {
   resolvedRow: Partial<Quote>;
   fieldInputText?: string;
 }) => {
-  if (payload.key !== 'F10' || payload.fieldKey !== 'customerId') {
+  if (payload.key !== 'F10') {
+    return;
+  }
+  if (payload.fieldKey === 'notes') {
+    openQuoteNotesModalForEditingRow(
+      {
+        isNewRow: payload.isNewRow,
+        rowIndex: payload.rowIndex,
+        row: payload.isNewRow ? null : payload.row,
+      },
+      { requireEmptyNotes: false },
+    );
+    return;
+  }
+  if (payload.fieldKey !== 'customerId') {
     return;
   }
 

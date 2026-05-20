@@ -112,6 +112,8 @@
                 v-model="detailDraft.notes"
                 class="form-control"
                 rows="3"
+                @focus="onDetailNotesFocus"
+                @keydown="onDetailNotesKeydown"
               />
             </template>
           </DetailFieldsPanel>
@@ -242,6 +244,14 @@
       @close="closeProcessingModal"
       @confirm="handleProcessingConfirm"
     />
+
+    <QuoteNotesTemplateModal
+      :show="showQuoteNotesModal"
+      :initial-notes="quoteNotesModalInitialNotes"
+      :default-work-days="quoteNotesModalDefaultWorkDays"
+      @close="closeQuoteNotesModal"
+      @apply="applyQuoteNotesModal"
+    />
   </div>
 </template>
 
@@ -257,6 +267,8 @@ import {
   type DetailFieldItem,
 } from '@/components';
 import ProcessingSelectModal from '@/components/ProcessingSelectModal.vue';
+import QuoteNotesTemplateModal from '@/components/QuoteNotesTemplateModal.vue';
+import { DEFAULT_QUOTE_NOTES_WORK_DAYS } from '@/utils/quoteNotesTemplate';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import { quoteItemService, type QuoteItem } from '@/services/crm/quote.service';
 import { processingService, type Processing } from '@/services/crm/processing.service';
@@ -284,6 +296,11 @@ const processingModalKind = ref<QuoteProcessingModalKind>(null);
 const selectedQuoteItem = ref<QuoteItem | null>(null);
 const allProcessings = ref<Processing[]>([]);
 const processingAutoOpenBlockedUntil = ref(0);
+
+const showQuoteNotesModal = ref(false);
+const quoteNotesModalInitialNotes = ref<string | null>(null);
+const quoteNotesModalDefaultWorkDays = ref(7);
+const quoteNotesModalBlockedUntil = ref(0);
 
 const processingModalModelValue = computed(() => {
   if (processingModalKind.value === 'header') {
@@ -353,6 +370,61 @@ const startDetailsEdit = () => {
 
 const cancelDetailsEdit = () => {
   detailsEditing.value = false;
+};
+
+const closeQuoteNotesModal = () => {
+  quoteNotesModalBlockedUntil.value = Date.now() + 200;
+  showQuoteNotesModal.value = false;
+};
+
+const applyQuoteNotesModal = (text: string) => {
+  detailDraft.value.notes = text;
+  closeQuoteNotesModal();
+};
+
+const onDetailNotesFocus = () => {
+  if (!detailsEditing.value) {
+    return;
+  }
+  if (
+    showQuoteNotesModal.value ||
+    processingModalKind.value !== null ||
+    Date.now() < quoteNotesModalBlockedUntil.value ||
+    Date.now() < processingAutoOpenBlockedUntil.value
+  ) {
+    return;
+  }
+  const n = detailDraft.value.notes;
+  if (n != null && String(n).trim() !== '') {
+    return;
+  }
+  quoteNotesModalDefaultWorkDays.value = DEFAULT_QUOTE_NOTES_WORK_DAYS;
+  quoteNotesModalInitialNotes.value = null;
+  showQuoteNotesModal.value = true;
+};
+
+const onDetailNotesKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'F10') {
+    return;
+  }
+  if (!detailsEditing.value) {
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  if (
+    showQuoteNotesModal.value ||
+    processingModalKind.value !== null ||
+    Date.now() < quoteNotesModalBlockedUntil.value ||
+    Date.now() < processingAutoOpenBlockedUntil.value
+  ) {
+    return;
+  }
+  quoteNotesModalDefaultWorkDays.value = DEFAULT_QUOTE_NOTES_WORK_DAYS;
+  const n = detailDraft.value.notes;
+  quoteNotesModalInitialNotes.value =
+    n == null || String(n).trim() === '' ? null : String(n);
+  showQuoteNotesModal.value = true;
 };
 
 const saveDetailsEdit = async () => {

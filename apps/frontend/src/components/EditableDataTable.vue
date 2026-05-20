@@ -60,6 +60,7 @@
                 :search-function="column.searchFunction"
                 @update:value="handleNewRowFieldChange(column.key, $event)"
                 @keydown="handleFieldKeyDown($event, null, column, -1)"
+                @focus="handleCellNativeFocus(null, column, -1)"
                 @blur="handleNewRowBlur"
               />
               <slot 
@@ -126,6 +127,7 @@
                 :search-function="column.searchFunction"
                 @update:value="handleFieldChange(row, column.key, $event, index)"
                 @keydown="handleFieldKeyDown($event, row, column, index)"
+                @focus="handleCellNativeFocus(row, column, index)"
                 @blur="handleFieldBlur(row, column.key, index)"
               />
               <slot 
@@ -292,6 +294,8 @@ export interface EditableColumn extends Column {
   type?: 'text' | 'number' | 'select' | 'textarea' | 'boolean' | 'search-select' | 'crm-config-select' | 'date';
   /** 與 type=crm-config-select 併用：銷管設定分類 */
   crmConfigCategory?: CrmConfigCategory;
+  /** 與 type=textarea 併用：列高 */
+  textareaRows?: number;
   /** 與 type=text 併用：瀏覽器 datalist 建議值（仍可自由輸入） */
   datalistOptions?: string[];
   options?: Array<{value: any, label: string}> | (() => Array<{value: any, label: string}>);
@@ -484,6 +488,23 @@ const canEditExistingRow = (row: any) => {
 
 const isColumnEditable = (column: EditableColumn) => {
   return props.editable && (column.editable !== false);
+};
+
+/** 滑鼠點入可編輯欄位時同步 focus 狀態並廣播 focus-field（byKeyboard: false） */
+const handleCellNativeFocus = (row: any | null, column: EditableColumn, rowIndex: number) => {
+  if (!isColumnEditable(column)) {
+    return;
+  }
+  focusedFieldKey.value = column.key;
+  if (row === null) {
+    isNewRowFocused.value = true;
+    focusedRowIndex.value = null;
+    emitFocusField(column.key, newRowData.value, -1, true, false);
+  } else {
+    isNewRowFocused.value = false;
+    focusedRowIndex.value = rowIndex;
+    emitFocusField(column.key, row, rowIndex, false, false);
+  }
 };
 
 const getEditingValue = (row: any, field: string, index: number) => {

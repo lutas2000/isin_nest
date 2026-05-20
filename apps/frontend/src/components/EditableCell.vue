@@ -14,6 +14,7 @@
         :list="textDatalistId || undefined"
         @input="handleInput($event)"
         @keydown="handleKeyDown"
+        @focus="handleNativeFocus"
         @blur="handleBlur"
       />
       <datalist v-if="textDatalistId" :id="textDatalistId">
@@ -38,6 +39,7 @@
       :value="value"
       @input="handleInput($event)"
       @keydown="handleKeyDown"
+      @focus="handleNativeFocus"
       @blur="handleBlur"
       step="any"
     />
@@ -55,6 +57,7 @@
       :value="value"
       @input="handleInput($event)"
       @keydown="handleKeyDown"
+      @focus="handleNativeFocus"
       @blur="handleBlur"
     />
 
@@ -70,6 +73,7 @@
       :value="value"
       @change="handleSelectChange($event)"
       @keydown="handleKeyDown"
+      @focus="handleNativeFocus"
       @blur="handleBlur"
     >
       <option value="">{{ column.required ? '請選擇...' : '' }}</option>
@@ -94,8 +98,9 @@
       :value="value"
       @input="handleInput($event)"
       @keydown="handleKeyDown"
+      @focus="handleNativeFocus"
       @blur="handleBlur"
-      rows="2"
+      :rows="column.textareaRows ?? 2"
     ></textarea>
 
     <!-- 布林值（下拉選單） -->
@@ -106,6 +111,7 @@
       :value="value"
       @change="handleSelectChange($event)"
       @keydown="handleKeyDown"
+      @focus="handleNativeFocus"
       @blur="handleBlur"
     >
       <option :value="true">是</option>
@@ -207,7 +213,12 @@ const emit = defineEmits<{
   'update:value': [value: any];
   'keydown': [event: KeyboardEvent];
   'blur': [];
+  focus: [];
 }>();
+
+const handleNativeFocus = () => {
+  emit('focus');
+};
 
 const textDatalistId = computed(() => {
   const opts = props.column.datalistOptions;
@@ -453,6 +464,7 @@ const handleSearchInput = (event: Event) => {
 };
 
 const handleSearchFocus = () => {
+  emit('focus');
   // 如果已經有值，顯示下拉選單並搜尋
   if (searchTerm.value.trim() || props.value) {
     showSearchDropdown.value = true;
