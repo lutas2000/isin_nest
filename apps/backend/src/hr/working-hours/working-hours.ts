@@ -4,10 +4,11 @@ import { Repository } from 'typeorm';
 import { AttendRecord } from '../attend-record/entities/attend-record.entity';
 import { Staff } from '../staff/entities/staff.entity';
 
-// 出勤類型常數
+// 出勤類型常數（對應 Django staff/models.py）
+export const TYPE_NEW = 0; // 新紀錄（未決定）
 export const TYPE_ON_WORK = 1; // 上班
 export const TYPE_OFF_WORK = 2; // 下班
-export const TYPE_UNKNOWN = 0; // 未決定
+export const TYPE_UNKNOWN = 3; // 不明（重複打卡）
 
 /**
  * 工作時間計算器
@@ -59,7 +60,7 @@ export class WorkingHours {
    */
   async findUndecidedRecords(): Promise<AttendRecord[]> {
     return await this.attendRecordRepository.find({
-      where: { attendType: TYPE_UNKNOWN } as any,
+      where: { attendType: TYPE_NEW } as any,
       order: { createTime: 'ASC' } as any,
     });
   }

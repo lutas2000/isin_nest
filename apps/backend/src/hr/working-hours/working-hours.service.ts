@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SchedulePicker } from './schedule-picker';
 import { WorkingHours } from './working-hours';
 import { ManHourManager } from './man-hour-manager';
+import { HrAttendancePipelineService } from './hr-attendance-pipeline.service';
 
 /**
  * 工時計算整合服務
@@ -15,7 +16,16 @@ export class WorkingHoursService {
     private readonly schedulePicker: SchedulePicker,
     private readonly workingHours: WorkingHours,
     private readonly manHourManager: ManHourManager,
+    private readonly pipelineService: HrAttendancePipelineService,
   ) {}
+
+  async appointAttendRecordsType(): Promise<Date | null> {
+    return this.workingHours.appointAttendRecordsType();
+  }
+
+  async runDailyPipeline(): Promise<void> {
+    await this.pipelineService.runAttendancePipeline('today');
+  }
 
   /**
    * 完整的工時計算流程
@@ -191,9 +201,9 @@ export class WorkingHoursService {
       const undoneRecord = await this.manHourManager.findUndoneWorkHour();
 
       if (undoneRecord) {
-        const record = undoneRecord as { staffId: string; start_time: Date };
+        const record = undoneRecord as { name: string; start_time: Date };
         this.logger.warn(
-          `發現未完成的工時記錄: 員工 ${record.staffId}, 開始時間: ${record.start_time}`,
+          `發現未完成的工時記錄: 員工 ${record.name}, 開始時間: ${record.start_time}`,
         );
       } else {
         this.logger.log('沒有未完成的工時記錄');

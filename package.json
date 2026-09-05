@@ -36,6 +36,7 @@
     "create-resigned-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-resigned-staff.ts",
     "create-customer": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/create-customer.ts",
     "copy-staff": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-staff.ts",
+    "copy-hr-all": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-hr-all.ts",
     "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
     "list-access-mdb": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/list-access-mdb.ts",
     "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts",

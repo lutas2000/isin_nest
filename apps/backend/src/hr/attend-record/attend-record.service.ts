@@ -59,9 +59,13 @@ export class AttendRecordService {
       createAttendRecordDto.attendType,
     );
 
-    const attendRecord = this.attendRecordRepository.create(
-      createAttendRecordDto,
-    );
+    const attendRecord = this.attendRecordRepository.create({
+      ...createAttendRecordDto,
+      createTime: new Date(),
+      id:
+        String(Date.now() / 1000) +
+        (createAttendRecordDto.staffName || createAttendRecordDto.staffId),
+    });
     const savedRecord = await this.attendRecordRepository.save(attendRecord);
     return Array.isArray(savedRecord)
       ? (savedRecord[0] as AttendRecord)
@@ -84,7 +88,6 @@ export class AttendRecordService {
     const skip = (pageNum - 1) * maxLimit;
 
     const [data, total] = await this.attendRecordRepository.findAndCount({
-      relations: ['staff'],
       order: { createTime: 'DESC' },
       take: maxLimit,
       skip: skip,
@@ -96,10 +99,9 @@ export class AttendRecordService {
   /**
    * 根據ID取得出勤記錄
    */
-  async findOne(id: number): Promise<AttendRecord> {
+  async findOne(id: string): Promise<AttendRecord> {
     const attendRecord = await this.attendRecordRepository.findOne({
       where: { id },
-      relations: ['staff'],
     });
 
     if (!attendRecord) {
@@ -115,7 +117,6 @@ export class AttendRecordService {
   async findByStaffId(staffId: string): Promise<AttendRecord[]> {
     return await this.attendRecordRepository.find({
       where: { staffId },
-      relations: ['staff'],
       order: { createTime: 'DESC' },
     });
   }
@@ -129,7 +130,6 @@ export class AttendRecordService {
   ): Promise<AttendRecord[]> {
     return await this.attendRecordRepository
       .createQueryBuilder('attendRecord')
-      .leftJoinAndSelect('attendRecord.staff', 'staff')
       .where('attendRecord.createTime >= :startDate', { startDate })
       .andWhere('attendRecord.createTime <= :endDate', { endDate })
       .orderBy('attendRecord.createTime', 'DESC')
@@ -146,7 +146,6 @@ export class AttendRecordService {
   ): Promise<AttendRecord[]> {
     return await this.attendRecordRepository
       .createQueryBuilder('attendRecord')
-      .leftJoinAndSelect('attendRecord.staff', 'staff')
       .where('attendRecord.staffId = :staffId', { staffId })
       .andWhere('attendRecord.createTime >= :startDate', { startDate })
       .andWhere('attendRecord.createTime <= :endDate', { endDate })
@@ -158,7 +157,7 @@ export class AttendRecordService {
    * 更新出勤記錄
    */
   async update(
-    id: number,
+    id: string,
     updateAttendRecordDto: UpdateAttendRecordDto,
   ): Promise<AttendRecord> {
     const attendRecord = await this.findOne(id);
@@ -174,7 +173,7 @@ export class AttendRecordService {
   /**
    * 刪除出勤記錄
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const attendRecord = await this.findOne(id);
     await this.attendRecordRepository.remove(attendRecord);
   }
@@ -185,7 +184,6 @@ export class AttendRecordService {
   async findByAttendType(attendType: number): Promise<AttendRecord[]> {
     return await this.attendRecordRepository.find({
       where: { attendType },
-      relations: ['staff'],
       order: { createTime: 'DESC' },
     });
   }
@@ -229,10 +227,10 @@ export class AttendRecordService {
    * 驗證出勤類型
    */
   private validateAttendType(attendType: number): void {
-    const validTypes = [0, 1, 2];
+    const validTypes = [0, 1, 2, 3];
     if (!validTypes.includes(attendType)) {
       throw new BadRequestException(
-        `無效的出勤類型 ${attendType}，僅支援 0(未決定)、1(上班)、2(下班)`,
+        `無效的出勤類型 ${attendType}，僅支援 0(新紀錄)、1(上班)、2(下班)、3(不明)`,
       );
     }
   }

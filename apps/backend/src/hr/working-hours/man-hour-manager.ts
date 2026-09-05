@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffManhour } from '../staff-manhour/entities/staff-manhour.entity';
 import { Staff } from '../staff/entities/staff.entity';
-import { WorkingHours, TYPE_ON_WORK, TYPE_OFF_WORK } from './working-hours';
+import { WorkingHours, TYPE_ON_WORK, TYPE_OFF_WORK, TYPE_UNKNOWN } from './working-hours';
 
 /**
  * 工時管理器
@@ -82,7 +82,7 @@ export class ManHourManager {
 
         // 建立新的工時記錄
         const manHour = this.staffManhourRepository.create({
-          staffId: staffName, // 使用姓名作為員工ID
+          name: staffName,
           start_time: startTime,
           day: date,
         });
@@ -135,7 +135,7 @@ export class ManHourManager {
   async delManHour(staffName: string, date: Date): Promise<void> {
     try {
       const result = await this.staffManhourRepository.delete({
-        staffId: staffName,
+        name: staffName,
         day: date,
       } as any);
 
@@ -193,7 +193,7 @@ export class ManHourManager {
 
       if (undoneRecord) {
         this.logger.debug(
-          `找到未完成工時記錄: ${undoneRecord.id}, 員工: ${undoneRecord.staffId}`,
+          `找到未完成工時記錄: ${undoneRecord.id}, 員工: ${undoneRecord.name}`,
         );
       }
 
@@ -217,7 +217,7 @@ export class ManHourManager {
     try {
       return await this.staffManhourRepository.find({
         where: {
-          staffId: staffName,
+          name: staffName,
           day: date,
         } as any,
         order: { startTime: 'ASC' } as any,
@@ -249,12 +249,11 @@ export class ManHourManager {
     try {
       const manHours = await this.staffManhourRepository
         .createQueryBuilder('mh')
-        .leftJoinAndSelect('mh.staff', 'staff')
         .where('mh.day >= :startDate', { startDate })
         .andWhere('mh.day <= :endDate', { endDate })
         .getMany();
 
-      const totalStaff = new Set(manHours.map((mh) => mh.staffId)).size;
+      const totalStaff = new Set(manHours.map((mh) => mh.name)).size;
       const totalWorkHours = manHours.reduce(
         (sum, mh) => sum + (mh.work_time || 0),
         0,

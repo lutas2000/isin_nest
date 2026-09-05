@@ -114,6 +114,20 @@ export const FEATURES: FeatureConfig[] = [
     module: 'hr',
     category: 'working-hours',
   },
+  {
+    name: 'hr-staff-workhour',
+    label: '員工工時彙總',
+    description: '管理員工工時彙總記錄',
+    module: 'hr',
+    category: 'staff-workhour',
+  },
+  {
+    name: 'hr-staff-authority',
+    label: '員工權限',
+    description: '管理員工模組權限設定',
+    module: 'hr',
+    category: 'staff-authority',
+  },
 ] as const;
 
 /**

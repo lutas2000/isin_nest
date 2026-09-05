@@ -51,13 +51,10 @@
         :show-actions="true"
         :editable="false"
       >
-        <template #cell-staffId="{ row }">
+        <template #cell-name="{ row }">
           <span class="clickable-cell" @click="viewSegment(row)">
-            {{ row.staffId }}
+            {{ row.name }}
           </span>
-        </template>
-        <template #cell-staffName="{ row }">
-          {{ getStaffName(row.staffId) }}
         </template>
         <template #cell-begain_time="{ value }">
           {{ value }}
@@ -134,7 +131,7 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">員工 *</label>
-              <select class="form-control" v-model="newSegment.staffId" required>
+              <select class="form-control" v-model="selectedStaffId" required>
                 <option value="">選擇員工</option>
                 <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
                   {{ staff.id }} - {{ staff.name }}
@@ -257,7 +254,7 @@
               <input
                 type="text"
                 class="form-control"
-                :value="getStaffName(editingSegment.staffId)"
+                :value="editingSegment.name"
                 readonly
               />
             </div>
@@ -375,12 +372,8 @@
             <div class="detail-section">
               <h4 class="section-title">基本資訊</h4>
               <div class="detail-row">
-                <div class="detail-label">員工編號</div>
-                <div class="detail-value">{{ viewingSegment.staffId }}</div>
-              </div>
-              <div class="detail-row">
                 <div class="detail-label">員工姓名</div>
-                <div class="detail-value">{{ getStaffName(viewingSegment.staffId) }}</div>
+                <div class="detail-value">{{ viewingSegment.name }}</div>
               </div>
               <div class="detail-row">
                 <div class="detail-label">建立日期</div>
@@ -472,12 +465,12 @@ const errorStore = useErrorStore();
 // 段別類型定義
 interface StaffSegment {
   id: number;
-  staffId: string;
+  name: string;
   begain_time: string;
   end_time: string;
-  cross_day: boolean;
-  duty: boolean;
-  night_work: boolean;
+  cross_day: number;
+  duty: number;
+  night_work: number;
   rest_time: number;
   rest_time2: number;
   create_date: string;
@@ -510,14 +503,16 @@ const showViewModal = ref(false);
 
 
 // 新增段別表單
+const selectedStaffId = ref('');
+
 const newSegment = ref<StaffSegment>({
   id: 0,
-  staffId: '',
+  name: '',
   begain_time: '08:00',
   end_time: '17:00',
-  cross_day: false,
-  duty: false,
-  night_work: false,
+  cross_day: 0,
+  duty: 0,
+  night_work: 0,
   rest_time: 60,
   rest_time2: 60,
   create_date: new Date().toISOString().split('T')[0],
@@ -582,7 +577,7 @@ const updateSegmentStats = () => {
 const getMockSegmentData = () => [
   {
     id: 1,
-    staffId: 'STAFF001',
+    name: '張小明',
     begain_time: '08:00:00',
     end_time: '17:00:00',
     cross_day: false,
@@ -594,7 +589,7 @@ const getMockSegmentData = () => [
   },
   {
     id: 2,
-    staffId: 'STAFF002',
+    name: '李小華',
     begain_time: '22:00:00',
     end_time: '06:00:00',
     cross_day: true,
@@ -606,7 +601,7 @@ const getMockSegmentData = () => [
   },
   {
     id: 3,
-    staffId: 'STAFF003',
+    name: '王美玲',
     begain_time: '09:00:00',
     end_time: '18:00:00',
     cross_day: false,
@@ -634,13 +629,12 @@ const filteredSegments = computed(() => {
   if (searchQuery.value) {
     filtered = filtered.filter(
       (segment) =>
-        segment.staffId.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        getStaffName(segment.staffId).toLowerCase().includes(searchQuery.value.toLowerCase())
+        segment.name.toLowerCase().includes(searchQuery.value.toLowerCase())
     );
   }
 
   if (staffFilter.value) {
-    filtered = filtered.filter((segment) => segment.staffId === staffFilter.value);
+    filtered = filtered.filter((segment) => segment.name === staffFilter.value);
   }
 
   if (shiftTypeFilter.value) {
@@ -658,7 +652,7 @@ const filteredSegments = computed(() => {
 
 // 段別列表表格欄位
 const segmentColumns = [
-  { key: 'staffId', label: '員工編號' },
+  { key: 'name', label: '員工姓名' },
   { key: 'staffName', label: '員工姓名' },
   { key: 'begain_time', label: '開始時間' },
   { key: 'end_time', label: '結束時間' },
@@ -692,6 +686,13 @@ const editSegment = (segment: StaffSegment) => {
 const addSegment = async () => {
   errorStore.clearError();
 
+  const staff = staffList.value.find((s) => s.id === selectedStaffId.value);
+  if (!staff) {
+    errorStore.showError('請選擇員工');
+    return;
+  }
+  newSegment.value.name = staff.name;
+
   try {
     const response = await fetch('/api/staff-segment', {
       method: 'POST',
@@ -709,16 +710,17 @@ const addSegment = async () => {
       // 重置表單
       newSegment.value = {
         id: 0,
-        staffId: '',
+        name: '',
         begain_time: '08:00',
         end_time: '17:00',
-        cross_day: false,
-        duty: false,
-        night_work: false,
+        cross_day: 0,
+        duty: 0,
+        night_work: 0,
         rest_time: 60,
         rest_time2: 60,
         create_date: new Date().toISOString().split('T')[0],
       };
+      selectedStaffId.value = '';
 
       showAddModal.value = false;
     } else {
@@ -766,7 +768,7 @@ const updateSegment = async () => {
 
 // 刪除段別
 const deleteSegment = async (segment: StaffSegment) => {
-  if (!confirm(`確定要刪除員工 ${getStaffName(segment.staffId)} 的段別設定嗎？`)) {
+  if (!confirm(`確定要刪除員工 ${segment.name} 的段別設定嗎？`)) {
     return;
   }
 

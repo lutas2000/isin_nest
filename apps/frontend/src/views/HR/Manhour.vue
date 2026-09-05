@@ -111,7 +111,7 @@
               <template #cell-day="{ value }">
                 {{ formatDate(value) }}
               </template>
-              <template #cell-staffId="{ value }">
+              <template #cell-name="{ value }">
                 {{ value }}
               </template>
               <template #cell-staffName="{ row }">
@@ -183,7 +183,7 @@
           <div class="stat-card">
             <h4>員工工時排行</h4>
             <div class="employee-stats">
-              <div class="employee-item" v-for="emp in employeeStats" :key="emp.staffId">
+              <div class="employee-item" v-for="emp in employeeStats" :key="emp.name">
                 <div class="employee-info">
                   <div class="employee-name">{{ emp.employeeName }}</div>
                   <div class="employee-dept">{{ emp.department }}</div>
@@ -255,11 +255,11 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>員工編號 *</label>
+            <label>員工姓名 *</label>
             <input 
               type="text" 
               class="form-control" 
-              v-model="formData.staffId"
+              v-model="formData.name"
               :disabled="showEditModal"
               required
             />
@@ -329,7 +329,7 @@ interface Staff {
 
 interface StaffManhour {
   id: number;
-  staffId: string;
+  name: string;
   start_time?: string | Date;
   end_time?: string | Date;
   work_time: number;
@@ -352,7 +352,7 @@ interface DeptStat {
 }
 
 interface EmployeeStat {
-  staffId: string;
+  name: string;
   employeeName: string;
   department: string;
   totalHours: number;
@@ -405,7 +405,7 @@ const errorMessage = ref('');
 
 // 表單資料
 const formData = ref<Partial<StaffManhour>>({
-  staffId: '',
+  name: '',
   day: '',
   start_time: '',
   end_time: '',
@@ -458,7 +458,7 @@ const loadManhourData = async () => {
 const updateStats = () => {
   const records = manhourRecords.value;
   const totalHours = records.reduce((sum, r) => sum + r.work_time, 0);
-  const uniqueEmployees = new Set(records.map(r => r.staffId));
+  const uniqueEmployees = new Set(records.map(r => r.name));
   
   manhourStats.value = {
     totalHours: Math.round(totalHours * 10) / 10,
@@ -476,7 +476,7 @@ const filteredRecords = computed(() => {
     const search = recordSearch.value.toLowerCase();
     filtered = filtered.filter(
       (record) =>
-        record.staffId.toLowerCase().includes(search) ||
+        record.name.toLowerCase().includes(search) ||
         record.staff?.name?.toLowerCase().includes(search) ||
         record.staff?.department?.toLowerCase().includes(search),
     );
@@ -488,7 +488,7 @@ const filteredRecords = computed(() => {
 // 工時記錄表格欄位
 const recordColumns = [
   { key: 'day', label: '日期' },
-  { key: 'staffId', label: '員工編號' },
+  { key: 'name', label: '員工姓名' },
   { key: 'staffName', label: '員工姓名' },
   { key: 'department', label: '部門' },
   { key: 'start_time', label: '開始時間' },
@@ -550,7 +550,7 @@ const calculateDeptStats = (records: StaffManhour[]) => {
       deptMap.set(dept, { employees: new Set(), hours: 0 });
     }
     const stat = deptMap.get(dept)!;
-    stat.employees.add(record.staffId);
+    stat.employees.add(record.name);
     stat.hours += record.work_time;
   });
   
@@ -567,7 +567,7 @@ const calculateEmployeeStats = (records: StaffManhour[]) => {
   const empMap = new Map<string, { name: string, dept: string, hours: number, count: number }>();
   
   records.forEach(record => {
-    const empId = record.staffId;
+    const empId = record.name;
     if (!empMap.has(empId)) {
       empMap.set(empId, {
         name: record.staff?.name || empId,
@@ -582,8 +582,8 @@ const calculateEmployeeStats = (records: StaffManhour[]) => {
   });
   
   employeeStats.value = Array.from(empMap.entries())
-    .map(([staffId, stat]) => ({
-      staffId,
+    .map(([name, stat]) => ({
+      name,
       employeeName: stat.name,
       department: stat.dept,
       totalHours: Math.round(stat.hours * 10) / 10,
@@ -618,7 +618,7 @@ const generateReport = async () => {
     if (response.ok) {
       const data = await response.json();
       const totalHours = data.reduce((sum: number, r: StaffManhour) => sum + r.work_time, 0);
-      const uniqueEmployees = new Set(data.map((r: StaffManhour) => r.staffId));
+      const uniqueEmployees = new Set(data.map((r: StaffManhour) => r.name));
       
       reportSummary.value = {
         totalHours: Math.round(totalHours * 10) / 10,
@@ -635,7 +635,7 @@ const generateReport = async () => {
 const editRecord = (record: StaffManhour) => {
   formData.value = {
     id: record.id,
-    staffId: record.staffId,
+    name: record.name,
     day: formatDateForInput(record.day),
     start_time: formatDateTimeForInput(record.start_time),
     end_time: formatDateTimeForInput(record.end_time),
@@ -675,14 +675,14 @@ const saveRecord = async () => {
   errorMessage.value = '';
   
   // 驗證必填欄位
-  if (!formData.value.staffId || !formData.value.day || formData.value.work_time === undefined) {
+  if (!formData.value.name || !formData.value.day || formData.value.work_time === undefined) {
     errorMessage.value = '請填寫所有必填欄位';
     return;
   }
   
   try {
     const payload: any = {
-      staffId: formData.value.staffId,
+      name: formData.value.name,
       day: formData.value.day,
       work_time: formData.value.work_time,
     };
@@ -725,7 +725,7 @@ const closeModal = () => {
   showEditModal.value = false;
   errorMessage.value = '';
   formData.value = {
-    staffId: '',
+    name: '',
     day: '',
     start_time: '',
     end_time: '',

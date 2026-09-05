@@ -7,15 +7,7 @@ export class StaffVacation {
   @PrimaryColumn({ type: 'date' })
   date: Date;
 
-  @ApiProperty({ description: '是否支薪', example: true })
-  @Column({ type: 'boolean', default: false })
-  pay: boolean;
-
-  @ApiProperty({ description: '假別', example: '國定假日' })
-  @Column({
-    type: 'varchar',
-    length: 50,
-  })
-  type: string;
+  @ApiProperty({ description: '是否支薪', example: 1 })
+  @Column({ type: 'int' })
+  pay: number;
 }
-

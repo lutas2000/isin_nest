@@ -1,70 +1,33 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Staff } from '../../staff/entities/staff.entity';
 
-@Entity('staff_leave') // 表名為 staff_leave
+@Entity('staff_leave')
 export class StaffLeave {
   @ApiProperty({ description: '請假記錄編號', example: 1 })
   @PrimaryGeneratedColumn({ type: 'int' })
-  id: number; // 請假記錄編號
+  id: number;
 
-  @ApiProperty({ description: '員工ID', example: 'STAFF001' })
-  @Column({ 
-    type: 'varchar',
-    length: 10,
-  })
-  staff_id: string; // 員工ID
+  @ApiProperty({ description: '員工姓名', example: '張三' })
+  @Column({ type: 'varchar', length: 6 })
+  name: string;
 
-  @ApiProperty({ description: '員工資料', type: () => Staff, required: false })
-  @ManyToOne(() => Staff, { eager: true, nullable: true })
-  @JoinColumn({ name: 'staff_id' })
-  staff?: Staff; // 員工關聯
+  @ApiProperty({ description: '假別', example: '特休' })
+  @Column({ type: 'varchar', length: 4 })
+  type: string;
 
-  @ApiProperty({ description: '請假類型', example: '特休' })
-  @Column({
-    type: 'varchar',
-    length: 20,
-  })
-  type: string; // 請假類型
-
-  @ApiProperty({
-    description: '開始時間',
-    example: '2023-12-01 09:00:00',
-  })
+  @ApiProperty({ description: '開始時間', example: '2023-12-01 09:00:00' })
   @Column({ type: 'timestamptz' })
-  start_time: Date; // 開始時間
+  start_time: Date;
 
-  @ApiProperty({
-    description: '結束時間',
-    example: '2023-12-01 18:00:00',
-  })
+  @ApiProperty({ description: '結束時間', example: '2023-12-01 18:00:00' })
   @Column({ type: 'timestamptz' })
-  end_time: Date; // 結束時間
+  end_time: Date;
 
   @ApiProperty({ description: '請假時數', example: 8.0 })
-  @Column({ type: 'float', default: 0, comment: '時數' })
-  time: number; // 時數
+  @Column({ type: 'float', default: 0 })
+  time: number;
 
-  @ApiProperty({
-    description: '審核主管ID',
-    example: 'STAFF002',
-    required: false,
-  })
-  @Column({ type: 'varchar', length: 10, nullable: true })
-  verify_by_staff_id: string; // 審核主管ID
-
-  @ApiProperty({
-    description: '審核主管資料',
-    type: () => Staff,
-    required: false,
-  })
-  @ManyToOne(() => Staff, { eager: true, nullable: true })
-  @JoinColumn({ name: 'verify_by_staff_id' })
-  verifyByStaff?: Staff; // 審核主管關聯
+  @ApiProperty({ description: '簽核人', example: '王五' })
+  @Column({ type: 'varchar', length: 6 })
+  verify: string;
 }

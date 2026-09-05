@@ -193,6 +193,23 @@ export class WorkingHoursController {
     return await this.workingHoursService.getSystemStatus();
   }
 
+  @Post('appoint-attend-type')
+  @ApiOperation({ summary: '決定未分類打卡記錄類型（對應 Django /staff/appoint）' })
+  async appointAttendType(): Promise<{ message: string; lastTime: string | null }> {
+    const lastTime = await this.workingHoursService.appointAttendRecordsType();
+    return {
+      message: 'appoint_attend_type succeed',
+      lastTime: lastTime ? lastTime.toISOString() : null,
+    };
+  }
+
+  @Post('run-daily-pipeline')
+  @ApiOperation({ summary: '執行完整每日出勤管線（對應 Django /staff/work_hour/today）' })
+  async runDailyPipeline(): Promise<{ message: string }> {
+    await this.workingHoursService.runDailyPipeline();
+    return { message: 'succeed' };
+  }
+
   @Post('today')
   @ApiOperation({ summary: '計算今日工時' })
   @ApiResponse({ status: 200, description: '成功計算今日工時' })

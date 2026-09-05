@@ -7,27 +7,23 @@ import { StaffSegmentModule } from './staff-segment/staff-segment.module';
 import { AttendRecordModule } from './attend-record/attend-record.module';
 import { WorkingHoursModule } from './working-hours/working-hours.module';
 import { StaffVacationModule } from './staff-vacation/staff-vacation.module';
+import { StaffWorkhourModule } from './staff-workhour/staff-workhour.module';
+import { StaffAuthorityModule } from './staff-authority/staff-authority.module';
 
 @Module({
   imports: [
-    // 員工基本資料管理
     StaffModule,
-    // 員工請假管理
     StaffLeaveModule,
-    // 員工工時管理
     StaffManhourModule,
     StaffManhour2Module,
-    // 員工上班時段管理
     StaffSegmentModule,
-    // 員工出勤記錄管理
     AttendRecordModule,
-    // 工時計算管理
     WorkingHoursModule,
-    // 員工假期管理
     StaffVacationModule,
+    StaffWorkhourModule,
+    StaffAuthorityModule,
   ],
   exports: [
-    // 匯出所有子模組，讓其他模組可以使用
     StaffModule,
     StaffLeaveModule,
     StaffManhourModule,
@@ -36,6 +32,8 @@ import { StaffVacationModule } from './staff-vacation/staff-vacation.module';
     AttendRecordModule,
     WorkingHoursModule,
     StaffVacationModule,
+    StaffWorkhourModule,
+    StaffAuthorityModule,
   ],
 })
 export class HrModule {}

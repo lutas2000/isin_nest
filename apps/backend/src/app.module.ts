@@ -26,6 +26,7 @@ import { AddDeliveryDeadlineToOrder1776700000000 } from './migrations/1776700000
 import { AddUnitToCrmLineItems1776800000000 } from './migrations/1776800000000-AddUnitToCrmLineItems';
 import { CrmConfigCodeSingleChar1776900000000 } from './migrations/1776900000000-CrmConfigCodeSingleChar';
 import { AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000 } from './migrations/1777000000000-AddQuoteDeliveryDaysAndOrderConfirmedAt';
+import { AlignHrSchemaToLegacy1777100000000 } from './migrations/1777100000000-AlignHrSchemaToLegacy';
 import { SystemModule } from './system/system.module';
 
 function parseBool(value: string | undefined): boolean | undefined {
@@ -81,6 +82,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           AddUnitToCrmLineItems1776800000000,
           CrmConfigCodeSingleChar1776900000000,
           AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000,
+          AlignHrSchemaToLegacy1777100000000,
         ],
         migrationsRun: parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
         migrationsTableName: 'typeorm_migrations',

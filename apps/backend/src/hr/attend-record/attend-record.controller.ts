@@ -165,7 +165,7 @@ export class AttendRecordController {
     type: AttendRecord,
   })
   @ApiResponse({ status: 404, description: '出勤記錄不存在' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<AttendRecord> {
+  async findOne(@Param('id') id: string): Promise<AttendRecord> {
     return await this.attendRecordService.findOne(id);
   }
 
@@ -180,7 +180,7 @@ export class AttendRecordController {
   @ApiResponse({ status: 404, description: '出勤記錄不存在' })
   @ApiResponse({ status: 400, description: '請求參數錯誤' })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateAttendRecordDto: UpdateAttendRecordDto,
   ): Promise<AttendRecord> {
     return await this.attendRecordService.update(id, updateAttendRecordDto);
@@ -192,7 +192,7 @@ export class AttendRecordController {
   @ApiResponse({ status: 200, description: '成功刪除出勤記錄' })
   @ApiResponse({ status: 404, description: '出勤記錄不存在' })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
   ): Promise<{ message: string }> {
     await this.attendRecordService.remove(id);
     return { message: '出勤記錄已成功刪除' };

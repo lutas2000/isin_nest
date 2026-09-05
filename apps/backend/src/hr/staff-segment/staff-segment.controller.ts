@@ -58,6 +58,12 @@ export class StaffSegmentController {
     return await this.staffSegmentService.findAll(page, limit);
   }
 
+  @Get('by-name/:name')
+  @ApiOperation({ summary: '根據員工姓名取得段別設定' })
+  async findByName(@Param('name') name: string): Promise<StaffSegment[]> {
+    return this.staffSegmentService.findByName(name);
+  }
+
   @Get('staff/:staffId')
   @ApiOperation({ summary: '根據員工編號取得段別設定' })
   @ApiParam({ name: 'staffId', description: '員工編號', example: 'STAFF001' })

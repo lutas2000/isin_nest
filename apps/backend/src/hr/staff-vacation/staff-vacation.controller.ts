@@ -81,29 +81,11 @@ export class StaffVacationController {
     return await this.staffVacationService.findByDateRange(startDate, endDate);
   }
 
-  @Get('by-type/:type')
-  @ApiOperation({ summary: '根據假別查詢假期記錄' })
-  @ApiParam({ name: 'type', description: '假別', example: '國定假日' })
-  @ApiResponse({
-    status: 200,
-    description: '成功取得指定假別的假期記錄',
-    type: [StaffVacation],
-  })
-  async findByType(@Param('type') type: string): Promise<StaffVacation[]> {
-    return await this.staffVacationService.findByType(type);
-  }
-
   @Get('by-pay')
   @ApiOperation({ summary: '根據是否支薪查詢假期記錄' })
-  @ApiQuery({ name: 'pay', description: '是否支薪', example: true })
-  @ApiResponse({
-    status: 200,
-    description: '成功取得指定支薪狀態的假期記錄',
-    type: [StaffVacation],
-  })
+  @ApiQuery({ name: 'pay', description: '是否支薪 (0/1)', example: 1 })
   async findByPay(@Query('pay') pay: string): Promise<StaffVacation[]> {
-    const payBoolean = pay === 'true';
-    return await this.staffVacationService.findByPay(payBoolean);
+    return this.staffVacationService.findByPay(parseInt(pay, 10) || 0);
   }
 
   @Get(':date')

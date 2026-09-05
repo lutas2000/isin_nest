@@ -26,7 +26,7 @@ export class SchedulePicker {
     try {
       this.segment = await this.staffSegmentRepository
         .createQueryBuilder('segment')
-        .where('segment.staffId = :name', { name })
+        .where('segment.name = :name', { name })
         .andWhere('segment.create_date <= :date', { date })
         .orderBy('segment.create_date', 'DESC')
         .getOne();

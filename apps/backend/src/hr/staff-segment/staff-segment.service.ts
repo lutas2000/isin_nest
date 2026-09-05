@@ -2,26 +2,28 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffSegment } from './entities/staff-segment.entity';
+import { Staff } from '../staff/entities/staff.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 export interface CreateStaffSegmentDto {
-  staffId: string;
+  name: string;
   begain_time: string;
   end_time: string;
-  cross_day?: boolean;
-  duty?: boolean;
-  night_work?: boolean;
+  cross_day?: number;
+  duty?: number;
+  night_work?: number;
   rest_time?: number;
   rest_time2?: number;
+  create_date?: Date;
 }
 
 export interface UpdateStaffSegmentDto {
-  staffId?: string;
+  name?: string;
   begain_time?: string;
   end_time?: string;
-  cross_day?: boolean;
-  duty?: boolean;
-  night_work?: boolean;
+  cross_day?: number;
+  duty?: number;
+  night_work?: number;
   rest_time?: number;
   rest_time2?: number;
 }
@@ -31,61 +33,57 @@ export class StaffSegmentService {
   constructor(
     @InjectRepository(StaffSegment)
     private readonly staffSegmentRepository: Repository<StaffSegment>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
   ) {}
 
   async create(
     createStaffSegmentDto: CreateStaffSegmentDto,
   ): Promise<StaffSegment> {
-    const staffSegment = this.staffSegmentRepository.create(
-      createStaffSegmentDto,
-    );
-    const savedStaffSegment =
-      await this.staffSegmentRepository.save(staffSegment);
-    return Array.isArray(savedStaffSegment)
-      ? (savedStaffSegment[0] as StaffSegment)
-      : savedStaffSegment;
+    const staffSegment = this.staffSegmentRepository.create({
+      ...createStaffSegmentDto,
+      create_date: createStaffSegmentDto.create_date ?? new Date(),
+    });
+    return this.staffSegmentRepository.save(staffSegment);
   }
 
   async findAll(
     page?: number,
     limit?: number,
   ): Promise<StaffSegment[] | PaginatedResponseDto<StaffSegment>> {
-    // 使用預設值：page=1, limit=50
     const pageNum = page ?? 1;
-    const limitNum = limit ?? 50;
-
-    // 限制最大每頁筆數
-    const maxLimit = Math.min(limitNum, 100);
-    const skip = (pageNum - 1) * maxLimit;
+    const limitNum = Math.min(limit ?? 50, 100);
+    const skip = (pageNum - 1) * limitNum;
 
     const [data, total] = await this.staffSegmentRepository.findAndCount({
-      relations: ['staff'],
-      order: { id: 'ASC' } as any,
-      take: maxLimit,
-      skip: skip,
+      order: { id: 'ASC' },
+      take: limitNum,
+      skip,
     });
 
-    return new PaginatedResponseDto(data, total, pageNum, maxLimit);
+    return new PaginatedResponseDto(data, total, pageNum, limitNum);
   }
 
   async findOne(id: number): Promise<StaffSegment> {
     const staffSegment = await this.staffSegmentRepository.findOne({
-      where: { id } as any,
-      relations: ['staff'],
+      where: { id },
     });
-
     if (!staffSegment) {
       throw new NotFoundException(`員工段別設定 ID ${id} 不存在`);
     }
-
     return staffSegment;
   }
 
   async findByStaffId(staffId: string): Promise<StaffSegment[]> {
-    return await this.staffSegmentRepository.find({
-      where: { staffId } as any,
-      relations: ['staff'],
-      order: { id: 'ASC' } as any,
+    const staff = await this.staffRepository.findOne({ where: { id: staffId } });
+    if (!staff) return [];
+    return this.findByName(staff.name);
+  }
+
+  async findByName(name: string): Promise<StaffSegment[]> {
+    return this.staffSegmentRepository.find({
+      where: { name },
+      order: { id: 'ASC' },
     });
   }
 
@@ -93,18 +91,12 @@ export class StaffSegmentService {
     id: number,
     updateStaffSegmentDto: UpdateStaffSegmentDto,
   ): Promise<StaffSegment> {
-    const existingStaffSegment = await this.findOne(id);
-
-    const updatedStaffSegment = this.staffSegmentRepository.merge(
-      existingStaffSegment,
+    const existing = await this.findOne(id);
+    const updated = this.staffSegmentRepository.merge(
+      existing,
       updateStaffSegmentDto,
     );
-
-    const savedStaffSegment =
-      await this.staffSegmentRepository.save(updatedStaffSegment);
-    return Array.isArray(savedStaffSegment)
-      ? (savedStaffSegment[0] as StaffSegment)
-      : savedStaffSegment;
+    return this.staffSegmentRepository.save(updated);
   }
 
   async remove(id: number): Promise<void> {
@@ -116,9 +108,8 @@ export class StaffSegmentService {
     startDate: Date,
     endDate: Date,
   ): Promise<StaffSegment[]> {
-    return await this.staffSegmentRepository
+    return this.staffSegmentRepository
       .createQueryBuilder('staffSegment')
-      .leftJoinAndSelect('staffSegment.staff', 'staff')
       .where('staffSegment.create_date >= :startDate', { startDate })
       .andWhere('staffSegment.create_date <= :endDate', { endDate })
       .orderBy('staffSegment.id', 'ASC')
