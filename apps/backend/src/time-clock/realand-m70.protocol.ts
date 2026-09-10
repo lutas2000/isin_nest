@@ -3,15 +3,26 @@ import { TimeClockDeviceTime, TimeClockUser } from './time-clock.types';
 
 export const M70_COMMAND = {
   INITIALIZE: 0x0052,
+  SET_ENROLL_DATA: 0x0102,
+  DELETE_ENROLL_DATA: 0x0103,
   GET_DEVICE_STATUS: 0x0108,
   GET_DEVICE_INFO: 0x0109,
+  ENABLE_USER: 0x010d,
+  MODIFY_PRIVILEGE: 0x0111,
   GET_DEVICE_TIME: 0x010e,
   READ_ALL_USER_IDS: 0x0112,
   GET_SERIAL_NUMBER: 0x0113,
   GET_BACKUP_NUMBER: 0x0115,
   GET_PRODUCT_CODE: 0x0116,
   GET_USER_NAME: 0x011a,
+  SET_USER_NAME: 0x011b,
 } as const;
+
+/**
+ * SBPCCOMM's SendBigDataX splits a data payload into 0x3fc-byte frames.
+ * The value is part of the native DLL implementation, not a TCP MTU guess.
+ */
+export const M70_MAX_DATA_PAYLOAD = 0x03fc;
 
 export const M70_DEVICE_STATUS_SELECTOR = {
   MANAGER_COUNT: 1,
@@ -76,6 +87,33 @@ export function buildCommandFrame(
   frame.writeUInt32LE(arg3 >>> 0, 8);
   frame.writeUInt16LE(arg2 & 0xffff, 12);
   frame.writeUInt16LE(checksum16(frame.subarray(0, 14)), 14);
+  return frame;
+}
+
+export function buildDataFrame(dn: number, payload: Uint8Array): Buffer {
+  const frame = Buffer.alloc(payload.length + 6);
+  frame.writeUInt16BE(0xa55a, 0);
+  frame.writeUInt16LE(dn, 2);
+  Buffer.from(payload).copy(frame, 4);
+  frame.writeUInt16LE(
+    checksum16(frame.subarray(0, frame.length - 2)),
+    frame.length - 2,
+  );
+  return frame;
+}
+
+/**
+ * SendBigDataX uses the alternate 5a a5 header used by M70 write payloads.
+ */
+export function buildBigDataFrame(dn: number, payload: Uint8Array): Buffer {
+  const frame = Buffer.alloc(payload.length + 6);
+  frame.writeUInt16BE(0x5aa5, 0);
+  frame.writeUInt16LE(dn, 2);
+  Buffer.from(payload).copy(frame, 4);
+  frame.writeUInt16LE(
+    checksum16(frame.subarray(0, frame.length - 2)),
+    frame.length - 2,
+  );
   return frame;
 }
 

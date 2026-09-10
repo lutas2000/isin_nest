@@ -10,6 +10,7 @@ import {
   TimeClockDeviceStatus,
   TimeClockDeviceTime,
   TimeClockUser,
+  TimeClockUserUpsert,
 } from './time-clock.types';
 
 /**
@@ -56,6 +57,14 @@ export class TimeClockService {
 
   setUserName(userId: number, name: string): Promise<void> {
     return this.client.setUserName(userId, name);
+  }
+
+  upsertUser(user: TimeClockUserUpsert): Promise<void> {
+    return this.client.upsertUser(user);
+  }
+
+  deleteUser(userId: number): Promise<void> {
+    return this.client.deleteUser(userId);
   }
 
   setUserEnabled(userId: number, enabled: boolean): Promise<void> {

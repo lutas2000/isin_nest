@@ -4,7 +4,7 @@
 > 測試設備：M70 v3.6.8，IP 192.168.0.223
 > 直接連線：TCP 192.168.0.223:5005
 > 設備 Machine ID / DN：3
-> 本文件的測試範圍以唯讀操作為主，未讀取指紋、人臉模板，也未執行清除、寫入、開門、重啟或韌體操作。
+> 本文件的實機測試範圍以唯讀操作為主，未讀取指紋、人臉模板，也未對設備執行清除、寫入、開門、重啟或韌體操作。後文新增的 NestJS 寫入 wrapper 是依官方程式/DLL 靜態分析實作，尚未對 M70 實機送出寫入封包。
 
 ## 1. 結論摘要
 
@@ -887,6 +887,8 @@ RealandM70Client
 ├── getTime()
 ├── listUsers()
 ├── getUserName(userId)
+├── upsertUser(user)
+├── deleteUser(userId)
 ├── listAttendanceLogs()
 └── disconnect()
 ~~~
@@ -923,3 +925,45 @@ RealandM70Client
 - SBPCCOMM.DLL extended functions 的版本相容性。
 
 在沒有設備備份、維護時段和明確回復方案前，保持這些函式停用。
+
+## 11. NestJS 人員寫入/刪除 functions
+
+目前 backend 提供兩個不涉及資料庫或 HTTP controller 的設備操作：
+
+~~~ts
+TimeClockService.upsertUser(user: TimeClockUserUpsert): Promise<void>
+TimeClockService.deleteUser(userId: number): Promise<void>
+~~~
+
+`upsertUser` 對應官方 SDK 的 `UserProperty.Enroll` 使用情境，支援以下欄位：
+
+| 欄位 | 說明 |
+|---|---|
+| `userId` | 必填，unsigned 32-bit 人員 ID |
+| `name` | UTF-16LE，最多 0x6c bytes |
+| `password` | 十進位字串或數字，unsigned 32-bit |
+| `cardId` | 十進位字串或數字，unsigned 32-bit |
+| `fingerprints` | slot 0–9；每筆必須是 native SBXPC 0x588-byte template |
+| `privilege` | unsigned 16-bit 權限值 |
+| `enabled` | 啟用/停用人員 |
+
+對應的 native command 是：
+
+~~~text
+SetEnrollData  0x0102, fingerprint: arg2=0x11, arg3=(slot << 28) | userId
+SetEnrollData  0x0102, password:    arg2=0x12, arg3=userId
+SetEnrollData  0x0102, card:        arg2=0x13, arg3=userId
+SetUserName    0x011b,               arg2=0,    arg3=userId
+ModifyPrivilege 0x0111,              arg2=privilege, arg3=userId
+EnableUser     0x010d,               arg2=1/0,  arg3=userId
+~~~
+
+指紋及姓名/憑證 payload 會依 `SendBigDataX` 的 0x3fc-byte 分段方式傳送。SDK 較高層的 498-byte 指紋格式不能直接當成 native 0x588-byte payload；目前也不接受 `duress` 指紋。
+
+`deleteUser(userId)` 對應 `DeviceProperty.Enrolls` 傳入人員 ID，使用：
+
+~~~text
+DeleteEnrollData 0x0103, arg2=5, arg3=userId
+~~~
+
+這個 selector 的語意是刪除該人員的整筆 enrollment/credentials，不是只刪單一指紋 slot。上述函式具有實際副作用，呼叫前應先做權限控管、audit log、設備備份與人工確認；本次尚未對實機執行。

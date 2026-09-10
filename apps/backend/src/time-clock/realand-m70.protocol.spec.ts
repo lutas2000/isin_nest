@@ -1,4 +1,5 @@
 import {
+  buildBigDataFrame,
   buildCommandFrame,
   checksum16,
   decodeM70DeviceTime,
@@ -56,6 +57,14 @@ describe('Realand M70 protocol helpers', () => {
 
     frame[4] = 9;
     expect(() => parseDataFrame(frame, 3, 4)).toThrow('checksum mismatch');
+  });
+
+  it('builds the big-data frame used by native write helpers', () => {
+    const frame = buildBigDataFrame(3, Buffer.from([1, 2, 3]));
+
+    expect(frame.subarray(0, 4).toString('hex')).toBe('5aa50300');
+    expect(frame.subarray(4, 7)).toEqual(Buffer.from([1, 2, 3]));
+    expect(frame.readUInt16LE(7)).toBe(checksum16(frame.subarray(0, 7)));
   });
 
   it('decodes device seconds from the 2000 epoch', () => {

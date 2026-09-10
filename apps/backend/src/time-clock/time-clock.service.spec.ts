@@ -4,6 +4,7 @@ import {
   TimeClockDeviceStatus,
   TimeClockDeviceTime,
   TimeClockUser,
+  TimeClockUserUpsert,
 } from './time-clock.types';
 
 describe('TimeClockService', () => {
@@ -46,6 +47,8 @@ describe('TimeClockService', () => {
       getUserName: jest.fn().mockResolvedValue('王小明'),
       setDeviceTime: jest.fn(),
       setUserName: jest.fn(),
+      upsertUser: jest.fn(),
+      deleteUser: jest.fn(),
       setUserEnabled: jest.fn(),
       getAttendanceLogs: jest.fn().mockResolvedValue([]),
     };
@@ -55,18 +58,22 @@ describe('TimeClockService', () => {
     await expect(service.getDeviceTime()).resolves.toBe(deviceTime);
     await expect(service.listUsers()).resolves.toBe(users);
     await expect(service.getUserName(1001)).resolves.toBe('王小明');
+    const upsert: TimeClockUserUpsert = {
+      userId: 1001,
+      name: '王小明',
+      password: '1234',
+    };
+    await service.upsertUser(upsert);
+    await service.deleteUser(1001);
     expect(client.getDeviceStatus).toHaveBeenCalledTimes(1);
     expect(client.getDeviceTime).toHaveBeenCalledTimes(1);
+    expect(client.upsertUser).toHaveBeenCalledWith(upsert);
+    expect(client.deleteUser).toHaveBeenCalledWith(1001);
   });
 
-  it('does not silently issue unverified write or log commands', async () => {
+  it('does not silently issue still-unverified write or log commands', async () => {
     const client = {
       setDeviceTime: jest
-        .fn()
-        .mockRejectedValue(
-          new TimeClockUnsupportedError('write frame not verified'),
-        ),
-      setUserName: jest
         .fn()
         .mockRejectedValue(
           new TimeClockUnsupportedError('write frame not verified'),
@@ -85,9 +92,6 @@ describe('TimeClockService', () => {
     const service = new TimeClockService(client as never);
 
     await expect(service.setDeviceTime(new Date())).rejects.toBeInstanceOf(
-      TimeClockUnsupportedError,
-    );
-    await expect(service.setUserName(1001, '王小明')).rejects.toBeInstanceOf(
       TimeClockUnsupportedError,
     );
     await expect(service.setUserEnabled(1001, true)).rejects.toBeInstanceOf(

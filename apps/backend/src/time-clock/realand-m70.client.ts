@@ -8,6 +8,7 @@ import {
 } from './time-clock.errors';
 import {
   buildCommandFrame,
+  buildBigDataFrame,
   decodeM70DeviceTime,
   decodeM70Text,
   decodeM70UserSummary,
@@ -16,6 +17,7 @@ import {
   M70_COMMAND,
   M70_DEVICE_INFO_SELECTOR,
   M70_DEVICE_STATUS_SELECTOR,
+  M70_MAX_DATA_PAYLOAD,
   parseAckFrame,
   parseDataFrame,
   parseResultFrame,
@@ -32,6 +34,7 @@ import {
   TimeClockDeviceTime,
   TimeClockModuleOptions,
   TimeClockUser,
+  TimeClockUserUpsert,
 } from './time-clock.types';
 import { TIME_CLOCK_OPTIONS } from './time-clock.constants';
 
@@ -128,6 +131,33 @@ class M70Session {
       );
     }
 
+    return parseResultFrame(await this.readExact(14), this.options.dn, command);
+  }
+
+  async requestWrite(
+    command: number,
+    arg2 = 0,
+    arg3 = 0,
+    payload?: Buffer,
+  ): Promise<ReturnType<typeof parseResultFrame>> {
+    const result = await this.requestResult(command, arg2, arg3);
+    if (!payload || payload.length === 0) return result;
+
+    for (
+      let offset = 0;
+      offset < payload.length;
+      offset += M70_MAX_DATA_PAYLOAD
+    ) {
+      await this.send(
+        buildBigDataFrame(
+          this.options.dn,
+          payload.subarray(offset, offset + M70_MAX_DATA_PAYLOAD),
+        ),
+      );
+    }
+
+    // SetEnrollData/SetUserName return a second command-result frame after
+    // the data frames have been accepted by the device.
     return parseResultFrame(await this.readExact(14), this.options.dn, command);
   }
 
@@ -544,10 +574,77 @@ export class RealandM70Client {
   }
 
   async setUserName(userId: number, name: string): Promise<void> {
+    return this.upsertUser({ userId, name });
+  }
+
+  async upsertUser(user: TimeClockUserUpsert): Promise<void> {
+    const prepared = prepareUserUpsert(user);
+
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        for (const fingerprint of prepared.fingerprints) {
+          await session.requestWrite(
+            M70_COMMAND.SET_ENROLL_DATA,
+            fingerprint.commandArg2,
+            fingerprint.commandArg3,
+            fingerprint.payload,
+          );
+        }
+
+        if (prepared.password) {
+          await session.requestWrite(
+            M70_COMMAND.SET_ENROLL_DATA,
+            0x12,
+            prepared.userId,
+            prepared.password,
+          );
+        }
+
+        if (prepared.cardId) {
+          await session.requestWrite(
+            M70_COMMAND.SET_ENROLL_DATA,
+            0x13,
+            prepared.userId,
+            prepared.cardId,
+          );
+        }
+
+        if (prepared.name !== undefined) {
+          await session.requestWrite(
+            M70_COMMAND.SET_USER_NAME,
+            0,
+            prepared.userId,
+            prepared.name,
+          );
+        }
+
+        if (prepared.privilege !== undefined) {
+          await session.requestResult(
+            M70_COMMAND.MODIFY_PRIVILEGE,
+            prepared.privilege,
+            prepared.userId,
+          );
+        }
+
+        if (prepared.enabled !== undefined) {
+          await session.requestResult(
+            M70_COMMAND.ENABLE_USER,
+            prepared.enabled ? 1 : 0,
+            prepared.userId,
+          );
+        }
+      }),
+    );
+  }
+
+  async deleteUser(userId: number): Promise<void> {
     assertUserId(userId);
-    encodeM70Text(name);
-    throw new TimeClockUnsupportedError(
-      'M70 setUserName is not enabled until its firmware 3.6.8 write frame is verified',
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        // DeviceProperty.Enrolls with a user ID maps to the native
+        // DeleteEnrollData "all credentials for one user" selector (5).
+        await session.requestResult(M70_COMMAND.DELETE_ENROLL_DATA, 5, userId);
+      }),
     );
   }
 
@@ -654,6 +751,177 @@ function readNumber(
   const value = Number(environmentValue);
   if (Number.isNaN(value)) return fallback;
   return value;
+}
+
+const M70_USER_NAME_WRITE_LENGTH = 0x6c;
+const M70_FINGERPRINT_TEMPLATE_LENGTH = 0x588;
+
+interface PreparedFingerprint {
+  commandArg2: number;
+  commandArg3: number;
+  payload: Buffer;
+}
+
+interface PreparedUserUpsert {
+  userId: number;
+  name?: Buffer;
+  enabled?: boolean;
+  privilege?: number;
+  password?: Buffer;
+  cardId?: Buffer;
+  fingerprints: PreparedFingerprint[];
+}
+
+function prepareUserUpsert(user: TimeClockUserUpsert): PreparedUserUpsert {
+  if (!user || typeof user !== 'object') {
+    throw new TimeClockProtocolError('M70 user upsert input is required');
+  }
+
+  assertUserId(user.userId);
+
+  const fingerprints = user.fingerprints ?? [];
+  if (!Array.isArray(fingerprints)) {
+    throw new TimeClockProtocolError(
+      'M70 user fingerprints must be an array when provided',
+    );
+  }
+
+  const hasChange =
+    user.name !== undefined ||
+    user.enabled !== undefined ||
+    user.privilege !== undefined ||
+    user.password !== undefined ||
+    user.cardId !== undefined ||
+    fingerprints.length > 0;
+  if (!hasChange) {
+    throw new TimeClockProtocolError(
+      'M70 user upsert must include at least one field to change',
+    );
+  }
+
+  let name: Buffer | undefined;
+  if (user.name !== undefined) {
+    if (typeof user.name !== 'string') {
+      throw new TimeClockProtocolError('M70 user name must be a string');
+    }
+    name = encodeM70Text(user.name, M70_USER_NAME_WRITE_LENGTH);
+  }
+
+  if (user.enabled !== undefined && typeof user.enabled !== 'boolean') {
+    throw new TimeClockProtocolError('M70 user enabled must be a boolean');
+  }
+
+  if (
+    user.privilege !== undefined &&
+    (!Number.isInteger(user.privilege) ||
+      user.privilege < 0 ||
+      user.privilege > 0xffff)
+  ) {
+    throw new TimeClockProtocolError(
+      'M70 user privilege must be an unsigned 16-bit integer',
+    );
+  }
+
+  const seenFingerprintSlots = new Set<number>();
+  const preparedFingerprints = fingerprints.map((fingerprint) => {
+    if (!fingerprint || typeof fingerprint !== 'object') {
+      throw new TimeClockProtocolError(
+        'M70 fingerprint enrollment must be an object',
+      );
+    }
+    if (
+      !Number.isInteger(fingerprint.slot) ||
+      fingerprint.slot < 0 ||
+      fingerprint.slot > 9
+    ) {
+      throw new TimeClockProtocolError(
+        'M70 fingerprint slot must be an integer between 0 and 9',
+      );
+    }
+    if (seenFingerprintSlots.has(fingerprint.slot)) {
+      throw new TimeClockProtocolError(
+        `M70 fingerprint slot ${fingerprint.slot} was provided more than once`,
+      );
+    }
+    seenFingerprintSlots.add(fingerprint.slot);
+
+    if (fingerprint.duress) {
+      throw new TimeClockUnsupportedError(
+        'M70 duress fingerprint enrollment is not enabled',
+      );
+    }
+    if (!Buffer.isBuffer(fingerprint.template)) {
+      throw new TimeClockProtocolError(
+        'M70 fingerprint template must be a Buffer',
+      );
+    }
+    if (fingerprint.template.length !== M70_FINGERPRINT_TEMPLATE_LENGTH) {
+      throw new TimeClockProtocolError(
+        `M70 fingerprint template must be ${M70_FINGERPRINT_TEMPLATE_LENGTH} bytes in native format`,
+      );
+    }
+    if (user.userId > 0x0fffffff) {
+      throw new TimeClockProtocolError(
+        'M70 fingerprint enrollment requires a userId no larger than 0x0fffffff',
+      );
+    }
+
+    return {
+      commandArg2: 0x11,
+      commandArg3: ((fingerprint.slot << 28) | user.userId) >>> 0,
+      payload: Buffer.from(fingerprint.template),
+    };
+  });
+
+  return {
+    userId: user.userId,
+    name,
+    enabled: user.enabled,
+    privilege: user.privilege,
+    password:
+      user.password === undefined
+        ? undefined
+        : encodeM70NumericCredential(user.password, 'password'),
+    cardId:
+      user.cardId === undefined
+        ? undefined
+        : encodeM70NumericCredential(user.cardId, 'cardId'),
+    fingerprints: preparedFingerprints,
+  };
+}
+
+function encodeM70NumericCredential(
+  value: string | number,
+  fieldName: 'password' | 'cardId',
+): Buffer {
+  let numericValue: bigint;
+  try {
+    if (typeof value === 'number') {
+      if (!Number.isSafeInteger(value) || value < 0) {
+        throw new Error('not an unsigned integer');
+      }
+      numericValue = BigInt(value);
+    } else {
+      if (!/^\d+$/.test(value.trim())) {
+        throw new Error('not a decimal integer');
+      }
+      numericValue = BigInt(value.trim());
+    }
+  } catch {
+    throw new TimeClockProtocolError(
+      `M70 user ${fieldName} must be an unsigned 32-bit integer`,
+    );
+  }
+
+  if (numericValue > 0xffffffffn) {
+    throw new TimeClockProtocolError(
+      `M70 user ${fieldName} must be an unsigned 32-bit integer`,
+    );
+  }
+
+  const payload = Buffer.alloc(4);
+  payload.writeUInt32LE(Number(numericValue), 0);
+  return payload;
 }
 
 function assertUserId(userId: number): void {

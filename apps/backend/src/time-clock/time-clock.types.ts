@@ -84,6 +84,30 @@ export interface TimeClockUser {
   raw: Buffer;
 }
 
+/**
+ * Fields accepted by the native M70 enrollment path.
+ *
+ * Password and cardId are the numeric values used by the official SDK and
+ * are encoded as unsigned 32-bit values on the wire. Fingerprint templates
+ * use the raw 0x588-byte SBXPC format; a template captured in the SDK's
+ * higher-level 498-byte format must be converted by that SDK first.
+ */
+export interface TimeClockFingerprintTemplate {
+  slot: number;
+  template: Buffer;
+  duress?: boolean;
+}
+
+export interface TimeClockUserUpsert {
+  userId: number;
+  name?: string;
+  enabled?: boolean;
+  privilege?: number;
+  password?: string | number;
+  cardId?: string | number;
+  fingerprints?: TimeClockFingerprintTemplate[];
+}
+
 export interface ListUsersOptions {
   includeNames?: boolean;
 }
