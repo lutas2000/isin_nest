@@ -31,13 +31,7 @@
 
 <script setup lang="ts">
 import { useSlots } from 'vue';
-
-export interface DetailFieldItem {
-  key: string;
-  label: string;
-  value: string | number | null | undefined;
-  fullWidth?: boolean;
-}
+import type { DetailFieldItem } from './component.types';
 
 defineProps<{
   items: DetailFieldItem[];

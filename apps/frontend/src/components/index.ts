@@ -3,7 +3,7 @@ export { default as OverviewCard } from './OverviewCard.vue';
 export { default as TabNavigation } from './TabNavigation.vue';
 export { default as DataTable } from './DataTable.vue';
 export { default as EditableDataTable } from './EditableDataTable.vue';
-export type { EditableColumn } from './EditableDataTable.vue';
+export type { EditableColumn, EditableColumnWidth } from './component.types';
 export { default as SearchField } from './SearchField.vue';
 export { default as SearchFilters } from './SearchFilters.vue';
 export { default as FilterChipControl } from './FilterChipControl.vue';
@@ -15,9 +15,13 @@ export type {
   CrmDateRangeFilterDefinition,
 } from '@/types/crm-filter';
 export { default as SortControl } from './SortControl.vue';
-export type { SortOption, SortValue } from './SortControl.vue';
+export type { SortOption, SortValue } from './component.types';
 export { default as FilterControl } from './FilterControl.vue';
-export type { FilterDefinition, FilterOption as FilterOptionType } from './FilterControl.vue';
+export type {
+  FilterDefinition,
+  FilterOption,
+  FilterOption as FilterOptionType,
+} from './component.types';
 export { default as StatusBadge } from './StatusBadge.vue';
 export { default as Modal } from './Modal.vue';
 export { default as OrderItemSearchModal } from './OrderItemSearchModal.vue';
@@ -30,5 +34,5 @@ export { default as SectionHeader } from './SectionHeader.vue';
 export { default as TableHeader } from './TableHeader.vue';
 export { default as ShortcutHint } from './ShortcutHint.vue';
 export { default as DetailFieldsPanel } from './DetailFieldsPanel.vue';
-export type { DetailFieldItem } from './DetailFieldsPanel.vue';
+export type { DetailFieldItem } from './component.types';
 export { default as DxfPreviewPanel } from './DxfPreviewPanel.vue';

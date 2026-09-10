@@ -81,7 +81,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import Modal from './Modal.vue'
-import EditableDataTable, { type EditableColumn } from './EditableDataTable.vue'
+import EditableDataTable from './EditableDataTable.vue'
+import type { EditableColumn } from './component.types'
 import { customerService, type Customer } from '@/services/crm/customer.service'
 import type { PaginatedResponse } from '@/types/pagination'
 

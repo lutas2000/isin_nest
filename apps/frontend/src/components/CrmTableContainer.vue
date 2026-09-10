@@ -115,8 +115,9 @@
 import { computed } from 'vue';
 import SearchField from './SearchField.vue';
 import FilterChipControl from './FilterChipControl.vue';
-import FilterControl, { type FilterDefinition } from './FilterControl.vue';
-import SortControl, { type SortOption, type SortValue } from './SortControl.vue';
+import FilterControl from './FilterControl.vue';
+import SortControl from './SortControl.vue';
+import type { FilterDefinition, SortOption, SortValue } from './component.types';
 import type { CrmFilterDefinition } from '@/types/crm-filter';
 import { getDefaultChipFilterValues, hasActiveChipFilters } from '@/utils/crmFilter';
 

@@ -40,15 +40,7 @@
 </template>
 
 <script setup lang="ts">
-export interface SortOption {
-  key: string;
-  label: string;
-}
-
-export interface SortValue {
-  key: string;
-  direction: 'asc' | 'desc';
-}
+import type { SortOption, SortValue } from './component.types';
 
 interface Props {
   options: SortOption[];

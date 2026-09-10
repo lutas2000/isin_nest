@@ -8,6 +8,7 @@ import { resolve } from 'path';
 import { NestingService } from './nesting.service';
 import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
+import { CuttingWorkOrder } from '../cutting-work-order/entities/cutting-work-order.entity';
 
 describe('NestingService', () => {
   let service: NestingService;
@@ -19,6 +20,11 @@ describe('NestingService', () => {
   };
 
   const nestingItemRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const cuttingWorkOrderRepository = {
     create: jest.fn(),
     save: jest.fn(),
   };
@@ -39,6 +45,13 @@ describe('NestingService', () => {
     nestingItemRepository.create.mockImplementation((payload: Partial<NestingItem>) => payload);
     nestingItemRepository.save.mockImplementation(async (payload: Partial<NestingItem>[]) => payload);
 
+    cuttingWorkOrderRepository.create.mockImplementation(
+      (payload: Partial<CuttingWorkOrder>) => payload,
+    );
+    cuttingWorkOrderRepository.save.mockImplementation(
+      async (payload: Partial<CuttingWorkOrder>) => payload,
+    );
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NestingService,
@@ -49,6 +62,10 @@ describe('NestingService', () => {
         {
           provide: getRepositoryToken(NestingItem),
           useValue: nestingItemRepository,
+        },
+        {
+          provide: getRepositoryToken(CuttingWorkOrder),
+          useValue: cuttingWorkOrderRepository,
         },
       ],
     }).compile();

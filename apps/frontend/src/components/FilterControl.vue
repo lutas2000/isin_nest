@@ -40,17 +40,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-
-export interface FilterOption {
-  value: string;
-  label: string;
-}
-
-export interface FilterDefinition {
-  key: string;
-  placeholder: string;
-  options: FilterOption[];
-}
+import type { FilterDefinition } from './component.types';
 
 interface Props {
   filters: FilterDefinition[];

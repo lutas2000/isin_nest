@@ -192,7 +192,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue';
 import CrmConfigSelectCell from './CrmConfigSelectCell.vue';
-import type { EditableColumn } from './EditableDataTable.vue';
+import type { EditableColumn } from './component.types';
 
 interface Props {
   column: EditableColumn;

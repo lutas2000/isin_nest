@@ -90,7 +90,8 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import Modal from './Modal.vue'
 import DxfPreviewPanel from './DxfPreviewPanel.vue'
-import EditableDataTable, { type EditableColumn } from './EditableDataTable.vue'
+import EditableDataTable from './EditableDataTable.vue'
+import type { EditableColumn } from './component.types'
 import { orderItemService, type OrderItem } from '@/services/crm/order.service'
 import type { PaginatedResponse } from '@/types/pagination'
 

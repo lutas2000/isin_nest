@@ -57,6 +57,7 @@ export const API_CONFIG = {
     NESTINGS: '/crm/nestings',
     // 委外成本
     OUTSOURCING_COSTS: '/crm/outsourcing-costs',
+    OUTSOURCING_WORK_ORDERS: '/crm/outsourcing-work-orders',
     // 配置
     CONFIGS: '/crm/configs', // 分頁端點
     CONFIGS_ALL: '/crm/configs/all', // 無分頁端點
