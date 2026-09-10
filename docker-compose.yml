@@ -6,7 +6,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS:-postgres}
       POSTGRES_DB: ${DB_NAME:-isin}
     ports:
-      - "${HOST_DB_PORT:-5432}:5432"
+      # PostgreSQL 僅供本機使用；不要改成 0.0.0.0 或移除此 host 綁定限制。
+      - "127.0.0.1:${HOST_DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
