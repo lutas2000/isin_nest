@@ -1,0 +1,1 @@
+export const TIME_CLOCK_OPTIONS = Symbol('TIME_CLOCK_OPTIONS');

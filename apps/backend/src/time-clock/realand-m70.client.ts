@@ -1,0 +1,665 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as net from 'node:net';
+import {
+  TimeClockConnectionError,
+  TimeClockProtocolError,
+  TimeClockUnsupportedError,
+} from './time-clock.errors';
+import {
+  buildCommandFrame,
+  decodeM70DeviceTime,
+  decodeM70Text,
+  decodeM70UserSummary,
+  encodeM70DeviceTime,
+  encodeM70Text,
+  M70_COMMAND,
+  M70_DEVICE_INFO_SELECTOR,
+  M70_DEVICE_STATUS_SELECTOR,
+  parseAckFrame,
+  parseDataFrame,
+  parseResultFrame,
+} from './realand-m70.protocol';
+import {
+  ListUsersOptions,
+  ResolvedTimeClockOptions,
+  TimeClockAttendanceLog,
+  TimeClockAttendanceLogQuery,
+  TimeClockConnectionResult,
+  TimeClockDeviceIdentity,
+  TimeClockDeviceInfo,
+  TimeClockDeviceStatus,
+  TimeClockDeviceTime,
+  TimeClockModuleOptions,
+  TimeClockUser,
+} from './time-clock.types';
+import { TIME_CLOCK_OPTIONS } from './time-clock.constants';
+
+const DEFAULT_OPTIONS: ResolvedTimeClockOptions = {
+  host: '192.168.0.223',
+  port: 5005,
+  dn: 3,
+  password: 0,
+  timeoutMs: 5000,
+};
+
+interface ReadWaiter {
+  length: number;
+  resolve: (value: Buffer) => void;
+  reject: (error: Error) => void;
+  timer: NodeJS.Timeout;
+}
+
+class M70Session {
+  private socket: net.Socket | undefined;
+  private receiveBuffer = Buffer.alloc(0);
+  private readWaiter: ReadWaiter | undefined;
+  private terminalError: Error | undefined;
+
+  constructor(private readonly options: ResolvedTimeClockOptions) {}
+
+  async open(): Promise<void> {
+    if (this.socket) return;
+
+    const socket = new net.Socket();
+    this.socket = socket;
+    socket.setTimeout(this.options.timeoutMs);
+    socket.on('data', (chunk: Buffer) => this.handleData(chunk));
+    socket.on('timeout', () => {
+      this.handleError(
+        new TimeClockConnectionError(
+          `M70 socket timed out after ${this.options.timeoutMs}ms`,
+        ),
+      );
+    });
+    socket.on('error', (error: Error) => this.handleError(error));
+    socket.on('close', () => {
+      if (!this.terminalError) {
+        this.handleError(new TimeClockConnectionError('M70 socket closed'));
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(
+          new TimeClockConnectionError(
+            `Unable to connect to M70 at ${this.options.host}:${this.options.port}`,
+          ),
+        );
+        socket.destroy();
+      }, this.options.timeoutMs);
+
+      socket.connect(this.options.port, this.options.host, () => {
+        clearTimeout(timer);
+        resolve();
+      });
+
+      socket.once('error', (error: Error) => {
+        clearTimeout(timer);
+        reject(
+          new TimeClockConnectionError(
+            `Unable to connect to M70 at ${this.options.host}:${this.options.port}: ${error.message}`,
+          ),
+        );
+      });
+    });
+
+    await this.requestResult(M70_COMMAND.INITIALIZE, 1, 0);
+  }
+
+  close(): void {
+    this.rejectReadWaiter(new TimeClockConnectionError('M70 session closed'));
+    this.socket?.destroy();
+    this.socket = undefined;
+  }
+
+  async requestResult(
+    command: number,
+    arg2 = 0,
+    arg3 = 0,
+  ): Promise<ReturnType<typeof parseResultFrame>> {
+    await this.send(buildCommandFrame(this.options.dn, command, arg2, arg3));
+    const ack = parseAckFrame(await this.readExact(8), this.options.dn);
+    if (ack.resultWord === 0) {
+      // The device uses a non-zero result word for a successful ACK.
+      throw new TimeClockProtocolError(
+        `M70 rejected command 0x${command.toString(16)}`,
+        command,
+      );
+    }
+
+    return parseResultFrame(await this.readExact(14), this.options.dn, command);
+  }
+
+  async requestData(
+    command: number,
+    expectedPayloadLength: number,
+    arg2 = 0,
+    arg3 = 0,
+  ): Promise<{ payload: Buffer; result: ReturnType<typeof parseResultFrame> }> {
+    await this.send(buildCommandFrame(this.options.dn, command, arg2, arg3));
+    const ack = parseAckFrame(await this.readExact(8), this.options.dn);
+    if (ack.resultWord === 0) {
+      throw new TimeClockProtocolError(
+        `M70 rejected command 0x${command.toString(16)}`,
+        command,
+      );
+    }
+
+    // Firmware variants use both ACK -> result -> data and ACK -> data ->
+    // result. Peek at the next frame magic instead of assuming one order.
+    const prefix = await this.readExact(2);
+    const magic = prefix.readUInt16BE(0);
+
+    if (magic === 0xaa55) {
+      const result = parseResultFrame(
+        Buffer.concat([prefix, await this.readExact(12)]),
+        this.options.dn,
+        command,
+      );
+      const payload = parseDataFrame(
+        await this.readExact(expectedPayloadLength + 6),
+        this.options.dn,
+        expectedPayloadLength,
+        command,
+      );
+      return { payload, result };
+    }
+
+    if (magic === 0xa55a || magic === 0x5aa5) {
+      const payload = parseDataFrame(
+        Buffer.concat([
+          prefix,
+          await this.readExact(expectedPayloadLength + 4),
+        ]),
+        this.options.dn,
+        expectedPayloadLength,
+        command,
+      );
+      const result = parseResultFrame(
+        await this.readExact(14),
+        this.options.dn,
+        command,
+      );
+      return { payload, result };
+    }
+
+    throw new TimeClockProtocolError(
+      `Unexpected M70 data/result frame header: ${prefix.toString('hex')}`,
+      command,
+    );
+  }
+
+  async requestVariableData(
+    command: number,
+    recordLength: number,
+    arg2 = 0,
+    arg3 = 0,
+  ): Promise<{ payload: Buffer; result: ReturnType<typeof parseResultFrame> }> {
+    await this.send(buildCommandFrame(this.options.dn, command, arg2, arg3));
+    const ack = parseAckFrame(await this.readExact(8), this.options.dn);
+    if (ack.resultWord === 0) {
+      throw new TimeClockProtocolError(
+        `M70 rejected command 0x${command.toString(16)}`,
+        command,
+      );
+    }
+
+    const result = parseResultFrame(
+      await this.readExact(14),
+      this.options.dn,
+      command,
+    );
+    if (!Number.isInteger(recordLength) || recordLength <= 0) {
+      throw new TimeClockProtocolError(
+        'M70 record length must be positive',
+        command,
+      );
+    }
+    if (result.value > 100000) {
+      throw new TimeClockProtocolError(
+        `M70 returned unreasonable record count ${result.value}`,
+        command,
+      );
+    }
+
+    const payload = parseDataFrame(
+      await this.readExact(result.value * recordLength + 6),
+      this.options.dn,
+      result.value * recordLength,
+      command,
+    );
+    return { payload, result };
+  }
+
+  private async send(frame: Buffer): Promise<void> {
+    if (!this.socket || this.terminalError) {
+      throw (
+        this.terminalError ??
+        new TimeClockConnectionError('M70 is not connected')
+      );
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      this.socket?.write(frame, (error?: Error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  private readExact(length: number): Promise<Buffer> {
+    if (length < 0) {
+      return Promise.reject(
+        new TimeClockProtocolError('Read length cannot be negative'),
+      );
+    }
+
+    if (this.terminalError) {
+      return Promise.reject(this.terminalError);
+    }
+
+    if (this.receiveBuffer.length >= length) {
+      const result = this.receiveBuffer.subarray(0, length);
+      this.receiveBuffer = this.receiveBuffer.subarray(length);
+      return Promise.resolve(Buffer.from(result));
+    }
+
+    if (this.readWaiter) {
+      return Promise.reject(
+        new TimeClockProtocolError(
+          'M70 protocol reader received concurrent reads',
+        ),
+      );
+    }
+
+    return new Promise<Buffer>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.readWaiter = undefined;
+        reject(
+          new TimeClockConnectionError(
+            `M70 response timed out while waiting for ${length} bytes`,
+          ),
+        );
+      }, this.options.timeoutMs);
+      this.readWaiter = { length, resolve, reject, timer };
+    });
+  }
+
+  private handleData(chunk: Buffer): void {
+    this.receiveBuffer = Buffer.concat([this.receiveBuffer, chunk]);
+    this.flushReadWaiter();
+  }
+
+  private flushReadWaiter(): void {
+    const waiter = this.readWaiter;
+    if (!waiter || this.receiveBuffer.length < waiter.length) return;
+
+    clearTimeout(waiter.timer);
+    this.readWaiter = undefined;
+    const result = this.receiveBuffer.subarray(0, waiter.length);
+    this.receiveBuffer = this.receiveBuffer.subarray(waiter.length);
+    waiter.resolve(Buffer.from(result));
+  }
+
+  private handleError(error: Error): void {
+    if (!this.terminalError) {
+      this.terminalError = error;
+    }
+    this.rejectReadWaiter(this.terminalError);
+  }
+
+  private rejectReadWaiter(error: Error): void {
+    if (!this.readWaiter) return;
+    clearTimeout(this.readWaiter.timer);
+    const waiter = this.readWaiter;
+    this.readWaiter = undefined;
+    waiter.reject(error);
+  }
+}
+
+@Injectable()
+export class RealandM70Client {
+  private readonly options: ResolvedTimeClockOptions;
+  private operationQueue: Promise<void> = Promise.resolve();
+
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(TIME_CLOCK_OPTIONS)
+    moduleOptions: TimeClockModuleOptions = {},
+  ) {
+    this.options = resolveOptions(configService, moduleOptions);
+  }
+
+  get connectionOptions(): ResolvedTimeClockOptions {
+    return { ...this.options };
+  }
+
+  async checkConnection(): Promise<TimeClockConnectionResult> {
+    return this.enqueue(async () => {
+      const startedAt = Date.now();
+      await this.withSession(async () => undefined);
+      return {
+        host: this.options.host,
+        port: this.options.port,
+        dn: this.options.dn,
+        latencyMs: Date.now() - startedAt,
+      };
+    });
+  }
+
+  async getDeviceStatus(): Promise<TimeClockDeviceStatus> {
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const raw: Record<number, number> = {};
+        for (const selector of Object.values(M70_DEVICE_STATUS_SELECTOR)) {
+          const result = await session.requestResult(
+            M70_COMMAND.GET_DEVICE_STATUS,
+            selector,
+            0,
+          );
+          raw[selector] = result.value;
+        }
+
+        return {
+          managerCount: raw[M70_DEVICE_STATUS_SELECTOR.MANAGER_COUNT] ?? 0,
+          userCount: raw[M70_DEVICE_STATUS_SELECTOR.USER_COUNT] ?? 0,
+          fingerprintCount:
+            raw[M70_DEVICE_STATUS_SELECTOR.FINGERPRINT_COUNT] ?? 0,
+          passwordCount: raw[M70_DEVICE_STATUS_SELECTOR.PASSWORD_COUNT] ?? 0,
+          managementLogCount:
+            raw[M70_DEVICE_STATUS_SELECTOR.MANAGEMENT_LOG_COUNT] ?? 0,
+          attendanceLogCount:
+            raw[M70_DEVICE_STATUS_SELECTOR.ATTENDANCE_LOG_COUNT] ?? 0,
+          cardCount: raw[M70_DEVICE_STATUS_SELECTOR.CARD_COUNT] ?? 0,
+          alarmBits: raw[M70_DEVICE_STATUS_SELECTOR.ALARM_BITS] ?? 0,
+          faceCount: raw[M70_DEVICE_STATUS_SELECTOR.FACE_COUNT] ?? 0,
+          unreadManagementLogCount:
+            raw[M70_DEVICE_STATUS_SELECTOR.UNREAD_MANAGEMENT_LOG_COUNT] ?? 0,
+          unreadAttendanceLogCount:
+            raw[M70_DEVICE_STATUS_SELECTOR.UNREAD_ATTENDANCE_LOG_COUNT] ?? 0,
+          raw,
+        };
+      }),
+    );
+  }
+
+  async getDeviceInfo(): Promise<TimeClockDeviceInfo> {
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const raw: Record<number, number> = {};
+        for (const selector of Object.values(M70_DEVICE_INFO_SELECTOR)) {
+          const result = await session.requestResult(
+            M70_COMMAND.GET_DEVICE_INFO,
+            selector,
+            0,
+          );
+          raw[selector] = result.value;
+        }
+
+        return {
+          maxManagerCount: raw[M70_DEVICE_INFO_SELECTOR.MAX_MANAGER_COUNT] ?? 0,
+          machineId: raw[M70_DEVICE_INFO_SELECTOR.MACHINE_ID] ?? 0,
+          language: raw[M70_DEVICE_INFO_SELECTOR.LANGUAGE] ?? 0,
+          autoPowerOffMinutes:
+            raw[M70_DEVICE_INFO_SELECTOR.AUTO_POWER_OFF_MINUTES] ?? 0,
+          doorOpenSeconds: raw[M70_DEVICE_INFO_SELECTOR.DOOR_OPEN_SECONDS] ?? 0,
+          attendanceLogWarningThreshold:
+            raw[M70_DEVICE_INFO_SELECTOR.ATTENDANCE_LOG_WARNING_THRESHOLD] ?? 0,
+          managementLogWarningThreshold:
+            raw[M70_DEVICE_INFO_SELECTOR.MANAGEMENT_LOG_WARNING_THRESHOLD] ?? 0,
+          duplicateVerifyIntervalSeconds:
+            raw[M70_DEVICE_INFO_SELECTOR.DUPLICATE_VERIFY_INTERVAL_SECONDS] ??
+            0,
+          serialBaudRateCode:
+            raw[M70_DEVICE_INFO_SELECTOR.SERIAL_BAUD_RATE_CODE] ?? 0,
+          parity: raw[M70_DEVICE_INFO_SELECTOR.PARITY] ?? 0,
+          stopBitCode: raw[M70_DEVICE_INFO_SELECTOR.STOP_BIT_CODE] ?? 0,
+          dateSeparator: raw[M70_DEVICE_INFO_SELECTOR.DATE_SEPARATOR] ?? 0,
+          verifyMode: raw[M70_DEVICE_INFO_SELECTOR.VERIFY_MODE] ?? 0,
+          doorControlMode: raw[M70_DEVICE_INFO_SELECTOR.DOOR_CONTROL_MODE] ?? 0,
+          doorSensorType: raw[M70_DEVICE_INFO_SELECTOR.DOOR_SENSOR_TYPE] ?? 0,
+          doorOpenTimeout: raw[M70_DEVICE_INFO_SELECTOR.DOOR_OPEN_TIMEOUT] ?? 0,
+          antiPassback: raw[M70_DEVICE_INFO_SELECTOR.ANTI_PASSBACK] ?? 0,
+          autoSleep: raw[M70_DEVICE_INFO_SELECTOR.AUTO_SLEEP] ?? 0,
+          daylightOffset: raw[M70_DEVICE_INFO_SELECTOR.DAYLIGHT_OFFSET] ?? 0,
+          showRealtimeCamera:
+            raw[M70_DEVICE_INFO_SELECTOR.SHOW_REALTIME_CAMERA] ?? 0,
+          useFailLog: raw[M70_DEVICE_INFO_SELECTOR.USE_FAIL_LOG] ?? 0,
+          raw,
+        };
+      }),
+    );
+  }
+
+  async getDeviceIdentity(): Promise<TimeClockDeviceIdentity> {
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const serial = await session.requestData(
+          M70_COMMAND.GET_SERIAL_NUMBER,
+          32,
+        );
+        const backup = await session.requestResult(
+          M70_COMMAND.GET_BACKUP_NUMBER,
+        );
+        const product = await session.requestData(
+          M70_COMMAND.GET_PRODUCT_CODE,
+          32,
+        );
+
+        return {
+          serialNumber: decodeM70Text(serial.payload),
+          backupNumber: backup.value,
+          productCode: decodeM70Text(product.payload),
+        };
+      }),
+    );
+  }
+
+  async getDeviceTime(): Promise<TimeClockDeviceTime> {
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const response = await session.requestData(
+          M70_COMMAND.GET_DEVICE_TIME,
+          4,
+          0,
+          4,
+        );
+        return decodeM70DeviceTime(response.payload);
+      }),
+    );
+  }
+
+  async listUsers(options: ListUsersOptions = {}): Promise<TimeClockUser[]> {
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const countResult = await session.requestResult(
+          M70_COMMAND.READ_ALL_USER_IDS,
+          0,
+          0,
+        );
+        const count = countResult.value;
+        if (count === 0) return [];
+        if (count > 10000) {
+          throw new TimeClockProtocolError(
+            `M70 returned unreasonable user count ${count}`,
+          );
+        }
+
+        // The M70 returns one 8-byte row per enrolled credential/template,
+        // so the second response can contain more rows than userCount.
+        const usersResult = await session.requestVariableData(
+          M70_COMMAND.READ_ALL_USER_IDS,
+          8,
+          1,
+          count,
+        );
+        const summary = decodeM70UserSummary(usersResult.payload);
+        const usersById = new Map<number, TimeClockUser>();
+        for (const user of summary) {
+          if (!usersById.has(user.userId)) usersById.set(user.userId, user);
+        }
+        const users = [...usersById.values()];
+
+        if (options.includeNames === false) return users;
+        for (const user of users) {
+          const response = await session.requestData(
+            M70_COMMAND.GET_USER_NAME,
+            48,
+            0,
+            user.userId,
+          );
+          user.name = decodeM70Text(response.payload);
+        }
+        return users;
+      }),
+    );
+  }
+
+  async getUserName(userId: number): Promise<string> {
+    assertUserId(userId);
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const response = await session.requestData(
+          M70_COMMAND.GET_USER_NAME,
+          48,
+          0,
+          userId,
+        );
+        return decodeM70Text(response.payload);
+      }),
+    );
+  }
+
+  async setDeviceTime(_value: Date): Promise<void> {
+    // The M70 read command is verified, but the write payload variant is not
+    // yet verified against firmware 3.6.8. Do not guess a write frame.
+    encodeM70DeviceTime(_value);
+    throw new TimeClockUnsupportedError(
+      'M70 setDeviceTime is not enabled until its firmware 3.6.8 write frame is verified',
+    );
+  }
+
+  async setUserName(userId: number, name: string): Promise<void> {
+    assertUserId(userId);
+    encodeM70Text(name);
+    throw new TimeClockUnsupportedError(
+      'M70 setUserName is not enabled until its firmware 3.6.8 write frame is verified',
+    );
+  }
+
+  async setUserEnabled(userId: number, enabled: boolean): Promise<void> {
+    assertUserId(userId);
+    void enabled;
+    throw new TimeClockUnsupportedError(
+      'M70 setUserEnabled is not enabled until its firmware 3.6.8 write frame is verified',
+    );
+  }
+
+  async getAttendanceLogs(
+    _query: TimeClockAttendanceLogQuery = {},
+  ): Promise<TimeClockAttendanceLog[]> {
+    throw new TimeClockUnsupportedError(
+      'M70 general attendance log frame parsing is not enabled until a firmware 3.6.8 capture is verified',
+    );
+  }
+
+  private async withSession<T>(
+    callback: (session: M70Session) => Promise<T>,
+  ): Promise<T> {
+    const session = new M70Session(this.options);
+    try {
+      await session.open();
+      return await callback(session);
+    } finally {
+      session.close();
+    }
+  }
+
+  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const queued = this.operationQueue.then(operation, operation);
+    this.operationQueue = queued.then(
+      () => undefined,
+      () => undefined,
+    );
+    return queued;
+  }
+}
+
+function resolveOptions(
+  configService: ConfigService,
+  moduleOptions: TimeClockModuleOptions,
+): ResolvedTimeClockOptions {
+  const options: ResolvedTimeClockOptions = {
+    host:
+      moduleOptions.host ??
+      configService.get<string>('TIME_CLOCK_IP') ??
+      DEFAULT_OPTIONS.host,
+    port: readNumber(
+      moduleOptions.port,
+      configService.get<string>('TIME_CLOCK_PORT'),
+      DEFAULT_OPTIONS.port,
+    ),
+    dn: readNumber(
+      moduleOptions.dn,
+      configService.get<string>('TIME_CLOCK_DN'),
+      DEFAULT_OPTIONS.dn,
+    ),
+    password: readNumber(
+      moduleOptions.password,
+      configService.get<string>('TIME_CLOCK_PASSWORD'),
+      DEFAULT_OPTIONS.password,
+    ),
+    timeoutMs: readNumber(
+      moduleOptions.timeoutMs,
+      configService.get<string>('TIME_CLOCK_TIMEOUT_MS'),
+      DEFAULT_OPTIONS.timeoutMs,
+    ),
+  };
+
+  if (!options.host.trim()) throw new Error('TIME_CLOCK_IP cannot be empty');
+  if (
+    !Number.isInteger(options.port) ||
+    options.port < 1 ||
+    options.port > 65535
+  ) {
+    throw new Error('TIME_CLOCK_PORT must be an integer between 1 and 65535');
+  }
+  if (!Number.isInteger(options.dn) || options.dn < 0 || options.dn > 65535) {
+    throw new Error('TIME_CLOCK_DN must be an integer between 0 and 65535');
+  }
+  if (!Number.isInteger(options.password) || options.password < 0) {
+    throw new Error('TIME_CLOCK_PASSWORD must be a non-negative integer');
+  }
+  if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 100) {
+    throw new Error(
+      'TIME_CLOCK_TIMEOUT_MS must be an integer of at least 100ms',
+    );
+  }
+
+  return options;
+}
+
+function readNumber(
+  override: number | undefined,
+  environmentValue: string | undefined,
+  fallback: number,
+): number {
+  if (override !== undefined) return override;
+  if (environmentValue === undefined || environmentValue.trim() === '')
+    return fallback;
+  const value = Number(environmentValue);
+  if (Number.isNaN(value)) return fallback;
+  return value;
+}
+
+function assertUserId(userId: number): void {
+  if (!Number.isInteger(userId) || userId < 0 || userId > 0xffffffff) {
+    throw new TimeClockProtocolError(
+      'M70 userId must be an unsigned 32-bit integer',
+    );
+  }
+}
