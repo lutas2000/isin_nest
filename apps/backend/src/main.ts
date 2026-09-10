@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { FileLoggerService } from './common/logger/file-logger.service';
 
@@ -44,6 +44,12 @@ async function bootstrap() {
 
     // 註冊全局異常過濾器
     app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: false,
+      }),
+    );
 
   // 啟用 CORS
   app.enableCors({

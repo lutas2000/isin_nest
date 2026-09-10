@@ -10,6 +10,9 @@
           <span class="mr-2">📊</span>
           工時報表
         </button>
+        <button class="btn btn-outline" @click="recalculateWorkingHours">
+          重算工時
+        </button>
       </template>
     </TableHeader>
 
@@ -240,6 +243,23 @@
                 <div class="summary-label">參與員工</div>
                 <div class="summary-value">{{ reportSummary.employeeCount }} 人</div>
               </div>
+              <div v-if="authStore.isAdmin" class="summary-item">
+                <div class="summary-label">應付總額</div>
+                <div class="summary-value">{{ payrollTotals.grossPay }}</div>
+              </div>
+              <div v-if="authStore.isAdmin" class="summary-item">
+                <div class="summary-label">實發總額</div>
+                <div class="summary-value">{{ payrollTotals.netPay }}</div>
+              </div>
+            </div>
+          </div>
+          <div v-if="authStore.isAdmin && payrollReport.length" class="report-summary">
+            <h4>薪資摘要</h4>
+            <div class="table-container">
+              <table class="table">
+                <thead><tr><th>員工</th><th>工作時數</th><th>請假</th><th>加班</th><th>遲到</th><th>實發</th></tr></thead>
+                <tbody><tr v-for="item in payrollReport" :key="item.staffId"><td>{{ item.staffId }} - {{ item.staffName }}</td><td>{{ item.workHours }}</td><td>{{ item.leaveHours }}</td><td>{{ item.overtimeHours }}</td><td>{{ item.lateMinutes }} 分</td><td>{{ item.netPay }}</td></tr></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -316,8 +336,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
-import { buildApiUrl, API_CONFIG } from '../../config/api';
-import { useAuthStore } from '../../stores/auth';
+import { API_CONFIG } from '@/config/api';
+import { apiDelete, apiGet, apiPost, apiPut, getApiItems } from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 
 // 型別定義
 interface Staff {
@@ -365,6 +386,23 @@ interface ReportSummary {
   employeeCount: number;
 }
 
+interface PayrollItem {
+  staffId: string;
+  staffName: string;
+  grossPay: number;
+  deductions: number;
+  netPay: number;
+  workHours: number;
+  leaveHours: number;
+  overtimeHours: number;
+  lateMinutes: number;
+}
+
+interface PayrollResponse {
+  items: PayrollItem[];
+  totals: { grossPay: number; deductions: number; netPay: number };
+}
+
 // 頁面標籤
 const tabs = [
   { id: 'records', label: '工時記錄' },
@@ -374,8 +412,6 @@ const tabs = [
 
 const activeTab = ref('records');
 const loading = ref(false);
-
-// 認證 store
 const authStore = useAuthStore();
 
 // 工時記錄資料
@@ -397,6 +433,8 @@ const statPeriod = ref('month');
 const reportType = ref('employee');
 const reportStartDate = ref('');
 const reportEndDate = ref('');
+const payrollReport = ref<PayrollItem[]>([]);
+const payrollTotals = ref({ grossPay: 0, deductions: 0, netPay: 0 });
 
 // Modal 狀態
 const showCreateModal = ref(false);
@@ -412,46 +450,38 @@ const formData = ref<Partial<StaffManhour>>({
   work_time: 0,
 });
 
-// 取得認證標頭
-const getAuthHeaders = () => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (authStore.token) {
-    headers['Authorization'] = `Bearer ${authStore.token}`;
-  }
-  
-  return headers;
-};
-
 // 載入工時資料
 const loadManhourData = async () => {
   loading.value = true;
   try {
-    let url = buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR);
-    
-    // 如果有日期範圍，使用日期範圍查詢
-    if (recordStartDate.value && recordEndDate.value) {
-      url = `${buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)}/date-range/search?startDate=${recordStartDate.value}&endDate=${recordEndDate.value}`;
-    }
-    
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      manhourRecords.value = data;
-      updateStats();
-    } else {
-      console.error('載入工時資料失敗:', response.statusText);
-    }
+    const response = recordStartDate.value && recordEndDate.value
+      ? await apiGet<StaffManhour[]>(`${API_CONFIG.HR.STAFF_MANHOUR}/date-range/search`, {
+          startDate: recordStartDate.value,
+          endDate: recordEndDate.value,
+        })
+      : await apiGet<StaffManhour[] | { data: StaffManhour[] }>(API_CONFIG.HR.STAFF_MANHOUR, {
+          page: 1,
+          limit: 100,
+        });
+    manhourRecords.value = getApiItems(response);
+    updateStats();
   } catch (error) {
     console.error('載入工時資料失敗:', error);
   } finally {
     loading.value = false;
   }
+};
+
+const recalculateWorkingHours = async () => {
+  if (!recordStartDate.value || !recordEndDate.value) {
+    alert('請先選擇重算的開始與結束日期');
+    return;
+  }
+  await apiPost(API_CONFIG.HR.WORKING_HOURS_CALCULATE_RANGE, {
+    startDate: recordStartDate.value,
+    endDate: recordEndDate.value,
+  });
+  await loadManhourData();
 };
 
 // 更新統計資料
@@ -523,18 +553,12 @@ const loadStatistics = async () => {
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
     
-    const response = await fetch(
-      `${buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)}/date-range/search?startDate=${startStr}&endDate=${endStr}`,
-      {
-        headers: getAuthHeaders(),
-      }
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      calculateDeptStats(data);
-      calculateEmployeeStats(data);
-    }
+    const response = await apiGet<StaffManhour[]>(`${API_CONFIG.HR.STAFF_MANHOUR}/date-range/search`, {
+      startDate: startStr,
+      endDate: endStr,
+    });
+    calculateDeptStats(getApiItems(response));
+    calculateEmployeeStats(getApiItems(response));
   } catch (error) {
     console.error('載入統計資料失敗:', error);
   }
@@ -608,24 +632,29 @@ const generateReport = async () => {
   }
   
   try {
-    const response = await fetch(
-      `${buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)}/date-range/search?startDate=${reportStartDate.value}&endDate=${reportEndDate.value}`,
-      {
-        headers: getAuthHeaders(),
-      }
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      const totalHours = data.reduce((sum: number, r: StaffManhour) => sum + r.work_time, 0);
-      const uniqueEmployees = new Set(data.map((r: StaffManhour) => r.staffId));
-      
-      reportSummary.value = {
-        totalHours: Math.round(totalHours * 10) / 10,
-        recordCount: data.length,
-        employeeCount: uniqueEmployees.size,
-      };
+    const response = await apiGet<StaffManhour[]>(`${API_CONFIG.HR.STAFF_MANHOUR}/date-range/search`, {
+      startDate: reportStartDate.value,
+      endDate: reportEndDate.value,
+    });
+    const data = getApiItems(response);
+    const totalHours = data.reduce((sum: number, r: StaffManhour) => sum + r.work_time, 0);
+    const uniqueEmployees = new Set(data.map((r: StaffManhour) => r.staffId));
+    reportSummary.value = {
+      totalHours: Math.round(totalHours * 10) / 10,
+      recordCount: data.length,
+      employeeCount: uniqueEmployees.size,
+    };
+    if (!authStore.isAdmin) {
+      payrollReport.value = [];
+      payrollTotals.value = { grossPay: 0, deductions: 0, netPay: 0 };
+      return;
     }
+    const payroll = await apiGet<PayrollResponse>(`${API_CONFIG.HR.STAFF_WORKHOUR}/payroll`, {
+      startDate: reportStartDate.value,
+      endDate: reportEndDate.value,
+    });
+    payrollReport.value = payroll.items || [];
+    payrollTotals.value = payroll.totals || { grossPay: 0, deductions: 0, netPay: 0 };
   } catch (error) {
     console.error('產生報表失敗:', error);
   }
@@ -651,19 +680,8 @@ const deleteRecord = async (id: number) => {
   }
   
   try {
-    const response = await fetch(
-      `${buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)}/${id}`,
-      {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      }
-    );
-    
-    if (response.ok) {
-      await loadManhourData();
-    } else {
-      alert('刪除失敗');
-    }
+    await apiDelete(`${API_CONFIG.HR.STAFF_MANHOUR}/${id}`);
+    await loadManhourData();
   } catch (error) {
     console.error('刪除失敗:', error);
     alert('刪除失敗');
@@ -694,25 +712,13 @@ const saveRecord = async () => {
       payload.end_time = formData.value.end_time;
     }
     
-    const url = showCreateModal.value
-      ? buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)
-      : `${buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)}/${formData.value.id}`;
-    
-    const method = showCreateModal.value ? 'POST' : 'PUT';
-    
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    });
-    
-    if (response.ok) {
-      closeModal();
-      await loadManhourData();
+    if (showCreateModal.value) {
+      await apiPost(API_CONFIG.HR.STAFF_MANHOUR, payload);
     } else {
-      const errorData = await response.json().catch(() => ({}));
-      errorMessage.value = errorData.message || '儲存失敗，請稍後再試';
+      await apiPut(`${API_CONFIG.HR.STAFF_MANHOUR}/${formData.value.id}`, payload);
     }
+    closeModal();
+    await loadManhourData();
   } catch (error) {
     console.error('儲存失敗:', error);
     errorMessage.value = '網路連線錯誤，請檢查網路連線後再試';

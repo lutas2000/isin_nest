@@ -13,6 +13,12 @@ import {
   AttendRecordCsvReader,
   AttendRecordUsbReader,
 } from './attend-record-csv-reader';
+import {
+  TYPE_NEW,
+  TYPE_OFF_WORK,
+  TYPE_ON_WORK,
+  TYPE_UNKNOWN,
+} from '../working-hours/working-hours';
 
 export interface CreateAttendRecordDto {
   staffId: string;
@@ -127,11 +133,14 @@ export class AttendRecordService {
     startDate: Date,
     endDate: Date,
   ): Promise<AttendRecord[]> {
+    const inclusiveEndDate = this.endOfDateIfDateOnly(endDate);
     return await this.attendRecordRepository
       .createQueryBuilder('attendRecord')
       .leftJoinAndSelect('attendRecord.staff', 'staff')
       .where('attendRecord.createTime >= :startDate', { startDate })
-      .andWhere('attendRecord.createTime <= :endDate', { endDate })
+      .andWhere('attendRecord.createTime <= :endDate', {
+        endDate: inclusiveEndDate,
+      })
       .orderBy('attendRecord.createTime', 'DESC')
       .getMany();
   }
@@ -144,12 +153,15 @@ export class AttendRecordService {
     startDate: Date,
     endDate: Date,
   ): Promise<AttendRecord[]> {
+    const inclusiveEndDate = this.endOfDateIfDateOnly(endDate);
     return await this.attendRecordRepository
       .createQueryBuilder('attendRecord')
       .leftJoinAndSelect('attendRecord.staff', 'staff')
       .where('attendRecord.staffId = :staffId', { staffId })
       .andWhere('attendRecord.createTime >= :startDate', { startDate })
-      .andWhere('attendRecord.createTime <= :endDate', { endDate })
+      .andWhere('attendRecord.createTime <= :endDate', {
+        endDate: inclusiveEndDate,
+      })
       .orderBy('attendRecord.createTime', 'DESC')
       .getMany();
   }
@@ -229,10 +241,10 @@ export class AttendRecordService {
    * 驗證出勤類型
    */
   private validateAttendType(attendType: number): void {
-    const validTypes = [0, 1, 2];
+    const validTypes = [TYPE_NEW, TYPE_ON_WORK, TYPE_OFF_WORK, TYPE_UNKNOWN];
     if (!validTypes.includes(attendType)) {
       throw new BadRequestException(
-        `無效的出勤類型 ${attendType}，僅支援 0(未決定)、1(上班)、2(下班)`,
+        `無效的出勤類型 ${attendType}，僅支援 0(新紀錄)、1(上班)、2(下班)、3(不明)`,
       );
     }
   }
@@ -245,7 +257,7 @@ export class AttendRecordService {
     attendType: number,
   ): Promise<void> {
     // 僅檢查上班和下班打卡，未決定類型可以重複
-    if (attendType === 0) return;
+    if (attendType === TYPE_NEW || attendType === TYPE_UNKNOWN) return;
 
     const today = new Date();
     const startOfDay = new Date(
@@ -273,12 +285,25 @@ export class AttendRecordService {
     if (existingRecord) {
       const recordDate = new Date(existingRecord.createTime);
       if (recordDate >= startOfDay && recordDate <= endOfDay) {
-        const typeText = attendType === 1 ? '上班' : '下班';
+        const typeText = attendType === TYPE_ON_WORK ? '上班' : '下班';
         throw new BadRequestException(
           `今日已有 ${typeText} 打卡記錄，請勿重複打卡`,
         );
       }
     }
+  }
+
+  private endOfDateIfDateOnly(date: Date): Date {
+    const result = new Date(date);
+    if (
+      result.getUTCHours() === 0 &&
+      result.getUTCMinutes() === 0 &&
+      result.getUTCSeconds() === 0 &&
+      result.getUTCMilliseconds() === 0
+    ) {
+      result.setUTCHours(23, 59, 59, 999);
+    }
+    return result;
   }
 
   /**

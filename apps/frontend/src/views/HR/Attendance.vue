@@ -2,230 +2,64 @@
   <div class="attendance-page">
     <TableHeader :border="false">
       <template #actions>
-        <button class="btn btn-primary">
-          <span class="mr-2">📅</span>
-          今日出勤
-        </button>
-        <button class="btn btn-outline">
-          <span class="mr-2">📊</span>
-          出勤報表
-        </button>
+        <button class="btn btn-primary" @click="refreshAttendance">重新整理</button>
       </template>
     </TableHeader>
 
-    <!-- 出勤概覽 -->
     <div class="attendance-overview">
-      <div class="overview-card">
-        <div class="overview-icon">👥</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ attendanceStats.totalStaff }}</div>
-          <div class="overview-label">總員工數</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">✅</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ attendanceStats.present }}</div>
-          <div class="overview-label">已到班</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">⏰</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ attendanceStats.late }}</div>
-          <div class="overview-label">遲到</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">❌</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ attendanceStats.absent }}</div>
-          <div class="overview-label">缺勤</div>
-        </div>
-      </div>
+      <div class="overview-card"><strong>{{ attendanceStats.totalStaff }}</strong><span>總員工數</span></div>
+      <div class="overview-card"><strong>{{ attendanceStats.present }}</strong><span>已到班</span></div>
+      <div class="overview-card"><strong>{{ attendanceStats.late }}</strong><span>遲到</span></div>
+      <div class="overview-card"><strong>{{ attendanceStats.absent }}</strong><span>缺勤</span></div>
     </div>
 
-    <!-- 主要內容區域 -->
     <div class="attendance-content">
       <div class="content-tabs">
-        <button 
-          v-for="tab in tabs" 
-          :key="tab.id"
-          class="tab-btn"
-          :class="{ active: activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >
+        <button v-for="tab in tabs" :key="tab.id" class="tab-btn" :class="{ active: activeTab === tab.id }" @click="activeTab = tab.id">
           {{ tab.label }}
         </button>
       </div>
 
-      <!-- 今日出勤 -->
       <div v-if="activeTab === 'today'" class="tab-content">
         <SectionHeader :title="`今日出勤狀況 - ${todayDate}`">
-          <template #actions>
-            <button class="btn btn-success" @click="refreshAttendance">
-              刷新資料
-            </button>
-          </template>
+          <template #actions><button class="btn btn-success" @click="refreshAttendance">刷新資料</button></template>
         </SectionHeader>
-
-        <EditableDataTable
-          :columns="todayColumns"
-          :data="todayAttendance"
-          :show-actions="false"
-          :editable="false"
-        >
-          <template #cell-employeeId="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-employeeName="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-department="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-checkInTime="{ row }">
-            <span :class="{ 'text-danger': row.checkInTime > '09:00' }">
-              {{ row.checkInTime }}
-            </span>
-          </template>
-          <template #cell-checkOutTime="{ value }">
-            {{ value || '-' }}
-          </template>
-          <template #cell-workHours="{ value }">
-            {{ value || '-' }}
-          </template>
-          <template #cell-status="{ row }">
-            <span class="badge" :class="`badge-${row.status}`">
-              {{ row.statusText }}
-            </span>
-          </template>
-          <template #cell-notes="{ value }">
-            {{ value || '-' }}
-          </template>
+        <div v-if="loading" class="empty-state">載入中...</div>
+        <EditableDataTable v-else :columns="todayColumns" :data="todayAttendance" :show-actions="false" :editable="false">
+          <template #cell-checkInTime="{ row }"><span :class="{ 'text-danger': row.status === 'late' }">{{ row.checkInTime || '-' }}</span></template>
+          <template #cell-checkOutTime="{ value }">{{ value || '-' }}</template>
+          <template #cell-workHours="{ value }">{{ value || '-' }}</template>
+          <template #cell-status="{ row }"><span class="badge" :class="`badge-${row.status}`">{{ row.statusText }}</span></template>
+          <template #cell-notes="{ value }">{{ value || '-' }}</template>
         </EditableDataTable>
       </div>
 
-      <!-- 出勤記錄 -->
       <div v-if="activeTab === 'records'" class="tab-content">
         <SectionHeader title="出勤記錄查詢">
           <template #actions>
-            <div class="search-box">
-              <input 
-                type="text" 
-                class="form-control" 
-                placeholder="搜尋員工姓名或編號..."
-                v-model="recordSearch"
-              />
-            </div>
-            <input 
-              type="date" 
-              class="form-control" 
-              v-model="recordDate"
-            />
-            <select class="form-control" v-model="recordDepartment">
+            <input v-model="recordSearch" class="form-control" placeholder="搜尋員工姓名或編號..." />
+            <input v-model="recordDate" type="date" class="form-control" @change="refreshAttendance" />
+            <select v-model="recordDepartment" class="form-control">
               <option value="">全部部門</option>
-              <option value="production">生產部</option>
-              <option value="engineering">工程部</option>
-              <option value="sales">業務部</option>
-              <option value="hr">人資部</option>
+              <option v-for="department in departments" :key="department" :value="department">{{ department }}</option>
             </select>
           </template>
         </SectionHeader>
-
-        <EditableDataTable
-          :columns="recordColumns"
-          :data="filteredRecords"
-          :show-actions="false"
-          :editable="false"
-        >
-          <template #cell-date="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-employeeId="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-employeeName="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-department="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-checkInTime="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-checkOutTime="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-workHours="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-overtimeHours="{ value }">
-            {{ value || '-' }}
-          </template>
-          <template #cell-status="{ row }">
-            <span class="badge" :class="`badge-${row.status}`">
-              {{ row.statusText }}
-            </span>
-          </template>
+        <EditableDataTable :columns="recordColumns" :data="filteredRecords" :show-actions="false" :editable="false">
+          <template #cell-checkInTime="{ value }">{{ value || '-' }}</template>
+          <template #cell-checkOutTime="{ value }">{{ value || '-' }}</template>
+          <template #cell-workHours="{ value }">{{ value || '-' }}</template>
+          <template #cell-overtimeHours="{ value }">{{ value || '-' }}</template>
+          <template #cell-status="{ row }"><span class="badge" :class="`badge-${row.status}`">{{ row.statusText }}</span></template>
         </EditableDataTable>
       </div>
 
-      <!-- 統計報表 -->
       <div v-if="activeTab === 'reports'" class="tab-content">
-        <SectionHeader title="出勤統計報表">
-          <template #actions>
-            <select class="form-control" v-model="reportPeriod">
-              <option value="week">本週</option>
-              <option value="month">本月</option>
-              <option value="quarter">本季</option>
-            </select>
-            <button class="btn btn-primary">匯出報表</button>
-          </template>
-        </SectionHeader>
-
+        <SectionHeader title="出勤統計報表" />
         <div class="reports-grid">
-          <div class="report-card">
-            <h4>部門出勤率</h4>
-            <div class="department-stats">
-              <div class="stat-item" v-for="dept in departmentStats" :key="dept.name">
-                <div class="stat-label">{{ dept.name }}</div>
-                <div class="stat-value">{{ dept.attendanceRate }}%</div>
-                <div class="stat-bar">
-                  <div class="stat-bar-fill" :style="{ width: dept.attendanceRate + '%' }"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="report-card">
-            <h4>遲到統計</h4>
-            <div class="late-stats">
-              <div class="late-item" v-for="late in lateStats" :key="late.employeeId">
-                <div class="late-info">
-                  <div class="late-name">{{ late.employeeName }}</div>
-                  <div class="late-department">{{ late.department }}</div>
-                </div>
-                <div class="late-count">{{ late.lateCount }} 次</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="report-card">
-            <h4>加班統計</h4>
-            <div class="overtime-stats">
-              <div class="overtime-item" v-for="ot in overtimeStats" :key="ot.employeeId">
-                <div class="overtime-info">
-                  <div class="overtime-name">{{ ot.employeeName }}</div>
-                  <div class="overtime-department">{{ ot.department }}</div>
-                </div>
-                <div class="overtime-hours">{{ ot.totalHours }} 小時</div>
-              </div>
-            </div>
-          </div>
+          <div class="report-card"><h4>部門出勤率</h4><p v-for="item in departmentStats" :key="item.name">{{ item.name }}：{{ item.attendanceRate }}%</p></div>
+          <div class="report-card"><h4>遲到統計</h4><p v-for="item in lateStats" :key="item.employeeId">{{ item.employeeName }}：{{ item.lateCount }} 次</p></div>
+          <div class="report-card"><h4>加班統計</h4><p v-for="item in overtimeStats" :key="item.employeeId">{{ item.employeeName }}：{{ item.totalHours }} 小時</p></div>
         </div>
       </div>
     </div>
@@ -233,154 +67,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
+import { computed, onMounted, ref } from 'vue'
+import { EditableDataTable, SectionHeader, TableHeader } from '@/components'
+import { apiGet, getApiItems } from '@/services/api'
+import { API_CONFIG } from '@/config/api'
 
-// 頁面標籤
+interface Staff {
+  id: string
+  name: string
+  department?: string
+  need_check?: boolean
+}
+
+interface AttendRecord {
+  id: number
+  staffId: string
+  staffName?: string
+  createTime: string
+  attendType: number
+}
+
+interface Segment {
+  staffId: string
+  begain_time: string
+  end_time: string
+  rest_time?: number
+  create_date?: string
+}
+
+interface AttendanceRow {
+  id: string
+  date: string
+  employeeId: string
+  employeeName: string
+  department: string
+  checkInTime: string
+  checkOutTime: string
+  workHours: string
+  overtimeHours: string
+  status: 'present' | 'late' | 'absent' | 'incomplete'
+  statusText: string
+  notes: string
+}
+
 const tabs = [
   { id: 'today', label: '今日出勤' },
   { id: 'records', label: '出勤記錄' },
   { id: 'reports', label: '統計報表' },
-];
+]
+const activeTab = ref('today')
+const loading = ref(false)
+const todayDate = ref(toDateKey(new Date()))
+const recordDate = ref(todayDate.value)
+const recordSearch = ref('')
+const recordDepartment = ref('')
+const staffList = ref<Staff[]>([])
+const segments = ref<Segment[]>([])
+const todayAttendance = ref<AttendanceRow[]>([])
+const attendanceRecords = ref<AttendanceRow[]>([])
+const attendanceStats = ref({ totalStaff: 0, present: 0, late: 0, absent: 0 })
+const departmentStats = ref<{ name: string; attendanceRate: number }[]>([])
+const lateStats = ref<{ employeeId: string; employeeName: string; lateCount: number }[]>([])
+const overtimeStats = ref<{ employeeId: string; employeeName: string; totalHours: number }[]>([])
 
-const activeTab = ref('today');
+const departments = computed(() => Array.from(new Set(staffList.value.map((staff) => staff.department).filter(Boolean) as string[])).sort())
 
-// 今日日期
-const todayDate = ref('');
-
-// 出勤統計
-const attendanceStats = ref({
-  totalStaff: 45,
-  present: 42,
-  late: 3,
-  absent: 0,
-});
-
-// 搜尋和篩選
-const recordSearch = ref('');
-const recordDate = ref('');
-const recordDepartment = ref('');
-const reportPeriod = ref('week');
-
-// 今日出勤資料
-const todayAttendance = ref([
-  {
-    id: 1,
-    employeeId: 'EMP-001',
-    employeeName: '張小明',
-    department: '生產部',
-    checkInTime: '08:45',
-    checkOutTime: '17:30',
-    workHours: '8.75',
-    status: 'present',
-    statusText: '正常',
-    notes: '',
-  },
-  {
-    id: 2,
-    employeeId: 'EMP-002',
-    employeeName: '李小華',
-    department: '工程部',
-    checkInTime: '09:15',
-    checkOutTime: '18:00',
-    workHours: '8.75',
-    status: 'late',
-    statusText: '遲到',
-    notes: '交通延誤',
-  },
-  {
-    id: 3,
-    employeeId: 'EMP-003',
-    employeeName: '王美玲',
-    department: '業務部',
-    checkInTime: '08:30',
-    checkOutTime: '17:45',
-    workHours: '9.25',
-    status: 'present',
-    statusText: '正常',
-    notes: '',
-  },
-  {
-    id: 4,
-    employeeId: 'EMP-004',
-    employeeName: '陳志強',
-    department: '生產部',
-    checkInTime: '',
-    checkOutTime: '',
-    workHours: '',
-    status: 'absent',
-    statusText: '缺勤',
-    notes: '請病假',
-  },
-]);
-
-// 出勤記錄資料
-const attendanceRecords = ref([
-  {
-    id: 1,
-    date: '2024-01-15',
-    employeeId: 'EMP-001',
-    employeeName: '張小明',
-    department: '生產部',
-    checkInTime: '08:45',
-    checkOutTime: '17:30',
-    workHours: '8.75',
-    overtimeHours: '0.75',
-    status: 'present',
-    statusText: '正常',
-  },
-  {
-    id: 2,
-    date: '2024-01-15',
-    employeeId: 'EMP-002',
-    employeeName: '李小華',
-    department: '工程部',
-    checkInTime: '09:15',
-    checkOutTime: '18:00',
-    workHours: '8.75',
-    overtimeHours: '0',
-    status: 'late',
-    statusText: '遲到',
-  },
-  {
-    id: 3,
-    date: '2024-01-14',
-    employeeId: 'EMP-001',
-    employeeName: '張小明',
-    department: '生產部',
-    checkInTime: '08:30',
-    checkOutTime: '19:00',
-    workHours: '10.5',
-    overtimeHours: '2.5',
-    status: 'present',
-    statusText: '正常',
-  },
-]);
-
-// 篩選後的記錄
 const filteredRecords = computed(() => {
-  let filtered = attendanceRecords.value;
+  const search = recordSearch.value.toLowerCase()
+  return attendanceRecords.value.filter((record) => {
+    const matchesSearch = !search || record.employeeId.toLowerCase().includes(search) || record.employeeName.toLowerCase().includes(search)
+    const matchesDepartment = !recordDepartment.value || record.department === recordDepartment.value
+    return matchesSearch && matchesDepartment
+  })
+})
 
-  if (recordSearch.value) {
-    filtered = filtered.filter(
-      (record) =>
-        record.employeeId.toLowerCase().includes(recordSearch.value.toLowerCase()) ||
-        record.employeeName.toLowerCase().includes(recordSearch.value.toLowerCase()),
-    );
-  }
-
-  if (recordDate.value) {
-    filtered = filtered.filter((record) => record.date === recordDate.value);
-  }
-
-  if (recordDepartment.value) {
-    filtered = filtered.filter((record) => record.department === recordDepartment.value);
-  }
-
-  return filtered;
-});
-
-// 今日出勤表格欄位
 const todayColumns = [
   { key: 'employeeId', label: '員工編號' },
   { key: 'employeeName', label: '姓名' },
@@ -390,9 +150,7 @@ const todayColumns = [
   { key: 'workHours', label: '工作時數' },
   { key: 'status', label: '狀態' },
   { key: 'notes', label: '備註' },
-];
-
-// 出勤記錄表格欄位
+]
 const recordColumns = [
   { key: 'date', label: '日期' },
   { key: 'employeeId', label: '員工編號' },
@@ -403,363 +161,105 @@ const recordColumns = [
   { key: 'workHours', label: '工作時數' },
   { key: 'overtimeHours', label: '加班時數' },
   { key: 'status', label: '狀態' },
-];
+]
 
-// 部門統計
-const departmentStats = ref([
-  { name: '生產部', attendanceRate: 96.4 },
-  { name: '工程部', attendanceRate: 98.2 },
-  { name: '業務部', attendanceRate: 94.8 },
-  { name: '人資部', attendanceRate: 100 },
-]);
+async function refreshAttendance() {
+  loading.value = true
+  try {
+    const date = recordDate.value || toDateKey(new Date())
+    const [staffResponse, recordResponse, segmentResponse] = await Promise.all([
+      apiGet<Staff[]>(API_CONFIG.HR.STAFF_ALL),
+      apiGet<AttendRecord[] | { data: AttendRecord[] }>(API_CONFIG.HR.ATTEND_RECORD, { startDate: date, endDate: date }),
+      apiGet<Segment[] | { data: Segment[] }>(API_CONFIG.HR.STAFF_SEGMENT, { page: 1, limit: 100 }),
+    ])
+    staffList.value = getApiItems(staffResponse).filter((staff) => staff.need_check !== false)
+    segments.value = getApiItems(segmentResponse)
+    const records = getApiItems(recordResponse)
+    const rows = staffList.value.map((staff) => buildRow(staff, records.filter((record) => record.staffId === staff.id), date))
+    todayAttendance.value = rows
+    attendanceRecords.value = rows
+    updateStatistics(rows)
+  } finally {
+    loading.value = false
+  }
+}
 
-// 遲到統計
-const lateStats = ref([
-  { employeeId: 'EMP-002', employeeName: '李小華', department: '工程部', lateCount: 3 },
-  { employeeId: 'EMP-005', employeeName: '林雅婷', department: '人資部', lateCount: 1 },
-  { employeeId: 'EMP-008', employeeName: '劉建國', department: '生產部', lateCount: 2 },
-]);
+function buildRow(staff: Staff, records: AttendRecord[], date: string): AttendanceRow {
+  const sorted = [...records].sort((a, b) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime())
+  const checkIn = sorted.find((record) => record.attendType === 1)
+  const checkOut = sorted.find((record) => record.attendType === 2 && (!checkIn || new Date(record.createTime) > new Date(checkIn.createTime)))
+  const staffSegments = segments.value
+    .filter((item) => item.staffId === staff.id && (!item.create_date || item.create_date <= date))
+    .sort((a, b) => (b.create_date || '').localeCompare(a.create_date || ''))
+  const segment = staffSegments[0]
+  const checkInTime = checkIn ? formatTime(checkIn.createTime) : ''
+  const checkOutTime = checkOut ? formatTime(checkOut.createTime) : ''
+  const workHours = checkIn && checkOut ? Math.max(0, (new Date(checkOut.createTime).getTime() - new Date(checkIn.createTime).getTime()) / 3600000) : 0
+  const expected = segment?.begain_time?.slice(0, 5) || '09:00'
+  const late = checkInTime ? timeToMinutes(checkInTime) > timeToMinutes(expected) : false
+  const status = !checkIn ? 'absent' : !checkOut ? 'incomplete' : late ? 'late' : 'present'
+  const statusText = { present: '正常', late: '遲到', absent: '缺勤', incomplete: '未完成' }[status]
+  const standardHours = segment ? scheduledHours(segment) : 8
+  return {
+    id: `${staff.id}-${date}`,
+    date,
+    employeeId: staff.id,
+    employeeName: staff.name,
+    department: staff.department || '未分部門',
+    checkInTime,
+    checkOutTime,
+    workHours: workHours ? workHours.toFixed(2) : '',
+    overtimeHours: workHours > standardHours ? (workHours - standardHours).toFixed(2) : '0',
+    status,
+    statusText,
+    notes: '',
+  }
+}
 
-// 加班統計
-const overtimeStats = ref([
-  { employeeId: 'EMP-001', employeeName: '張小明', department: '生產部', totalHours: 12.5 },
-  { employeeId: 'EMP-003', employeeName: '王美玲', department: '業務部', totalHours: 8.0 },
-  { employeeId: 'EMP-006', employeeName: '黃志明', department: '工程部', totalHours: 15.0 },
-]);
+function updateStatistics(rows: AttendanceRow[]) {
+  const present = rows.filter((row) => row.status === 'present' || row.status === 'late' || row.status === 'incomplete').length
+  const late = rows.filter((row) => row.status === 'late').length
+  attendanceStats.value = { totalStaff: rows.length, present, late, absent: rows.filter((row) => row.status === 'absent').length }
+  const byDepartment = new Map<string, AttendanceRow[]>()
+  rows.forEach((row) => byDepartment.set(row.department, [...(byDepartment.get(row.department) || []), row]))
+  departmentStats.value = Array.from(byDepartment, ([name, departmentRows]) => ({
+    name,
+    attendanceRate: departmentRows.length ? Number(((departmentRows.filter((row) => row.status !== 'absent').length / departmentRows.length) * 100).toFixed(1)) : 0,
+  }))
+  lateStats.value = rows.filter((row) => row.status === 'late').map((row) => ({ employeeId: row.employeeId, employeeName: row.employeeName, lateCount: 1 }))
+  overtimeStats.value = rows.filter((row) => Number(row.overtimeHours) > 0).map((row) => ({ employeeId: row.employeeId, employeeName: row.employeeName, totalHours: Number(row.overtimeHours) }))
+}
 
-// 刷新出勤資料
-const refreshAttendance = () => {
-  // TODO: 調用 API 刷新資料
-  console.log('刷新出勤資料');
-};
+function scheduledHours(segment: Segment) {
+  const [startHour, startMinute] = segment.begain_time.split(':').map(Number)
+  const [endHour, endMinute] = segment.end_time.split(':').map(Number)
+  let minutes = endHour * 60 + endMinute - startHour * 60 - startMinute
+  if (minutes < 0) minutes += 24 * 60
+  return Math.max(0, minutes / 60 - (segment.rest_time || 0) / 60)
+}
 
-// 初始化
-onMounted(() => {
-  const today = new Date();
-  todayDate.value = today.toLocaleDateString('zh-TW');
-});
+function formatTime(value: string) { return new Date(value).toISOString().slice(11, 16) }
+function timeToMinutes(value: string) { const [hour, minute] = value.split(':').map(Number); return hour * 60 + minute }
+function toDateKey(value: Date) { return value.toISOString().slice(0, 10) }
+
+onMounted(refreshAttendance)
 </script>
 
 <style scoped>
-.attendance-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-
-/* 出勤概覽 */
-.attendance-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.overview-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.overview-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.overview-content {
-  flex: 1;
-}
-
-.overview-value {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.overview-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-/* 主要內容區域 */
-.attendance-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.content-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--secondary-200);
-  background-color: var(--secondary-50);
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 1rem 2rem;
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--secondary-600);
-  transition: all 0.2s ease;
-  border-bottom: 3px solid transparent;
-}
-
-.tab-btn:hover {
-  color: var(--secondary-800);
-  background-color: var(--secondary-100);
-}
-
-.tab-btn.active {
-  color: var(--primary-600);
-  border-bottom-color: var(--primary-600);
-  background-color: white;
-}
-
-.tab-content {
-  padding: 2rem;
-}
-
-.content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.content-header h3 {
-  margin: 0;
-  color: var(--secondary-900);
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-}
-
-.search-box {
-  min-width: 300px;
-}
-
-/* 表格容器 */
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.table th {
-  background-color: var(--secondary-50);
-  font-weight: 600;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table tbody tr:hover {
-  background-color: var(--secondary-50);
-}
-
-/* 報表網格 */
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.report-card {
-  background: var(--secondary-50);
-  border-radius: var(--border-radius-lg);
-  padding: 1.5rem;
-  border: 1px solid var(--secondary-200);
-}
-
-.report-card h4 {
-  margin: 0 0 1rem 0;
-  color: var(--secondary-900);
-}
-
-/* 部門統計 */
-.department-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.stat-item {
-  background: white;
-  padding: 1rem;
-  border-radius: var(--border-radius);
-}
-
-.stat-label {
-  font-weight: 500;
-  color: var(--secondary-700);
-  margin-bottom: 0.5rem;
-}
-
-.stat-value {
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-  color: var(--primary-600);
-  margin-bottom: 0.5rem;
-}
-
-.stat-bar {
-  width: 100%;
-  height: 8px;
-  background: var(--secondary-200);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.stat-bar-fill {
-  height: 100%;
-  background: var(--primary-500);
-  transition: width 0.3s ease;
-}
-
-/* 遲到統計 */
-.late-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.late-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: white;
-  border-radius: var(--border-radius);
-}
-
-.late-name {
-  font-weight: 500;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.late-department {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.late-count {
-  font-weight: 600;
-  color: var(--warning-600);
-}
-
-/* 加班統計 */
-.overtime-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.overtime-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: white;
-  border-radius: var(--border-radius);
-}
-
-.overtime-name {
-  font-weight: 500;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.overtime-department {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.overtime-hours {
-  font-weight: 600;
-  color: var(--info-600);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .attendance-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .content-tabs {
-    flex-wrap: wrap;
-  }
-  
-  .tab-btn {
-    flex: 1;
-    min-width: 120px;
-    text-align: center;
-  }
-  
-  /* content-header 響應式設計已移至 SectionHeader 組件 */
-  
-  .search-box {
-    min-width: auto;
-  }
-  
-  .reports-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .attendance-overview {
-    grid-template-columns: 1fr;
-  }
-  
-  .tab-content {
-    padding: 1rem;
-  }
-  
-  .table-container {
-    font-size: var(--font-size-sm);
-  }
-  
-  .table th,
-  .table td {
-    padding: 0.5rem;
-  }
-}
+.attendance-page { width: 100%; margin: 0 auto; }
+.attendance-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.overview-card, .report-card { background: white; padding: 1.25rem; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); }
+.overview-card strong { display: block; font-size: var(--font-size-2xl); color: var(--secondary-900); }
+.overview-card span { color: var(--secondary-600); }
+.attendance-content { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+.content-tabs { display: flex; border-bottom: 1px solid var(--secondary-200); background: var(--secondary-50); }
+.tab-btn { border: 0; background: none; padding: 1rem 1.5rem; cursor: pointer; color: var(--secondary-600); }
+.tab-btn.active { color: var(--primary-700); border-bottom: 3px solid var(--primary-500); }
+.tab-content { padding: 1rem; }
+.reports-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.empty-state { padding: 2rem; text-align: center; color: var(--secondary-600); }
+.badge { padding: .25rem .5rem; border-radius: var(--border-radius); }
+.badge-present { background: var(--success-100); color: var(--success-700); }
+.badge-late, .badge-incomplete { background: var(--warning-100); color: var(--warning-700); }
+.badge-absent { background: var(--danger-100); color: var(--danger-700); }
 </style>

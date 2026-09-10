@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import {
   AttendRecordService,
@@ -22,8 +24,11 @@ import {
   UpdateAttendRecordDto,
 } from './attend-record.service';
 import { AttendRecord } from './entities/attend-record.entity';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
 @ApiTags('出勤記錄管理')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(JwtAuthGuard)
 @Controller('attend-record')
 export class AttendRecordController {
   constructor(private readonly attendRecordService: AttendRecordService) {}
@@ -78,8 +83,8 @@ export class AttendRecordController {
   @ApiQuery({
     name: 'attendType',
     required: false,
-    description: '根據出勤類型篩選 0:未決定 1:上班 2:下班',
-    enum: [0, 1, 2],
+    description: '根據出勤類型篩選 0:新紀錄 1:上班 2:下班 3:不明',
+    enum: [0, 1, 2, 3],
   })
   @ApiQuery({
     name: 'startDate',

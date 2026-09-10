@@ -1,5 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { AttendRecord } from './entities/attend-record.entity';
+import { Repository } from 'typeorm';
+import { Staff } from '../staff/entities/staff.entity';
+import {
+  TYPE_NEW,
+  TYPE_OFF_WORK,
+  TYPE_ON_WORK,
+  TYPE_UNKNOWN,
+} from '../working-hours/working-hours';
 
 /**
  * 出勤記錄資料轉換器
@@ -8,6 +17,11 @@ import { AttendRecord } from './entities/attend-record.entity';
 @Injectable()
 export class AttendRecordMapper {
   private readonly logger = new Logger(AttendRecordMapper.name);
+
+  constructor(
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
+  ) {}
 
   /**
    * 將 CSV 行資料轉換為 AttendRecord 實體
@@ -20,35 +34,20 @@ export class AttendRecordMapper {
     const attendRecord = new AttendRecord();
 
     try {
-      // 根據實際的 CSV 格式進行對應
-      // TODO: 需要根據實際的 CSV 檔案格式調整這些對應關係
+      // Django 的 Log 檔欄位：staff_id=row[1]、name=row[2]、
+      // time=row[6]、input_type=row[8]。
+      attendRecord.staffId = this.sanitizeString(row[1]) || '';
+      const staffName = this.sanitizeString(row[2]);
+      attendRecord.staffName = staffName || undefined;
+      attendRecord.inputType = this.sanitizeString(row[8]) || 'card';
+      attendRecord.attendType = TYPE_NEW;
 
-      if (row.length >= 1) {
-        // 第一欄通常是員工編號
-        attendRecord.staffId = this.sanitizeString(row[0]) || '';
-      }
-
-      if (row.length >= 2) {
-        // 第二欄通常是員工姓名
-        const staffName = this.sanitizeString(row[1]);
-        attendRecord.staffName = staffName || undefined;
-      }
-
-      if (row.length >= 3) {
-        // 第三欄可能是輸入類型或時間戳記
-        const inputType = this.sanitizeString(row[2]);
-        attendRecord.inputType = inputType || 'card'; // 預設為刷卡
-      }
-
-      if (row.length >= 4) {
-        // 第四欄可能是出勤類型
-        const attendTypeStr = this.sanitizeString(row[3]);
-        attendRecord.attendType = this.parseAttendType(attendTypeStr);
-      }
-
-      // 如果沒有明確的出勤類型，設定為未決定
-      if (attendRecord.attendType === undefined) {
-        attendRecord.attendType = 0; // 0: 未決定
+      const createTime = this.parseDateTime(
+        this.sanitizeString(row[6]),
+        'normal',
+      );
+      if (createTime) {
+        attendRecord.createTime = createTime;
       }
 
       this.logger.debug(`CSV 轉換結果: ${JSON.stringify(attendRecord)}`);
@@ -56,7 +55,7 @@ export class AttendRecordMapper {
       this.logger.warn(`CSV 資料轉換失敗: ${JSON.stringify(row)}`, error);
       // 回傳基本的實體，避免程式中斷
       attendRecord.staffId = '';
-      attendRecord.attendType = 0;
+      attendRecord.attendType = TYPE_NEW;
     }
 
     return attendRecord;
@@ -73,46 +72,24 @@ export class AttendRecordMapper {
     const attendRecord = new AttendRecord();
 
     try {
-      // USB CSV 格式可能與一般 CSV 不同
-      // TODO: 需要根據實際的 USB CSV 檔案格式調整這些對應關係
-
-      if (row.length >= 1) {
-        // 員工編號或姓名
-        const identifier = this.sanitizeString(row[0]);
-
-        // 判斷是員工編號還是姓名（通常編號會包含數字）
-        if (this.isStaffId(identifier)) {
-          attendRecord.staffId = identifier || '';
-        } else {
-          attendRecord.staffName = identifier || undefined;
-          // 如果是姓名，可能需要根據姓名查找員工編號
-          attendRecord.staffId =
-            (await this.findStaffIdByName(identifier)) || '';
-        }
-      }
-
-      if (row.length >= 2) {
-        // 可能是時間戳記或其他資訊
-        const secondField = this.sanitizeString(row[1]);
-
-        // 如果第一欄是員工編號，第二欄可能是姓名
-        if (attendRecord.staffId && !attendRecord.staffName) {
-          attendRecord.staffName = secondField || undefined;
-        }
-      }
-
-      if (row.length >= 3) {
-        // 出勤類型或其他資訊
-        const thirdField = this.sanitizeString(row[2]);
-        attendRecord.attendType = this.parseAttendType(thirdField);
-      }
-
-      // USB 固定標記為 USB 輸入類型
+      // Django 的 USB 匯出欄位：UID=row[2]、姓名=row[3]、
+      // 打卡時間=row[8]。UID 沒有直接等於 staff.id，必須先解析姓名。
+      const uid = this.sanitizeString(row[2]);
+      const explicitName = this.sanitizeString(row[3]);
+      const staffName = explicitName || this.fixName(Number(uid));
+      attendRecord.staffName = staffName || undefined;
+      attendRecord.staffId = staffName
+        ? (await this.findStaffIdByName(staffName)) || ''
+        : '';
       attendRecord.inputType = 'usb';
+      attendRecord.attendType = TYPE_NEW;
 
-      // 如果沒有明確的出勤類型，設定為未決定
-      if (attendRecord.attendType === undefined) {
-        attendRecord.attendType = 0; // 0: 未決定
+      const createTime = this.parseDateTime(
+        this.sanitizeString(row[8]),
+        'usb',
+      );
+      if (createTime) {
+        attendRecord.createTime = createTime;
       }
 
       this.logger.debug(`USB CSV 轉換結果: ${JSON.stringify(attendRecord)}`);
@@ -120,7 +97,7 @@ export class AttendRecordMapper {
       this.logger.warn(`USB CSV 資料轉換失敗: ${JSON.stringify(row)}`, error);
       // 回傳基本的實體，避免程式中斷
       attendRecord.staffId = '';
-      attendRecord.attendType = 0;
+      attendRecord.attendType = TYPE_NEW;
       attendRecord.inputType = 'usb';
     }
 
@@ -143,10 +120,10 @@ export class AttendRecordMapper {
   /**
    * 解析出勤類型
    * @param value 字串值
-   * @returns 出勤類型數字 (0: 未決定, 1: 上班, 2: 下班)
+   * @returns 出勤類型數字 (0: 新紀錄, 1: 上班, 2: 下班, 3: 不明)
    */
   private parseAttendType(value: string | undefined): number {
-    if (!value) return 0;
+    if (!value) return TYPE_NEW;
 
     const cleanValue = this.sanitizeString(value).toLowerCase();
 
@@ -156,77 +133,115 @@ export class AttendRecordMapper {
       cleanValue.includes('in') ||
       cleanValue === '1'
     ) {
-      return 1; // 上班
+      return TYPE_ON_WORK; // 上班
     } else if (
       cleanValue.includes('下班') ||
       cleanValue.includes('out') ||
       cleanValue === '2'
     ) {
-      return 2; // 下班
+      return TYPE_OFF_WORK; // 下班
     } else if (cleanValue === '0' || cleanValue.includes('未決定')) {
-      return 0; // 未決定
+      return TYPE_NEW; // 未決定
+    } else if (cleanValue === '3' || cleanValue.includes('不明')) {
+      return TYPE_UNKNOWN; // 不明
     }
 
     // 嘗試直接解析數字
     const numValue = parseInt(cleanValue, 10);
-    if (!isNaN(numValue) && [0, 1, 2].includes(numValue)) {
+    if (!isNaN(numValue) && [TYPE_NEW, TYPE_ON_WORK, TYPE_OFF_WORK, TYPE_UNKNOWN].includes(numValue)) {
       return numValue;
     }
 
     // 預設為未決定
-    return 0;
-  }
-
-  /**
-   * 判斷字串是否為員工編號格式
-   * 通常員工編號會包含數字或特定格式
-   */
-  private isStaffId(value: string): boolean {
-    if (!value) return false;
-
-    // 檢查是否包含數字
-    const hasNumber = /\d/.test(value);
-
-    // 檢查是否為純中文姓名
-    const isChineseName = /^[\u4e00-\u9fa5]{2,4}$/.test(value);
-
-    // 如果是純中文姓名，則不是員工編號
-    if (isChineseName) return false;
-
-    // 如果包含數字，很可能是員工編號
-    return hasNumber;
+    return TYPE_NEW;
   }
 
   /**
    * 根據員工姓名查找員工編號
-   * 這個方法需要與資料庫整合
-   * TODO: 實作資料庫查詢邏輯
    */
-  private findStaffIdByName(staffName: string): Promise<string | null> {
+  private async findStaffIdByName(staffName: string): Promise<string | null> {
     try {
-      // TODO: 實作從資料庫查詢員工編號的邏輯
-      // const staff = await this.staffRepository.findOne({ where: { name: staffName } });
-      // return staff ? staff.id : null;
-
-      this.logger.debug(`需要根據姓名查找員工編號: ${staffName}`);
-      return Promise.resolve(null);
+      const staff = await this.staffRepository.findOne({
+        where: { name: staffName },
+      });
+      return staff?.id || null;
     } catch (error) {
       this.logger.warn(`根據姓名查找員工編號失敗: ${staffName}`, error);
-      return Promise.resolve(null);
+      return null;
     }
+  }
+
+  /**
+   * USB 機器只提供 UID 時的相容名稱對照。
+   * 長期仍應以員工資料表的實際姓名為準。
+   */
+  fixName(uid: number): string | null {
+    const names: Record<number, string> = {
+      36: '高光達',
+      38: '阮文折',
+      39: '鄭春景',
+    };
+    return names[uid] || null;
+  }
+
+  private parseDateTime(
+    value: string,
+    source: 'normal' | 'usb',
+  ): Date | undefined {
+    const pattern =
+      source === 'normal'
+        ? /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/
+        : /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+    const match = value.match(pattern);
+    if (!match) return undefined;
+
+    const [, year, month, day, hour, minute, second] = match;
+    const date = new Date(
+      Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second),
+      ),
+    );
+
+    if (Number.isNaN(date.getTime())) return undefined;
+
+    // Date.UTC 會自動正規化不存在的日期（例如 6/31），需比對元件以
+    // 保留 Python datetime.strptime 的嚴格解析行為。
+    const matchesInput =
+      date.getUTCFullYear() === Number(year) &&
+      date.getUTCMonth() === Number(month) - 1 &&
+      date.getUTCDate() === Number(day) &&
+      date.getUTCHours() === Number(hour) &&
+      date.getUTCMinutes() === Number(minute) &&
+      date.getUTCSeconds() === Number(second);
+
+    return matchesInput ? date : undefined;
   }
 
   /**
    * 驗證 AttendRecord 實體的必要欄位
    */
   validateAttendRecord(attendRecord: AttendRecord): boolean {
-    // 至少要有員工編號或員工姓名
-    const hasIdentifier = attendRecord.staffId || attendRecord.staffName;
+    // attend_record.staff_id 是非空且有 FK 的欄位；只有姓名的 USB
+    // 記錄不能寫入資料庫，避免留下 UNKNOWN 員工。
+    const hasStaffId = Boolean(attendRecord.staffId?.trim());
 
     // 出勤類型必須是有效值
-    const hasValidAttendType = [0, 1, 2].includes(attendRecord.attendType);
+    const hasValidAttendType = [
+      TYPE_NEW,
+      TYPE_ON_WORK,
+      TYPE_OFF_WORK,
+      TYPE_UNKNOWN,
+    ].includes(attendRecord.attendType);
+    const hasValidCreateTime =
+      attendRecord.createTime instanceof Date &&
+      !Number.isNaN(attendRecord.createTime.getTime());
 
-    return !!hasIdentifier && hasValidAttendType;
+    return hasStaffId && hasValidAttendType && hasValidCreateTime;
   }
 
   /**
@@ -238,6 +253,39 @@ export class AttendRecordMapper {
       staffName: attendRecord.staffName,
       inputType: attendRecord.inputType,
       attendType: attendRecord.attendType,
+      createTime: attendRecord.createTime,
     });
   }
+}
+
+/**
+ * 解析一行帶引號的分隔資料。設備輸出的姓名或備註可能含有分隔符，
+ * 不能直接使用 String.split()。
+ */
+export function parseDelimitedLine(line: string, delimiter = ','): string[] {
+  const cells: string[] = [];
+  let cell = '';
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const character = line[index];
+    const nextCharacter = line[index + 1];
+
+    if (character === '"') {
+      if (quoted && nextCharacter === '"') {
+        cell += '"';
+        index++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === delimiter && !quoted) {
+      cells.push(cell.trim());
+      cell = '';
+    } else {
+      cell += character;
+    }
+  }
+
+  cells.push(cell.trim());
+  return cells;
 }

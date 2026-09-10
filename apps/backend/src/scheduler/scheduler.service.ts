@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
+import { Cron, SchedulerRegistry } from '@nestjs/schedule';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { CronJob } from 'cron';
 import { WorkingHoursService } from '../hr/working-hours/working-hours.service';
-import { AttendRecordCsvReader } from '../hr/attend-record/attend-record-csv-reader';
+import {
+  AttendRecordCsvReader,
+  AttendRecordUsbReader,
+} from '../hr/attend-record/attend-record-csv-reader';
 
 export interface ScheduledTask {
   id: string;
@@ -32,6 +35,7 @@ export class SchedulerService {
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly workingHoursService: WorkingHoursService,
     private readonly attendRecordCsvReader: AttendRecordCsvReader,
+    private readonly attendRecordUsbReader: AttendRecordUsbReader,
   ) {
     this.initializeDefaultTasks();
   }
@@ -264,80 +268,58 @@ export class SchedulerService {
   }
 
   /**
-   * 工時計算任務 - 每30分鐘執行一次
-   * 對應原始 Python 中的 calculate_man_hour_morning 函數
+   * HR 工時計算任務：每 30 分鐘匯入、分類，並補算完整日期範圍。
    */
-  // @Cron('0 */30 * * * *', {
-  //   name: 'calculate-man-hour',
-  //   timeZone: 'Asia/Taipei',
-  // })
-  // async handleCalculateManHour(): Promise<void> {
-  //   try {
-  //     this.logger.log('開始執行工時計算任務...');
-
-  //     // 步驟1: 處理出勤記錄 CSV 檔案
-  //     this.logger.log('步驟1: 處理出勤記錄 CSV 檔案');
-  //     await this.attendRecordCsvReader.searchAttendLogs();
-  //     this.logger.log('出勤記錄處理完成');
-
-  //     // 步驟2: 決定打卡記錄類型
-  //     this.logger.log('步驟2: 決定打卡記錄類型');
-  //     const lastTime =
-  //       await this.workingHoursService['workingHours'][
-  //         'appointAttendRecordsType'
-  //       ]();
-  //     this.logger.log('打卡記錄類型決定完成');
-
-  //     if (!lastTime) {
-  //       this.logger.log('沒有需要處理的打卡記錄，任務結束');
-  //       return;
-  //     }
-
-  //     // 步驟3: 計算工時
-  //     this.logger.log('步驟3: 開始計算工時');
-  //     const now = new Date();
-  //     const endTime = new Date(now);
-  //     endTime.setHours(6, 0, 0, 0); // 設定為當天早上6點
-
-  //     const startTime = new Date(lastTime);
-  //     startTime.setHours(6, 0, 0, 0); // 設定為最後處理時間的早上6點
-
-  //     // 如果開始時間超過結束時間，調整為前一天
-  //     if (startTime > endTime) {
-  //       startTime.setDate(startTime.getDate() - 1);
-  //     }
-
-  //     // 逐日計算工時
-  //     while (startTime <= endTime) {
-  //       try {
-  //         await this.workingHoursService.calculateCompleteWorkingHours(
-  //           startTime,
-  //         );
-  //         this.logger.log(
-  //           `工時計算完成: ${startTime.toISOString().split('T')[0]}`,
-  //         );
-  //       } catch (error) {
-  //         this.logger.error(
-  //           `計算工時失敗: ${startTime.toISOString().split('T')[0]}`,
-  //           error,
-  //         );
-  //       }
-
-  //       // 移到下一天
-  //       startTime.setDate(startTime.getDate() + 1);
-  //     }
-
-  //     this.logger.log('工時計算任務完成');
-  //   } catch (error) {
-  //     this.logger.error('工時計算任務執行失敗', error);
-  //   }
-  // }
+  @Cron('0 */30 * * * *', {
+    name: 'calculate-man-hour',
+    timeZone: 'Asia/Taipei',
+  })
+  async handleCalculateManHour(): Promise<void> {
+    try {
+      await this.runWorkingHoursJob();
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : String(error);
+      this.logger.error('工時計算任務執行失敗', errorStack);
+    }
+  }
 
   /**
-   * 手動觸發工時計算任務
+   * 可由排程與管理介面共用的完整流程；now 參數讓測試能固定工作日邊界。
    */
-  // async manualCalculateManHour(): Promise<void> {
-  //   this.logger.log('手動觸發工時計算任務');
-  //   await this.handleCalculateManHour();
-  // }
+  async runWorkingHoursJob(now = new Date()): Promise<void> {
+    await this.attendRecordCsvReader.searchAttendLogs();
+    await this.attendRecordUsbReader.read();
+    const firstRecordTime =
+      await this.workingHoursService.appointAttendanceTypes();
+
+    const endTime = new Date(now);
+    endTime.setUTCHours(6, 0, 0, 0);
+    const startTime = firstRecordTime
+      ? new Date(firstRecordTime)
+      : new Date(endTime);
+
+    if (firstRecordTime) {
+      startTime.setUTCHours(6, 0, 0, 0);
+      // 若目前尚未到今天 06:00，只補算到昨天 06:00。
+      if (startTime > endTime) {
+        endTime.setUTCDate(endTime.getUTCDate() - 1);
+      }
+    } else {
+      // 沒有新打卡時仍重算昨日與今日，讓新核准的請假能反映到日工時表。
+      startTime.setUTCDate(startTime.getUTCDate() - 1);
+    }
+
+    while (startTime <= endTime) {
+      await this.workingHoursService.calculateCompleteWorkingHours(
+        new Date(startTime),
+        false,
+      );
+      startTime.setUTCDate(startTime.getUTCDate() + 1);
+    }
+  }
+
+  /** 手動觸發與排程相同的 HR 流程。 */
+  async manualCalculateManHour(): Promise<void> {
+    await this.runWorkingHoursJob();
+  }
 }

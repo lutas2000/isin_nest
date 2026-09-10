@@ -38,29 +38,34 @@ def calculate_man_hour_morning():
   timeZone: 'Asia/Taipei',
 })
 async handleCalculateManHour(): Promise<void> {
-  // 步驟1: 處理出勤記錄 CSV 檔案
+  // 步驟1: 處理一般 Log 與 USB 出勤檔案
   await this.attendRecordCsvReader.searchAttendLogs();
+  await this.attendRecordUsbReader.read();
 
   // 步驟2: 決定打卡記錄類型
-  const lastTime = await this.workingHoursService['workingHours']['appointAttendRecordsType']();
-
-  if (!lastTime) return;
+  const lastTime = await this.workingHoursService.appointAttendanceTypes();
 
   // 步驟3: 計算工時
   const now = new Date();
   const endTime = new Date(now);
-  endTime.setHours(6, 0, 0, 0); // 設定為當天早上6點
+  endTime.setUTCHours(6, 0, 0, 0); // 設定為 UTC 06:00 工作日邊界
 
-  let startTime = new Date(lastTime);
-  startTime.setHours(6, 0, 0, 0);
-
-  if (startTime > endTime) {
-    startTime.setDate(startTime.getDate() - 1);
+  const startTime = lastTime
+    ? new Date(lastTime)
+    : new Date(endTime);
+  if (lastTime) {
+    startTime.setUTCHours(6, 0, 0, 0);
+    if (startTime > endTime) {
+      endTime.setUTCDate(endTime.getUTCDate() - 1);
+    }
+  } else {
+    // 沒有新打卡時仍更新昨日與今日的日工時／請假資料。
+    startTime.setUTCDate(startTime.getUTCDate() - 1);
   }
 
   while (startTime <= endTime) {
-    await this.workingHoursService.calculateCompleteWorkingHours(startTime);
-    startTime.setDate(startTime.getDate() + 1);
+    await this.workingHoursService.calculateCompleteWorkingHours(startTime, false);
+    startTime.setUTCDate(startTime.getUTCDate() + 1);
   }
 }
 ```
@@ -73,22 +78,23 @@ async handleCalculateManHour(): Promise<void> {
 
 ## 任務流程
 
-### 1. 處理出勤記錄 CSV 檔案
+### 1. 處理出勤記錄檔案
 
 - 調用 `AttendRecordCsvReader.searchAttendLogs()`
+- 調用 `AttendRecordUsbReader.read()`
 - 搜尋並處理所有出勤記錄檔案
 - 將資料轉換為 `AttendRecord` 實體
 
 ### 2. 決定打卡記錄類型
 
-- 調用 `WorkingHours.appointAttendRecordsType()`
+- 調用 `WorkingHoursService.appointAttendanceTypes()`
 - 自動分類打卡記錄為上班或下班
 - 處理重複打卡記錄
-- 返回最後處理的打卡記錄時間
+- 返回首筆待處理打卡時間；沒有新資料時仍會更新今日資料
 
 ### 3. 計算工時
 
-- 設定時間範圍：從最後處理時間到當天早上6點
+- 有新資料時從首筆打卡日補算到當前 UTC 06:00；無新資料時重算昨日與今日
 - 逐日計算工時
 - 調用 `WorkingHoursService.calculateCompleteWorkingHours()`
 - 包含完整的工時計算流程
@@ -97,8 +103,8 @@ async handleCalculateManHour(): Promise<void> {
 
 ### 時間範圍設定
 
-- **結束時間**: 當天早上6:00
-- **開始時間**: 最後處理打卡記錄的日期早上6:00
+- **結束時間**: 當前 UTC 06:00
+- **開始時間**: 有新打卡時為首筆打卡日 06:00，否則為前一日 06:00
 - **調整邏輯**: 如果開始時間超過結束時間，調整為前一天
 
 ### 逐日計算
@@ -122,21 +128,9 @@ async handleCalculateManHour(): Promise<void> {
 
 ## API 端點
 
-### 手動觸發
+### 自動執行
 
-```
-POST /api/scheduler/calculate-man-hour
-```
-
-**用途**: 手動觸發工時計算任務
-**權限**: 需要管理員權限
-**回應**:
-
-```json
-{
-  "message": "工時計算任務已開始執行"
-}
-```
+HR 工時計算由 `@Cron('0 */30 * * * *')` 自動執行，使用 `Asia/Taipei` 時區；一般 Log 與 USB 檔案會一併匯入，再分類打卡並補算工作日資料，同步更新 `staff_manhour` 與 `staff_workhour`。
 
 ## 日誌記錄
 
@@ -149,7 +143,7 @@ POST /api/scheduler/calculate-man-hour
 ### 步驟完成
 
 ```
-[calculate-man-hour] 步驟1: 處理出勤記錄 CSV 檔案
+[calculate-man-hour] 步驟1: 處理一般 Log 與 USB 出勤檔案
 [calculate-man-hour] 出勤記錄處理完成
 [calculate-man-hour] 步驟2: 決定打卡記錄類型
 [calculate-man-hour] 打卡記錄類型決定完成

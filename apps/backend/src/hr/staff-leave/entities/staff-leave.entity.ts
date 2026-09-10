@@ -8,6 +8,12 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Staff } from '../../staff/entities/staff.entity';
 
+export enum LeaveStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 @Entity('staff_leave') // 表名為 staff_leave
 export class StaffLeave {
   @ApiProperty({ description: '請假記錄編號', example: 1 })
@@ -57,7 +63,7 @@ export class StaffLeave {
     required: false,
   })
   @Column({ type: 'varchar', length: 10, nullable: true })
-  verify_by_staff_id: string; // 審核主管ID
+  verify_by_staff_id: string | null; // 審核主管ID
 
   @ApiProperty({
     description: '審核主管資料',
@@ -67,4 +73,20 @@ export class StaffLeave {
   @ManyToOne(() => Staff, { eager: true, nullable: true })
   @JoinColumn({ name: 'verify_by_staff_id' })
   verifyByStaff?: Staff; // 審核主管關聯
+
+  @ApiProperty({
+    description: '審核狀態',
+    enum: LeaveStatus,
+    example: LeaveStatus.PENDING,
+  })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: LeaveStatus.PENDING,
+  })
+  status: LeaveStatus;
+
+  @ApiProperty({ description: '審核備註', required: false, example: '資料齊全' })
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  verify_note?: string;
 }

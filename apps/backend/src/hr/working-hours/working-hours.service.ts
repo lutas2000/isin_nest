@@ -1,7 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { SchedulePicker } from './schedule-picker';
 import { WorkingHours } from './working-hours';
 import { ManHourManager } from './man-hour-manager';
+import {
+  AttendRecordCsvReader,
+  AttendRecordUsbReader,
+} from '../attend-record/attend-record-csv-reader';
+import { StaffWorkhourService } from '../staff-workhour/staff-workhour.service';
 
 /**
  * 工時計算整合服務
@@ -15,6 +20,10 @@ export class WorkingHoursService {
     private readonly schedulePicker: SchedulePicker,
     private readonly workingHours: WorkingHours,
     private readonly manHourManager: ManHourManager,
+    private readonly attendRecordCsvReader: AttendRecordCsvReader,
+    private readonly attendRecordUsbReader: AttendRecordUsbReader,
+    @Optional()
+    private readonly staffWorkhourService?: StaffWorkhourService,
   ) {}
 
   /**
@@ -23,26 +32,32 @@ export class WorkingHoursService {
    * 2. 計算工時
    * @param date 日期
    */
-  async calculateCompleteWorkingHours(date: Date): Promise<void> {
+  async calculateCompleteWorkingHours(
+    date: Date,
+    classifyAttendance = true,
+  ): Promise<void> {
     try {
       this.logger.log(
         `開始完整工時計算流程: ${date.toISOString().split('T')[0]}`,
       );
 
-      // 步驟1: 決定打卡記錄類型
-      this.logger.log('步驟1: 決定打卡記錄類型');
-      const firstRecordTime =
-        await this.workingHours.appointAttendRecordsType();
+      // 步驟1: 決定打卡記錄類型；批次排程在進入逐日計算前只做一次。
+      if (classifyAttendance) {
+        this.logger.log('步驟1: 決定打卡記錄類型');
+        const firstRecordTime =
+          await this.workingHours.appointAttendRecordsType();
 
-      if (firstRecordTime) {
-        this.logger.log(`第一筆打卡記錄時間: ${firstRecordTime.toISOString()}`);
-      } else {
-        this.logger.log('沒有需要處理的打卡記錄');
+        if (firstRecordTime) {
+          this.logger.log(`第一筆打卡記錄時間: ${firstRecordTime.toISOString()}`);
+        } else {
+          this.logger.log('沒有需要處理的打卡記錄');
+        }
       }
 
       // 步驟2: 計算工時
       this.logger.log('步驟2: 計算工時');
       await this.manHourManager.calculateManHour(date);
+      await this.staffWorkhourService?.calculate(date);
 
       this.logger.log(
         `完成完整工時計算流程: ${date.toISOString().split('T')[0]}`,
@@ -51,6 +66,28 @@ export class WorkingHoursService {
       this.logger.error(`完整工時計算流程失敗: ${date.toISOString()}`, error);
       throw error;
     }
+  }
+
+  /** 讓排程器先分類，再逐日重算時使用。 */
+  async appointAttendanceTypes(): Promise<Date | null> {
+    return this.workingHours.appointAttendanceTypes();
+  }
+
+  /**
+   * 今日完整流程：匯入兩種設備檔案、分類打卡，再重算昨天與今天兩個工作日。
+   */
+  async calculateTodayWorkingHours(now = new Date()): Promise<void> {
+    await this.attendRecordCsvReader.searchAttendLogs();
+    await this.attendRecordUsbReader.read();
+    await this.workingHours.appointAttendanceTypes();
+
+    const today = new Date(now);
+    today.setUTCHours(6, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+
+    await this.calculateCompleteWorkingHours(yesterday, false);
+    await this.calculateCompleteWorkingHours(today, false);
   }
 
   /**
@@ -138,8 +175,8 @@ export class WorkingHoursService {
       }
 
       // 處理打卡記錄類型
-      this.workingHours['deleteUnknownRecord'](workRecords);
-      await this.workingHours['appointAttendRecordType'](workRecords);
+      await this.workingHours.deleteUnknownRecord(workRecords);
+      await this.workingHours.appointAttendRecordType(workRecords);
 
       this.logger.log(
         `完成處理員工 ${staffName} 在 ${date.toISOString().split('T')[0]} 的打卡記錄`,
@@ -220,12 +257,8 @@ export class WorkingHoursService {
         `開始重新計算日期範圍工時: ${String(startDate).split('T')[0]} - ${String(endDate).split('T')[0]}`,
       );
 
-      const currentDate = new Date(startDate);
-
-      while (currentDate <= endDate) {
-        await this.calculateCompleteWorkingHours(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
+      await this.workingHours.appointAttendanceTypes();
+      await this.calculateWorkingHoursRange(startDate, endDate);
 
       this.logger.log(
         `完成重新計算日期範圍工時: ${String(startDate).split('T')[0]} - ${String(endDate).split('T')[0]}`,
@@ -236,6 +269,18 @@ export class WorkingHoursService {
         error,
       );
       throw error;
+    }
+  }
+
+  /** 不重複分類、只逐日重建工時資料。 */
+  async calculateWorkingHoursRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<void> {
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      await this.calculateCompleteWorkingHours(new Date(currentDate), false);
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
   }
 
@@ -253,12 +298,13 @@ export class WorkingHoursService {
       // 檢查未完成的工時記錄
       const undoneRecord = await this.manHourManager.findUndoneWorkHour();
 
-      // 這裡可以加入更多系統狀態檢查邏輯
       const systemHealth = undoneRecord ? 'warning' : 'healthy';
+      const today = new Date();
+      const staffIds = await this.manHourManager.findStaffIds(today);
 
       return {
-        lastProcessedDate: new Date(), // 這裡應該從實際的處理記錄中取得
-        totalStaffCount: 0, // 這裡應該從實際的員工資料中取得
+        lastProcessedDate: null,
+        totalStaffCount: staffIds.length,
         incompleteRecordsCount: undoneRecord ? 1 : 0,
         systemHealth,
       };

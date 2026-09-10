@@ -21,10 +21,11 @@
 
 ### 資料轉換
 
-- 支援 CSV 和 USB CSV 兩種格式
-- 自動識別員工編號和姓名
-- 智慧型出勤類型解析
-- 資料驗證確保完整性
+- 支援 CSV 和 USB CSV 兩種格式，時間分別解析為 UTC 的 `YYYY-MM-DD HH:mm:ss` 與 `YYYY/MM/DD HH:mm:ss`
+- 一般 Log 使用 Django 對應欄位 `staff_id=row[1]`、姓名 `row[2]`、時間 `row[6]`
+- USB 使用 UID `row[2]`、姓名 `row[3]`、時間 `row[8]`；姓名會解析成正式 `staff.id`
+- 無法對應員工、時間格式錯誤或欄位不完整的資料會略過，不寫入 UNKNOWN 員工
+- 以 `staffId + createTime` 略過重複匯入
 
 ### 錯誤處理
 
@@ -68,8 +69,8 @@ files/
 
 ## 注意事項
 
-1. **CSV 格式**: 目前的 CSV 欄位對應是基於假設，需要根據實際 CSV 檔案格式調整 `AttendRecordMapper` 中的對應邏輯
-2. **員工查詢**: `findStaffIdByName` 方法目前僅返回 null，需要根據實際需求實作資料庫查詢
+1. **CSV 格式**: 欄位對應依 `isin_django/staff/mapper.py`；若設備格式變更，請同步調整 `AttendRecordMapper`
+2. **員工查詢**: USB 姓名會查詢 `staff.name` 取得 canonical `staff.id`；查不到的資料會略過
 3. **備份目錄**: 系統會自動建立備份目錄，確保檔案處理的安全性
 4. **權限**: 確保應用程式對檔案目錄有讀寫權限
 

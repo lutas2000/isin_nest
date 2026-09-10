@@ -2,796 +2,202 @@
   <div class="leave-page">
     <TableHeader :border="false">
       <template #actions>
-        <button class="btn btn-primary">
-          <span class="mr-2">📝</span>
-          新增請假
-        </button>
-        <button class="btn btn-outline">
-          <span class="mr-2">📊</span>
-          請假報表
-        </button>
+        <button class="btn btn-primary" @click="showCreateModal = true">新增請假</button>
+        <button class="btn btn-outline" @click="loadLeaveData">重新整理</button>
       </template>
     </TableHeader>
 
-    <!-- 請假概覽 -->
     <div class="leave-overview">
-      <div class="overview-card">
-        <div class="overview-icon">📅</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ leaveStats.pendingCount }}</div>
-          <div class="overview-label">待審核</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">✅</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ leaveStats.approvedCount }}</div>
-          <div class="overview-label">已核准</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">❌</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ leaveStats.rejectedCount }}</div>
-          <div class="overview-label">已拒絕</div>
-        </div>
-      </div>
-      
-      <div class="overview-card">
-        <div class="overview-icon">⏰</div>
-        <div class="overview-content">
-          <div class="overview-value">{{ leaveStats.totalDays }}</div>
-          <div class="overview-label">總請假天數</div>
-        </div>
-      </div>
+      <div class="overview-card"><strong>{{ leaveStats.pendingCount }}</strong><span>待審核</span></div>
+      <div class="overview-card"><strong>{{ leaveStats.approvedCount }}</strong><span>已核准</span></div>
+      <div class="overview-card"><strong>{{ leaveStats.rejectedCount }}</strong><span>已拒絕</span></div>
+      <div class="overview-card"><strong>{{ leaveStats.totalDays }}</strong><span>總請假天數</span></div>
     </div>
 
-    <!-- 主要內容區域 -->
     <div class="leave-content">
       <div class="content-tabs">
-        <button 
-          v-for="tab in tabs" 
-          :key="tab.id"
-          class="tab-btn"
-          :class="{ active: activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >
-          {{ tab.label }}
-        </button>
+        <button v-for="tab in tabs" :key="tab.id" class="tab-btn" :class="{ active: activeTab === tab.id }" @click="activeTab = tab.id">{{ tab.label }}</button>
       </div>
 
-      <!-- 請假申請 -->
       <div v-if="activeTab === 'applications'" class="tab-content">
         <SectionHeader title="請假申請">
           <template #actions>
-            <div class="search-box">
-              <input 
-                type="text" 
-                class="form-control" 
-                placeholder="搜尋員工姓名..."
-                v-model="applicationSearch"
-              />
-            </div>
-            <select class="form-control" v-model="applicationStatus">
+            <input v-model="applicationSearch" class="form-control" placeholder="搜尋員工姓名或編號..." />
+            <select v-model="applicationStatus" class="form-control">
               <option value="">全部狀態</option>
               <option value="pending">待審核</option>
               <option value="approved">已核准</option>
               <option value="rejected">已拒絕</option>
             </select>
-            <select class="form-control" v-model="leaveType">
+            <select v-model="leaveType" class="form-control">
               <option value="">全部類型</option>
-              <option value="annual">年假</option>
-              <option value="sick">病假</option>
-              <option value="personal">事假</option>
-              <option value="maternity">產假</option>
+              <option v-for="type in leaveTypes" :key="type" :value="type">{{ type }}</option>
             </select>
           </template>
         </SectionHeader>
-
-        <EditableDataTable
-          :columns="applicationColumns"
-          :data="filteredApplications"
-          :show-actions="true"
-          :editable="false"
-        >
-          <template #cell-applyDate="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-employeeName="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-leaveTypeText="{ row }">
-            <span class="badge" :class="`badge-${row.leaveType}`">
-              {{ row.leaveTypeText }}
-            </span>
-          </template>
-          <template #cell-startDate="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-endDate="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-days="{ value }">
-            {{ value }} 天
-          </template>
-          <template #cell-reason="{ value }">
-            {{ value }}
-          </template>
-          <template #cell-statusText="{ row }">
-            <span class="badge" :class="`badge-${row.status}`">
-              {{ row.statusText }}
-            </span>
-          </template>
+        <div v-if="loading" class="empty-state">載入中...</div>
+        <EditableDataTable v-else :columns="applicationColumns" :data="filteredApplications" :show-actions="true" :editable="false">
+          <template #cell-leaveTypeText="{ row }"><span class="badge badge-info">{{ row.leaveTypeText }}</span></template>
+          <template #cell-days="{ value }">{{ value }} 天</template>
+          <template #cell-statusText="{ row }"><span class="badge" :class="`badge-${row.status}`">{{ row.statusText }}</span></template>
           <template #actions="{ row }">
             <div class="action-buttons">
-              <button class="btn btn-sm btn-outline">查看詳情</button>
-              <button
-                v-if="row.status === 'pending'"
-                class="btn btn-sm btn-success"
-              >
-                核准
-              </button>
-              <button
-                v-if="row.status === 'pending'"
-                class="btn btn-sm btn-danger"
-              >
-                拒絕
-              </button>
+              <button v-if="row.status === 'pending'" class="btn btn-sm btn-success" @click="reviewLeave(row.id, 'approve')">核准</button>
+              <button v-if="row.status === 'pending'" class="btn btn-sm btn-danger" @click="reviewLeave(row.id, 'reject')">拒絕</button>
             </div>
           </template>
         </EditableDataTable>
       </div>
 
-      <!-- 請假統計 -->
       <div v-if="activeTab === 'statistics'" class="tab-content">
-        <SectionHeader title="請假統計">
-          <template #actions>
-            <select class="form-control" v-model="statPeriod">
-              <option value="month">本月</option>
-              <option value="quarter">本季</option>
-              <option value="year">本年</option>
-            </select>
-            <button class="btn btn-primary">匯出統計</button>
-          </template>
-        </SectionHeader>
-
+        <SectionHeader title="請假統計" />
         <div class="statistics-grid">
-          <div class="stat-card">
-            <h4>請假類型統計</h4>
-            <div class="leave-type-stats">
-              <div class="type-item" v-for="type in leaveTypeStats" :key="type.name">
-                <div class="type-info">
-                  <div class="type-name">{{ type.name }}</div>
-                  <div class="type-count">{{ type.count }} 次</div>
-                </div>
-                <div class="type-days">
-                  <div class="total-days">{{ type.totalDays }} 天</div>
-                  <div class="avg-days">平均 {{ type.avgDays }} 天/次</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="stat-card">
-            <h4>部門請假統計</h4>
-            <div class="dept-leave-stats">
-              <div class="dept-item" v-for="dept in deptLeaveStats" :key="dept.name">
-                <div class="dept-info">
-                  <div class="dept-name">{{ dept.name }}</div>
-                  <div class="dept-count">{{ dept.employeeCount }} 人</div>
-                </div>
-                <div class="dept-leave">
-                  <div class="leave-count">{{ dept.leaveCount }} 次</div>
-                  <div class="leave-days">{{ dept.totalDays }} 天</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="stat-card">
-            <h4>請假趨勢</h4>
-            <div class="trend-chart">
-              <div class="chart-placeholder">
-                <div class="chart-text">📊 請假趨勢圖表</div>
-                <p>顯示請假數量和天數的變化趨勢</p>
-              </div>
-            </div>
-          </div>
+          <div class="stat-card"><h4>請假類型統計</h4><p v-for="item in leaveTypeStats" :key="item.name">{{ item.name }}：{{ item.count }} 次／{{ item.totalDays }} 天</p></div>
+          <div class="stat-card"><h4>部門請假統計</h4><p v-for="item in deptLeaveStats" :key="item.name">{{ item.name }}：{{ item.leaveCount }} 次／{{ item.totalDays }} 天</p></div>
         </div>
       </div>
 
-      <!-- 請假政策 -->
       <div v-if="activeTab === 'policies'" class="tab-content">
-        <SectionHeader title="請假政策">
-          <template #actions>
-            <button class="btn btn-primary">編輯政策</button>
-          </template>
-        </SectionHeader>
+        <SectionHeader title="請假政策" />
+        <div class="policies-grid"><div v-for="policy in leavePolicies" :key="policy.type" class="policy-card"><h4>{{ policy.name }}</h4><p>{{ policy.description }}</p><span>年度配額：{{ policy.annualQuota }} 天</span></div></div>
+      </div>
+    </div>
 
-        <div class="policies-grid">
-          <div class="policy-card" v-for="policy in leavePolicies" :key="policy.type">
-            <div class="policy-header">
-              <div class="policy-icon">{{ policy.icon }}</div>
-              <div class="policy-info">
-                <h4>{{ policy.name }}</h4>
-                <p>{{ policy.description }}</p>
-              </div>
-            </div>
-            
-            <div class="policy-details">
-              <div class="detail-row">
-                <span class="detail-label">年度配額：</span>
-                <span class="detail-value">{{ policy.annualQuota }} 天</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">最小申請單位：</span>
-                <span class="detail-value">{{ policy.minUnit }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">提前申請天數：</span>
-                <span class="detail-value">{{ policy.advanceNotice }} 天</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">需要證明：</span>
-                <span class="detail-value">{{ policy.requiresProof ? '是' : '否' }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div v-if="showCreateModal" class="modal-overlay" @click="showCreateModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header"><h3>新增請假</h3><button class="modal-close" @click="showCreateModal = false">×</button></div>
+        <form class="modal-form" @submit.prevent="createLeave">
+          <label>員工<select v-model="createForm.staff_id" class="form-control" required><option value="">請選擇員工</option><option v-for="staff in staffList" :key="staff.id" :value="staff.id">{{ staff.id }} - {{ staff.name }}</option></select></label>
+          <label>假別<input v-model="createForm.type" class="form-control" required placeholder="例如：特休" /></label>
+          <label>開始時間<input v-model="createForm.start_time" class="form-control" type="datetime-local" required /></label>
+          <label>結束時間<input v-model="createForm.end_time" class="form-control" type="datetime-local" required /></label>
+          <div class="form-actions"><button type="button" class="btn btn-outline" @click="showCreateModal = false">取消</button><button type="submit" class="btn btn-primary">送出申請</button></div>
+        </form>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
+import { computed, onMounted, ref } from 'vue'
+import { EditableDataTable, SectionHeader, TableHeader } from '@/components'
+import { apiGet, apiPost, getApiItems } from '@/services/api'
+import { API_CONFIG } from '@/config/api'
 
-// 頁面標籤
-const tabs = [
-  { id: 'applications', label: '請假申請' },
-  { id: 'statistics', label: '請假統計' },
-  { id: 'policies', label: '請假政策' },
-];
+type LeaveStatus = 'pending' | 'approved' | 'rejected'
+interface Staff { id: string; name: string; department?: string }
+interface StaffLeaveApi { id: number; staff_id: string; staff?: Staff; type: string; start_time: string; end_time: string; time: number; status?: LeaveStatus; verify_note?: string }
+interface LeaveApplication { id: number; applyDate: string; employeeId: string; employeeName: string; department: string; leaveType: string; leaveTypeText: string; startDate: string; endDate: string; days: number; reason: string; status: LeaveStatus; statusText: string }
 
-const activeTab = ref('applications');
+const tabs = [{ id: 'applications', label: '請假申請' }, { id: 'statistics', label: '請假統計' }, { id: 'policies', label: '請假政策' }]
+const activeTab = ref('applications')
+const loading = ref(false)
+const applicationSearch = ref('')
+const applicationStatus = ref('')
+const leaveType = ref('')
+const showCreateModal = ref(false)
+const staffList = ref<Staff[]>([])
+const leaveApplications = ref<LeaveApplication[]>([])
+const createForm = ref({ staff_id: '', type: '', start_time: '', end_time: '' })
+const statusText: Record<LeaveStatus, string> = { pending: '待審核', approved: '已核准', rejected: '已拒絕' }
 
-// 請假統計
-const leaveStats = ref({
-  pendingCount: 5,
-  approvedCount: 28,
-  rejectedCount: 3,
-  totalDays: 156,
-});
-
-// 搜尋和篩選
-const applicationSearch = ref('');
-const applicationStatus = ref('');
-const leaveType = ref('');
-const statPeriod = ref('month');
-
-// 請假申請資料
-const leaveApplications = ref([
-  {
-    id: 1,
-    applyDate: '2024-01-15',
-    employeeName: '張小明',
-    leaveType: 'annual',
-    leaveTypeText: '年假',
-    startDate: '2024-01-20',
-    endDate: '2024-01-22',
-    days: 3,
-    reason: '家庭旅遊',
-    status: 'pending',
-    statusText: '待審核',
-  },
-  {
-    id: 2,
-    applyDate: '2024-01-14',
-    employeeName: '李小華',
-    leaveType: 'sick',
-    leaveTypeText: '病假',
-    startDate: '2024-01-16',
-    endDate: '2024-01-17',
-    days: 2,
-    reason: '感冒發燒',
-    status: 'approved',
-    statusText: '已核准',
-  },
-  {
-    id: 3,
-    applyDate: '2024-01-13',
-    employeeName: '王美玲',
-    leaveType: 'personal',
-    leaveTypeText: '事假',
-    startDate: '2024-01-18',
-    endDate: '2024-01-18',
-    days: 1,
-    reason: '個人事務',
-    status: 'rejected',
-    statusText: '已拒絕',
-  },
-]);
-
-// 篩選後的申請
+const leaveStats = computed(() => ({
+  pendingCount: leaveApplications.value.filter((item) => item.status === 'pending').length,
+  approvedCount: leaveApplications.value.filter((item) => item.status === 'approved').length,
+  rejectedCount: leaveApplications.value.filter((item) => item.status === 'rejected').length,
+  totalDays: Number((leaveApplications.value.reduce((sum, item) => sum + item.days, 0)).toFixed(2)),
+}))
+const leaveTypes = computed(() => Array.from(new Set(leaveApplications.value.map((item) => item.leaveType))).sort())
 const filteredApplications = computed(() => {
-  let filtered = leaveApplications.value;
-
-  if (applicationSearch.value) {
-    filtered = filtered.filter(
-      (application) =>
-        application.employeeName.toLowerCase().includes(applicationSearch.value.toLowerCase()),
-    );
-  }
-
-  if (applicationStatus.value) {
-    filtered = filtered.filter((application) => application.status === applicationStatus.value);
-  }
-
-  if (leaveType.value) {
-    filtered = filtered.filter((application) => application.leaveType === leaveType.value);
-  }
-
-  return filtered;
-});
-
-// 申請列表表格欄位
+  const search = applicationSearch.value.toLowerCase()
+  return leaveApplications.value.filter((item) => {
+    const matchesSearch = !search || item.employeeId.toLowerCase().includes(search) || item.employeeName.toLowerCase().includes(search)
+    return matchesSearch && (!applicationStatus.value || item.status === applicationStatus.value) && (!leaveType.value || item.leaveType === leaveType.value)
+  })
+})
 const applicationColumns = [
-  { key: 'applyDate', label: '申請日期' },
-  { key: 'employeeName', label: '員工姓名' },
-  { key: 'leaveTypeText', label: '請假類型' },
-  { key: 'startDate', label: '開始日期' },
-  { key: 'endDate', label: '結束日期' },
-  { key: 'days', label: '請假天數' },
-  { key: 'reason', label: '請假原因' },
-  { key: 'statusText', label: '狀態' },
-];
+  { key: 'applyDate', label: '申請日期' }, { key: 'employeeName', label: '員工姓名' }, { key: 'leaveTypeText', label: '請假類型' },
+  { key: 'startDate', label: '開始' }, { key: 'endDate', label: '結束' }, { key: 'days', label: '請假天數' }, { key: 'reason', label: '備註' }, { key: 'statusText', label: '狀態' },
+]
+const leaveTypeStats = computed(() => Array.from(new Set(leaveApplications.value.map((item) => item.leaveType))).map((name) => {
+  const items = leaveApplications.value.filter((item) => item.leaveType === name)
+  return { name, count: items.length, totalDays: Number(items.reduce((sum, item) => sum + item.days, 0).toFixed(2)) }
+}))
+const deptLeaveStats = computed(() => Array.from(new Set(leaveApplications.value.map((item) => item.department))).map((name) => {
+  const items = leaveApplications.value.filter((item) => item.department === name)
+  return { name, leaveCount: items.length, totalDays: Number(items.reduce((sum, item) => sum + item.days, 0).toFixed(2)) }
+}))
+const leavePolicies = [
+  { type: 'annual', name: '年假', description: '年度休假', annualQuota: 14 },
+  { type: 'sick', name: '病假', description: '因病無法工作時使用', annualQuota: 30 },
+  { type: 'personal', name: '事假', description: '個人事務使用', annualQuota: 7 },
+]
 
-// 請假類型統計
-const leaveTypeStats = ref([
-  { name: '年假', count: 15, totalDays: 45, avgDays: 3.0 },
-  { name: '病假', count: 8, totalDays: 16, avgDays: 2.0 },
-  { name: '事假', count: 5, totalDays: 5, avgDays: 1.0 },
-  { name: '產假', count: 2, totalDays: 90, avgDays: 45.0 },
-]);
+async function loadLeaveData() {
+  loading.value = true
+  try {
+    const [leaveResponse, staffResponse] = await Promise.all([
+      apiGet<StaffLeaveApi[] | { data: StaffLeaveApi[] }>(API_CONFIG.HR.STAFF_LEAVE, { page: 1, limit: 100 }),
+      apiGet<Staff[]>(API_CONFIG.HR.STAFF_ALL),
+    ])
+    staffList.value = getApiItems(staffResponse)
+    leaveApplications.value = getApiItems(leaveResponse).map(toApplication)
+  } finally {
+    loading.value = false
+  }
+}
 
-// 部門請假統計
-const deptLeaveStats = ref([
-  { name: '生產部', employeeCount: 15, leaveCount: 12, totalDays: 38 },
-  { name: '工程部', employeeCount: 8, leaveCount: 8, totalDays: 25 },
-  { name: '業務部', employeeCount: 5, leaveCount: 6, totalDays: 18 },
-  { name: '人資部', employeeCount: 3, leaveCount: 4, totalDays: 12 },
-]);
+function toApplication(item: StaffLeaveApi): LeaveApplication {
+  const status = item.status || 'pending'
+  return {
+    id: item.id, applyDate: dateKey(item.start_time), employeeId: item.staff_id, employeeName: item.staff?.name || item.staff_id,
+    department: item.staff?.department || '未分部門', leaveType: item.type, leaveTypeText: item.type, startDate: formatDateTime(item.start_time), endDate: formatDateTime(item.end_time),
+    days: Number(((item.time || 0) / 8).toFixed(2)), reason: item.verify_note || '-', status, statusText: statusText[status],
+  }
+}
 
-// 請假政策
-const leavePolicies = ref([
-  {
-    type: 'annual',
-    icon: '🏖️',
-    name: '年假',
-    description: '員工年度休假，用於休息和充電',
-    annualQuota: 14,
-    minUnit: '0.5 天',
-    advanceNotice: 3,
-    requiresProof: false,
-  },
-  {
-    type: 'sick',
-    icon: '🏥',
-    name: '病假',
-    description: '員工因病無法工作時的請假',
-    annualQuota: 30,
-    minUnit: '1 天',
-    advanceNotice: 0,
-    requiresProof: true,
-  },
-  {
-    type: 'personal',
-    icon: '📋',
-    name: '事假',
-    description: '員工因個人事務需要請假',
-    annualQuota: 7,
-    minUnit: '0.5 天',
-    advanceNotice: 1,
-    requiresProof: false,
-  },
-  {
-    type: 'maternity',
-    icon: '👶',
-    name: '產假',
-    description: '女性員工生育期間的請假',
-    annualQuota: 84,
-    minUnit: '1 天',
-    advanceNotice: 30,
-    requiresProof: true,
-  },
-]);
+async function createLeave() {
+  await apiPost(API_CONFIG.HR.STAFF_LEAVE, { staff_id: createForm.value.staff_id, type: createForm.value.type, start_time: new Date(createForm.value.start_time).toISOString(), end_time: new Date(createForm.value.end_time).toISOString() })
+  createForm.value = { staff_id: '', type: '', start_time: '', end_time: '' }
+  showCreateModal.value = false
+  await loadLeaveData()
+}
+
+async function reviewLeave(id: number, action: 'approve' | 'reject') {
+  if (!confirm(action === 'approve' ? '確定核准這筆請假？' : '確定拒絕這筆請假？')) return
+  await apiPost(`${API_CONFIG.HR.STAFF_LEAVE}/${id}/${action}`, {})
+  await loadLeaveData()
+}
+
+function dateKey(value: string) { return new Date(value).toISOString().slice(0, 10) }
+function formatDateTime(value: string) { return new Date(value).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' }) }
+
+onMounted(loadLeaveData)
 </script>
 
 <style scoped>
-.leave-page {
-  width: 100%;
-  margin: 0 auto;
-}
-
-
-/* 請假概覽 */
-.leave-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.overview-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.overview-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.overview-content {
-  flex: 1;
-}
-
-.overview-value {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.overview-label {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-/* 主要內容區域 */
-.leave-content {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.content-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--secondary-200);
-  background-color: var(--secondary-50);
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 1rem 2rem;
-  cursor: pointer;
-  font-weight: 500;
-  color: var(--secondary-600);
-  transition: all 0.2s ease;
-  border-bottom: 3px solid transparent;
-}
-
-.tab-btn:hover {
-  color: var(--secondary-800);
-  background-color: var(--secondary-100);
-}
-
-.tab-btn.active {
-  color: var(--primary-600);
-  border-bottom-color: var(--primary-600);
-  background-color: white;
-}
-
-.tab-content {
-  padding: 2rem;
-}
-
-/* content-header 樣式已移至 SectionHeader 組件 */
-
-.search-box {
-  min-width: 300px;
-}
-
-/* 表格容器 */
-.table-container {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid var(--secondary-200);
-}
-
-.table th {
-  background-color: var(--secondary-50);
-  font-weight: 600;
-  color: var(--secondary-700);
-  font-size: var(--font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table tbody tr:hover {
-  background-color: var(--secondary-50);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* 統計網格 */
-.statistics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.stat-card {
-  background: var(--secondary-50);
-  border-radius: var(--border-radius-lg);
-  padding: 1.5rem;
-  border: 1px solid var(--secondary-200);
-}
-
-.stat-card h4 {
-  margin: 0 0 1rem 0;
-  color: var(--secondary-900);
-}
-
-/* 請假類型統計 */
-.leave-type-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.type-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: white;
-  border-radius: var(--border-radius);
-}
-
-.type-name {
-  font-weight: 500;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.type-count {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.total-days {
-  font-weight: 600;
-  color: var(--primary-600);
-  margin-bottom: 0.25rem;
-}
-
-.avg-days {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-500);
-}
-
-/* 部門請假統計 */
-.dept-leave-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dept-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: white;
-  border-radius: var(--border-radius);
-}
-
-.dept-name {
-  font-weight: 500;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.dept-count {
-  font-size: var(--font-size-sm);
-  color: var(--secondary-600);
-}
-
-.leave-count {
-  font-weight: 500;
-  color: var(--secondary-900);
-  margin-bottom: 0.25rem;
-}
-
-.leave-days {
-  font-weight: 600;
-  color: var(--warning-600);
-}
-
-/* 趨勢圖表 */
-.trend-chart {
-  height: 300px;
-}
-
-.chart-placeholder {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: white;
-  border-radius: var(--border-radius);
-  border: 2px dashed var(--secondary-300);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.chart-text {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.chart-placeholder p {
-  color: var(--secondary-600);
-  margin: 0;
-}
-
-/* 請假政策 */
-.policies-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.policy-card {
-  background: var(--secondary-50);
-  border-radius: var(--border-radius-lg);
-  padding: 1.5rem;
-  border: 1px solid var(--secondary-200);
-}
-
-.policy-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.policy-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.policy-info h4 {
-  margin: 0 0 0.5rem 0;
-  color: var(--secondary-900);
-}
-
-.policy-info p {
-  margin: 0;
-  color: var(--secondary-600);
-  font-size: var(--font-size-sm);
-}
-
-.policy-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--font-size-sm);
-}
-
-.detail-label {
-  color: var(--secondary-600);
-  font-weight: 500;
-}
-
-.detail-value {
-  color: var(--secondary-900);
-  font-weight: 500;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .leave-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .content-tabs {
-    flex-wrap: wrap;
-  }
-  
-  .tab-btn {
-    flex: 1;
-    min-width: 120px;
-    text-align: center;
-  }
-  
-  .content-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .header-controls {
-    width: 100%;
-    flex-direction: column;
-  }
-  
-  .search-box {
-    min-width: auto;
-  }
-  
-  .statistics-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .policies-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .leave-overview {
-    grid-template-columns: 1fr;
-  }
-  
-  .tab-content {
-    padding: 1rem;
-  }
-  
-  .table-container {
-    font-size: var(--font-size-sm);
-  }
-  
-  .table th,
-  .table td {
-    padding: 0.5rem;
-  }
-}
+.leave-page { width: 100%; margin: 0 auto; }
+.leave-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.overview-card, .stat-card, .policy-card { background: white; padding: 1.25rem; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); }
+.overview-card strong { display: block; font-size: var(--font-size-2xl); color: var(--secondary-900); }
+.overview-card span { color: var(--secondary-600); }
+.leave-content { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+.content-tabs { display: flex; border-bottom: 1px solid var(--secondary-200); background: var(--secondary-50); }
+.tab-btn { border: 0; background: none; padding: 1rem 1.5rem; cursor: pointer; color: var(--secondary-600); }
+.tab-btn.active { color: var(--primary-700); border-bottom: 3px solid var(--primary-500); }
+.tab-content { padding: 1rem; }
+.statistics-grid, .policies-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.empty-state { padding: 2rem; text-align: center; color: var(--secondary-600); }
+.badge { padding: .25rem .5rem; border-radius: var(--border-radius); }
+.badge-pending { background: var(--warning-100); color: var(--warning-700); }
+.badge-approved { background: var(--success-100); color: var(--success-700); }
+.badge-rejected { background: var(--danger-100); color: var(--danger-700); }
+.badge-info { background: var(--info-100); color: var(--info-700); }
+.action-buttons { display: flex; gap: .5rem; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: white; border-radius: var(--border-radius-lg); width: min(520px, 90%); padding: 1.25rem; }
+.modal-header, .form-actions { display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+.modal-form { display: grid; gap: 1rem; }
+.modal-form label { display: grid; gap: .35rem; }
+.modal-close { border: 0; background: none; font-size: 1.5rem; cursor: pointer; }
 </style>

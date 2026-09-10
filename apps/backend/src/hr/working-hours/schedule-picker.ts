@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffSegment } from '../staff-segment/entities/staff-segment.entity';
+import { Staff } from '../staff/entities/staff.entity';
 
 /**
  * 用於計算上班時間的排程選擇器
@@ -15,6 +16,8 @@ export class SchedulePicker {
   constructor(
     @InjectRepository(StaffSegment)
     private readonly staffSegmentRepository: Repository<StaffSegment>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
   ) {}
 
   /**
@@ -22,20 +25,27 @@ export class SchedulePicker {
    * @param name 員工姓名
    * @param date 日期
    */
-  async initialize(name: string, date: Date): Promise<void> {
+  async initialize(staffIdentifier: string, date: Date): Promise<void> {
     try {
+      const staff = await this.resolveStaff(staffIdentifier);
+      const staffId = staff?.id || staffIdentifier;
       this.segment = await this.staffSegmentRepository
         .createQueryBuilder('segment')
-        .where('segment.staffId = :name', { name })
+        .where('segment.staffId = :staffId', { staffId })
         .andWhere('segment.create_date <= :date', { date })
         .orderBy('segment.create_date', 'DESC')
         .getOne();
 
       if (!this.segment) {
-        this.logger.warn(`找不到員工 ${name} 在 ${String(date)} 的段別設定`);
+        this.logger.warn(
+          `找不到員工 ${staffIdentifier} 在 ${String(date)} 的段別設定`,
+        );
       }
     } catch (error) {
-      this.logger.error(`初始化排程選擇器失敗: ${name}, ${date}`, error);
+      this.logger.error(
+        `初始化排程選擇器失敗: ${staffIdentifier}, ${date}`,
+        error,
+      );
       throw error;
     }
   }
@@ -73,17 +83,17 @@ export class SchedulePicker {
 
     // 中午休息時間 (12:00)
     const breakStartTime1 = new Date(workStartTime);
-    breakStartTime1.setHours(12, 0, 0, 0);
+    breakStartTime1.setUTCHours(12, 0, 0, 0);
     const breakEndTime1 = new Date(breakStartTime1);
-    breakEndTime1.setMinutes(
+    breakEndTime1.setUTCMinutes(
       breakEndTime1.getMinutes() + this.segment.rest_time,
     );
 
     // 晚上休息時間 (18:00)
     const breakStartTime2 = new Date(workStartTime);
-    breakStartTime2.setHours(18, 0, 0, 0);
+    breakStartTime2.setUTCHours(18, 0, 0, 0);
     const breakEndTime2 = new Date(breakStartTime2);
-    breakEndTime2.setMinutes(
+    breakEndTime2.setUTCMinutes(
       breakEndTime2.getMinutes() + this.segment.rest_time2,
     );
 
@@ -120,5 +130,23 @@ export class SchedulePicker {
     }
 
     return `段別ID: ${this.segment.id}, 休息時間: ${this.segment.rest_time}分鐘, 加班休息時間: ${this.segment.rest_time2}分鐘`;
+  }
+
+  private async resolveStaff(staffIdentifier: string): Promise<Staff | null> {
+    const repository = this.staffRepository as Repository<Staff> & {
+      findOne?: Repository<Staff>['findOne'];
+    };
+    if (typeof repository.findOne !== 'function' || !staffIdentifier) {
+      return null;
+    }
+
+    const byId = await repository.findOne({
+      where: { id: staffIdentifier },
+    });
+    if (byId) return byId;
+
+    return repository.findOne({
+      where: { name: staffIdentifier } as any,
+    });
   }
 }

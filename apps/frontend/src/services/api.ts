@@ -132,3 +132,18 @@ export const apiPatch = <T>(endpoint: string, data?: any): Promise<T> => {
   })
 }
 
+export interface PaginatedApiResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+/** 將既有陣列端點與 Nest 分頁回應統一成前端列表。 */
+export const getApiItems = <T>(
+  response: T[] | PaginatedApiResponse<T> | { data?: T[] },
+): T[] => {
+  if (Array.isArray(response)) return response
+  return Array.isArray(response.data) ? response.data : []
+}

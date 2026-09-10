@@ -13,6 +13,7 @@ import { StaffSegmentModule } from '../staff-segment/staff-segment.module';
 import { AttendRecordModule } from '../attend-record/attend-record.module';
 import { StaffModule } from '../staff/staff.module';
 import { StaffManhourModule } from '../staff-manhour/staff-manhour.module';
+import { StaffWorkhourModule } from '../staff-workhour/staff-workhour.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StaffManhourModule } from '../staff-manhour/staff-manhour.module';
     AttendRecordModule,
     StaffModule,
     StaffManhourModule,
+    StaffWorkhourModule,
   ],
   controllers: [WorkingHoursController],
   providers: [

@@ -22,7 +22,16 @@ export const API_CONFIG = {
   // HR 相關端點
   HR: {
     STAFF: '/staffs',
+    STAFF_ALL: '/staffs/all',
+    ATTEND_RECORD: '/attend-record',
+    STAFF_LEAVE: '/staff-leaves',
     STAFF_MANHOUR: '/staff-manhours',
+    STAFF_WORKHOUR: '/staff-workhours',
+    STAFF_SEGMENT: '/staff-segment',
+    STAFF_VACATION: '/staff-vacation',
+    WORKING_HOURS: '/working-hours',
+    WORKING_HOURS_CALCULATE: '/working-hours/calculate',
+    WORKING_HOURS_CALCULATE_RANGE: '/working-hours/calculate-range',
   },
   
   // CRM 相關端點

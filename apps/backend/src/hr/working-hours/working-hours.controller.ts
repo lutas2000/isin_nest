@@ -1,12 +1,15 @@
-import { Controller, Post, Get, Query, Body } from '@nestjs/common';
+import { Controller, Post, Get, Query, Body, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
+  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
 import { WorkingHoursService } from './working-hours.service';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { AdminGuard } from '../../auth/admin.guard';
 
 export class CalculateWorkingHoursDto {
   date: string; // YYYY-MM-DD 格式
@@ -25,6 +28,8 @@ export class StaffBreakTimeDto {
 }
 
 @ApiTags('工時計算管理')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('working-hours')
 export class WorkingHoursController {
   constructor(private readonly workingHoursService: WorkingHoursService) {}
@@ -199,7 +204,7 @@ export class WorkingHoursController {
   @ApiResponse({ status: 500, description: '計算今日工時失敗' })
   async calculateTodayWorkingHours(): Promise<{ message: string }> {
     const today = new Date();
-    await this.workingHoursService.calculateCompleteWorkingHours(today);
+    await this.workingHoursService.calculateTodayWorkingHours(today);
 
     return {
       message: `成功計算 ${today.toISOString().split('T')[0]} 的工時`,

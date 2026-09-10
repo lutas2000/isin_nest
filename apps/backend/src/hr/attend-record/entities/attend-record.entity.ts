@@ -56,15 +56,15 @@ export class AttendRecord {
   inputType?: string;
 
   @ApiProperty({
-    description: '出勤類型 0:未決定 1:上班 2:下班',
+    description: '出勤類型 0:新紀錄 1:上班 2:下班 3:不明',
     example: 1,
-    enum: [0, 1, 2],
+    enum: [0, 1, 2, 3],
   })
   @Column({
     type: 'int',
     default: 0,
     name: 'attend_type',
-    comment: '0:未決定 1:上班 2:下班',
+    comment: '0:新紀錄 1:上班 2:下班 3:不明',
   })
   attendType: number;
 
