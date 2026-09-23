@@ -28,6 +28,7 @@ import { CrmConfigCodeSingleChar1776900000000 } from './migrations/1776900000000
 import { AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000 } from './migrations/1777000000000-AddQuoteDeliveryDaysAndOrderConfirmedAt';
 import { AlignHrSchemaToLegacy1777100000000 } from './migrations/1777100000000-AlignHrSchemaToLegacy';
 import { SystemModule } from './system/system.module';
+import { TimeClockModule } from './time-clock/time-clock.module';
 
 function parseBool(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -84,7 +85,8 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000,
           AlignHrSchemaToLegacy1777100000000,
         ],
-        migrationsRun: parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
+        migrationsRun:
+          parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
         migrationsTableName: 'typeorm_migrations',
         // 開發環境可用 DB_SYNC=true 快速同步；正式環境建議關閉並使用 migration
         synchronize: parseBool(configService.get<string>('DB_SYNC')) ?? false,
@@ -99,6 +101,8 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
     SchedulerModule,
     CrmModule,
     SystemModule,
+    // Realand M70 TCP communication layer; no controller or persistence.
+    TimeClockModule.register(),
   ],
   controllers: [AppController],
   providers: [AppService],
