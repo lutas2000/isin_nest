@@ -52,23 +52,4 @@ export class StaffWorkhourService {
       .orderBy('wh.date', 'ASC')
       .getMany();
   }
-
-  async create(dto: Partial<StaffWorkhour>): Promise<StaffWorkhour> {
-    const record = this.repository.create(dto);
-    return this.repository.save(record);
-  }
-
-  async update(
-    id: number,
-    dto: Partial<StaffWorkhour>,
-  ): Promise<StaffWorkhour> {
-    const record = await this.findOne(id);
-    Object.assign(record, dto);
-    return this.repository.save(record);
-  }
-
-  async remove(id: number): Promise<void> {
-    const record = await this.findOne(id);
-    await this.repository.remove(record);
-  }
 }

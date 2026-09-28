@@ -25,12 +25,13 @@ export class AttendRecordMapper {
     try {
       attendRecord.staffId = this.sanitizeString(row[1]) || '';
       attendRecord.staffName = this.sanitizeString(row[2]) || undefined;
-      attendRecord.inputType = this.sanitizeString(row[8]) || undefined;
+      attendRecord.inputType = this.sanitizeString(row[8]);
       attendRecord.attendType = 0;
       attendRecord.createTime = this.convertCsvTime(row[6]);
-      attendRecord.id =
-        String(attendRecord.createTime.getTime() / 1000) +
-        (attendRecord.staffName || '');
+      attendRecord.id = this.legacyId(
+        attendRecord.createTime,
+        attendRecord.staffName || '',
+      );
 
       this.logger.debug(`CSV 轉換結果: ${JSON.stringify(attendRecord)}`);
     } catch (error) {
@@ -64,9 +65,10 @@ export class AttendRecordMapper {
       attendRecord.inputType = 'usb';
 
       if (attendRecord.staffName) {
-        attendRecord.id =
-          String(attendRecord.createTime.getTime() / 1000) +
-          attendRecord.staffName;
+        attendRecord.id = this.legacyId(
+          attendRecord.createTime,
+          attendRecord.staffName,
+        );
       } else {
         attendRecord.id = '';
       }
@@ -86,6 +88,11 @@ export class AttendRecordMapper {
 
   fixName(uid: number): string | undefined {
     return USB_UID_NAME_MAP[uid];
+  }
+
+  private legacyId(time: Date, staffName: string): string {
+    // Python str(datetime.timestamp()) retains the decimal for whole seconds.
+    return `${(time.getTime() / 1000).toFixed(1)}${staffName}`;
   }
 
   private convertCsvTime(timeStr: string): Date {

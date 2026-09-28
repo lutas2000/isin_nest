@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { StaffWorkhourService } from './staff-workhour.service';
 import { StaffWorkhour } from './entities/staff-workhour.entity';
@@ -48,26 +38,5 @@ export class StaffWorkhourController {
   @ApiOperation({ summary: '取得單一工時彙總記錄' })
   findOne(@Param('id', ParseIntPipe) id: number): Promise<StaffWorkhour> {
     return this.service.findOne(id);
-  }
-
-  @Post()
-  @ApiOperation({ summary: '建立工時彙總記錄' })
-  create(@Body() dto: Partial<StaffWorkhour>): Promise<StaffWorkhour> {
-    return this.service.create(dto);
-  }
-
-  @Put(':id')
-  @ApiOperation({ summary: '更新工時彙總記錄' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Partial<StaffWorkhour>,
-  ): Promise<StaffWorkhour> {
-    return this.service.update(id, dto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: '刪除工時彙總記錄' })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.service.remove(id);
   }
 }

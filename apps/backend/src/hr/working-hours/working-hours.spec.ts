@@ -64,7 +64,7 @@ describe('WorkingHours', () => {
     );
   });
 
-  it('queries attendance by canonical staff ID when both ID and name exist', async () => {
+  it('queries attendance by name when device staff ID differs from staff primary key', async () => {
     const queryBuilder = {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -76,9 +76,14 @@ describe('WorkingHours', () => {
       .mockReturnValue(
         queryBuilder,
       ) as unknown as Repository<AttendRecord>['createQueryBuilder'];
+    const namedStaffRepository = {
+      findOne: jest.fn(async ({ where }) =>
+        where.name === '張三' ? { id: 'S001', name: '張三' } : null,
+      ),
+    } as unknown as Repository<Staff>;
     const workingHours = new WorkingHours(
       attendRecordRepository,
-      staffRepository,
+      namedStaffRepository,
     );
 
     await workingHours.findUserRecords({
@@ -88,8 +93,8 @@ describe('WorkingHours', () => {
     } as AttendRecord);
 
     expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-      expect.stringContaining('staffId'),
-      expect.objectContaining({ staffId: 'A001' }),
+      expect.stringContaining('staffName'),
+      expect.objectContaining({ identifier: '張三' }),
     );
   });
 });

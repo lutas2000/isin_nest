@@ -20,7 +20,7 @@ describe('AttendRecordMapper', () => {
 
     expect(record.staffId).toBe('A001');
     expect(record.staffName).toBe('高光達');
-    expect(record.id).toBe('1717232700高光達');
+    expect(record.id).toBe('1717232700.0高光達');
     expect(mapper.validateAttendRecord(record)).toBe(true);
   });
 

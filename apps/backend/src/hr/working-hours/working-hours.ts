@@ -99,35 +99,38 @@ export class WorkingHours {
     }
   }
 
-  /** 以打卡記錄上的 canonical staff ID 查詢工作日資料。 */
+  /** 以 Django 使用的員工姓名查詢；缺少姓名時才使用設備員工 ID。 */
   async findUserRecords(attendRecord: AttendRecord): Promise<AttendRecord[]> {
     return this.findUserRecords1(
-      attendRecord.staffId || attendRecord.staffName || '',
+      attendRecord.staffName || attendRecord.staffId || '',
       attendRecord.createTime,
     );
   }
 
   /**
    * 尋找員工工作日內的所有打卡記錄。
-   * 參數可接受 ID 或姓名；若傳姓名，會先解析為 staff.id。
+   * 參數可接受 ID 或姓名。姓名查詢需與 Django 一樣使用打卡記錄的
+   * staff_name，因設備匯出的 staff_id 不一定等於員工資料表主鍵。
    */
   async findUserRecords1(
     staffIdentifier: string,
     time: Date,
   ): Promise<AttendRecord[]> {
-    const staffId = await this.resolveStaffId(staffIdentifier);
+    const identity = await this.resolveRecordIdentity(staffIdentifier);
     const { start, end } = this.getWorkDayRange(time);
 
     const workRecords = await this.attendRecordRepository
       .createQueryBuilder('ar')
       .where('ar.createTime >= :startTime', { startTime: start })
       .andWhere('ar.createTime < :endTime', { endTime: end })
-      .andWhere('ar.staffId = :staffId', { staffId })
+      .andWhere(`ar.${identity.column} = :identifier`, {
+        identifier: identity.value,
+      })
       .orderBy('ar.createTime', 'ASC')
       .getMany();
 
     this.logger.debug(
-      `查詢員工打卡記錄: ${staffId}, 時間範圍: ${String(start)} - ${String(end)}, 記錄數: ${workRecords.length}`,
+      `查詢員工打卡記錄: ${staffIdentifier}, 時間範圍: ${String(start)} - ${String(end)}, 記錄數: ${workRecords.length}`,
     );
     return workRecords;
   }
@@ -138,20 +141,22 @@ export class WorkingHours {
     time: Date,
     attendType: number,
   ): Promise<AttendRecord[]> {
-    const staffId = await this.resolveStaffId(staffIdentifier);
+    const identity = await this.resolveRecordIdentity(staffIdentifier);
     const { start, end } = this.getWorkDayRange(time);
 
     const workRecords = await this.attendRecordRepository
       .createQueryBuilder('ar')
       .where('ar.createTime >= :startTime', { startTime: start })
       .andWhere('ar.createTime < :endTime', { endTime: end })
-      .andWhere('ar.staffId = :staffId', { staffId })
+      .andWhere(`ar.${identity.column} = :identifier`, {
+        identifier: identity.value,
+      })
       .andWhere('ar.attendType = :attendType', { attendType })
       .orderBy('ar.createTime', 'ASC')
       .getMany();
 
     this.logger.debug(
-      `查詢員工特定類型打卡記錄: ${staffId}, 類型: ${attendType}, 記錄數: ${workRecords.length}`,
+      `查詢員工特定類型打卡記錄: ${staffIdentifier}, 類型: ${attendType}, 記錄數: ${workRecords.length}`,
     );
     return workRecords;
   }
@@ -194,11 +199,14 @@ export class WorkingHours {
     }
   }
 
-  private async resolveStaffId(staffIdentifier: string): Promise<string> {
-    if (!staffIdentifier) return staffIdentifier;
-
+  private async resolveRecordIdentity(
+    staffIdentifier: string,
+  ): Promise<{ column: 'staffId' | 'staffName'; value: string }> {
     const staff = await this.findStaff(staffIdentifier);
-    return staff?.id || staffIdentifier;
+    if (staff?.name === staffIdentifier) {
+      return { column: 'staffName', value: staffIdentifier };
+    }
+    return { column: 'staffId', value: staffIdentifier };
   }
 
   private async findStaff(staffIdentifier: string): Promise<Staff | null> {

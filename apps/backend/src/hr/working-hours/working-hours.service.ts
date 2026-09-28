@@ -148,7 +148,7 @@ export class WorkingHoursService {
       }
 
       // 處理打卡記錄類型
-      this.workingHours['deleteUnknownRecord'](workRecords);
+      await this.workingHours.deleteUnknownRecord(workRecords);
       await this.workingHours['appointAttendRecordType'](workRecords);
 
       this.logger.log(

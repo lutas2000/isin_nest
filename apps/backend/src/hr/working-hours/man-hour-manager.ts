@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StaffManhour } from '../staff-manhour/entities/staff-manhour.entity';
 import { Staff } from '../staff/entities/staff.entity';
-import { WorkingHours, TYPE_ON_WORK, TYPE_OFF_WORK, TYPE_UNKNOWN } from './working-hours';
+import { WorkingHours, TYPE_ON_WORK, TYPE_OFF_WORK } from './working-hours';
 
 /**
  * 工時管理器
@@ -85,19 +85,15 @@ export class ManHourManager {
           name: staffName,
           start_time: startTime,
           day: date,
+          work_time: 0,
         });
 
         // 如果有對應的下班記錄，設定結束時間
         if (index < offRecords.length) {
           manHour.end_time = offRecords[index].createTime;
 
-          // 計算工作時間（小時）
-          const workTimeMs =
-            offRecords[index].createTime.getTime() - startTime.getTime();
-          manHour.work_time = workTimeMs / (1000 * 60 * 60); // 轉換為小時
-
           this.logger.debug(
-            `員工 ${staffName} 工時記錄: 開始=${startTime.toISOString()}, 結束=${offRecords[index].createTime.toISOString()}, 工時=${manHour.work_time}小時`,
+            `員工 ${staffName} 工時記錄: 開始=${startTime.toISOString()}, 結束=${offRecords[index].createTime.toISOString()}`,
           );
         } else {
           this.logger.warn(
