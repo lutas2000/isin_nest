@@ -17,6 +17,21 @@ interface PunchRow {
   attend_type: number;
 }
 
+export interface LegacyStaffImportSummary {
+  read: number;
+  inserted: number;
+  duplicate: number;
+  skipped: number;
+  departed: number;
+}
+
+export interface LegacyStaffJobSummary extends LegacyStaffImportSummary {
+  recalculatedDays: number;
+  recalculatedStaffDays: number;
+  fromDay: string | null;
+  toDay: string | null;
+}
+
 /** The old Django mapper tagged M70 wall time as UTC without shifting its clock. */
 export function legacyDate(value: Date): string {
   return value.toISOString().slice(0, 19).replace('T', ' ');
@@ -73,10 +88,10 @@ export class LegacyStaffService {
   }
 
   async import(): Promise<void> {
-    return this.exclusive(() => this.importLogs());
+    await this.exclusive(() => this.importLogs());
   }
 
-  private async importLogs(): Promise<void> {
+  private async importLogs(): Promise<LegacyStaffImportSummary> {
     const mappings = await this.db.query(`SELECT m.machine_id, m.staff_id, m.record_name,
       DATE_FORMAT(s.stop_work, '%Y-%m-%d') AS stop_work
       FROM staff_m70_user m INNER JOIN staff s ON s.id = m.staff_id
@@ -139,6 +154,7 @@ export class LegacyStaffService {
     this.logger.log(
       `M70 import: read=${logs.length}, inserted=${inserted}, duplicate=${duplicate}, skipped=${unknown}, departed=${departed}`,
     );
+    return { read: logs.length, inserted, duplicate, skipped: unknown, departed };
   }
 
   async appoint(): Promise<void> {
@@ -210,24 +226,33 @@ export class LegacyStaffService {
     });
   }
 
-  async scheduled(): Promise<void> {
+  async scheduled(): Promise<LegacyStaffJobSummary> {
     return this.exclusive(async () => {
-      await this.importLogs();
-      await this.db.transaction(async (connection) => {
+      const imported = await this.importLogs();
+      const recalculated = await this.db.transaction(async (connection) => {
         const first = await this.appointInTransaction(connection);
-        if (!first) return;
+        if (!first) return {
+          recalculatedDays: 0, recalculatedStaffDays: 0,
+          fromDay: null, toDay: null,
+        };
         const today = taipeiToday();
-        for (let day = workDay(first); day <= today; day = nextDay(day)) {
-          await this.calculateDay(connection, day);
+        const fromDay = workDay(first);
+        let recalculatedDays = 0;
+        let recalculatedStaffDays = 0;
+        for (let day = fromDay; day <= today; day = nextDay(day)) {
+          recalculatedStaffDays += await this.calculateDay(connection, day);
+          recalculatedDays++;
         }
+        return { recalculatedDays, recalculatedStaffDays, fromDay, toDay: today };
       });
+      return { ...imported, ...recalculated };
     });
   }
 
   private async calculateDay(
     connection: LegacyConnection,
     day: string,
-  ): Promise<void> {
+  ): Promise<number> {
     const staff = await connection.query(
       'SELECT name FROM staff WHERE need_check = 1 AND begain_work <= ? AND (stop_work >= ? OR stop_work IS NULL)',
       [day, day],
@@ -257,5 +282,6 @@ export class LegacyStaffService {
       }
     }
     this.logger.log(`Legacy staff calculated: ${day}, staff=${staff.length}`);
+    return staff.length;
   }
 }

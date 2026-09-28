@@ -7,9 +7,10 @@ import { LegacyStaffSchedulerService } from './legacy-staff-scheduler.service';
 import { LegacyStaffService } from './legacy-staff.service';
 import { LegacyStaffM70Controller } from './legacy-staff-m70.controller';
 import { LegacyStaffM70Service } from './legacy-staff-m70.service';
+import { SlackWebhookModule } from '../slack/slack-webhook.module';
 
 @Module({
-  imports: [AuthModule, TimeClockModule.register()],
+  imports: [AuthModule, TimeClockModule.register(), SlackWebhookModule],
   controllers: [LegacyStaffController, LegacyStaffM70Controller],
   providers: [
     LegacyStaffDbService,

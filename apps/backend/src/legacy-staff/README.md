@@ -8,6 +8,8 @@
 
 `LEGACY_STAFF_CRON_ENABLED` 預設為 `false`。驗證完成、Django jobs 停止後，設定為 `true` 並重啟後端，才會每 30 分鐘執行新流程。同時設定 `HR_ATTENDANCE_CRON_ENABLED=false`，停用原先寫 PostgreSQL 的 Nest HR 排程。回復時先將新排程設回 `false`，再依需要恢復舊排程。
 
+設定通用的 `SLACK_WEBHOOK_URL` 可讓新排程每次實際執行後發送成功或失敗通知。成功訊息包含 M70 讀取／新增／重複／未對照／離職過濾筆數、重算日期與人日數及耗時。Slack 傳送失敗只寫入應用程式日誌，不會重跑資料庫流程；停用的排程不發送通知。網址屬於密鑰，僅放在未追蹤的 `.env` 或部署環境，勿寫進程式或日誌。
+
 ## API
 
 以下路由需要管理員 JWT，成功回應為舊版純文字；會寫入資料，故全部使用 POST。
