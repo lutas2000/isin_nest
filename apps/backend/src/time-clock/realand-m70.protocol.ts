@@ -11,6 +11,7 @@ export const M70_COMMAND = {
   MODIFY_PRIVILEGE: 0x0111,
   GET_DEVICE_TIME: 0x010e,
   READ_ALL_USER_IDS: 0x0112,
+  READ_ALL_ATTENDANCE_LOGS: 0x0107,
   GET_SERIAL_NUMBER: 0x0113,
   GET_BACKUP_NUMBER: 0x0115,
   GET_PRODUCT_CODE: 0x0116,
@@ -274,6 +275,45 @@ export function decodeM70DeviceTime(payload: Buffer): TimeClockDeviceTime {
   };
 }
 
+/** M70 v3.6.8 general log rows captured from the device are 12 bytes. */
+export function decodeM70AttendanceLogs(payload: Buffer): {
+  userId: string;
+  clock: Date;
+  verifyMode: number;
+  action: number;
+  raw: Buffer;
+}[] {
+  if (payload.length % 12 !== 0) {
+    throw new TimeClockProtocolError(
+      'M70 attendance payload is not a multiple of 12 bytes',
+    );
+  }
+  const rows: {
+    userId: string;
+    clock: Date;
+    verifyMode: number;
+    action: number;
+    raw: Buffer;
+  }[] = [];
+  for (let offset = 0; offset < payload.length; offset += 12) {
+    const raw = Buffer.from(payload.subarray(offset, offset + 12));
+    const clock = decodeM70DeviceTime(raw.subarray(0, 4)).date;
+    if (clock.getUTCFullYear() > 2099 || raw.readUInt32LE(4) === 0) {
+      throw new TimeClockProtocolError(
+        'M70 attendance row has invalid time or user ID',
+      );
+    }
+    rows.push({
+      userId: String(raw.readUInt32LE(4)),
+      clock,
+      verifyMode: raw[8],
+      action: raw[9],
+      raw,
+    });
+  }
+  return rows;
+}
+
 export function encodeM70DeviceTime(value: Date): Buffer {
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
     throw new TimeClockProtocolError('Invalid device time');
@@ -297,6 +337,13 @@ export function encodeM70DeviceTime(value: Date): Buffer {
 }
 
 export function decodeM70Text(payload: Buffer): string {
+  // Serial/product fields on this firmware are ASCII; enrolled names are
+  // UTF-16LE. ASCII pairs can look like valid CJK when decoded as UTF-16.
+  const nul = payload.indexOf(0);
+  const asciiEnd = nul < 0 ? payload.length : nul;
+  if (asciiEnd > 1 && payload.subarray(0, asciiEnd).every((byte) => byte >= 0x20 && byte <= 0x7e) &&
+      (nul < 0 || payload.subarray(nul).every((byte) => byte === 0)))
+    return payload.subarray(0, asciiEnd).toString('ascii').trim();
   const utf16 = payload
     .toString('utf16le')
     .replace(/\u0000+$/g, '')

@@ -10,6 +10,7 @@ import {
   buildCommandFrame,
   buildBigDataFrame,
   decodeM70DeviceTime,
+  decodeM70AttendanceLogs,
   decodeM70Text,
   decodeM70UserSummary,
   encodeM70DeviceTime,
@@ -140,8 +141,13 @@ class M70Session {
     arg3 = 0,
     payload?: Buffer,
   ): Promise<ReturnType<typeof parseResultFrame>> {
-    const result = await this.requestResult(command, arg2, arg3);
-    if (!payload || payload.length === 0) return result;
+    if (!payload || payload.length === 0)
+      return this.requestResult(command, arg2, arg3);
+
+    await this.send(buildCommandFrame(this.options.dn, command, arg2, arg3));
+    const ack = parseAckFrame(await this.readExact(8), this.options.dn);
+    if (ack.resultWord === 0)
+      throw new TimeClockProtocolError(`M70 rejected command 0x${command.toString(16)}`, command);
 
     for (
       let offset = 0;
@@ -156,8 +162,8 @@ class M70Session {
       );
     }
 
-    // SetEnrollData/SetUserName return a second command-result frame after
-    // the data frames have been accepted by the device.
+    // The firmware waits for big-data payload after ACK. It sends the
+    // command-result frame only after consuming that payload.
     return parseResultFrame(await this.readExact(14), this.options.dn, command);
   }
 
@@ -260,6 +266,69 @@ class M70Session {
       command,
     );
     return { payload, result };
+  }
+
+  async readAllAttendanceLogs(): Promise<Buffer> {
+    const command = M70_COMMAND.READ_ALL_ATTENDANCE_LOGS;
+    const count = (await this.requestResult(command)).value;
+    if (count === 0) return Buffer.alloc(0);
+    if (count > 100000) {
+      throw new TimeClockProtocolError(
+        `M70 returned unreasonable attendance count ${count}`,
+        command,
+      );
+    }
+
+    // Verified against M70 v3.6.8: second command, a 4-byte read-mode
+    // payload, result, 8-byte count frame, then 0x3fc-byte data chunks.
+    await this.send(buildCommandFrame(this.options.dn, command, 1, count));
+    const ack = parseAckFrame(await this.readExact(8), this.options.dn);
+    if (ack.resultWord === 0)
+      throw new TimeClockProtocolError(
+        'M70 rejected attendance transfer',
+        command,
+      );
+    const readMode = Buffer.alloc(4);
+    readMode.writeUInt32LE(1);
+    await this.send(buildBigDataFrame(this.options.dn, readMode));
+    const result = parseResultFrame(
+      await this.readExact(14),
+      this.options.dn,
+      command,
+    );
+    if (result.value !== count || result.word === 0) {
+      throw new TimeClockProtocolError(
+        'M70 attendance transfer count mismatch',
+        command,
+      );
+    }
+    const header = parseDataFrame(
+      await this.readExact(14),
+      this.options.dn,
+      8,
+      command,
+    );
+    if (header.readUInt32LE(0) !== count) {
+      throw new TimeClockProtocolError(
+        'M70 attendance data header count mismatch',
+        command,
+      );
+    }
+    const chunks: Buffer[] = [];
+    let remaining = count * 12;
+    while (remaining > 0) {
+      const size = Math.min(M70_MAX_DATA_PAYLOAD, remaining);
+      chunks.push(
+        parseDataFrame(
+          await this.readExact(size + 6),
+          this.options.dn,
+          size,
+          command,
+        ),
+      );
+      remaining -= size;
+    }
+    return Buffer.concat(chunks);
   }
 
   private async send(frame: Buffer): Promise<void> {
@@ -610,12 +679,17 @@ export class RealandM70Client {
         }
 
         if (prepared.name !== undefined) {
-          await session.requestWrite(
+          const result = await session.requestWrite(
             M70_COMMAND.SET_USER_NAME,
             0,
             prepared.userId,
             prepared.name,
           );
+          if (result.word === 0)
+            throw new TimeClockProtocolError(
+              `M70 rejected name write: status=${result.status}, value=${result.value}`,
+              M70_COMMAND.SET_USER_NAME,
+            );
         }
 
         if (prepared.privilege !== undefined) {
@@ -657,10 +731,24 @@ export class RealandM70Client {
   }
 
   async getAttendanceLogs(
-    _query: TimeClockAttendanceLogQuery = {},
+    query: TimeClockAttendanceLogQuery = {},
   ): Promise<TimeClockAttendanceLog[]> {
-    throw new TimeClockUnsupportedError(
-      'M70 general attendance log frame parsing is not enabled until a firmware 3.6.8 capture is verified',
+    if (query.markAsRead) {
+      throw new TimeClockUnsupportedError(
+        'M70 attendance log read-mark mode is disabled',
+      );
+    }
+    return this.enqueue(() =>
+      this.withSession(async (session) => {
+        const payload = await session.readAllAttendanceLogs();
+        return decodeM70AttendanceLogs(payload)
+          .map((row, index) => ({ ...row, index }))
+          .filter(
+            (row) =>
+              (!query.startDate || row.clock >= query.startDate) &&
+              (!query.endDate || row.clock <= query.endDate),
+          );
+      }),
     );
   }
 

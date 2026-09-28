@@ -29,6 +29,7 @@ import { AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000 } from './migratio
 import { AlignHrSchemaToLegacy1777100000000 } from './migrations/1777100000000-AlignHrSchemaToLegacy';
 import { SystemModule } from './system/system.module';
 import { TimeClockModule } from './time-clock/time-clock.module';
+import { LegacyStaffModule } from './legacy-staff/legacy-staff.module';
 
 function parseBool(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -103,6 +104,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
     SystemModule,
     // Realand M70 TCP communication layer; no controller or persistence.
     TimeClockModule.register(),
+    LegacyStaffModule,
   ],
   controllers: [AppController],
   providers: [AppService],

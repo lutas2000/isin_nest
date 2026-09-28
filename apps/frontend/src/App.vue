@@ -34,6 +34,10 @@
               <div class="nav-icon">👨‍💼</div>
               <span v-if="!sidebarCollapsed" class="nav-text">員工管理</span>
             </router-link>
+            <router-link v-if="authStore.isAdmin" to="/staff/m70-users" class="nav-item" active-class="active">
+              <div class="nav-icon">🪪</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">M70 員工對照</span>
+            </router-link>
             <router-link
               to="/hr/attendance"
               class="nav-item"
@@ -299,6 +303,7 @@ const showUserMenu = ref(false); // 新增：控制用戶下拉選單的顯示
 const pageTitles: Record<string, string> = {
   '/': '儀表板',
   '/hr/staff': '員工管理',
+  '/staff/m70-users': 'M70 員工對照',
   '/hr/attendance': '出勤管理',
   '/hr/manhour': '工時管理',
   '/hr/leave': '請假管理',

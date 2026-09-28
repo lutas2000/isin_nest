@@ -208,6 +208,7 @@ export class SchedulerService {
     timeZone: 'Asia/Taipei',
   })
   async handleCalculateManHour(): Promise<void> {
+    if (this.configService.get<string>('HR_ATTENDANCE_CRON_ENABLED') === 'false') return;
     try {
       this.logger.log('開始執行工時計算任務...');
       await this.pipelineService.runAttendancePipeline('cron');

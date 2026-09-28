@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import Home from '../views/Home.vue'
 import HRStaff from '../views/HR/Staff.vue'
+import M70Users from '../views/Staff/M70Users.vue'
 import HRAttendance from '../views/HR/Attendance.vue'
 import HRManhour from '../views/HR/Manhour.vue'
 import HRLeave from '../views/HR/Leave.vue'
@@ -55,6 +56,12 @@ const routes = [
     name: 'HRStaff',
     component: HRStaff,
     meta: { title: '員工管理', icon: '👨‍💼', requiresAuth: true }
+  },
+  {
+    path: '/staff/m70-users',
+    name: 'M70Users',
+    component: M70Users,
+    meta: { title: 'M70 員工對照', icon: '🪪', requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/hr/attendance',
@@ -252,6 +259,10 @@ router.beforeEach(async (to: RouteLocationNormalized, _: RouteLocationNormalized
         const userData = JSON.parse(user)
         if (!userData.userName) {
           throw new Error('Invalid user data')
+        }
+        if (to.meta.requiresAdmin && !userData.isAdmin) {
+          next('/')
+          return
         }
         next()
       } catch (error) {

@@ -3,6 +3,7 @@ import {
   buildCommandFrame,
   checksum16,
   decodeM70DeviceTime,
+  decodeM70AttendanceLogs,
   decodeM70Text,
   decodeM70UserSummary,
   encodeM70Text,
@@ -28,6 +29,12 @@ describe('Realand M70 protocol helpers', () => {
 
     expect(ack.dn).toBe(3);
     expect(ack.resultWord).toBe(1);
+  });
+
+  it('decodes ASCII device serial without treating byte pairs as Chinese', () => {
+    const serial = Buffer.alloc(32);
+    serial.write('ZXTI06103026', 'ascii');
+    expect(decodeM70Text(serial)).toBe('ZXTI06103026');
   });
 
   it('parses a result frame and exposes the raw frame', () => {
@@ -100,5 +107,16 @@ describe('Realand M70 protocol helpers', () => {
 
     expect(users.map((user) => user.userId)).toEqual([1001, 1002]);
     expect(users[0].raw).toEqual(payload.subarray(0, 8));
+  });
+
+  it('decodes captured M70 attendance row layout without shifting wall time', () => {
+    const row = Buffer.from('b4ce0032010000007980ffff', 'hex');
+    const logs = decodeM70AttendanceLogs(row);
+    expect(logs).toHaveLength(1);
+    expect(logs[0].userId).toBe('1');
+    expect(logs[0].clock.toISOString()).toBe('2026-08-01T15:35:16.000Z');
+    expect(logs[0].verifyMode).toBe(0x79);
+    expect(logs[0].raw).toEqual(row);
+    expect(() => decodeM70AttendanceLogs(row.subarray(0, 11))).toThrow();
   });
 });
