@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AttendRecordCsvReader } from '../attend-record/attend-record-csv-reader';
+import {
+  AttendRecordCsvReader,
+  AttendRecordUsbReader,
+} from '../attend-record/attend-record-csv-reader';
 import { WorkingHours } from './working-hours';
 import { ManHourManager } from './man-hour-manager';
 
@@ -9,6 +12,7 @@ export class HrAttendancePipelineService {
 
   constructor(
     private readonly attendRecordCsvReader: AttendRecordCsvReader,
+    private readonly attendRecordUsbReader: AttendRecordUsbReader,
     private readonly workingHours: WorkingHours,
     private readonly manHourManager: ManHourManager,
   ) {}
@@ -17,6 +21,7 @@ export class HrAttendancePipelineService {
     this.logger.log(`開始執行出勤管線 (${mode})`);
 
     await this.attendRecordCsvReader.searchAttendLogs();
+    await this.attendRecordUsbReader.read();
     this.logger.log('出勤記錄匯入完成');
 
     const lastTime = await this.workingHours.appointAttendRecordsType();

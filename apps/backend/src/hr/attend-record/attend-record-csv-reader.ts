@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendRecord } from './entities/attend-record.entity';
 import { Staff } from '../staff/entities/staff.entity';
-import { AttendRecordMapper } from './attend-record-mapper';
+import { AttendRecordMapper, parseDelimitedLine } from './attend-record-mapper';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
@@ -121,7 +121,7 @@ export class AttendRecordCsvReader {
 
       rl.on('line', (line) => {
         rowCount++;
-        const row = line.split(',').map((cell) => cell.trim());
+        const row = parseDelimitedLine(line, ',');
         const promise = this.readRow(row, fileName, rowCount);
         processedRows.push(promise);
       });
@@ -162,6 +162,11 @@ export class AttendRecordCsvReader {
         this.logger.warn(`無效記錄: ${JSON.stringify(row)}`);
         return;
       }
+
+      const existing = await this.attendRecordRepository.findOne({
+        where: { id: attendRecord.id },
+      });
+      if (existing) return;
 
       // 保存出勤記錄
       const savedRecord = await this.attendRecordRepository.save(attendRecord);
@@ -288,7 +293,7 @@ export class AttendRecordUsbReader {
 
       rl.on('line', (line) => {
         // USB CSV 使用 tab 分隔符
-        const row = line.split('\t').map((cell) => cell.trim());
+        const row = parseDelimitedLine(line, '\t');
         const promise = this.readRow(row);
         processedRows.push(promise);
       });
@@ -328,6 +333,11 @@ export class AttendRecordUsbReader {
         this.logger.warn(`無效 USB 記錄: ${JSON.stringify(row)}`);
         return;
       }
+
+      const existing = await this.attendRecordRepository.findOne({
+        where: { id: attendRecord.id },
+      });
+      if (existing) return;
 
       // 保存出勤記錄
       const savedRecord = await this.attendRecordRepository.save(attendRecord);

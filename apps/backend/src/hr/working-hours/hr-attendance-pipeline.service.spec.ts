@@ -1,13 +1,17 @@
 /// <reference types="jest" />
 import { Test, TestingModule } from '@nestjs/testing';
 import { HrAttendancePipelineService } from './hr-attendance-pipeline.service';
-import { AttendRecordCsvReader } from '../attend-record/attend-record-csv-reader';
+import {
+  AttendRecordCsvReader,
+  AttendRecordUsbReader,
+} from '../attend-record/attend-record-csv-reader';
 import { WorkingHours } from './working-hours';
 import { ManHourManager } from './man-hour-manager';
 
 describe('HrAttendancePipelineService', () => {
   let service: HrAttendancePipelineService;
   const csvReader = { searchAttendLogs: jest.fn() };
+  const usbReader = { read: jest.fn() };
   const workingHours = { appointAttendRecordsType: jest.fn() };
   const manHourManager = { calculateManHour: jest.fn() };
 
@@ -17,6 +21,7 @@ describe('HrAttendancePipelineService', () => {
       providers: [
         HrAttendancePipelineService,
         { provide: AttendRecordCsvReader, useValue: csvReader },
+        { provide: AttendRecordUsbReader, useValue: usbReader },
         { provide: WorkingHours, useValue: workingHours },
         { provide: ManHourManager, useValue: manHourManager },
       ],
@@ -28,6 +33,7 @@ describe('HrAttendancePipelineService', () => {
     workingHours.appointAttendRecordsType.mockResolvedValue(new Date());
     await service.runAttendancePipeline('today');
     expect(csvReader.searchAttendLogs).toHaveBeenCalled();
+    expect(usbReader.read).toHaveBeenCalled();
     expect(workingHours.appointAttendRecordsType).toHaveBeenCalled();
     expect(manHourManager.calculateManHour).toHaveBeenCalledTimes(2);
   });

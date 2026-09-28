@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AttendRecord } from './entities/attend-record.entity';
+import { Staff } from '../staff/entities/staff.entity';
 
 const USB_UID_NAME_MAP: Record<number, string> = {
   36: '高光達',
@@ -10,6 +13,11 @@ const USB_UID_NAME_MAP: Record<number, string> = {
 @Injectable()
 export class AttendRecordMapper {
   private readonly logger = new Logger(AttendRecordMapper.name);
+
+  constructor(
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
+  ) {}
 
   csvToEntity(row: string[]): AttendRecord {
     const attendRecord = new AttendRecord();
@@ -44,6 +52,12 @@ export class AttendRecordMapper {
       if (!attendRecord.staffName) {
         const uid = parseInt(row[2], 10);
         attendRecord.staffName = this.fixName(uid);
+      }
+      if (attendRecord.staffName) {
+        const staff = await this.staffRepository.findOne({
+          where: { name: attendRecord.staffName },
+        });
+        attendRecord.staffId = staff?.id || '';
       }
       attendRecord.createTime = this.convertUsbTime(row[8]);
       attendRecord.attendType = 0;
@@ -80,16 +94,33 @@ export class AttendRecordMapper {
     if (!dateTimeFormat.test(value)) {
       throw new Error(`Invalid CSV time format: ${value}`);
     }
-    return new Date(value.replace(' ', 'T') + 'Z');
+    return this.parseUtcTime(value.replace(' ', 'T') + 'Z');
   }
 
   private convertUsbTime(timeStr: string): Date {
     const value = this.sanitizeString(timeStr);
-    const parsed = new Date(value.replace(/\//g, '-').replace(' ', 'T') + 'Z');
-    if (isNaN(parsed.getTime())) {
-      throw new Error(`Invalid USB time format: ${value}`);
-    }
-    return parsed;
+    return this.parseUtcTime(value.replace(/\//g, '-').replace(' ', 'T') + 'Z');
+  }
+
+  private parseUtcTime(value: string): Date {
+    const match = value.match(
+      /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/,
+    );
+    if (!match) throw new Error(`Invalid attendance time: ${value}`);
+    const [, year, month, day, hour, minute, second] = match.map(Number);
+    const result = new Date(
+      Date.UTC(year, month - 1, day, hour, minute, second),
+    );
+    if (
+      result.getUTCFullYear() !== year ||
+      result.getUTCMonth() !== month - 1 ||
+      result.getUTCDate() !== day ||
+      result.getUTCHours() !== hour ||
+      result.getUTCMinutes() !== minute ||
+      result.getUTCSeconds() !== second
+    )
+      throw new Error(`Invalid attendance time: ${value}`);
+    return result;
   }
 
   private sanitizeString(value: string | undefined): string {
@@ -102,10 +133,13 @@ export class AttendRecordMapper {
   }
 
   validateAttendRecord(attendRecord: AttendRecord): boolean {
-    const hasIdentifier = attendRecord.staffId || attendRecord.staffName;
+    const hasIdentifier = !!attendRecord.staffId;
     const hasValidId = !!attendRecord.id;
     const hasValidAttendType = [0, 1, 2, 3].includes(attendRecord.attendType);
-    return !!hasIdentifier && hasValidId && hasValidAttendType;
+    const hasValidTime =
+      attendRecord.createTime instanceof Date &&
+      !isNaN(attendRecord.createTime.getTime());
+    return hasIdentifier && hasValidId && hasValidAttendType && hasValidTime;
   }
 
   formatForLogging(attendRecord: AttendRecord): string {
@@ -117,4 +151,31 @@ export class AttendRecordMapper {
       attendType: attendRecord.attendType,
     });
   }
+}
+
+/** Parse quoted CSV or tab separated device output, including escaped quotes. */
+export function parseDelimitedLine(line: string, delimiter = ','): string[] {
+  const cells: string[] = [];
+  let cell = '';
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        cell += '"';
+        index++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === delimiter && !quoted) {
+      cells.push(cell.trim());
+      cell = '';
+    } else {
+      cell += character;
+    }
+  }
+
+  cells.push(cell.trim());
+  return cells;
 }
