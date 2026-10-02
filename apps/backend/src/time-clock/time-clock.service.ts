@@ -76,4 +76,8 @@ export class TimeClockService {
   ): Promise<TimeClockAttendanceLog[]> {
     return this.client.getAttendanceLogs(query);
   }
+
+  consumeUnreadAttendanceLogs<T>(persist: (logs: TimeClockAttendanceLog[]) => Promise<T>): Promise<T> {
+    return this.client.consumeUnreadAttendanceLogs(persist);
+  }
 }

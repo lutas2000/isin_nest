@@ -24,7 +24,7 @@ import { LegacyStaffService } from './legacy-staff.service';
 @ApiResponse({ status: 401, description: '未登入或 token 無效' })
 @ApiResponse({ status: 403, description: '非管理員' })
 @ApiResponse({ status: 409, description: '已有流程執行中' })
-@ApiResponse({ status: 503, description: '舊 MariaDB 尚未設定或姓名對照無效' })
+@ApiResponse({ status: 503, description: '舊 MariaDB 尚未設定' })
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('staff')
 export class LegacyStaffController {
@@ -32,7 +32,7 @@ export class LegacyStaffController {
 
   @Post('import')
   @HttpCode(200)
-  @ApiOperation({ summary: '從 M70 匯入打卡資料至舊 MariaDB' })
+  @ApiOperation({ summary: '匯入 M70 未讀打卡，提交 MariaDB 後標記已讀；重試尚未連結員工的保存紀錄' })
   @ApiResponse({ status: 200, description: 'succeed' })
   async import(@Res() response: Response): Promise<void> {
     await this.service.import();

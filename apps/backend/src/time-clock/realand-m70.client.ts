@@ -21,6 +21,7 @@ import {
   M70_MAX_DATA_PAYLOAD,
   parseAckFrame,
   parseDataFrame,
+  parseM70GeneralLogCursor,
   parseResultFrame,
 } from './realand-m70.protocol';
 import {
@@ -54,18 +55,22 @@ interface ReadWaiter {
   timer: NodeJS.Timeout;
 }
 
-class M70Session {
+export class M70Session {
   private socket: net.Socket | undefined;
   private receiveBuffer = Buffer.alloc(0);
   private readWaiter: ReadWaiter | undefined;
   private terminalError: Error | undefined;
+  private pendingGeneralRead: { count: number; throughIndex: number } | undefined;
 
-  constructor(private readonly options: ResolvedTimeClockOptions) {}
+  constructor(
+    private readonly options: ResolvedTimeClockOptions,
+    private readonly createSocket: () => net.Socket = () => new net.Socket(),
+  ) {}
 
   async open(): Promise<void> {
     if (this.socket) return;
 
-    const socket = new net.Socket();
+    const socket = this.createSocket();
     this.socket = socket;
     socket.setTimeout(this.options.timeoutMs);
     socket.on('data', (chunk: Buffer) => this.handleData(chunk));
@@ -328,7 +333,97 @@ class M70Session {
       );
       remaining -= size;
     }
+
     return Buffer.concat(chunks);
+  }
+
+  async readGeneralAttendanceLogs(): Promise<Buffer> {
+    this.pendingGeneralRead = undefined;
+    const cursorResponse = await this.requestData(
+      M70_COMMAND.READ_GENERAL_ATTENDANCE_LOGS,
+      4,
+    );
+    const cursor = parseM70GeneralLogCursor(
+      cursorResponse.payload,
+      cursorResponse.result.value,
+    );
+    const count = cursor.unreadCount;
+    if (count === 0) return Buffer.alloc(0);
+
+    const startIndex = Buffer.alloc(4);
+    startIndex.writeUInt32LE(cursor.firstUnreadIndex + 1);
+    const result = await this.requestWrite(
+      M70_COMMAND.READ_ALL_ATTENDANCE_LOGS,
+      1,
+      count,
+      startIndex,
+    );
+    if (result.value !== count || result.word === 0) {
+      throw new TimeClockProtocolError(
+        `M70 general attendance transfer count mismatch: requested ${count}, received ${result.value}`,
+        M70_COMMAND.READ_ALL_ATTENDANCE_LOGS,
+      );
+    }
+
+    const header = parseDataFrame(
+      await this.readExact(14),
+      this.options.dn,
+      8,
+      M70_COMMAND.READ_ALL_ATTENDANCE_LOGS,
+    );
+    if (header.readUInt32LE(0) !== count || header.readUInt32LE(4) !== 0) {
+      throw new TimeClockProtocolError(
+        `M70 general attendance data header count mismatch: requested ${count}, received ${header.readUInt32LE(0)}`,
+        M70_COMMAND.READ_ALL_ATTENDANCE_LOGS,
+      );
+    }
+
+    const chunks: Buffer[] = [];
+    let remaining = count * 12;
+    while (remaining > 0) {
+      const size = Math.min(M70_MAX_DATA_PAYLOAD, remaining);
+      chunks.push(
+        parseDataFrame(
+          await this.readExact(size + 6),
+          this.options.dn,
+          size,
+          M70_COMMAND.READ_ALL_ATTENDANCE_LOGS,
+        ),
+      );
+      remaining -= size;
+    }
+
+    this.pendingGeneralRead = { count, throughIndex: cursor.totalLogs };
+    return Buffer.concat(chunks);
+  }
+
+  /** The consumer must durably save the entire batch before this SDK completion frame. */
+  async consumeGeneralAttendanceLogs<T>(persist: (payload: Buffer) => Promise<T>): Promise<T> {
+    const payload = await this.readGeneralAttendanceLogs();
+    this.socket?.setTimeout(Math.max(30000, this.options.timeoutMs));
+    const saved = await persist(payload);
+    this.socket?.setTimeout(this.options.timeoutMs);
+    if (!this.pendingGeneralRead) return saved;
+
+    const { count, throughIndex } = this.pendingGeneralRead;
+    const completed = Buffer.alloc(4);
+    completed.writeUInt32LE(count);
+    // SBXPC sends a second data frame after the log stream. M70 v3.6.8
+    // requires SendBigDataX (5AA5) for both data frames, including completion.
+    await this.send(buildBigDataFrame(this.options.dn, completed));
+    const result = parseResultFrame(await this.readExact(14), this.options.dn, M70_COMMAND.READ_ALL_ATTENDANCE_LOGS);
+    if (result.word === 0 || result.value !== 0)
+      throw new TimeClockProtocolError('M70 did not accept attendance completion', M70_COMMAND.READ_ALL_ATTENDANCE_LOGS);
+
+    const response = await this.requestData(M70_COMMAND.READ_GENERAL_ATTENDANCE_LOGS, 4);
+    const cursor = parseM70GeneralLogCursor(response.payload, response.result.value);
+    if (cursor.firstUnreadIndex !== throughIndex)
+      throw new TimeClockProtocolError(
+        `M70 read cursor did not reach committed batch: expected ${throughIndex}, received ${cursor.firstUnreadIndex}`,
+        M70_COMMAND.READ_GENERAL_ATTENDANCE_LOGS,
+      );
+    this.pendingGeneralRead = undefined;
+    return saved;
   }
 
   private async send(frame: Buffer): Promise<void> {
@@ -733,16 +828,24 @@ export class RealandM70Client {
   async getAttendanceLogs(
     query: TimeClockAttendanceLogQuery = {},
   ): Promise<TimeClockAttendanceLog[]> {
-    if (query.markAsRead) {
-      throw new TimeClockUnsupportedError(
-        'M70 attendance log read-mark mode is disabled',
+    if (query.includeAll && (query.readNewOnly || query.markAsRead)) {
+      throw new TimeClockProtocolError(
+        'M70 includeAll and readNewOnly are mutually exclusive',
       );
     }
+    if ((query.readNewOnly || query.markAsRead) && (query.startDate || query.endDate)) {
+      throw new TimeClockProtocolError(
+        'M70 readNewOnly cannot be combined with date filters because ReadGeneralLogData handles the complete batch before filtering',
+      );
+    }
+    if (query.markAsRead) return this.consumeUnreadAttendanceLogs(async (logs) => logs);
     return this.enqueue(() =>
       this.withSession(async (session) => {
-        const payload = await session.readAllAttendanceLogs();
+        const payload = query.readNewOnly
+          ? await session.readGeneralAttendanceLogs()
+          : await session.readAllAttendanceLogs();
         return decodeM70AttendanceLogs(payload)
-          .map((row, index) => ({ ...row, index }))
+          .map((row, index) => ({ ...row, index, deviceNumber: this.options.dn }))
           .filter(
             (row) =>
               (!query.startDate || row.clock >= query.startDate) &&
@@ -750,6 +853,15 @@ export class RealandM70Client {
           );
       }),
     );
+  }
+
+  /** Persist first, then mark exactly that unread batch. Failure leaves it retryable. */
+  async consumeUnreadAttendanceLogs<T>(persist: (logs: TimeClockAttendanceLog[]) => Promise<T>): Promise<T> {
+    return this.enqueue(() => this.withSession((session) =>
+      session.consumeGeneralAttendanceLogs((payload) => persist(
+        decodeM70AttendanceLogs(payload).map((row, index) => ({ ...row, index, deviceNumber: this.options.dn })),
+      )),
+    ));
   }
 
   private async withSession<T>(

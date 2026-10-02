@@ -2,8 +2,9 @@ import {
   ConflictException,
   Injectable,
   Logger,
-  ServiceUnavailableException,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { TimeClockAttendanceLog } from '../time-clock/time-clock.types';
 import { TimeClockService } from '../time-clock/time-clock.service';
 import {
   LegacyConnection,
@@ -91,70 +92,78 @@ export class LegacyStaffService {
     await this.exclusive(() => this.importLogs());
   }
 
+  /** One-time bootstrap/recovery; normal API and scheduled imports only read unread logs. */
+  async backfillHistory(): Promise<LegacyStaffImportSummary> {
+    return this.exclusive(async () => this.persistLogs(
+      await this.clock.getAttendanceLogs({ includeAll: true, markAsRead: false }),
+    ));
+  }
+
   private async importLogs(): Promise<LegacyStaffImportSummary> {
-    const mappings = await this.db.query(`SELECT m.machine_id, m.staff_id, m.record_name,
-      DATE_FORMAT(s.stop_work, '%Y-%m-%d') AS stop_work
-      FROM staff_m70_user m INNER JOIN staff s ON s.id = m.staff_id
-      WHERE m.record_name IS NOT NULL AND m.present_on_device = 1`);
-    // Reading every record keeps retries safe even when a previous database write failed.
-    // The device's unread marker must never be changed by this path.
-    const logs = await this.clock.getAttendanceLogs({
-      includeAll: true,
-      markAsRead: false,
-    });
-    const staffByDeviceId = new Map<string, { id: string; name: string; stopWork: string | null }>();
-    for (const row of mappings)
-      staffByDeviceId.set(String(row.machine_id), {
-        id: String(row.staff_id), name: String(row.record_name),
-        stopWork: row.stop_work ? String(row.stop_work) : null,
-      });
-    if (
-      logs.length &&
-      !logs.some((log) => log.userId && staffByDeviceId.has(log.userId.trim()))
-    ) {
-      throw new ServiceUnavailableException(
-        'No M70 logs have a linked MariaDB machine ID',
-      );
-    }
-    let inserted = 0;
-    let duplicate = 0;
-    let unknown = 0;
-    let departed = 0;
-    await this.db.transaction(async (connection) => {
+    return this.clock.consumeUnreadAttendanceLogs((logs) => this.persistLogs(logs));
+  }
+
+  private logId(log: TimeClockAttendanceLog): string {
+    return createHash('sha256').update(String(log.deviceNumber ?? 3)).update(log.raw).digest('hex');
+  }
+
+  private async persistLogs(logs: TimeClockAttendanceLog[]): Promise<LegacyStaffImportSummary> {
+    const summary = await this.db.transaction(async (connection) => {
+      // This transaction commits the complete raw batch and its mapped punches
+      // before the client sends M70's completion frame. Unmapped rows stay pending.
       for (const log of logs) {
-        const person = log.userId && staffByDeviceId.get(log.userId.trim());
-        if (!person || !log.clock) {
-          unknown++;
-          continue;
-        }
-        const timestamp = legacyDate(log.clock);
-        // stop_work is the final employed calendar day, inclusive. Historical
-        // punches on or before that date may still be imported on a retry.
+        if (!log.raw || log.raw.length !== 12 || !log.clock || !log.userId)
+          throw new Error('M70 punch must contain a valid 12-byte raw record, time and user ID');
+        await connection.query(
+          'INSERT IGNORE INTO staff_m70_log (id, device_number, machine_id, create_time, verify_mode, raw) VALUES (?, ?, ?, ?, ?, ?)',
+          [this.logId(log), log.deviceNumber ?? 3, log.userId, legacyDate(log.clock), log.verifyMode ?? null, log.raw],
+        );
+      }
+      const mappings = await connection.query(`SELECT m.machine_id, m.staff_id, m.record_name,
+        DATE_FORMAT(s.stop_work, '%Y-%m-%d') AS stop_work
+        FROM staff_m70_user m INNER JOIN staff s ON s.id = m.staff_id
+        WHERE m.record_name IS NOT NULL AND m.present_on_device = 1`);
+      const people = new Map<string, { id: string; name: string; stopWork: string | null }>();
+      for (const row of mappings)
+        people.set(String(row.machine_id), {
+          id: String(row.staff_id), name: String(row.record_name),
+          stopWork: row.stop_work ? String(row.stop_work) : null,
+        });
+      const pending = await connection.query(
+        "SELECT id, machine_id, create_time, verify_mode FROM staff_m70_log WHERE state = 'pending' ORDER BY create_time, id FOR UPDATE",
+      );
+      const pendingIds = new Set(pending.map((row) => row.id));
+      const incomingPendingIds = new Set(logs.map((log) => this.logId(log)).filter((id) => pendingIds.has(id)));
+      let duplicate = logs.length - incomingPendingIds.size;
+      let inserted = 0;
+      let skipped = 0;
+      let departed = 0;
+      for (const row of pending) {
+        const person = people.get(String(row.machine_id));
+        if (!person) { skipped++; continue; }
+        const timestamp = String(row.create_time);
+        // The final employed calendar day remains eligible, including on retries.
         if (person.stopWork && timestamp.slice(0, 10) > person.stopWork) {
+          await connection.query("UPDATE staff_m70_log SET state = 'departed', processed_at = NOW() WHERE id = ?", [row.id]);
           departed++;
           continue;
         }
-        const epochSeconds = Math.floor(log.clock.getTime() / 1000);
-        const id = `${epochSeconds}.0${person.name}`;
+        const epochSeconds = Math.floor(new Date(timestamp.replace(' ', 'T') + 'Z').getTime() / 1000);
+        const recordId = `${epochSeconds}.0${person.name}`;
         const result = await connection.query(
           'INSERT INTO attend_record (id, staff_id, staff_name, create_time, input_type, attend_type) VALUES (?, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE id = id',
-          [
-            id,
-            person.id,
-            person.name,
-            timestamp,
-            legacyInputType(log.verifyMode),
-            0,
-          ],
+          [recordId, person.id, person.name, timestamp, legacyInputType(row.verify_mode), 0],
         );
         if (result.affectedRows === 1) inserted++;
         else duplicate++;
+        await connection.query("UPDATE staff_m70_log SET state = 'imported', record_id = ?, processed_at = NOW() WHERE id = ?", [recordId, row.id]);
       }
+      return { read: logs.length, inserted, duplicate, skipped, departed };
     });
     this.logger.log(
-      `M70 import: read=${logs.length}, inserted=${inserted}, duplicate=${duplicate}, skipped=${unknown}, departed=${departed}`,
+      `M70 import: read=${summary.read}, inserted=${summary.inserted}, duplicate=${summary.duplicate}, skipped=${summary.skipped}, departed=${summary.departed}`,
     );
-    return { read: logs.length, inserted, duplicate, skipped: unknown, departed };
+    return summary;
   }
 
   async appoint(): Promise<void> {

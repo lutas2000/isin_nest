@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { encodeM70DeviceTime } from '../time-clock/realand-m70.protocol';
 import { INestApplication, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -23,10 +26,18 @@ const enabled =
   () => {
     let app: INestApplication;
     let db: LegacyStaffDbService;
+    const punch = (userId: string, time: string, verifyMode = 1) => {
+      const clock = new Date(time);
+      const raw = Buffer.alloc(12);
+      encodeM70DeviceTime(clock).copy(raw);
+      raw.writeUInt32LE(Number(userId), 4);
+      raw[8] = verifyMode;
+      return { index: 0, deviceNumber: 3, userId, clock, verifyMode, raw };
+    };
     const logs = [
-      { userId: '1', clock: new Date('2026-09-23T16:00:00Z'), verifyMode: 1 },
-      { userId: '1', clock: new Date('2026-09-23T16:01:00Z'), verifyMode: 1 },
-      { userId: '1', clock: new Date('2026-09-24T01:30:00Z'), verifyMode: 1 },
+      punch('1', '2026-09-23T16:00:00Z'),
+      punch('1', '2026-09-23T16:01:00Z'),
+      punch('1', '2026-09-24T01:30:00Z'),
     ];
 
     beforeAll(async () => {
@@ -44,6 +55,7 @@ const enabled =
         listUsers: jest.fn().mockResolvedValue([{ userId: 1, name: '甲' }]),
         getDeviceIdentity: jest.fn().mockResolvedValue({ serialNumber: 'TEST-M70' }),
         getAttendanceLogs: jest.fn().mockResolvedValue(logs),
+        consumeUnreadAttendanceLogs: jest.fn(async persist => persist(logs)),
       };
       const module = await Test.createTestingModule({
         controllers: [LegacyStaffController, LegacyStaffM70Controller],
@@ -63,6 +75,7 @@ const enabled =
       app = module.createNestApplication();
       db = module.get(LegacyStaffDbService);
       await app.init();
+      await db.query('DROP TABLE IF EXISTS staff_m70_log');
       await db.query('DROP TABLE IF EXISTS staff_manhour');
       await db.query('DROP TABLE IF EXISTS attend_record');
       await db.query('DROP TABLE IF EXISTS staff_m70_user');
@@ -82,6 +95,7 @@ const enabled =
         updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT fk_staff_m70_user_staff FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE SET NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+      await db.query(readFileSync(join(__dirname, 'staff-m70-log.sql'), 'utf8'));
       await db.query(
         "INSERT INTO staff (id, name, need_check, begain_work) VALUES ('E001', '甲', 1, '2020-01-01')",
       );
@@ -174,14 +188,46 @@ const enabled =
       await request(server).delete('/staff/m70-users/99').expect(404);
     });
 
+
+    it('preserves unmapped raw punches and retries them with an empty M70 batch after linking', async () => {
+      const clock = app.get(TimeClockService);
+      jest.spyOn(clock, 'consumeUnreadAttendanceLogs').mockImplementationOnce(async persist => persist([
+        punch('77', '2026-09-24T09:00:00Z'),
+      ]));
+      await request(app.getHttpServer()).post('/staff/import').expect(200, 'succeed');
+      const pending = await db.query("SELECT machine_id, HEX(raw) AS raw_hex, state FROM staff_m70_log WHERE machine_id=77");
+      expect(pending[0]).toMatchObject({ machine_id: 77, state: 'pending' });
+      expect(pending[0].raw_hex).toHaveLength(24);
+      await db.query("INSERT INTO staff_m70_user (machine_id, staff_id, record_name) VALUES (77, 'E001', '甲')");
+      jest.spyOn(clock, 'consumeUnreadAttendanceLogs').mockImplementationOnce(async persist => persist([]));
+      await request(app.getHttpServer()).post('/staff/import').expect(200, 'succeed');
+      expect((await db.query("SELECT state FROM staff_m70_log WHERE machine_id=77"))[0].state).toBe('imported');
+      expect(await db.query("SELECT create_time FROM attend_record WHERE create_time='2026-09-24 09:00:00'")).toHaveLength(1);
+    });
+
+    it('rolls back the raw inbox and mapped insert together when import fails, then retries', async () => {
+      const clock = app.get(TimeClockService);
+      const next = [punch('1', '2026-09-24T10:00:00Z')];
+      await db.query(`CREATE TRIGGER reject_staff_punch BEFORE INSERT ON attend_record
+        FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'forced punch failure'`);
+      jest.spyOn(clock, 'consumeUnreadAttendanceLogs').mockImplementationOnce(async persist => persist(next));
+      const errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      await request(app.getHttpServer()).post('/staff/import').expect(500);
+      errorLog.mockRestore();
+      expect(await db.query("SELECT id FROM staff_m70_log WHERE create_time='2026-09-24 10:00:00'")).toHaveLength(0);
+      await db.query('DROP TRIGGER reject_staff_punch');
+      jest.spyOn(clock, 'consumeUnreadAttendanceLogs').mockImplementationOnce(async persist => persist(next));
+      await request(app.getHttpServer()).post('/staff/import').expect(200);
+      expect(await db.query("SELECT id FROM attend_record WHERE create_time='2026-09-24 10:00:00'")).toHaveLength(1);
+    });
+
     it('imports historical punches through the final workday but rejects later punches', async () => {
       await db.query("INSERT INTO staff (id, name, need_check, begain_work, stop_work) VALUES ('E002', '乙', 1, '2020-01-01', '2026-08-31')");
       await db.query("INSERT INTO staff_m70_user (machine_id, device_name, staff_id, record_name) VALUES (2, '乙', 'E002', '乙')");
       const clock = app.get(TimeClockService);
-      jest.spyOn(clock, 'getAttendanceLogs').mockResolvedValueOnce([
-        { userId: '2', clock: new Date('2026-08-31T23:59:59Z') },
-        { userId: '2', clock: new Date('2026-09-01T00:00:00Z') },
-      ] as never);
+      jest.spyOn(clock, 'consumeUnreadAttendanceLogs').mockImplementationOnce(async persist => persist([
+        punch('2', '2026-08-31T23:59:59Z'), punch('2', '2026-09-01T00:00:00Z'),
+      ]));
       await request(app.getHttpServer()).post('/staff/import').expect(200, 'succeed');
       const rows = await db.query("SELECT create_time FROM attend_record WHERE staff_id = 'E002'");
       expect(rows).toEqual([{ create_time: '2026-08-31 23:59:59' }]);

@@ -4,7 +4,7 @@
 
 ## 設定
 
-使用 `SOURCE_DB_HOST`、`SOURCE_DB_PORT`、`SOURCE_DB_USER`、`SOURCE_DB_PASS`、`SOURCE_DB_NAME` 連舊 MariaDB。這些設定與既有 PostgreSQL 的 `DB_*` 分開。M70 使用 `TIME_CLOCK_*` 設定。MariaDB 連線只在呼叫相容流程時建立；未設定時 API 回 503。模組不執行 schema sync。首次部署需對 `SOURCE_DB_*` 指向的資料庫執行 [staff-m70-user.sql](./staff-m70-user.sql)。
+使用 `SOURCE_DB_HOST`、`SOURCE_DB_PORT`、`SOURCE_DB_USER`、`SOURCE_DB_PASS`、`SOURCE_DB_NAME` 連舊 MariaDB。這些設定與既有 PostgreSQL 的 `DB_*` 分開。M70 使用 `TIME_CLOCK_*` 設定。MariaDB 連線只在呼叫相容流程時建立；未設定時 API 回 503。模組不執行 schema sync。首次部署需對 `SOURCE_DB_*` 指向的資料庫執行 [staff-m70-user.sql](./staff-m70-user.sql) 與 [staff-m70-log.sql](./staff-m70-log.sql)。後者保存 12-byte 原始打卡紀錄及處理狀態，供已讀標記失敗重試與尚未連結員工補匯使用。
 
 `LEGACY_STAFF_CRON_ENABLED` 預設為 `false`。驗證完成、Django jobs 停止後，設定為 `true` 並重啟後端，才會每 30 分鐘執行新流程。同時設定 `HR_ATTENDANCE_CRON_ENABLED=false`，停用原先寫 PostgreSQL 的 Nest HR 排程。回復時先將新排程設回 `false`，再依需要恢復舊排程。
 
@@ -19,7 +19,11 @@
 - `/staff/work_hour/:start_time`：從 YYYY-MM-DD 重算至台北今日。
 - `/staff/work_hour/today`：匯入、分類、重算昨日與今日。
 
-M70 v3.6.8 出勤讀取已用實機驗證：559 筆，讀取前後未讀數同為 19。封包是一個 8-byte 計數框，後接每筆 12 bytes 的分段資料。M70 數字 ID 與 `staff.id` 不能直接對應；匯入使用已儲存的數字 machine ID 對照，不再以設備姓名猜測。紀錄主鍵使用對照表保存的 `record_name`，設備改名也不會改寫舊紀錄。匯入日誌分列讀取、實際新增、既有重複與跳過筆數。
+M70 v3.6.8 的增量讀取和已讀標記已通過實機驗證：`0x0106` 取得總數與 0-based 未讀游標，`0x0107` 以 5AA5 frame 傳入 1-based 起始位置。收到紀錄後，必須再以 5AA5 frame 傳入本批筆數並等待最後結果；2026-10-02 實測 129 筆，游標從 576 前進到 705、未讀數降為 0，總紀錄仍是 705。先前未前進是缺少此完成框；A55A 完成框在此韌體會逾時。
+
+`/staff/import` 和排程共用 `consumeUnreadAttendanceLogs`：只抓設備未讀批次，先在同一 MariaDB 交易中保存整批 `staff_m70_log` 及可對照的 `attend_record`，提交成功後才送完成框，並重讀游標確認。交易失敗不標記；完成框逾時或游標驗證失敗時保留已提交資料，下次依 raw hash 與舊紀錄 ID 去重。讀取中新增的打卡留給下一輪。沒有新資料時不傳紀錄區、不送完成框，但仍會重試原始表內的 `pending` 紀錄。未對照員工留在 `pending`，新增對照後可補匯；離職後紀錄保留原始資料並記為 `departed`，不寫入舊打卡表。因此 `skipped` 是目前保存表內尚未對照的待處理數，可能包含先前批次。
+
+切換前以 `backfillHistory()` 做一次全量保存，讓已讀的歷史紀錄與未對照紀錄也進入原始表。此方法供初始切換或設備紀錄重置後的人工復原；正常 API 與排程只讀未讀資料。M70 數字 ID 與 `staff.id` 不能直接對應；匯入使用已儲存的 machine ID 對照，紀錄主鍵使用對照表保存的 `record_name`，設備改名也不會改寫舊紀錄。
 
 匯入會讀取連結員工的 `stop_work`：離職當日的歷史打卡仍可補入，次日起的打卡跳過並記錄 `departed` 數量。`input_type` 依實際舊庫比對轉換：M70 80 為「人臉」、16/17/120 為「指紋」、81 為空字串；未核實的其他代碼保留數字字串。
 
@@ -33,6 +37,6 @@ M70 v3.6.8 出勤讀取已用實機驗證：559 筆，讀取前後未讀數同�
 
 已用 `SOURCE_DB_*` 連上 MariaDB，表結構與日期欄位已確認。M70 的 22 個數字 ID 中，只有 3 個直接等於 `staff.id`，且其中 2 個姓名不一致。新對照表以 machine ID 作為唯一來源；ID 56 已明確連到 A82，ID 46 保持未連結。559 筆設備紀錄的時間與舊庫抽樣無 8 小時位移。
 
-2026-09-28 在只綁定本機的臨時 MariaDB，執行 `legacy-staff.integration.spec.ts` 的 HTTP 到資料庫驗證：重複匯入去重、跨午夜奇數筆分類、工時配對、強制寫入失敗後回滾及重跑、對照 CRUD 與同步保留人工連結均通過。先前以姓名對照的全量匯入數字不適用於新的 machine ID 對照，正式庫打卡與工時尚未寫入。
+2026-09-28 在只綁定本機的臨時 MariaDB，執行 `legacy-staff.integration.spec.ts` 的 HTTP 到資料庫驗證：重複匯入去重、跨午夜奇數筆分類、工時配對、強制寫入失敗後回滾及重跑、對照 CRUD 與同步保留人工連結均通過。先前以姓名對照的全量匯入數字不適用於新的 machine ID 對照，正式流程之後已依使用者指示執行並部署。
 
-以舊庫 2026-09-14 至 2026-09-24 的 11 個工作日唯讀比對，共推算 166 筆工時；其中 8 日的既存 `staff_manhour` 與目前 `attend_record` 時間不一致，例如施億和 2026-09-23 打卡 07:29:10，而既存工時開始 07:52:10。需確認這是人工修正還是舊 jobs 的生成規則，再決定是否能接受重算覆寫；驗收完成前保持 `LEGACY_STAFF_CRON_ENABLED=false`。
+以舊庫 2026-09-14 至 2026-09-24 的 11 個工作日唯讀比對，共推算 166 筆工時；其中 8 日的既存 `staff_manhour` 與目前 `attend_record` 時間不一致，例如施億和 2026-09-23 打卡 07:29:10，而既存工時開始 07:52:10。此處保留歷史差異；正常排程依尚未分類打卡的最早工作日起重算。

@@ -1,4 +1,5 @@
 import {
+  buildDataFrame,
   buildBigDataFrame,
   buildCommandFrame,
   checksum16,
@@ -9,6 +10,7 @@ import {
   encodeM70Text,
   parseAckFrame,
   parseDataFrame,
+  parseM70GeneralLogCursor,
   parseResultFrame,
 } from './realand-m70.protocol';
 
@@ -72,6 +74,31 @@ describe('Realand M70 protocol helpers', () => {
     expect(frame.subarray(0, 4).toString('hex')).toBe('5aa50300');
     expect(frame.subarray(4, 7)).toEqual(Buffer.from([1, 2, 3]));
     expect(frame.readUInt16LE(7)).toBe(checksum16(frame.subarray(0, 7)));
+  });
+
+  it('builds the normal data frame used for the 0106 cursor response', () => {
+    const cursor = Buffer.alloc(4);
+    cursor.writeUInt32LE(540);
+    const frame = buildDataFrame(3, cursor);
+    expect(frame.subarray(0, 4).toString('hex')).toBe('a55a0300');
+    expect(parseDataFrame(frame, 3, 4)).toEqual(cursor);
+  });
+
+  it('derives the unread batch from the captured M70 general-log cursor', () => {
+    const cursorPayload = parseDataFrame(
+      Buffer.from('a55a03001c0200002001', 'hex'),
+      3,
+      4,
+      0x0106,
+    );
+    expect(parseM70GeneralLogCursor(cursorPayload, 559)).toEqual({
+      totalLogs: 559,
+      firstUnreadIndex: 540,
+      unreadCount: 19,
+    });
+    expect(() => parseM70GeneralLogCursor(cursorPayload, 539)).toThrow(
+      'exceeds total log count',
+    );
   });
 
   it('decodes device seconds from the 2000 epoch', () => {

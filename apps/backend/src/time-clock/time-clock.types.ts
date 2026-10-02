@@ -115,7 +115,11 @@ export interface ListUsersOptions {
 export interface TimeClockAttendanceLogQuery {
   startDate?: Date;
   endDate?: Date;
+  /** Read the unread batch and mark it immediately. Persistence callers must use consumeUnreadAttendanceLogs instead. */
   markAsRead?: boolean;
+  /** Read the batch exposed by ReadGeneralLogData without claiming it was marked read. */
+  readNewOnly?: boolean;
+  /** Read the entire on-device history, ignoring the unread cursor. */
   includeAll?: boolean;
 }
 

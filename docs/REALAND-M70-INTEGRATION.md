@@ -231,6 +231,32 @@ payload   = 48 bytes UTF-16LE，尾端以 NUL 補齊
 
 已成功讀取全部 22 個姓名；本文件不保存實際姓名，以免把個人資料寫入串接規格。沒有讀取任何指紋或人臉模板。
 
+### 4.5 增量出勤紀錄（ReadGeneralLogData）
+
+SBXPC SDK 將 `ReadGeneralLogData` 定義為讀取新出勤紀錄，並指出 `ReadMark=TRUE` 時，已取得的紀錄會標為已讀；`ReadAllGLogData` 則讀取全部紀錄且忽略 read mark。M70 v3.6.8 的後續封包序列依本機 SDK DLL 反組譯實作；第一階段游標回應另以實機唯讀確認：
+
+~~~text
+1. command 0x0106, arg2=0, arg3=0
+   -> ACK + result.value=總筆數 + A55A data frame，4-byte uint32 是 0-based 第一筆未讀 index
+2. unreadCount = result.value - firstUnreadIndex
+   -> 若為 0，結束
+3. command 0x0107, arg2=1, arg3=unreadCount
+   -> ACK
+4. 5AA5 big-data frame，payload 是 uint32_le(firstUnreadIndex + 1)，即 1-based 起始位置
+5. result.value=unreadCount + 8-byte 計數 data frame + unreadCount * 12-byte 記錄資料
+6. MariaDB 交易提交成功後，送 5AA5 big-data frame，payload = uint32_le(unreadCount)
+   -> 最後 result.word=1、result.value=0
+7. 重讀 0x0106，確認第一筆未讀 index 已達本批起始時的總筆數；新打卡留給下一輪
+~~~
+
+第一次實測總數 559、未讀 index 540，取回 19 筆／228 bytes；當時缺少步驟 6，重複讀取仍為同一批。完整 SDK DLL 的 12-byte log 路徑（`0x10016140` 至 `0x10016340`）在資料後還會發送最後收到的 transfer result.value（本批筆數），並等待最後結果。DLL 使用 A55A `SendDataX`，但 M70 v3.6.8 的起始位置與完成確認兩個資料框都需要 5AA5 `SendBigDataX`。
+
+2026-10-02 實機確認：總數 705、未讀 index 576、未讀 129；這 129 筆均已存在 MariaDB。A55A 完成框逾時且游標未變，改用 5AA5、payload=129 後收到 `AA55` 最後結果（word=1、value=0），再查游標為 705、未讀為 0，總數仍為 705，未清除任何紀錄。
+
+程式透過 `consumeUnreadAttendanceLogs(persist)` 在同一設備 session 中先讀取、等待持久化 callback 成功，再送完成框並驗證游標。callback 失敗直接關閉 session，不標記。`getAttendanceLogs({ markAsRead: true })` 會立即標記，僅供明確需要此行為的呼叫者；Staff 使用持久化 callback，將未對照紀錄一併保存後才標記。`readNewOnly` 不送完成框，供唯讀探測；`includeAll` 供歷史保存與人工復原，兩者不可混用。
+
+SDK 參考：[SBXPC OCX Reference Manual v3.02](https://www.scribd.com/document/267628003/SBXPC-OCX-Reference-Manual-v3-02-Draft)（ReadMark、ReadGeneralLogData、ReadAllGLogData）。
+
 ## 5. Python 唯讀測試骨架
 
 以下只示範協定結構、初始化和 status；未包含任何寫入/清除/開門功能。
@@ -465,7 +491,7 @@ _ReadAllGLogData / ReadAllGLogData
 _GetAllGLogData / GetAllGLogData
 ~~~
 
-ReadGeneralLogData 的參數中有 ReadMark 概念；依 SDK 文件，某些模式可能會把記錄標成已讀。若只想同步而不改變設備的未讀計數，先確認 ReadMark 行為。
+SDK 文件說明 ReadGeneralLogData 會依 ReadMark 設定標記已讀紀錄；M70 v3.6.8 需在資料流後送出 5AA5 完成框，游標才會前進。全量 ReadAllGLogData 忽略該游標。
 
 #### 設備資訊、狀態、時間、電源
 
@@ -850,7 +876,7 @@ GetBellTime
 GetDeviceLongInfo
 ~~~
 
-讀取 log 時，需另外確認 ReadMark 是否會改變未讀狀態。
+ReadGeneralLogData 增量封包、持久化後完成確認與全量讀取已分開實作；實機確認完成框能推進已讀游標，未完成的唯讀探測可重複取得同一批。
 
 ### 必須人工確認後才能使用
 
@@ -900,7 +926,7 @@ RealandM70Client
 3. 每個 frame 驗證 magic、DN、長度和 checksum。
 4. 連線 timeout 建議 5 秒；讀取 big-data 要另外設定總量上限。
 5. 對外 API 預設只開放 GET/同步；寫入 API 需另外的權限、audit log 和人工確認。
-6. log 同步採 cursor/時間範圍時，先確認設備端的 ReadMark 行為。
+6. M70 v3.6.8 的增量同步必須先持久化整批原始紀錄，再送完成框並驗證游標；未對照員工也需保存，避免標記後失去補匯資料。
 7. 不要把設備的序號、人員姓名、指紋、人臉模板寫入一般 application log。
 
 ## 9. 參考資料與來源

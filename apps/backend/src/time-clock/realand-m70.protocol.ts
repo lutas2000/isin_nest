@@ -11,6 +11,7 @@ export const M70_COMMAND = {
   MODIFY_PRIVILEGE: 0x0111,
   GET_DEVICE_TIME: 0x010e,
   READ_ALL_USER_IDS: 0x0112,
+  READ_GENERAL_ATTENDANCE_LOGS: 0x0106,
   READ_ALL_ATTENDANCE_LOGS: 0x0107,
   GET_SERIAL_NUMBER: 0x0113,
   GET_BACKUP_NUMBER: 0x0115,
@@ -252,6 +253,48 @@ export function parseDataFrame(
   }
 
   return Buffer.from(frame.subarray(4, frame.length - 2));
+}
+
+export interface M70GeneralLogCursor {
+  totalLogs: number;
+  firstUnreadIndex: number;
+  unreadCount: number;
+}
+
+/**
+ * ReadGeneralLogData (0x0106) returns the number of stored logs in its result
+ * and the first unread index in a four-byte data frame.
+ */
+export function parseM70GeneralLogCursor(
+  cursorPayload: Buffer,
+  totalLogs: number,
+): M70GeneralLogCursor {
+  if (cursorPayload.length !== 4) {
+    throw new TimeClockProtocolError(
+      `M70 general-log cursor payload must be 4 bytes, received ${cursorPayload.length}`,
+      M70_COMMAND.READ_GENERAL_ATTENDANCE_LOGS,
+    );
+  }
+  if (!Number.isInteger(totalLogs) || totalLogs < 0 || totalLogs > 100000) {
+    throw new TimeClockProtocolError(
+      `M70 returned unreasonable attendance count ${totalLogs}`,
+      M70_COMMAND.READ_GENERAL_ATTENDANCE_LOGS,
+    );
+  }
+
+  const firstUnreadIndex = cursorPayload.readUInt32LE(0);
+  if (firstUnreadIndex > totalLogs) {
+    throw new TimeClockProtocolError(
+      `M70 general-log cursor ${firstUnreadIndex} exceeds total log count ${totalLogs}`,
+      M70_COMMAND.READ_GENERAL_ATTENDANCE_LOGS,
+    );
+  }
+
+  return {
+    totalLogs,
+    firstUnreadIndex,
+    unreadCount: totalLogs - firstUnreadIndex,
+  };
 }
 
 export function decodeM70DeviceTime(payload: Buffer): TimeClockDeviceTime {
