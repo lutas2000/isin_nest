@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, SchedulerRegistry } from '@nestjs/schedule';
+import { SchedulerRegistry } from '@nestjs/schedule';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { CronJob } from 'cron';
-import { HrAttendancePipelineService } from '../hr/working-hours/hr-attendance-pipeline.service';
 
 export interface ScheduledTask {
   id: string;
@@ -29,7 +28,6 @@ export class SchedulerService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly schedulerRegistry: SchedulerRegistry,
-    private readonly pipelineService: HrAttendancePipelineService,
   ) {
     this.initializeDefaultTasks();
   }
@@ -201,25 +199,5 @@ export class SchedulerService {
 
     this.logger.log(`任務已更新: ${task.name}`);
     return true;
-  }
-
-  @Cron('0 */30 * * * *', {
-    name: 'calculate-man-hour',
-    timeZone: 'Asia/Taipei',
-  })
-  async handleCalculateManHour(): Promise<void> {
-    if (this.configService.get<string>('HR_ATTENDANCE_CRON_ENABLED') === 'false') return;
-    try {
-      this.logger.log('開始執行工時計算任務...');
-      await this.pipelineService.runAttendancePipeline('cron');
-      this.logger.log('工時計算任務完成');
-    } catch (error) {
-      this.logger.error('工時計算任務執行失敗', error);
-    }
-  }
-
-  async manualCalculateManHour(): Promise<void> {
-    this.logger.log('手動觸發工時計算任務');
-    await this.handleCalculateManHour();
   }
 }

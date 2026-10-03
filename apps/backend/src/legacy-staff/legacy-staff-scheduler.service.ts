@@ -29,12 +29,6 @@ export class LegacyStaffSchedulerService {
   })
   async run(): Promise<void> {
     if (this.config.get<string>('LEGACY_STAFF_CRON_ENABLED') !== 'true') return;
-    if (this.config.get<string>('HR_ATTENDANCE_CRON_ENABLED') !== 'false') {
-      this.logger.error(
-        'Set HR_ATTENDANCE_CRON_ENABLED=false before enabling legacy staff cron',
-      );
-      return;
-    }
     const started = Date.now();
     const time = new Date(started).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
     try {

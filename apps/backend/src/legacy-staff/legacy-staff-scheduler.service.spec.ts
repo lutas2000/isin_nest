@@ -5,9 +5,7 @@ describe('Legacy Staff scheduled Slack notification', () => {
   let errorLog: jest.SpyInstance;
   beforeEach(() => { errorLog = jest.spyOn(Logger.prototype, 'error').mockImplementation(); });
   afterEach(() => errorLog.mockRestore());
-  const config = { get: (key: string) => ({
-    LEGACY_STAFF_CRON_ENABLED: 'true', HR_ATTENDANCE_CRON_ENABLED: 'false',
-  })[key] };
+  const config = { get: (key: string) => ({ LEGACY_STAFF_CRON_ENABLED: 'true' })[key] };
 
   it('sends committed import and work-hour counts after success', async () => {
     const scheduled = jest.fn().mockResolvedValue({

@@ -6,7 +6,7 @@
 
 使用 `SOURCE_DB_HOST`、`SOURCE_DB_PORT`、`SOURCE_DB_USER`、`SOURCE_DB_PASS`、`SOURCE_DB_NAME` 連舊 MariaDB。這些設定與既有 PostgreSQL 的 `DB_*` 分開。M70 使用 `TIME_CLOCK_*` 設定。MariaDB 連線只在呼叫相容流程時建立；未設定時 API 回 503。模組不執行 schema sync。首次部署需對 `SOURCE_DB_*` 指向的資料庫執行 [staff-m70-user.sql](./staff-m70-user.sql) 與 [staff-m70-log.sql](./staff-m70-log.sql)。後者保存 12-byte 原始打卡紀錄及處理狀態，供已讀標記失敗重試與尚未連結員工補匯使用。
 
-`LEGACY_STAFF_CRON_ENABLED` 預設為 `false`。驗證完成、Django jobs 停止後，設定為 `true` 並重啟後端，才會每 30 分鐘執行新流程。同時設定 `HR_ATTENDANCE_CRON_ENABLED=false`，停用原先寫 PostgreSQL 的 Nest HR 排程。回復時先將新排程設回 `false`，再依需要恢復舊排程。
+`LEGACY_STAFF_CRON_ENABLED` 預設為 `false`。驗證完成、Django jobs 停止後，設定為 `true` 並重啟後端，才會每 30 分鐘執行新流程。原先寫 PostgreSQL 的 Nest HR 出勤排程已移除，`POST /working-hours/today` 仍可手動執行 PostgreSQL 流程。
 
 設定通用的 `SLACK_WEBHOOK_URL` 可讓新排程每次實際執行後發送成功或失敗通知。成功訊息包含 M70 讀取／新增／重複／未對照／離職過濾筆數、重算日期與人日數及耗時。Slack 傳送失敗只寫入應用程式日誌，不會重跑資料庫流程；停用的排程不發送通知。網址屬於密鑰，僅放在未追蹤的 `.env` 或部署環境，勿寫進程式或日誌。
 
