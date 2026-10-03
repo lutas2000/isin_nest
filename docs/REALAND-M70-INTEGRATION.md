@@ -1,10 +1,10 @@
 # 真地（Realand）M70 v3.6.8 串接文件
 
-> 最後驗證：2026-09-10
+> 最後驗證：2026-10-04
 > 測試設備：M70 v3.6.8，IP 192.168.0.223
 > 直接連線：TCP 192.168.0.223:5005
 > 設備 Machine ID / DN：3
-> 本文件的實機測試範圍以唯讀操作為主，未讀取指紋、人臉模板，也未對設備執行清除、寫入、開門、重啟或韌體操作。後文新增的 NestJS 寫入 wrapper 是依官方程式/DLL 靜態分析實作，尚未對 M70 實機送出寫入封包。
+> 已驗證唯讀、出勤已讀標記，以及測試員工的密碼 enrollment、姓名修改與單一員工刪除。人員寫入測試結果及封包修正見第 11 節。指紋、人臉模板寫入與開門、重啟、韌體操作未驗證。
 
 ## 1. 結論摘要
 
@@ -966,7 +966,7 @@ TimeClockService.deleteUser(userId: number): Promise<void>
 | 欄位 | 說明 |
 |---|---|
 | `userId` | 必填，unsigned 32-bit 人員 ID |
-| `name` | UTF-16LE，最多 0x6c bytes |
+| `name` | 固定 48-byte UTF-16LE 欄位；超長輸入依 encoder 驗證拒絕 |
 | `password` | 十進位字串或數字，unsigned 32-bit |
 | `cardId` | 十進位字串或數字，unsigned 32-bit |
 | `fingerprints` | slot 0–9；每筆必須是 native SBXPC 0x588-byte template |
@@ -984,7 +984,7 @@ ModifyPrivilege 0x0111,              arg2=privilege, arg3=userId
 EnableUser     0x010d,               arg2=1/0,  arg3=userId
 ~~~
 
-指紋及姓名/憑證 payload 會依 `SendBigDataX` 的 0x3fc-byte 分段方式傳送。SDK 較高層的 498-byte 指紋格式不能直接當成 native 0x588-byte payload；目前也不接受 `duress` 指紋。
+指紋及姓名/憑證 payload 會依 `SendBigDataX` 的 0x3fc-byte 分段方式傳送。`SetEnrollData` 的完整流程是 command → ACK → 準備 result → big-data payload → 完成 result；兩個 result 都必須成功，才能送下一個 command。`SetUserName` 則是 command → ACK → 48-byte big-data payload → 完成 result。SDK 較高層的 498-byte 指紋格式不能直接當成 native 0x588-byte payload；目前也不接受 `duress` 指紋。
 
 `deleteUser(userId)` 對應 `DeviceProperty.Enrolls` 傳入人員 ID，使用：
 
@@ -992,4 +992,20 @@ EnableUser     0x010d,               arg2=1/0,  arg3=userId
 DeleteEnrollData 0x0103, arg2=5, arg3=userId
 ~~~
 
-這個 selector 的語意是刪除該人員的整筆 enrollment/credentials，不是只刪單一指紋 slot。上述函式具有實際副作用，呼叫前應先做權限控管、audit log、設備備份與人工確認；本次尚未對實機執行。
+這個 selector 的語意是刪除該人員的整筆 enrollment/credentials，不是只刪單一指紋 slot。
+
+### 11.1 2026-10-04 實機 CRUD 驗證
+
+使用正式 `RealandM70Client`，先讀取人員與全部打卡紀錄，確認測試 ID `9999` 不存在於人員或打卡歷史。新增一組隨機測試密碼及姓名，再以獨立連線讀回；最後只刪除該測試 ID。
+
+| 步驟 | 實機讀回結果 |
+|---|---|
+| 基準 | 22 位員工、711 筆打卡紀錄 |
+| 新增 `9999` / `M70測試員工` | 23 位員工；ID、姓名均吻合 |
+| 修改為 `M70測試修改` | 以人員列表讀回新姓名，ID 維持 `9999` |
+| 刪除 `9999` | 人員列表不再包含該 ID，恢復 22 位員工 |
+| 清理核對 | 原有員工 ID、姓名、摘要 raw bytes 全部一致；密碼、卡片、指紋、人臉及管理者數量恢復基準；原有 711 筆打卡 raw bytes 全部保留 |
+
+首次測試找到原本 wrapper 的兩個問題：`SetEnrollData` 漏讀準備 result，導致下一個指令把殘留完成 result 誤當 ACK；姓名沿用舊 DLL 的 108-byte 欄位遭 M70 拒絕。修正為完整雙 result 握手及 48-byte 姓名後，同一連線新增密碼與姓名、修改、刪除全部通過。每次失敗測試也已清除測試員工並核對既有資料。
+
+本次未驗證測試密碼在設備上的實際打卡、人臉/指紋註冊、卡片、權限或 enabled 設定，也未建立 MariaDB `staff` 或人員 mapping。

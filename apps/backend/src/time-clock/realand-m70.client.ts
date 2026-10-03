@@ -154,6 +154,16 @@ export class M70Session {
     if (ack.resultWord === 0)
       throw new TimeClockProtocolError(`M70 rejected command 0x${command.toString(16)}`, command);
 
+    // SetEnrollData sends a readiness result before accepting the payload,
+    // then a separate completion result. Consuming only the first result
+    // leaves the completion in the socket and corrupts the next command.
+    if (command === M70_COMMAND.SET_ENROLL_DATA) {
+      const ready = parseResultFrame(await this.readExact(14), this.options.dn, command);
+      if (ready.word === 0) {
+        throw new TimeClockProtocolError('M70 rejected enrollment preparation', command);
+      }
+    }
+
     for (
       let offset = 0;
       offset < payload.length;
@@ -169,7 +179,14 @@ export class M70Session {
 
     // The firmware waits for big-data payload after ACK. It sends the
     // command-result frame only after consuming that payload.
-    return parseResultFrame(await this.readExact(14), this.options.dn, command);
+    const result = parseResultFrame(await this.readExact(14), this.options.dn, command);
+    if (result.word === 0) {
+      throw new TimeClockProtocolError(
+        `M70 rejected write: status=${result.status}, value=${result.value}`,
+        command,
+      );
+    }
+    return result;
   }
 
   async requestData(
@@ -953,7 +970,8 @@ function readNumber(
   return value;
 }
 
-const M70_USER_NAME_WRITE_LENGTH = 0x6c;
+// M70 v3.6.8 accepts the same 48-byte UTF-16LE field used by GetUserName.
+const M70_USER_NAME_WRITE_LENGTH = 48;
 const M70_FINGERPRINT_TEMPLATE_LENGTH = 0x588;
 
 interface PreparedFingerprint {

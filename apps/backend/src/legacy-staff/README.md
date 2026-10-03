@@ -14,7 +14,7 @@
 
 以下路由需要管理員 JWT，成功回應為舊版純文字；會寫入資料，故全部使用 POST。
 
-- `/staff/import`：M70 全量唯讀匯入，依 `staff_m70_user.machine_id` 對應員工，以 Django 主鍵去重。未連結的 machine ID 會跳過。
+- `/staff/import`：M70 未讀批次匯入，依 `staff_m70_user.machine_id` 對應員工，以 Django 主鍵去重。未連結的 machine ID 會跳過。
 - `/staff/appoint`：分類尚未決定的打卡。
 - `/staff/work_hour/:start_time`：從 YYYY-MM-DD 重算至台北今日。
 - `/staff/work_hour/today`：匯入、分類、重算昨日與今日。
@@ -29,9 +29,42 @@ M70 v3.6.8 的增量讀取和已讀標記已通過實機驗證：`0x0106` 取得
 
 2026-09-28 使用目前對照表唯讀比對 M70 559 筆與舊庫：558 筆已連結、黃俊傑 1 筆未連結、離職日期過濾 0 筆。已連結者中 535 筆的舊版紀錄 ID、姓名、時間、`input_type` 相同；457 筆連 `staff_id` 也相同。另 78 筆只差歷史 `staff_id`：黃雅惠舊 7／現 A12（22 筆）、陳道彥舊 A58／現 A57（28 筆）、施億和舊 A99／現 A53（28 筆）。其餘 23 筆舊庫缺少（8 月 1 日 4 筆、9 月 24–25 日 19 筆）。沒有其他欄位不符。舊庫最後一筆打卡時間為 2026-09-24 12:44:34；對照與比對未寫入打卡或工時。
 
-`/staff/m70-users` 提供管理員 JSON API：GET 清單、POST 新增 MariaDB 對照、PATCH `/:machineId` 修改員工連結、DELETE `/:machineId` 刪除對照、GET `/staff-options` 查詢舊庫員工、POST `/sync` 從 M70 單向同步。同步會保留已指定的 `staff_id` 和 `record_name`；不存在於設備的列標為 `present_on_device=0`。刪除對照不刪設備使用者，下一次同步會將設備中的使用者重建。前端入口為 `/staff/m70-users`。POST `/:machineId/rename-device` 是獨立設備改名操作，會比對改名前後原始打卡與未讀數；設備若拒絕寫入會回錯誤。
+`/staff/m70-users` 提供管理員 JSON API：GET 清單、POST 新增 MariaDB 對照、PATCH `/:machineId` 修改員工連結、DELETE `/:machineId` 刪除對照、GET `/staff-options` 查詢舊庫員工、POST `/sync` 從 M70 單向同步。同步會保留已指定的 `staff_id` 和 `record_name`；不存在於設備的列標為 `present_on_device=0`。刪除對照不刪設備使用者，下一次同步會將設備中的使用者重建。前端入口為 `/staff/m70-users`。POST `/:machineId/rename-device` 是獨立設備改名操作，會讀回姓名並確認原有打卡紀錄仍保留；允許期間有新打卡或排程推進未讀游標。設備若拒絕寫入會回錯誤。
 
 2026-09-28 首次實機同步讀得 22 位：21 位連結舊庫，黃俊傑（machine ID 46）未連結。鄭得利（ID 56）依人工確認連到 `A82 鄭德利`，`record_name` 固定為「鄭德利」。M70 設備目前仍顯示「鄭得利」：實機 `SetUserName` 封包回傳 `status=0, value=0`，寫入未生效；讀回姓名未變。原始打卡 559 筆、ID 56 的 29 筆與未讀數 19 也未變。黃俊傑在設備上有 1 筆打卡，舊 `attend_record` 亦有同名歷史紀錄，故未刪除。設備改名需釐清韌體寫入格式後再驗收。
+
+## M70 設備員工 API
+
+全部需要現有 JWT 與管理員權限。設備 CRUD 使用獨立的 `/device` 路徑；成功回應為 JSON。
+
+| 方法 | 路徑 | 用途 |
+|---|---|---|
+| GET | `/staff/m70-users/device` | 直接讀取設備員工 `machine_id`、`name` |
+| POST | `/staff/m70-users/device` | 新增密碼員工、讀回姓名、建立未連結 mapping |
+| PATCH | `/staff/m70-users/device/:machineId` | 修改姓名或密碼、讀回驗證、更新 mapping 的設備姓名 |
+| DELETE | `/staff/m70-users/device/:machineId` | 刪除指定設備員工與憑證，讀回確認不存在；mapping 標為設備未見 |
+
+新增 body 範例（密碼請換成實際要設定的數值）：
+
+```json
+{ "machine_id": 9999, "name": "測試員工", "password": "654321" }
+```
+
+修改 body 範例：
+
+```json
+{ "name": "修改姓名" }
+```
+
+PATCH 至少提供 `name` 或 `password`。姓名不可空白、含 NUL，UTF-16LE 最多 48 bytes。密碼接受 JSON 整數或十進位字串，範圍 1–4294967295；不回傳或寫入日誌。姓名以設備列表讀回驗證；密碼以完整寫入完成回應確認，不執行實際打卡。不接受未驗證的指紋、人臉、卡片、權限或 enabled 欄位。
+
+新增回 201，修改回 200，內容為更新後的 `staff_m70_user` mapping；建立新員工後可使用既有 PATCH `/staff/m70-users/:machineId` 連結舊庫 `staff_id`。刪除回 200：`{ "machine_id": 9999, "deleted": true }`。設備改名與刪除保留原有 `staff_id`、`record_name`、舊庫員工與打卡資料。新增 ID 不得存在於設備、既有 mapping、保存的原始打卡或設備打卡歷史，避免將舊紀錄對到新員工。
+
+錯誤：400 輸入錯誤、401 未登入、403 非管理員、404 設備員工不存在、409 ID 衝突或本程序已有設備人員操作執行中、503 設備／資料庫／讀回驗證失敗。同步與設備 CRUD 共用本程序的執行鎖。多程序部署需額外的跨程序鎖；目前 Docker 使用單一 backend。
+
+設備寫入與 MariaDB 更新不是同一筆交易。503 可能代表設備已修改但 mapping 尚未更新；先 GET `/device` 確認設備，再 POST `/staff/m70-users/sync` 修復對照，避免直接重送寫入。API 不自動回復設備寫入。
+
+2026-10-04 已以實機 ID 9999 通過新增、改名、刪除測試，原有 22 位員工與 711 筆打卡完整保留。正式 client 修正 `SetEnrollData` 的準備及完成雙回應，以及 48-byte 姓名欄位。這次 API 的 HTTP 測試使用 mock 設備與資料庫，驗證路由、管理員權限、驗證失敗、衝突與保留歷史關聯。
 
 ## 切換驗收
 

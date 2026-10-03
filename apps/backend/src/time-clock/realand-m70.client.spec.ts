@@ -194,3 +194,101 @@ describe('RealandM70Client ReadGeneralLogData sequence', () => {
     expect(socket.commands.some((cmd) => cmd.command === 0x0107)).toBe(false);
   });
 });
+
+class UserWriteSocket extends FakeSocket {
+  readonly payloads: Buffer[] = [];
+  readyWord = 1;
+  completionWord = 1;
+  private pendingCommand: number | undefined;
+
+  override write(chunk: Buffer, callback?: (error?: Error | null) => void): boolean {
+    const ack = Buffer.from('5aa5030001000301', 'hex');
+    let response: Buffer;
+    if (this.pendingCommand !== undefined) {
+      this.payloads.push(parseDataFrame(chunk, 3, chunk.length - 6));
+      this.pendingCommand = undefined;
+      response = resultFrame(0, this.completionWord);
+    } else {
+      const command = chunk.readUInt16LE(6);
+      const arg2 = chunk.readUInt16LE(12);
+      const arg3 = chunk.readUInt32LE(8);
+      this.commands.push({ command, arg2, arg3 });
+      if (command === 0x0102 || command === 0x011b) {
+        this.pendingCommand = command;
+        response = command === 0x0102
+          ? Buffer.concat([ack, resultFrame(0, this.readyWord)])
+          : ack;
+      } else {
+        response = Buffer.concat([ack, resultFrame(0)]);
+      }
+    }
+    queueMicrotask(() => this.emit('data', response));
+    callback?.();
+    return true;
+  }
+}
+
+const writeOptions = { host: 'test', port: 5005, dn: 3, password: 0, timeoutMs: 100 };
+
+describe('M70 user writes', () => {
+  it('consumes both enrollment results before the next name command', async () => {
+    const socket = new UserWriteSocket();
+    const session = new M70Session(writeOptions, () => socket as any);
+    const credential = Buffer.from('40e20100', 'hex');
+    const name = Buffer.alloc(48);
+    name.write('M70測試員工', 'utf16le');
+    try {
+      await session.open();
+      await session.requestWrite(0x0102, 0x12, 9999, credential);
+      await session.requestWrite(0x011b, 0, 9999, name);
+      await session.requestResult(0x0103, 5, 9999);
+      expect(socket.commands.map((row) => row.command)).toEqual([0x0052, 0x0102, 0x011b, 0x0103]);
+      expect(socket.payloads).toEqual([credential, name]);
+    } finally {
+      session.close();
+    }
+  });
+
+  it('does not send credentials when enrollment preparation is rejected', async () => {
+    const socket = new UserWriteSocket();
+    socket.readyWord = 0;
+    const session = new M70Session(writeOptions, () => socket as any);
+    try {
+      await session.open();
+      await expect(session.requestWrite(0x0102, 0x12, 9999, Buffer.alloc(4))).rejects.toThrow('rejected enrollment preparation');
+      expect(socket.payloads).toHaveLength(0);
+    } finally {
+      session.close();
+    }
+  });
+
+  it('reports a rejected completion instead of accepting the readiness result', async () => {
+    const socket = new UserWriteSocket();
+    socket.completionWord = 0;
+    const session = new M70Session(writeOptions, () => socket as any);
+    try {
+      await session.open();
+      await expect(session.requestWrite(0x0102, 0x12, 9999, Buffer.alloc(4))).rejects.toThrow('rejected write');
+      expect(socket.payloads).toHaveLength(1);
+    } finally {
+      session.close();
+    }
+  });
+
+  it('encodes the actual 48-byte name field for combined enrollment and name writes', async () => {
+    const open = jest.spyOn(M70Session.prototype, 'open').mockResolvedValue();
+    const close = jest.spyOn(M70Session.prototype, 'close').mockImplementation();
+    const write = jest.spyOn(M70Session.prototype, 'requestWrite').mockResolvedValue({ dn: 3, status: 0, word: 1, value: 0, raw: resultFrame(0) });
+    try {
+      const client = new RealandM70Client({ get: () => undefined } as any, writeOptions);
+      await client.upsertUser({ userId: 9999, password: 123456, name: 'M70測試員工' });
+      expect(write.mock.calls.map((call) => call.slice(0, 3))).toEqual([[0x0102, 0x12, 9999], [0x011b, 0, 9999]]);
+      expect(write.mock.calls[1][3]?.length).toBe(48);
+      expect(write.mock.calls[1][3]?.toString('utf16le').replace(/\0+$/, '')).toBe('M70測試員工');
+    } finally {
+      open.mockRestore();
+      close.mockRestore();
+      write.mockRestore();
+    }
+  });
+});

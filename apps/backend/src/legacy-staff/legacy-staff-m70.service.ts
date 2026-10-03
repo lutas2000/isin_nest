@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  HttpException,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -29,6 +31,8 @@ function machineId(value: unknown): number {
 
 @Injectable()
 export class LegacyStaffM70Service {
+  private deviceBusy = false;
+  private readonly logger = new Logger(LegacyStaffM70Service.name);
   constructor(
     private readonly db: LegacyStaffDbService,
     private readonly clock: TimeClockService,
@@ -98,6 +102,10 @@ export class LegacyStaffM70Service {
   }
 
   async sync(): Promise<{ read: number; linked: number; unlinked: number }> {
+    return this.deviceOperation('M70 employee sync', () => this.syncDeviceSnapshot());
+  }
+
+  private async syncDeviceSnapshot(): Promise<{ read: number; linked: number; unlinked: number }> {
     // Fetch the complete device snapshot before changing the database. A failed
     // read must never mark existing users as absent.
     const [users, identity, staff] = await Promise.all([
@@ -144,25 +152,131 @@ export class LegacyStaffM70Service {
     return { read: users.length, linked, unlinked: users.length - linked };
   }
 
-  async renameDevice(idValue: string, body: { name?: unknown }): Promise<{ name: string; logsUnchanged: boolean }> {
+  private deviceName(value: unknown): string {
+    if (typeof value !== 'string' || !value.trim() || Buffer.byteLength(value.trim(), 'utf16le') > 48 || value.includes('\0'))
+      throw new BadRequestException('name must be nonempty UTF-16 text within 48 bytes and contain no NUL');
+    return value.trim();
+  }
+
+  private devicePassword(value: unknown): number {
+    if ((typeof value !== 'string' && typeof value !== 'number') ||
+      !/^[0-9]+$/.test(String(value)) || !Number.isSafeInteger(Number(value)) ||
+      Number(value) < 1 || Number(value) > 0xffffffff)
+      throw new BadRequestException('password must be a decimal integer from 1 to 4294967295');
+    return Number(value);
+  }
+
+  private deviceBody(body: unknown, allowed: string[]): Record<string, unknown> {
+    if (!body || typeof body !== 'object' || Array.isArray(body))
+      throw new BadRequestException('JSON object body is required');
+    if (Object.keys(body).some(key => !allowed.includes(key)))
+      throw new BadRequestException(`Only ${allowed.join(', ')} are supported`);
+    return body as Record<string, unknown>;
+  }
+
+  private async deviceOperation<T>(operation: string, work: () => Promise<T>): Promise<T> {
+    if (this.deviceBusy) throw new ConflictException('M70 employee operation is already running');
+    this.deviceBusy = true;
+    try {
+      const result = await work();
+      this.logger.log(`${operation} succeeded`);
+      return result;
+    } catch (error) {
+      this.logger.warn(`${operation} failed`);
+      if (error instanceof HttpException) throw error;
+      // A device write and a MariaDB update cannot form one transaction.
+      // Do not claim rollback or retry a potentially completed write.
+      throw new ServiceUnavailableException('M70 operation failed; device state may have changed. Read device users and run sync before retrying.');
+    } finally {
+      this.deviceBusy = false;
+    }
+  }
+
+  async listDeviceUsers(): Promise<{ machine_id: number; name: string | null }[]> {
+    return this.deviceOperation('M70 employee read', async () =>
+      (await this.clock.listUsers({ includeNames: true })).map(user => ({ machine_id: user.userId, name: user.name ?? null })),
+    );
+  }
+
+  private async saveDeviceSnapshot(id: number, name: string, serial: string): Promise<M70Mapping> {
+    // Preserve staff_id and record_name, including historical links for deleted users.
+    await this.db.query(`INSERT INTO staff_m70_user
+      (machine_id, device_name, device_serial, present_on_device, last_synced_at)
+      VALUES (?, ?, ?, 1, NOW()) ON DUPLICATE KEY UPDATE
+      device_name = VALUES(device_name), device_serial = VALUES(device_serial),
+      present_on_device = 1, last_synced_at = NOW()`, [id, name, serial]);
+    return this.get(id);
+  }
+
+  async createDeviceUser(input: unknown): Promise<M70Mapping> {
+    const body = this.deviceBody(input, ['machine_id', 'name', 'password']);
+    const id = machineId(body.machine_id);
+    if (id === 0) throw new BadRequestException('machine_id must be greater than zero for enrollment');
+    const name = this.deviceName(body.name);
+    const password = this.devicePassword(body.password);
+    return this.deviceOperation(`M70 employee create id=${id}`, async () => {
+      // Check the real device; the mapping may be stale or missing.
+      const users = await this.clock.listUsers({ includeNames: true });
+      if (users.some(user => user.userId === id)) throw new ConflictException(`M70 device user ${id} already exists`);
+      const identity = await this.clock.getDeviceIdentity();
+      // Ensure MariaDB is reachable before issuing device writes.
+      const mappings = await this.db.query('SELECT machine_id FROM staff_m70_user WHERE machine_id = ?', [id]);
+      if (mappings.length) throw new ConflictException(`Machine ID ${id} is already reserved in mapping; do not reuse historical IDs`);
+      const savedLogs = await this.db.query('SELECT machine_id FROM staff_m70_log WHERE machine_id = ? LIMIT 1', [id]);
+      if (savedLogs.length) throw new ConflictException(`Machine ID ${id} has saved attendance history and cannot be reused`);
+      const logs = await this.clock.getAttendanceLogs({ includeAll: true });
+      if (logs.some(log => String(log.userId) === String(id)))
+        throw new ConflictException(`Machine ID ${id} has attendance history and cannot be reused`);
+      await this.clock.upsertUser({ userId: id, name, password });
+      const created = (await this.clock.listUsers({ includeNames: true })).find(user => user.userId === id);
+      if (!created || created.name !== name) throw new ServiceUnavailableException('M70 creation readback failed; inspect device and sync');
+      return this.saveDeviceSnapshot(id, name, identity.serialNumber);
+    });
+  }
+
+  async updateDeviceUser(idValue: string, input: unknown): Promise<M70Mapping> {
     const id = machineId(idValue);
-    const name = body?.name;
-    if (typeof name !== 'string' || !name.trim() || name.length > 24)
-      throw new BadRequestException('name must be 1–24 characters');
-    await this.get(id);
-    const beforeName = await this.clock.getUserName(id);
-    const beforeStatus = await this.clock.getDeviceStatus();
-    const beforeLogs = await this.clock.getAttendanceLogs({ includeAll: true, markAsRead: false });
-    if (beforeName !== name.trim()) await this.clock.setUserName(id, name.trim());
-    const afterName = await this.clock.getUserName(id);
-    const afterStatus = await this.clock.getDeviceStatus();
-    const afterLogs = await this.clock.getAttendanceLogs({ includeAll: true, markAsRead: false });
-    const sameLogs = beforeLogs.length === afterLogs.length &&
-      beforeLogs.every((row, index) => row.raw.equals(afterLogs[index].raw));
-    if (afterName !== name.trim() || !sameLogs ||
-      beforeStatus.unreadAttendanceLogCount !== afterStatus.unreadAttendanceLogCount)
-      throw new ServiceUnavailableException('M70 rename verification failed; inspect device state');
-    await this.sync();
-    return { name: afterName, logsUnchanged: true };
+    const body = this.deviceBody(input, ['name', 'password']);
+    if (!Object.keys(body).length) throw new BadRequestException('name or password is required');
+    const name = body.name === undefined ? undefined : this.deviceName(body.name);
+    const password = body.password === undefined ? undefined : this.devicePassword(body.password);
+    if (name === undefined && password === undefined) throw new BadRequestException('name or password is required');
+    return this.deviceOperation(`M70 employee update id=${id}`, async () => {
+      const before = (await this.clock.listUsers({ includeNames: true })).find(user => user.userId === id);
+      if (!before) throw new NotFoundException(`M70 device user ${id} not found`);
+      const identity = await this.clock.getDeviceIdentity();
+      await this.db.query('SELECT machine_id FROM staff_m70_user WHERE machine_id = ?', [id]);
+      const beforeLogs = await this.clock.getAttendanceLogs({ includeAll: true });
+      await this.clock.upsertUser({ userId: id, ...(name !== undefined ? { name } : {}), ...(password !== undefined ? { password } : {}) });
+      const after = (await this.clock.listUsers({ includeNames: true })).find(user => user.userId === id);
+      if (!after || after.name !== (name ?? before.name))
+        throw new ServiceUnavailableException('M70 update readback failed; inspect device and sync');
+      const afterLogs = await this.clock.getAttendanceLogs({ includeAll: true });
+      const rawLogs = new Set(afterLogs.map(log => log.raw.toString('hex')));
+      if (!beforeLogs.every(log => rawLogs.has(log.raw.toString('hex'))))
+        throw new ServiceUnavailableException('M70 update attendance verification failed; inspect device state');
+      return this.saveDeviceSnapshot(id, after.name ?? '', identity.serialNumber);
+    });
+  }
+
+  async deleteDeviceUser(idValue: string): Promise<{ machine_id: number; deleted: true }> {
+    const id = machineId(idValue);
+    return this.deviceOperation(`M70 employee delete id=${id}`, async () => {
+      const user = (await this.clock.listUsers({ includeNames: true })).find(user => user.userId === id);
+      if (!user) throw new NotFoundException(`M70 device user ${id} not found`);
+      const identity = await this.clock.getDeviceIdentity();
+      // Store the historic mapping before deletion even if it has never been synced.
+      await this.saveDeviceSnapshot(id, user.name ?? '', identity.serialNumber);
+      await this.clock.deleteUser(id);
+      if ((await this.clock.listUsers({ includeNames: true })).some(row => row.userId === id))
+        throw new ServiceUnavailableException('M70 deletion readback failed; inspect device and sync');
+      await this.db.query('UPDATE staff_m70_user SET present_on_device = 0, last_synced_at = NOW() WHERE machine_id = ?', [id]);
+      return { machine_id: id, deleted: true };
+    });
+  }
+
+  async renameDevice(idValue: string, body: { name?: unknown }): Promise<{ name: string; logsUnchanged: boolean }> {
+    const result = await this.updateDeviceUser(idValue, { name: body?.name });
+    return { name: result.device_name!, logsUnchanged: true };
   }
 }

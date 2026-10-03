@@ -118,7 +118,7 @@ async function rename(row: Mapping) {
   if (!window.confirm(`確定將 M70 設備上的 ${row.device_name} 改為 ${name}？`)) return
   await action(async () => {
     await apiPost(`${base}/${row.machine_id}/rename-device`, { name })
-    message.value = `M70 姓名已改為 ${name}；打卡紀錄與未讀數未變。`
+    message.value = `M70 姓名已改為 ${name}；原有打卡紀錄已確認保留。`
   })
 }
 onMounted(async () => { try { await load() } finally { loading.value = false } })
