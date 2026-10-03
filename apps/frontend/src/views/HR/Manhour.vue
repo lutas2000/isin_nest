@@ -314,6 +314,9 @@
 </template>
 
 <script setup lang="ts">
+import { apiGet } from '@/services/api';
+import { getHrList } from '@/services/hr';
+import { useErrorStore } from '@/stores/error';
 import { ref, computed, onMounted } from 'vue';
 import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
 import { buildApiUrl, API_CONFIG } from '../../config/api';
@@ -374,6 +377,7 @@ const tabs = [
 
 const activeTab = ref('records');
 const loading = ref(false);
+const errorStore = useErrorStore();
 
 // 認證 store
 const authStore = useAuthStore();
@@ -429,26 +433,18 @@ const getAuthHeaders = () => {
 const loadManhourData = async () => {
   loading.value = true;
   try {
-    let url = buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR);
-    
-    // 如果有日期範圍，使用日期範圍查詢
+    let endpoint = API_CONFIG.HR.STAFF_MANHOUR;
     if (recordStartDate.value && recordEndDate.value) {
-      url = `${buildApiUrl(API_CONFIG.HR.STAFF_MANHOUR)}/date-range/search?startDate=${recordStartDate.value}&endDate=${recordEndDate.value}`;
-    }
-    
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      manhourRecords.value = data;
-      updateStats();
+      endpoint += `/date-range/search?startDate=${recordStartDate.value}&endDate=${recordEndDate.value}`;
+      manhourRecords.value = await apiGet<StaffManhour[]>(endpoint);
     } else {
-      console.error('載入工時資料失敗:', response.statusText);
+      manhourRecords.value = await getHrList<StaffManhour>(endpoint);
     }
+    updateStats();
   } catch (error) {
-    console.error('載入工時資料失敗:', error);
+    manhourRecords.value = [];
+    updateStats();
+    errorStore.showError(error instanceof Error ? error.message : '載入工時資料失敗');
   } finally {
     loading.value = false;
   }

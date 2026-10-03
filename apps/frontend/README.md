@@ -133,3 +133,12 @@ npm run type-check
 - Firefox >= 78
 - Safari >= 14
 - Edge >= 88
+
+## HR 專區
+
+- `/hr` 進入人力資源專區（預設員工管理），側邊欄僅顯示 HR／Staff 功能；透過「返回營運管理」切回 CRM／會計選單。
+- 路由集中於 `src/router/hr.ts`，子路由繼承登入要求與 `area: hr`；M70 員工對照另須管理員權限。
+- M70 新網址為 `/hr/m70-users`，舊的 `/staff/m70-users` 會重新導向。
+- 出勤頁顯示 `/attend-record` 的真實打卡記錄與分頁；未實作的請假申請、審核、政策與示範統計已移除。舊 `/hr/leave` 導向 `/hr/staff-vacation` 假期日曆，此頁管理公司假日，不代表請假審核。
+- 員工、工時、上班時段及假期列表讀取真實 API；API 失敗會顯示錯誤，不再填入示範資料。本地篩選列表透過 `services/hr.ts` 讀完後端分頁。
+- 路由與資料回歸測試：先以 `npm run dev --prefix apps/frontend -- --host 127.0.0.1 --port 4317` 啟動前端，再執行 `npx playwright test tests/hr/hr-routes.spec.ts --project=chromium`。測試攔截 API，不修改正式資料。

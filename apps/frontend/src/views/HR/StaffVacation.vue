@@ -282,6 +282,8 @@
 </template>
 
 <script setup lang="ts">
+import { apiRequest } from '@/services/api';
+import { getHrList } from '@/services/hr';
 import { ref, computed, onMounted } from 'vue';
 import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
@@ -338,41 +340,12 @@ const typeOptions = computed(() => {
 // 載入假期資料
 const loadVacationData = async () => {
   try {
-    const response = await fetch('/api/staff-vacation');
-    if (response.ok) {
-      const data = await response.json();
-      vacationList.value = data;
-    }
+    vacationList.value = await getHrList<StaffVacation>('/staff-vacation');
   } catch (error) {
-    console.error('載入假期資料失敗:', error);
-    // 使用模擬資料作為備用
-    vacationList.value = getMockVacationData();
+    vacationList.value = [];
+    errorStore.showError(error instanceof Error ? error.message : '載入資料失敗，請稍後再試');
   }
 };
-
-// 模擬假期資料（當 API 不可用時使用）
-const getMockVacationData = (): StaffVacation[] => [
-  {
-    date: '2024-01-01',
-    pay: true,
-    type: '國定假日',
-  },
-  {
-    date: '2024-02-10',
-    pay: true,
-    type: '國定假日',
-  },
-  {
-    date: '2024-04-04',
-    pay: true,
-    type: '國定假日',
-  },
-  {
-    date: '2024-12-25',
-    pay: true,
-    type: '公司假期',
-  },
-];
 
 // 篩選後的假期列表
 const filteredVacations = computed(() => {
@@ -424,7 +397,7 @@ const addVacation = async () => {
   errorStore.clearError();
 
   try {
-    const response = await fetch('/api/staff-vacation', {
+    const response = await apiRequest<StaffVacation>('/staff-vacation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -432,25 +405,20 @@ const addVacation = async () => {
       body: JSON.stringify(newVacation.value),
     });
 
-    if (response.ok) {
-      const newVacationData = await response.json();
-      vacationList.value.push(newVacationData);
+    const newVacationData = response;
+    vacationList.value.push(newVacationData);
 
-      // 重置表單
-      newVacation.value = {
-        date: new Date().toISOString().split('T')[0],
-        pay: true,
-        type: '',
-      };
+    // 重置表單
+    newVacation.value = {
+      date: new Date().toISOString().split('T')[0],
+      pay: true,
+      type: '',
+    };
 
-      showAddModal.value = false;
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      errorStore.showError(errorData.message || '新增假期失敗，請稍後再試');
-    }
+    showAddModal.value = false;
   } catch (error) {
     console.error('新增假期失敗:', error);
-    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
+    errorStore.showError(error instanceof Error ? error.message : '操作失敗，請稍後再試');
   }
 };
 
@@ -459,11 +427,11 @@ const updateVacation = async () => {
   errorStore.clearError();
 
   try {
-    const dateString = typeof editingVacation.value.date === 'string' 
-      ? editingVacation.value.date 
+    const dateString = typeof editingVacation.value.date === 'string'
+      ? editingVacation.value.date
       : editingVacation.value.date.toISOString().split('T')[0];
 
-    const response = await fetch(`/api/staff-vacation/${dateString}`, {
+    const response = await apiRequest<StaffVacation>(`/staff-vacation/${dateString}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -474,55 +442,46 @@ const updateVacation = async () => {
       }),
     });
 
-    if (response.ok) {
-      const updatedVacation = await response.json();
-      const index = vacationList.value.findIndex(
-        (vacation) => {
-          const vacationDate = typeof vacation.date === 'string' 
-            ? vacation.date 
-            : vacation.date.toISOString().split('T')[0];
-          return vacationDate === dateString;
-        }
-      );
-      if (index !== -1) {
-        vacationList.value[index] = updatedVacation;
+    const updatedVacation = response;
+    const index = vacationList.value.findIndex(
+      (vacation) => {
+        const vacationDate = typeof vacation.date === 'string'
+          ? vacation.date
+          : vacation.date.toISOString().split('T')[0];
+        return vacationDate === dateString;
       }
-      showEditModal.value = false;
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      errorStore.showError(errorData.message || '更新假期失敗，請稍後再試');
+    );
+    if (index !== -1) {
+      vacationList.value[index] = updatedVacation;
     }
+    showEditModal.value = false;
   } catch (error) {
     console.error('更新假期失敗:', error);
-    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
+    errorStore.showError(error instanceof Error ? error.message : '操作失敗，請稍後再試');
   }
 };
 
 // 刪除假期
 const deleteVacation = async (vacation: StaffVacation) => {
-  const dateString = typeof vacation.date === 'string' 
-    ? vacation.date 
+  const dateString = typeof vacation.date === 'string'
+    ? vacation.date
     : vacation.date.toISOString().split('T')[0];
-  
+
   if (!confirm(`確定要刪除 ${formatDate(vacation.date)} 的假期記錄嗎？`)) {
     return;
   }
 
   try {
-    const response = await fetch(`/api/staff-vacation/${dateString}`, {
+    await apiRequest<unknown>(`/staff-vacation/${dateString}`, {
       method: 'DELETE',
     });
 
-    if (response.ok) {
-      vacationList.value = vacationList.value.filter((v) => {
-        const vDate = typeof v.date === 'string' 
-          ? v.date 
-          : v.date.toISOString().split('T')[0];
-        return vDate !== dateString;
-      });
-    } else {
-      alert('刪除假期失敗，請稍後再試');
-    }
+    vacationList.value = vacationList.value.filter((v) => {
+      const vDate = typeof v.date === 'string'
+        ? v.date
+        : v.date.toISOString().split('T')[0];
+      return vDate !== dateString;
+    });
   } catch (error) {
     console.error('刪除假期失敗:', error);
     alert('網路連線錯誤，請檢查網路連線後再試');
@@ -537,13 +496,11 @@ const searchByDateRange = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/staff-vacation/date-range?startDate=${startDate.value}&endDate=${endDate.value}`
+    const response = await apiRequest<StaffVacation[]>(
+      `/staff-vacation/date-range?startDate=${startDate.value}&endDate=${endDate.value}`
     );
-    if (response.ok) {
-      const data = await response.json();
-      vacationList.value = data;
-    }
+    const data = response;
+    vacationList.value = data;
   } catch (error) {
     console.error('查詢失敗:', error);
     alert('查詢失敗，請稍後再試');

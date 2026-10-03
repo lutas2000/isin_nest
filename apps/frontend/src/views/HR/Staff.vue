@@ -624,6 +624,7 @@
 </template>
 
 <script setup lang="ts">
+import { getHrList } from '@/services/hr';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
   EditableDataTable,
@@ -809,126 +810,12 @@ const staffList = ref<Staff[]>([]);
 // 載入員工資料
 const loadStaffData = async () => {
   try {
-    const response = await fetch('/api/staffs');
-    if (response.ok) {
-      const data = await response.json();
-      // 確保最後一定是陣列，避免之後呼叫 push 時出現「不是函式」的錯誤
-      const list =
-        Array.isArray(data)
-          ? data
-          : Array.isArray((data as any)?.items)
-            ? (data as any).items
-            : Array.isArray((data as any)?.data)
-              ? (data as any).data
-              : [];
-
-      staffList.value = list;
-    }
+    staffList.value = await getHrList<Staff>('/staffs/all');
   } catch (error) {
-    console.error('載入員工資料失敗:', error);
-    // 使用模擬資料作為備用
-    staffList.value = getMockStaffData();
+    staffList.value = [];
+    errorStore.showError(error instanceof Error ? error.message : '載入資料失敗，請稍後再試');
   }
 };
-
-// 模擬員工資料（當 API 不可用時使用）
-const getMockStaffData = () => [
-  {
-    id: 'STAFF001',
-    name: '張小明',
-    post: 'CNC操作員',
-    work_group: 'A組',
-    department: '生產部',
-    wage: 35000,
-    allowance: 5000,
-    organizer: 0,
-    labor_insurance: 2000,
-    health_insurance: 1500,
-    pension: 3000,
-    is_foreign: false,
-    benifit: true,
-    need_check: true,
-    begain_work: '2023-01-15',
-    stop_work: null,
-    have_fake: false,
-  },
-  {
-    id: 'STAFF002',
-    name: '李小華',
-    post: '機械工程師',
-    work_group: 'B組',
-    department: '技術部',
-    wage: 45000,
-    allowance: 5000,
-    organizer: 3000,
-    labor_insurance: 2500,
-    health_insurance: 1800,
-    pension: 3500,
-    is_foreign: false,
-    benifit: true,
-    need_check: true,
-    begain_work: '2022-08-20',
-    stop_work: null,
-    have_fake: false,
-  },
-  {
-    id: 'STAFF003',
-    name: '王美玲',
-    post: '業務專員',
-    work_group: 'C組',
-    department: '業務部',
-    wage: 38000,
-    allowance: 4000,
-    organizer: 0,
-    labor_insurance: 2200,
-    health_insurance: 1600,
-    pension: 3200,
-    is_foreign: false,
-    benifit: true,
-    need_check: false,
-    begain_work: '2023-03-10',
-    stop_work: null,
-    have_fake: false,
-  },
-  {
-    id: 'STAFF004',
-    name: '陳志強',
-    post: '品質檢驗員',
-    work_group: 'A組',
-    department: '生產部',
-    wage: 32000,
-    allowance: 4000,
-    organizer: 0,
-    labor_insurance: 1800,
-    health_insurance: 1400,
-    pension: 2800,
-    is_foreign: false,
-    benifit: true,
-    need_check: true,
-    begain_work: '2022-11-05',
-    stop_work: null,
-    have_fake: false,
-  },
-  {
-    id: 'STAFF005',
-    name: '林雅婷',
-    post: '人資專員',
-    work_group: 'D組',
-    department: '人資部',
-    wage: 40000,
-    allowance: 4500,
-    organizer: 0,
-    labor_insurance: 2300,
-    health_insurance: 1700,
-    pension: 3300,
-    is_foreign: false,
-    benifit: true,
-    need_check: true,
-    begain_work: '2023-02-18',
-    stop_work: null,
-    have_fake: false,
-  },
-];
 
 // 部門選項（從目前員工資料中彙總）
 const departmentOptions = computed(() => {

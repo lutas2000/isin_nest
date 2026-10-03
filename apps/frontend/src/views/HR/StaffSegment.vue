@@ -456,6 +456,8 @@
 </template>
 
 <script setup lang="ts">
+import { apiRequest } from '@/services/api';
+import { getHrList } from '@/services/hr';
 import { ref, computed, onMounted } from 'vue';
 import { EditableDataTable, TableHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
@@ -531,32 +533,22 @@ const staffList = ref<Staff[]>([]);
 // 載入段別資料
 const loadSegmentData = async () => {
   try {
-    const response = await fetch('/api/staff-segment');
-    if (response.ok) {
-      const data = await response.json();
-      segmentList.value = data;
-      updateSegmentStats();
-    }
-  } catch (error) {
-    console.error('載入段別資料失敗:', error);
-    // 使用模擬資料作為備用
-    segmentList.value = getMockSegmentData();
+    segmentList.value = await getHrList<StaffSegment>('/staff-segment');
     updateSegmentStats();
+  } catch (error) {
+    segmentList.value = [];
+    updateSegmentStats();
+    errorStore.showError(error instanceof Error ? error.message : '載入資料失敗，請稍後再試');
   }
 };
 
 // 載入員工資料
 const loadStaffData = async () => {
   try {
-    const response = await fetch('/api/staffs');
-    if (response.ok) {
-      const data = await response.json();
-      staffList.value = data;
-    }
+    staffList.value = await getHrList<Staff>('/staffs/all');
   } catch (error) {
-    console.error('載入員工資料失敗:', error);
-    // 使用模擬資料作為備用
-    staffList.value = getMockStaffData();
+    staffList.value = [];
+    errorStore.showError(error instanceof Error ? error.message : '載入資料失敗，請稍後再試');
   }
 };
 
@@ -572,55 +564,6 @@ const updateSegmentStats = () => {
     dutyShifts: duty,
   };
 };
-
-// 模擬段別資料（當 API 不可用時使用）
-const getMockSegmentData = () => [
-  {
-    id: 1,
-    name: '張小明',
-    begain_time: '08:00:00',
-    end_time: '17:00:00',
-    cross_day: false,
-    duty: false,
-    night_work: false,
-    rest_time: 60,
-    rest_time2: 60,
-    create_date: '2024-01-01',
-  },
-  {
-    id: 2,
-    name: '李小華',
-    begain_time: '22:00:00',
-    end_time: '06:00:00',
-    cross_day: true,
-    duty: false,
-    night_work: true,
-    rest_time: 30,
-    rest_time2: 30,
-    create_date: '2024-01-01',
-  },
-  {
-    id: 3,
-    name: '王美玲',
-    begain_time: '09:00:00',
-    end_time: '18:00:00',
-    cross_day: false,
-    duty: true,
-    night_work: false,
-    rest_time: 60,
-    rest_time2: 60,
-    create_date: '2024-01-01',
-  },
-];
-
-// 模擬員工資料（當 API 不可用時使用）
-const getMockStaffData = () => [
-  { id: 'STAFF001', name: '張小明' },
-  { id: 'STAFF002', name: '李小華' },
-  { id: 'STAFF003', name: '王美玲' },
-  { id: 'STAFF004', name: '陳志強' },
-  { id: 'STAFF005', name: '林雅婷' },
-];
 
 // 篩選後的段別列表
 const filteredSegments = computed(() => {
@@ -694,7 +637,7 @@ const addSegment = async () => {
   newSegment.value.name = staff.name;
 
   try {
-    const response = await fetch('/api/staff-segment', {
+    const response = await apiRequest<StaffSegment>('/staff-segment', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -702,34 +645,29 @@ const addSegment = async () => {
       body: JSON.stringify(newSegment.value),
     });
 
-    if (response.ok) {
-      const newSegmentData = await response.json();
-      segmentList.value.push(newSegmentData);
-      updateSegmentStats();
+    const newSegmentData = response;
+    segmentList.value.push(newSegmentData);
+    updateSegmentStats();
 
-      // 重置表單
-      newSegment.value = {
-        id: 0,
-        name: '',
-        begain_time: '08:00',
-        end_time: '17:00',
-        cross_day: 0,
-        duty: 0,
-        night_work: 0,
-        rest_time: 60,
-        rest_time2: 60,
-        create_date: new Date().toISOString().split('T')[0],
-      };
-      selectedStaffId.value = '';
+    // 重置表單
+    newSegment.value = {
+      id: 0,
+      name: '',
+      begain_time: '08:00',
+      end_time: '17:00',
+      cross_day: 0,
+      duty: 0,
+      night_work: 0,
+      rest_time: 60,
+      rest_time2: 60,
+      create_date: new Date().toISOString().split('T')[0],
+    };
+    selectedStaffId.value = '';
 
-      showAddModal.value = false;
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      errorStore.showError(errorData.message || '新增段別失敗，請稍後再試');
-    }
+    showAddModal.value = false;
   } catch (error) {
     console.error('新增段別失敗:', error);
-    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
+    errorStore.showError(error instanceof Error ? error.message : '操作失敗，請稍後再試');
   }
 };
 
@@ -738,7 +676,7 @@ const updateSegment = async () => {
   errorStore.clearError();
 
   try {
-    const response = await fetch(`/api/staff-segment/${editingSegment.value.id}`, {
+    const response = await apiRequest<StaffSegment>(`/staff-segment/${editingSegment.value.id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -746,23 +684,18 @@ const updateSegment = async () => {
       body: JSON.stringify(editingSegment.value),
     });
 
-    if (response.ok) {
-      const updatedSegment = await response.json();
-      const index = segmentList.value.findIndex(
-        (segment) => segment.id === updatedSegment.id
-      );
-      if (index !== -1) {
-        segmentList.value[index] = updatedSegment;
-        updateSegmentStats();
-      }
-      showEditModal.value = false;
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      errorStore.showError(errorData.message || '更新段別失敗，請稍後再試');
+    const updatedSegment = response;
+    const index = segmentList.value.findIndex(
+      (segment) => segment.id === updatedSegment.id
+    );
+    if (index !== -1) {
+      segmentList.value[index] = updatedSegment;
+      updateSegmentStats();
     }
+    showEditModal.value = false;
   } catch (error) {
     console.error('更新段別失敗:', error);
-    errorStore.showError('網路連線錯誤，請檢查網路連線後再試');
+    errorStore.showError(error instanceof Error ? error.message : '操作失敗，請稍後再試');
   }
 };
 
@@ -773,16 +706,12 @@ const deleteSegment = async (segment: StaffSegment) => {
   }
 
   try {
-    const response = await fetch(`/api/staff-segment/${segment.id}`, {
+    await apiRequest<unknown>(`/staff-segment/${segment.id}`, {
       method: 'DELETE',
     });
 
-    if (response.ok) {
-      segmentList.value = segmentList.value.filter((s) => s.id !== segment.id);
-      updateSegmentStats();
-    } else {
-      alert('刪除段別失敗，請稍後再試');
-    }
+    segmentList.value = segmentList.value.filter((s) => s.id !== segment.id);
+    updateSegmentStats();
   } catch (error) {
     console.error('刪除段別失敗:', error);
     alert('網路連線錯誤，請檢查網路連線後再試');
@@ -797,14 +726,12 @@ const searchByDateRange = async () => {
   }
 
   try {
-    const response = await fetch(
-      `/api/staff-segment/date-range?startDate=${startDate.value}&endDate=${endDate.value}`
+    const response = await apiRequest<StaffSegment[]>(
+      `/staff-segment/date-range?startDate=${startDate.value}&endDate=${endDate.value}`
     );
-    if (response.ok) {
-      const data = await response.json();
-      segmentList.value = data;
-      updateSegmentStats();
-    }
+    const data = response;
+    segmentList.value = data;
+    updateSegmentStats();
   } catch (error) {
     console.error('查詢失敗:', error);
     alert('查詢失敗，請稍後再試');

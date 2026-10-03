@@ -1,12 +1,6 @@
 import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import Home from '../views/Home.vue'
-import HRStaff from '../views/HR/Staff.vue'
-import M70Users from '../views/Staff/M70Users.vue'
-import HRAttendance from '../views/HR/Attendance.vue'
-import HRManhour from '../views/HR/Manhour.vue'
-import HRLeave from '../views/HR/Leave.vue'
-import HRStaffSegment from '../views/HR/StaffSegment.vue'
-import HRStaffVacation from '../views/HR/StaffVacation.vue'
+import { hrRoutes } from './hr'
 import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
@@ -51,48 +45,7 @@ const routes = [
     component: Home,
     meta: { title: '儀表板', icon: '🏠', requiresAuth: true }
   },
-  {
-    path: '/hr/staff',
-    name: 'HRStaff',
-    component: HRStaff,
-    meta: { title: '員工管理', icon: '👨‍💼', requiresAuth: true }
-  },
-  {
-    path: '/staff/m70-users',
-    name: 'M70Users',
-    component: M70Users,
-    meta: { title: 'M70 員工對照', icon: '🪪', requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/hr/attendance',
-    name: 'HRAttendance',
-    component: HRAttendance,
-    meta: { title: '出勤管理', icon: '📅', requiresAuth: true }
-  },
-  {
-    path: '/hr/manhour',
-    name: 'HRManhour',
-    component: HRManhour,
-    meta: { title: '工時管理', icon: '⏰', requiresAuth: true }
-  },
-  {
-    path: '/hr/leave',
-    name: 'HRLeave',
-    component: HRLeave,
-    meta: { title: '請假管理', icon: '🏖️', requiresAuth: true }
-  },
-  {
-    path: '/hr/staff-segment',
-    name: 'HRStaffSegment',
-    component: HRStaffSegment,
-    meta: { title: '員工段別管理', icon: '⏰', requiresAuth: true }
-  },
-  {
-    path: '/hr/staff-vacation',
-    name: 'HRStaffVacation',
-    component: HRStaffVacation,
-    meta: { title: '員工假期管理', icon: '📅', requiresAuth: true }
-  },
+  ...hrRoutes,
   {
     path: '/crm',
     name: 'CRMCustomers',

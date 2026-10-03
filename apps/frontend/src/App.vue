@@ -21,6 +21,12 @@
 
         <nav class="sidebar-nav">
           <div class="nav-section">
+            <router-link :to="isHrArea ? '/' : '/hr'" class="nav-item">
+              <div class="nav-icon">↔</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">{{ isHrArea ? '返回營運管理' : '人力資源專區' }}</span>
+            </router-link>
+          </div>
+          <div v-if="!isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">主要功能</h3>
             <router-link to="/" class="nav-item" active-class="active">
               <div class="nav-icon">🏠</div>
@@ -28,13 +34,13 @@
             </router-link>
           </div>
 
-          <div class="nav-section">
+          <div v-if="isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">人力資源</h3>
             <router-link to="/hr/staff" class="nav-item" active-class="active">
               <div class="nav-icon">👨‍💼</div>
               <span v-if="!sidebarCollapsed" class="nav-text">員工管理</span>
             </router-link>
-            <router-link v-if="authStore.isAdmin" to="/staff/m70-users" class="nav-item" active-class="active">
+            <router-link v-if="authStore.isAdmin" to="/hr/m70-users" class="nav-item" active-class="active">
               <div class="nav-icon">🪪</div>
               <span v-if="!sidebarCollapsed" class="nav-text">M70 員工對照</span>
             </router-link>
@@ -54,9 +60,9 @@
               <div class="nav-icon">⏰</div>
               <span v-if="!sidebarCollapsed" class="nav-text">工時管理</span>
             </router-link>
-            <router-link to="/hr/leave" class="nav-item" active-class="active">
+            <router-link to="/hr/staff-vacation" class="nav-item" active-class="active">
               <div class="nav-icon">🏖️</div>
-              <span v-if="!sidebarCollapsed" class="nav-text">請假管理</span>
+              <span v-if="!sidebarCollapsed" class="nav-text">假期日曆</span>
             </router-link>
             <router-link to="/hr/staff-segment" class="nav-item" active-class="active">
               <div class="nav-icon">⏰</div>
@@ -64,7 +70,7 @@
             </router-link>
           </div>
 
-          <div class="nav-section">
+          <div v-if="!isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">銷售管理</h3>
             <router-link to="/crm" class="nav-item" active-class="active">
               <div class="nav-icon">🤝</div>
@@ -100,7 +106,7 @@
             </router-link>
           </div>
 
-          <div class="nav-section">
+          <div v-if="!isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">生產管理</h3>
             <router-link
               to="/crm/design-work-orders"
@@ -144,7 +150,7 @@
             </router-link>
           </div>
 
-          <div class="nav-section">
+          <div v-if="!isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">會計管理</h3>
             <router-link
               to="/accounting/sales-statistics"
@@ -164,7 +170,7 @@
             </router-link>
           </div>
 
-          <div class="nav-section">
+          <div v-if="!isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">系統管理</h3>
             <router-link to="/crm/processings" class="nav-item" active-class="active">
               <div class="nav-icon">🔩</div>
@@ -299,40 +305,8 @@ const sidebarCollapsed = ref(false);
 const showMobileOverlay = ref(false);
 const showUserMenu = ref(false); // 新增：控制用戶下拉選單的顯示
 
-// 頁面標題映射
-const pageTitles: Record<string, string> = {
-  '/': '儀表板',
-  '/hr/staff': '員工管理',
-  '/staff/m70-users': 'M70 員工對照',
-  '/hr/attendance': '出勤管理',
-  '/hr/manhour': '工時管理',
-  '/hr/leave': '請假管理',
-  '/hr/staff-segment': '上班時段管理',
-  '/crm': '客戶',
-  '/crm/contacts': '聯絡人',
-  '/crm/orders': '訂單管理',
-  '/crm/sales-vouchers': '銷貨單',
-  '/crm/quotes': '報價單',
-  '/crm/vendors': '廠商管理',
-  '/crm/processings': '加工項目管理',
-  '/accounting/sales-statistics': '銷貨單',
-  '/accounting/sales-statistics/items': '銷貨明細',
-  '/settings': '系統設定',
-  '/profile': '個人資料',
-};
-
-const currentPageTitle = computed(() => {
-  if (route.name === 'CRMQuoteItems') {
-    return '報價單詳情';
-  }
-  if (route.name === 'CRMOrderItems') {
-    return '訂單詳情';
-  }
-  if (route.name === 'CRMSalesVoucherItems') {
-    return '銷貨單明細';
-  }
-  return pageTitles[route.path] || '奕新雷射 銷管系統';
-});
+const isHrArea = computed(() => route.meta.area === 'hr');
+const currentPageTitle = computed(() => String(route.meta.title || '奕新雷射 銷管系統'));
 
 // 檢查是否為重設密碼頁面
 const isResetPasswordPage = computed(() => {
