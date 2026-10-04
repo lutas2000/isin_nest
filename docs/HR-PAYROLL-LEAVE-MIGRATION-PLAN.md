@@ -274,6 +274,7 @@ interface PayrollResult {
 3. **測試**：`domain/*.spec.ts` 對每人每日與每人每月項目逐格比對。允許差異只有三項：舊報表的防疫假列（已移除）、「林慶豐」排除（改以 `stop_work` 判斷）、伙食津貼少算最後一天（parity 測試以舊算法換算後比對）。其餘必須完全相等，段別選取照舊所以不會有差異。2026-10-04 以 6、7 月正式與外帳共四組 fixture 驗證：1,318 個每日列與全部薪資項目相符，唯一差異即伙食津貼最後一天。
 4. **邊界案例**：跨日段別、夜班、責任制、外勞有薪假、請假起點等於段別起點、缺下班打卡、無薪假自動補登。每項至少一個單元測試。
 5. 現有 `legacy-attendance-parity.spec.ts` 的作法可直接沿用。
+6. **雙軌比對（階段 6）**：`npm run payroll:dual-track -- --start 2026-06-01 --java <Java Excel> --nest <Nest 部門 Excel> [--nest ...]`。與第 3 點的差別是走完整 API 流程（真實 MariaDB loader、snapshot、exceljs 輸出），比對的是兩邊最後的 Excel 而非 domain 函式結果；部門清單、員工順序、每日列、薪資欄位任一不同就以非零退出碼結束，允許差異僅伙食津貼最後一天 +0 或 +50（加項合計與總合須同步）。
 
 ## 5. 實作順序
 
@@ -284,7 +285,7 @@ interface PayrollResult {
 | 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |（已實作：builder 以 round-trip 測試驗證，6、7 月四組 fixture 整月資料寫入後讀回與計算結果完全一致；本機後端實測下載）
 | 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |（已實作：`/hr/leave` 頁面、外帳工時頁籤；本機後端加 Vite 開發伺服器實測跨日拆單、預設時段、已用時數、外帳列新增；寫入目標是 PostgreSQL，見 3.5 的資料來源注意）
 | 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |（已實作：`/hr/payroll` 計算／建立 run／run 列表／手動欄位修改／定稿／下載；2026-10-04 以本機後端加 Vite 實測 6 月正式版兩個部門，手動欄位即時重算與 PATCH 後數字一致，定稿後唯讀）
-| 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |
+| 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |（已實作：`scripts/payroll-dual-track-compare.ts`（`npm run payroll:dual-track`）用同一個 reader 讀 Java 與 Nest 的 Excel 逐格比對；2026-10-04 以 isin-java `scripts/export-payroll.sh` 2026 年 6、7 月正式與外帳四份 Excel，對本機後端走完整流程（MariaDB loader → `POST /hr/payroll/runs` → `GET runs/:id/file`）產出的 10 個部門檔案比對：1,318 個每日列、1,128 個薪資欄位全部相同，唯一差異是伙食津貼最後一天共 6 處各 +50，皆在允許清單；測試 run 與檔案已刪除）
 | 7 | PostgreSQL loader，切換資料來源 | 不再依賴 MariaDB | 整體 HR 遷移翻轉寫入端後 |
 
 階段 1 到 3 不改動任何現有表與現有排程，風險最低，可先合併。

@@ -39,6 +39,7 @@
     "copy-hr-all": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/copy-hr-all.ts",
     "payroll:dump-source": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/payroll-dump-source.ts",
     "payroll:expected-from-xlsx": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/payroll-expected-from-xlsx.ts",
+    "payroll:dual-track": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/payroll-dual-track-compare.ts",
     "analyze-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/analyze-access.ts",
     "list-access-mdb": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/list-access-mdb.ts",
     "migrate-customer-from-access": "ts-node --project tsconfig.json -r tsconfig-paths/register scripts/migrate-customer-from-access.ts",

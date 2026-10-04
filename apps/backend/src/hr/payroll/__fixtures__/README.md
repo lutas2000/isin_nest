@@ -38,3 +38,13 @@ npm run payroll:expected-from-xlsx -- --xlsx "/path/2026年7月薪資表.xlsx" -
 - 舊 Excel 伙食津貼的 COUNTIF 範圍少算期間最後一天；新版整月計算，spec 會以舊算法換算後再比對。
 
 fixture 內含員工薪資資料，請勿提交到版本控制；`.gitignore` 已排除本目錄的 `*.json`。
+
+## 雙軌比對（不經 fixture）
+
+要直接比對 Java Excel 與 Nest API 下載的 Excel，用：
+
+```bash
+npm run payroll:dual-track -- --start 2026-06-01 --java "/path/official/2026年6月薪資表.xlsx" --nest "/path/official-2026-06-銷管部.xlsx" --nest "/path/official-2026-06-生產部.xlsx"
+```
+
+Nest 每個部門一個檔案，全部用 `--nest` 傳入。允許差異與上面相同。
