@@ -1,5 +1,6 @@
 export * from './types';
 export * from './leave-types';
+export * from './leave-hours';
 export * from './wall-clock';
 export * from './rounding';
 export * from './segment';

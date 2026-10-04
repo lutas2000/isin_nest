@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-04
 > 來源：isin-java `Personnel/src/wage/*`、`Personnel/src/gui/Dialog_Leave.java`、`Isin/src/isin/staff/*`
 > 目標：isin_nest `apps/backend/src/hr`、`apps/frontend/src/views/HR`
-> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試）、第 2 階段（snapshot 資料表、MariaDB loader、薪資 API）與第 3 階段（exceljs 報表與下載）已實作，見 `apps/backend/src/hr/payroll/`；fixture 產出步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
+> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試）、第 2 階段（snapshot 資料表、MariaDB loader、薪資 API）、第 3 階段（exceljs 報表與下載）與第 4 階段（請假登錄、外帳工時維護）已實作，見 `apps/backend/src/hr/payroll/`、`staff-leave/`、`staff-manhour/`；fixture 產出步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
 
 ## 0. 結論與原則
 
@@ -228,14 +228,18 @@ interface PayrollResult {
 
 ### 3.5 請假登錄
 
-後端修改 `staff-leave`：
+後端修改 `staff-leave`（已實作，2026-10-04）：
 
-1. `StaffLeaveController` 加 `JwtAuthGuard` + `FeatureGuard`，feature `hr-leave`。
+1. `StaffLeaveController` 加 `JwtAuthGuard` + `FeatureGuard`，feature 沿用 `features.config.ts` 既有的 `hr-staff-leave`（原規劃的 `hr-leave` 不另建）。
 2. 新增 `CreateStaffLeaveDto`：`name`、`type`（限 12 種假別，不含防疫假）、`start_time`、`end_time`。`verify` 一律從 JWT 取登入者對應的 `staff.name`，不接受 body 傳入。
 3. 時數改用 `domain/rounding.ts`：30 分鐘捨去後扣 `SchedulePicker.getBreakHour`。與 Java 一致不封頂。
 4. 跨日請假在 service 拆成每天一筆，同一交易寫入，回傳全部建立的紀錄。
-5. 新增 `GET /staff-leaves/balance?name=&date=`：回傳特休（到職日週年區間）與病假（曆年）已用時數，供前端顯示。
-6. 刪除與修改保留，但 `final` 薪資 run 涵蓋期間內的請假不允許修改，回 409。
+5. 新增 `GET /staff-leaves/balance?name=&date=`：回傳特休（到職日週年區間）與病假（曆年）已用時數，供前端顯示。另有 `GET /range?start=&end=&name=`、`GET /defaults?name=&date=`（最新段別的上下班時間）、`GET /types`。
+6. 刪除與修改保留，但 `final` 薪資 run 涵蓋期間內的請假不允許修改，回 409。修改不可跨日。
+7. 時間輸入與輸出一律台北牆上時間 `YYYY-MM-DD HH:mm`，寫入 timestamptz 時明確帶 +08:00（`hr/taipei-time.ts`），不依賴伺服器時區。時數與拆單的純函式在 `payroll/domain/leave-hours.ts`。
+8. 開發庫發現 `staff_leave`、`staff_manhour`、`staff_manhour2`、`staff_segment` 的 `name`（與 `verify`）仍留有改名前的外鍵 `REFERENCES staff(id)`，任何以姓名寫入都會失敗；migration `1777300000000-DropStaleHrNameForeignKeys` 移除它們。
+
+**資料來源注意**：目前 MariaDB 仍是 system of record，薪資計算（第 2 階段）讀 MariaDB；這裡的請假與外帳工時寫入的是 PostgreSQL。在第 7 階段翻轉資料來源之前，Nest 登錄的請假不會進入薪資計算，HR 仍需在 Java 端登錄。要提前啟用，需另加 MariaDB 寫入（鏡射）或提前翻轉。
 
 前端新增 `views/HR/StaffLeave.vue`，路由 `/hr/leave` 取代現在的轉址：
 
@@ -257,9 +261,9 @@ interface PayrollResult {
 
 外帳報表保留，因此 `have_fake` 員工的 `staff_manhour2` 需要可維護：
 
-- 後端 `staff-manhour2` 補齊 `PUT /:id`、`DELETE /:id`、`GET ?name=&from=&to=`，掛 `FeatureGuard` feature `hr-payroll` write。
+- 後端 `staff-manhour2` 補齊 `PUT /:id`、`DELETE /:id`、`GET ?name=&from=&to=`，掛 `FeatureGuard` feature `hr-payroll` write（已實作）。
 - 新增 `POST /staff-manhour2/copy-from-manhour`：body 為 `name`、`from`、`to`，把 `staff_manhour` 同期間區間複製到 `staff_manhour2`，作為外帳編輯的起點。複製只新增不覆寫既有列。
-- 前端在現有 `views/HR/Manhour.vue` 加「外帳」切換：只列 `have_fake=1` 員工，表格可直接編輯起訖時間、新增與刪除列，並提供「從正式工時複製」按鈕。
+- 前端在現有 `views/HR/Manhour.vue` 加「外帳工時」頁籤（`components/FakeManhourPanel.vue`）：只列 `have_fake=1` 員工，表格可直接編輯起訖時間、新增與刪除列，並提供「從正式工時複製」按鈕（已實作）。
 - `final` 薪資 run 涵蓋期間內的 `staff_manhour2` 不允許修改，回 409，與請假相同。
 
 ## 4. Parity 驗證
@@ -277,7 +281,7 @@ interface PayrollResult {
 | 1 | `domain/` 純函式 + fixture + parity 測試 | 計算核心通過比對 | 無 |（已實作：純函式與 32 個單元測試、parity spec、`payroll:dump-source` 與 `payroll:expected-from-xlsx` 腳本；待補 fixture）
 | 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |（已實作：migration `1777200000000-AddPayrollRunSnapshot`、`source/mariadb-payroll-source.ts` 與 `payroll:dump-source` 共用同一組 SQL、`PayrollService` 五個 API；2026-10-04 以本機後端對 6 月正式資料實測 preview 與 fixture 528 個薪資欄位全部相符，建立／修改手動欄位／定稿流程正常）
 | 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |（已實作：builder 以 round-trip 測試驗證，6、7 月四組 fixture 整月資料寫入後讀回與計算結果完全一致；本機後端實測下載）
-| 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |
+| 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |（已實作：`/hr/leave` 頁面、外帳工時頁籤；本機後端加 Vite 開發伺服器實測跨日拆單、預設時段、已用時數、外帳列新增；寫入目標是 PostgreSQL，見 3.5 的資料來源注意）
 | 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |
 | 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |
 | 7 | PostgreSQL loader，切換資料來源 | 不再依賴 MariaDB | 整體 HR 遷移翻轉寫入端後 |

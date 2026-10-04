@@ -62,6 +62,11 @@
         </button>
       </div>
 
+      <!-- 外帳工時（have_fake 員工的 staff_manhour2） -->
+      <div v-if="activeTab === 'fake'" class="tab-content">
+        <FakeManhourPanel />
+      </div>
+
       <!-- 工時記錄 -->
       <div v-if="activeTab === 'records'" class="tab-content">
         <SectionHeader title="工時記錄">
@@ -319,6 +324,7 @@ import { getHrList } from '@/services/hr';
 import { useErrorStore } from '@/stores/error';
 import { ref, computed, onMounted } from 'vue';
 import { EditableDataTable, SectionHeader, TableHeader } from '@/components';
+import FakeManhourPanel from './components/FakeManhourPanel.vue';
 import { buildApiUrl, API_CONFIG } from '../../config/api';
 import { useAuthStore } from '../../stores/auth';
 
@@ -373,6 +379,7 @@ const tabs = [
   { id: 'records', label: '工時記錄' },
   { id: 'statistics', label: '工時統計' },
   { id: 'reports', label: '工時報表' },
+  { id: 'fake', label: '外帳工時' },
 ];
 
 const activeTab = ref('records');
