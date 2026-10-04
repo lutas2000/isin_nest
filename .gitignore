@@ -144,3 +144,6 @@ frontend/.vite
 
 # Path
 apps/backend/path
+
+# payroll parity fixtures contain real salary data
+apps/backend/src/hr/payroll/__fixtures__/**/*.json

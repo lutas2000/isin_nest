@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-04
 > 來源：isin-java `Personnel/src/wage/*`、`Personnel/src/gui/Dialog_Leave.java`、`Isin/src/isin/staff/*`
 > 目標：isin_nest `apps/backend/src/hr`、`apps/frontend/src/views/HR`
-> 狀態：規劃，尚未實作
+> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試架構）已實作，見 `apps/backend/src/hr/payroll/`；parity fixture 待以舊系統產出，步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
 
 ## 0. 結論與原則
 
@@ -28,7 +28,7 @@
 
 段別選取規則（`Segment.setDefaltSegment`）：取 `name` 相同且 `create_date <= 當日` 的最新一筆。`cross_day=1` 時結束時間加一天。Nest 的 `SchedulePicker.initialize` 已是相同查法。
 
-薪資表的夜班與責任制判斷（`WageReport.getSegment`）用的是**該員工最新一筆段別**，不是逐日段別。逐日工時計算（`HourPage.caculate` 的 `isDuty`）則用 `ORDER BY create_date LIMIT 1`，也就是**最舊一筆**。這是舊程式的不一致，移植時統一為「當日生效段別」，並在 parity 測試中記錄差異。
+薪資表的夜班與責任制判斷（`WageReport.getSegment`）用的是**該員工最新一筆段別**，不是逐日段別。逐日工時計算（`HourPage.caculate` 的 `isDuty`）則用 `ORDER BY create_date LIMIT 1`，也就是**最舊一筆**。**決議：照舊移植**，三處各自保留原本的選取方式，純函式以三個明確參數接收（`daySegment`、`latestSegment`、`oldestSegmentDuty`），不做統一。
 
 ### 1.2 每日工時計算（`HourPage`）
 
@@ -54,7 +54,7 @@
 每人每日：日期、打卡時段字串、上班、加班、請假假別、請假時數、遲到、平日旗標。月底彙總：
 
 - 加班分四桶：有薪假 ≤8、有薪假 >8、平日 ≤2、平日 >2。每日分別封頂後加總。
-- 請假依 13 種假別加總：事假、特休、病假、公假、產假、產檢假、婚假、喪假、公休、曠職、陪產假、無薪假、防疫假。
+- 請假依 12 種假別加總：事假、特休、病假、公假、產假、產檢假、婚假、喪假、公休、曠職、陪產假、無薪假。**決議：移除防疫假**，舊資料若有防疫假紀錄，載入時歸入警告並以無薪假計算。
 - 遲到次數加總。
 - 員工範圍：`department` 相同、`need_check=1`、尚在職（`begain_work <= 當日`）。
 - 工時來源：正式報表讀 `staff_manhour`；外帳報表且 `have_fake=1` 讀 `staff_manhour2`。
@@ -84,7 +84,7 @@
 | 事假 | `時數 × (本薪 + 勤務) / 240` |
 | 曠職 | `時數 × (本薪 + 勤務) / 240` |
 | 公休 | `時數 × 本薪 / 240` |
-| 公假（標題）／防疫假 | 舊公式 `防疫假時數 + 無薪假時數 × base`，防疫假沒有乘基數，應為 bug。移植時改為兩者都乘基數，並在 parity 測試中列為已知差異 |
+| 無薪假 | `時數 × (本薪 + 勤務) / 240`。舊報表此列標題為「公假」且公式混入未乘基數的防疫假時數；防疫假已移除，此列只剩無薪假扣款，標題改為「無薪假」 |
 | 健保費、勞保費 | 取 `staff` |
 | 福利基金 | `benifit=1` 免繳，否則 100 |
 | 借支、其他代扣、稅金代扣 | 手動輸入，預設 0 |
@@ -96,8 +96,8 @@
 
 - 正式：部門 銷管部、生產部。
 - 外勞：多一欄稅金代扣。
-- 外帳（`exportFake`）：部門多「打工」，病假改外帳欄，`have_fake` 員工讀 `staff_manhour2`。
-- 員工排序：`need_check DESC, is_foreign ASC, name ASC`。程式硬編排除「林慶豐」，移植後改為員工設定欄位或直接移除。
+- 外帳（`exportFake`）：部門多「打工」，病假改外帳欄，`have_fake` 員工讀 `staff_manhour2`。**決議：外帳報表保留**，`staff_manhour2` 的維護介面見 3.7。
+- 員工排序：`need_check DESC, is_foreign ASC, name ASC`。程式硬編排除「林慶豐」。**決議：移除硬編**，改為 `stop_work IS NULL OR stop_work >= period_start` 判斷在職；離職員工只出現在離職當月及之前的報表。
 
 ### 1.5 請假登錄（`Dialog_Leave`）
 
@@ -225,7 +225,7 @@ interface PayrollResult {
 後端修改 `staff-leave`：
 
 1. `StaffLeaveController` 加 `JwtAuthGuard` + `FeatureGuard`，feature `hr-leave`。
-2. 新增 `CreateStaffLeaveDto`：`name`、`type`（限 13 種假別）、`start_time`、`end_time`。`verify` 一律從 JWT 取登入者對應的 `staff.name`，不接受 body 傳入。
+2. 新增 `CreateStaffLeaveDto`：`name`、`type`（限 12 種假別，不含防疫假）、`start_time`、`end_time`。`verify` 一律從 JWT 取登入者對應的 `staff.name`，不接受 body 傳入。
 3. 時數改用 `domain/rounding.ts`：30 分鐘捨去後扣 `SchedulePicker.getBreakHour`。與 Java 一致不封頂。
 4. 跨日請假在 service 拆成每天一筆，同一交易寫入，回傳全部建立的紀錄。
 5. 新增 `GET /staff-leaves/balance?name=&date=`：回傳特休（到職日週年區間）與病假（曆年）已用時數，供前端顯示。
@@ -243,15 +243,24 @@ interface PayrollResult {
 新增 `views/HR/Payroll.vue`，路由 `/hr/payroll`：
 
 1. 選年月、variant、部門，按「計算」呼叫 preview，顯示 warnings 與每人薪資項目表格。
-2. 可直接在表格填手動欄位，再按「建立 run」存 draft 並下載 Excel。
+2. **決議：手動欄位由前端輸入。** 獎金、特休加、特休減、借支、其他代扣、稅金代扣六欄在表格中為可編輯儲存格，輸入後即時重算加減合計與實領。按「建立 run」時隨 `manual_json` 存入 draft 並產 Excel；draft 狀態可再透過 PATCH `/manual` 修改並重產。Excel 不再供 HR 手改。
 3. run 列表：可檢視歷次 snapshot、下載檔案、定稿。
 4. 每日明細用展開列顯示，對應舊的打卡記錄工作表。
+
+### 3.7 外帳工時維護（`staff_manhour2`）
+
+外帳報表保留，因此 `have_fake` 員工的 `staff_manhour2` 需要可維護：
+
+- 後端 `staff-manhour2` 補齊 `PUT /:id`、`DELETE /:id`、`GET ?name=&from=&to=`，掛 `FeatureGuard` feature `hr-payroll` write。
+- 新增 `POST /staff-manhour2/copy-from-manhour`：body 為 `name`、`from`、`to`，把 `staff_manhour` 同期間區間複製到 `staff_manhour2`，作為外帳編輯的起點。複製只新增不覆寫既有列。
+- 前端在現有 `views/HR/Manhour.vue` 加「外帳」切換：只列 `have_fake=1` 員工，表格可直接編輯起訖時間、新增與刪除列，並提供「從正式工時複製」按鈕。
+- `final` 薪資 run 涵蓋期間內的 `staff_manhour2` 不允許修改，回 409，與請假相同。
 
 ## 4. Parity 驗證
 
 1. **取得基準**：用 Java Personnel 對 2026 年 8 月與 9 月各產一份正式與外帳 Excel，放到 `apps/backend/src/hr/payroll/__fixtures__/`。用 Excel 開啟後另存，讓公式結果固化成值，再用腳本讀成 JSON。
 2. **輸入固化**：用 MariaDB loader 把同期間的 `PayrollSourceData` 存成 JSON fixture。
-3. **測試**：`domain/*.spec.ts` 對每人每日與每人每月項目逐格比對。允許差異清單只放已知 bug（1.4 的防疫假、1.1 的段別選取），其餘必須完全相等。
+3. **測試**：`domain/*.spec.ts` 對每人每日與每人每月項目逐格比對。允許差異只有兩項：舊報表的防疫假列（已移除）與「林慶豐」排除（改以 `stop_work` 判斷）。其餘必須完全相等，段別選取照舊所以不會有差異。
 4. **邊界案例**：跨日段別、夜班、責任制、外勞有薪假、請假起點等於段別起點、缺下班打卡、無薪假自動補登。每項至少一個單元測試。
 5. 現有 `legacy-attendance-parity.spec.ts` 的作法可直接沿用。
 
@@ -259,21 +268,23 @@ interface PayrollResult {
 
 | 階段 | 內容 | 產出 | 依賴 |
 |---|---|---|---|
-| 1 | `domain/` 純函式 + fixture + parity 測試 | 計算核心通過比對 | 無 |
+| 1 | `domain/` 純函式 + fixture + parity 測試 | 計算核心通過比對 | 無 |（已實作：純函式與 32 個單元測試、parity spec、`payroll:dump-source` 與 `payroll:expected-from-xlsx` 腳本；待補 fixture）
 | 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |
 | 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |
-| 4 | 請假後端修正 + `StaffLeave.vue` | HR 可在 Nest 登錄請假 | 無，可與 1–3 並行 |
+| 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |
 | 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |
 | 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |
 | 7 | PostgreSQL loader，切換資料來源 | 不再依賴 MariaDB | 整體 HR 遷移翻轉寫入端後 |
 
 階段 1 到 3 不改動任何現有表與現有排程，風險最低，可先合併。
 
-## 6. 待決事項
+## 6. 決議紀錄（2026-10-04）
 
-1. **「林慶豐」排除**：改為 `staff` 新欄位 `exclude_payroll`，或直接以 `stop_work` 判斷離職。建議後者。
-2. **防疫假公式**：確認是否照舊（不乘基數）還是修正。本規劃預設修正。
-3. **段別選取不一致**：確認夜班與責任制以「當日段別」為準。
-4. **手動欄位來源**：獎金、借支等目前由 HR 在 Excel 手填。改為前端填入 draft run 後，Excel 就是最終版。確認 HR 接受不再手改 Excel。
-5. **外帳報表**是否仍需要。若需要，`staff_manhour2` 的維護介面也要一併規劃，目前 Nest 只有 GET/POST。
-6. **snapshot 保存期限**：`input_json` 每月每部門約數百 KB，預設永久保留。
+| 項目 | 決議 | 反映位置 |
+|---|---|---|
+| 「林慶豐」排除 | 移除硬編，以 `stop_work` 判斷離職 | 1.4 報表變體、4 |
+| 防疫假 | 移除此假別；舊資料載入時以無薪假計算並記 warning | 1.3、1.4、3.5 |
+| 段別選取不一致 | 照舊，不統一 | 1.1 |
+| 手動欄位 | 前端表格可編輯，存入 run 的 `manual_json` | 3.6 |
+| 外帳報表 | 保留，補 `staff_manhour2` 維護介面 | 1.4、3.7、5 |
+| snapshot 保存期限 | 永久保留，不做清理 | 3.2 |
