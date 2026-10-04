@@ -239,7 +239,7 @@ interface PayrollResult {
 7. 時間輸入與輸出一律台北牆上時間 `YYYY-MM-DD HH:mm`，寫入 timestamptz 時明確帶 +08:00（`hr/taipei-time.ts`），不依賴伺服器時區。時數與拆單的純函式在 `payroll/domain/leave-hours.ts`。
 8. 開發庫發現 `staff_leave`、`staff_manhour`、`staff_manhour2`、`staff_segment` 的 `name`（與 `verify`）仍留有改名前的外鍵 `REFERENCES staff(id)`，任何以姓名寫入都會失敗；migration `1777300000000-DropStaleHrNameForeignKeys` 移除它們。
 
-**資料來源注意**：目前 MariaDB 仍是 system of record，薪資計算（第 2 階段）讀 MariaDB。2026-10-05 起請假模組改經 `StaffLeaveStore` 介面存取，第 7 階段前綁定 `MariadbStaffLeaveStore`：請假、員工到職日、段別全部讀寫舊 MariaDB 的 `staff_leave`、`staff`、`staff_segment`（只動資料，不改 schema），Nest 登錄的請假會直接進入 Java 與薪資計算共用的舊庫，HR 可以在 Nest 登錄。`verify` 仍查 PostgreSQL 的登入者；定稿 409 檢查仍查 PostgreSQL 的 `payroll_run`。第 7 階段翻轉時把模組裡的 `STAFF_LEAVE_STORE` 換回 TypeORM 實作即可。外帳工時（`staff_manhour2`）尚未改，仍寫 PostgreSQL，第 7 階段前不要開放。
+**資料來源注意**：目前 MariaDB 仍是 system of record，薪資計算（第 2 階段）讀 MariaDB。2026-10-05 起請假模組改經 `StaffLeaveStore` 介面存取，第 7 階段前綁定 `MariadbStaffLeaveStore`：請假、員工到職日、段別全部讀寫舊 MariaDB 的 `staff_leave`、`staff`、`staff_segment`（只動資料，不改 schema），Nest 登錄的請假會直接進入 Java 與薪資計算共用的舊庫，HR 可以在 Nest 登錄。`verify` 仍查 PostgreSQL 的登入者；定稿 409 檢查仍查 PostgreSQL 的 `payroll_run`。第 7 階段翻轉時把模組裡的 `STAFF_LEAVE_STORE` 換回 TypeORM 實作即可。外帳工時同日起也經 `StaffManhour2Store` 綁定 `MariadbStaffManhour2Store`，讀寫舊庫 `staff_manhour2`、複製來源讀 `staff_manhour`；舊表沒有 `day` 欄位，`work_time` 舊程式一律留 0、薪資 loader 不讀，Nest 存顯示用時數。翻轉時同樣只換 `STAFF_MANHOUR2_STORE`。
 
 前端新增 `views/HR/StaffLeave.vue`，路由 `/hr/leave` 取代現在的轉址：
 
@@ -283,7 +283,7 @@ interface PayrollResult {
 | 1 | `domain/` 純函式 + fixture + parity 測試 | 計算核心通過比對 | 無 |（已實作：純函式與 32 個單元測試、parity spec、`payroll:dump-source` 與 `payroll:expected-from-xlsx` 腳本；待補 fixture）
 | 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |（已實作：migration `1777200000000-AddPayrollRunSnapshot`、`source/mariadb-payroll-source.ts` 與 `payroll:dump-source` 共用同一組 SQL、`PayrollService` 五個 API；2026-10-04 以本機後端對 6 月正式資料實測 preview 與 fixture 528 個薪資欄位全部相符，建立／修改手動欄位／定稿流程正常）
 | 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |（已實作：builder 以 round-trip 測試驗證，6、7 月四組 fixture 整月資料寫入後讀回與計算結果完全一致；本機後端實測下載）
-| 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |（已實作：`/hr/leave` 頁面、外帳工時頁籤；本機後端加 Vite 開發伺服器實測跨日拆單、預設時段、已用時數、外帳列新增；請假 2026-10-05 起改寫 MariaDB，以臨時 MariaDB 容器實測跨日拆單、區間查詢、已用時數、修改、刪除與 datetime 牆上時間正確；外帳工時仍寫 PostgreSQL，見 3.5 的資料來源注意）
+| 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |（已實作：`/hr/leave` 頁面、外帳工時頁籤；本機後端加 Vite 開發伺服器實測跨日拆單、預設時段、已用時數、外帳列新增；請假 2026-10-05 起改寫 MariaDB，以臨時 MariaDB 容器實測跨日拆單、區間查詢、已用時數、修改、刪除與 datetime 牆上時間正確；外帳工時同日改寫 MariaDB，以臨時容器實測從正式工時複製不覆寫、新增、修改、清空結束時間、刪除與 datetime 牆上時間正確；見 3.5 的資料來源注意）
 | 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |（已實作：`/hr/payroll` 計算／建立 run／run 列表／手動欄位修改／定稿／下載；2026-10-04 以本機後端加 Vite 實測 6 月正式版兩個部門，手動欄位即時重算與 PATCH 後數字一致，定稿後唯讀）
 | 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |（已實作：`scripts/payroll-dual-track-compare.ts`（`npm run payroll:dual-track`）用同一個 reader 讀 Java 與 Nest 的 Excel 逐格比對；2026-10-04 以 isin-java `scripts/export-payroll.sh` 2026 年 6、7 月正式與外帳四份 Excel，對本機後端走完整流程（MariaDB loader → `POST /hr/payroll/runs` → `GET runs/:id/file`）產出的 10 個部門檔案比對：1,318 個每日列、1,128 個薪資欄位全部相同，唯一差異是伙食津貼最後一天共 6 處各 +50，皆在允許清單；測試 run 與檔案已刪除）
 | 7 | PostgreSQL loader，切換資料來源 | 不再依賴 MariaDB | 整體 HR 遷移翻轉寫入端後 |

@@ -1,28 +1,28 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { StaffManhour2 } from './entities/staff-manhour2.entity';
 import { StaffManhour2Service } from './staff-manhour2.service';
+import { StaffManhour2Store } from './staff-manhour2.store';
 
 const at = (wallClock: string) => new Date(`${wallClock.replace(' ', 'T')}:00+08:00`);
 
 function harness(options: { finalDates?: string[]; source?: Array<{ start: string; end?: string }> } = {}) {
   let nextId = 1;
   const stored: StaffManhour2[] = [];
-  const repository = {
-    create: (value: Partial<StaffManhour2>) => ({ ...value }) as StaffManhour2,
-    save: jest.fn(async (value: StaffManhour2 | StaffManhour2[]) => {
-      const rows = Array.isArray(value) ? value : [value];
-      for (const row of rows) if (!row.id) { row.id = nextId++; stored.push(row); }
-      return value;
-    }),
-    findOne: jest.fn(async ({ where }: { where: { id: number } }) => stored.find((row) => row.id === where.id) ?? null),
-    find: jest.fn(async ({ where }: { where: { name?: string } }) => stored.filter((row) => !where.name || row.name === where.name)),
-    remove: jest.fn(async (row: StaffManhour2) => { stored.splice(stored.indexOf(row), 1); }),
-  };
-  const manhours = {
-    find: jest.fn(async () => (options.source ?? []).map((row, index) => ({ id: index + 1, name: '張三', start_time: at(row.start), end_time: row.end ? at(row.end) : null, work_time: 0 }))),
+  const inRange = (row: StaffManhour2, start?: Date, end?: Date) =>
+    !!row.start_time && (!start || row.start_time >= start) && (!end || row.start_time <= end);
+  const store: StaffManhour2Store = {
+    findPage: async () => ({ data: stored, total: stored.length }),
+    findOne: async (id) => stored.find((row) => row.id === id) ?? null,
+    findByName: async (name) => stored.filter((row) => row.name === name),
+    search: async (name, start, end) => stored.filter((row) => (!name || row.name === name) && inRange(row, start, end)),
+    insert: async (row) => { const saved = Object.assign(new StaffManhour2(), row, { id: nextId++ }); stored.push(saved); return saved; },
+    insertMany: async (rows) => rows.map((row) => { const saved = Object.assign(new StaffManhour2(), row, { id: nextId++ }); stored.push(saved); return saved; }),
+    update: async (row) => { stored.splice(stored.findIndex((item) => item.id === row.id), 1, row); return row; },
+    delete: async (id) => { stored.splice(stored.findIndex((item) => item.id === id), 1); },
+    findManhourStartingBetween: async () => (options.source ?? []).map((row) => ({ start_time: at(row.start), end_time: row.end ? at(row.end) : null })),
   };
   const payroll = { hasFinalRunCovering: jest.fn(async (date: string) => (options.finalDates ?? []).includes(date)) };
-  const service = new StaffManhour2Service(repository as never, manhours as never, payroll as never);
+  const service = new StaffManhour2Service(store, payroll as never);
   return { service, stored };
 }
 

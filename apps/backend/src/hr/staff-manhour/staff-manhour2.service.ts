@@ -1,12 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { StaffManhour2 } from './entities/staff-manhour2.entity';
-import { StaffManhour } from './entities/staff-manhour.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { PayrollService } from '../payroll/payroll.service';
 import { dateToTaipeiWallClock, taipeiWallClockToDate } from '../taipei-time';
 import { CopyManhourDto, CreateManhour2Dto, Manhour2QueryDto, UpdateManhour2Dto } from './dto/staff-manhour2.dto';
+import { NewStaffManhour2, STAFF_MANHOUR2_STORE, StaffManhour2Store } from './staff-manhour2.store';
 
 export interface CopyResult {
   copied: number;
@@ -17,48 +15,41 @@ export interface CopyResult {
 /**
  * 外帳工時（staff_manhour2）維護。外帳薪資報表的 have_fake 員工讀這張表（規劃文件 3.7）。
  * 已定稿薪資 run 涵蓋期間內不可增刪改。
+ *
+ * 資料經 `StaffManhour2Store` 存取；第七階段前綁定 MariaDB 實作，與薪資 loader 讀的是同一張表。
  */
 @Injectable()
 export class StaffManhour2Service {
   constructor(
-    @InjectRepository(StaffManhour2) private readonly repository: Repository<StaffManhour2>,
-    @InjectRepository(StaffManhour) private readonly manhours: Repository<StaffManhour>,
+    @Inject(STAFF_MANHOUR2_STORE) private readonly store: StaffManhour2Store,
     private readonly payroll: PayrollService,
   ) {}
 
   async findAll(page?: number, limit?: number): Promise<PaginatedResponseDto<StaffManhour2>> {
     const pageNum = page ?? 1;
     const limitNum = Math.min(limit ?? 50, 100);
-    const [data, total] = await this.repository.findAndCount({
-      order: { id: 'DESC' },
-      take: limitNum,
-      skip: (pageNum - 1) * limitNum,
-    });
+    const { data, total } = await this.store.findPage(pageNum, limitNum);
     return new PaginatedResponseDto(data, total, pageNum, limitNum);
   }
 
   /** 依員工與期間（開始時間的台北日期）查詢，依開始時間排序。 */
   search(query: Manhour2QueryDto): Promise<StaffManhour2[]> {
     if (query.from && query.to && query.from > query.to) throw new BadRequestException('from 不可晚於 to');
-    const where: Record<string, unknown> = {};
-    if (query.name) where.name = query.name;
-    if (query.from || query.to) {
-      where.start_time = Between(
-        taipeiWallClockToDate(`${query.from ?? '1970-01-01'} 00:00:00`),
-        taipeiWallClockToDate(`${query.to ?? '2999-12-31'} 23:59:59`),
-      );
-    }
-    return this.repository.find({ where, order: { start_time: 'ASC', id: 'ASC' } });
+    return this.store.search(
+      query.name,
+      query.from ? taipeiWallClockToDate(`${query.from} 00:00:00`) : undefined,
+      query.to ? taipeiWallClockToDate(`${query.to} 23:59:59`) : undefined,
+    );
   }
 
   async findOne(id: number): Promise<StaffManhour2> {
-    const row = await this.repository.findOne({ where: { id } });
+    const row = await this.store.findOne(id);
     if (!row) throw new NotFoundException(`ID ${id} 的外帳工時不存在`);
     return row;
   }
 
   findByName(name: string): Promise<StaffManhour2[]> {
-    return this.repository.find({ where: { name }, order: { id: 'DESC' } });
+    return this.store.findByName(name);
   }
 
   async create(dto: CreateManhour2Dto): Promise<StaffManhour2> {
@@ -66,9 +57,7 @@ export class StaffManhour2Service {
     const end = dto.end_time ? taipeiWallClockToDate(dto.end_time) : undefined;
     if (end && end <= start) throw new BadRequestException('結束時間必須晚於開始時間');
     await this.assertNotFinalized(start);
-    return this.repository.save(
-      this.repository.create({ name: dto.name, start_time: start, end_time: end, work_time: workHours(start, end) }),
-    );
+    return this.store.insert({ name: dto.name, start_time: start, end_time: end, work_time: workHours(start, end) });
   }
 
   async update(id: number, dto: UpdateManhour2Dto): Promise<StaffManhour2> {
@@ -83,13 +72,13 @@ export class StaffManhour2Service {
     row.start_time = start;
     row.end_time = end;
     row.work_time = workHours(start, end);
-    return this.repository.save(row);
+    return this.store.update(row);
   }
 
   async remove(id: number): Promise<void> {
     const row = await this.findOne(id);
     if (row.start_time) await this.assertNotFinalized(row.start_time);
-    await this.repository.remove(row);
+    await this.store.delete(id);
   }
 
   /** 把 staff_manhour 同期間的區間複製到 staff_manhour2；已有相同開始時間的列跳過，不覆寫。 */
@@ -97,26 +86,22 @@ export class StaffManhour2Service {
     if (dto.from > dto.to) throw new BadRequestException('from 不可晚於 to');
     await this.assertNotFinalized(taipeiWallClockToDate(`${dto.from} 00:00:00`));
     await this.assertNotFinalized(taipeiWallClockToDate(`${dto.to} 00:00:00`));
-    const range = Between(
-      taipeiWallClockToDate(`${dto.from} 00:00:00`),
-      taipeiWallClockToDate(`${dto.to} 23:59:59`),
-    );
+    const rangeStart = taipeiWallClockToDate(`${dto.from} 00:00:00`);
+    const rangeEnd = taipeiWallClockToDate(`${dto.to} 23:59:59`);
     const [source, existing] = await Promise.all([
-      this.manhours.find({ where: { name: dto.name, start_time: range }, order: { start_time: 'ASC' } }),
-      this.repository.find({ where: { name: dto.name, start_time: range } }),
+      this.store.findManhourStartingBetween(dto.name, rangeStart, rangeEnd),
+      this.store.search(dto.name, rangeStart, rangeEnd),
     ]);
     const taken = new Set(existing.map((row) => row.start_time?.getTime()));
-    const rows = source
-      .filter((row) => row.start_time && !taken.has(row.start_time.getTime()))
-      .map((row) =>
-        this.repository.create({
-          name: dto.name,
-          start_time: row.start_time,
-          end_time: row.end_time ?? undefined,
-          work_time: workHours(row.start_time as Date, row.end_time ?? undefined),
-        }),
-      );
-    const saved = rows.length ? await this.repository.save(rows) : [];
+    const rows: NewStaffManhour2[] = source
+      .filter((row) => !taken.has(row.start_time.getTime()))
+      .map((row) => ({
+        name: dto.name,
+        start_time: row.start_time,
+        end_time: row.end_time ?? undefined,
+        work_time: workHours(row.start_time, row.end_time ?? undefined),
+      }));
+    const saved = rows.length ? await this.store.insertMany(rows) : [];
     return { copied: saved.length, skipped: source.length - saved.length, rows: saved };
   }
 
