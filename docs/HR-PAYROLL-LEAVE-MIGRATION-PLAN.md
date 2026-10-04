@@ -250,12 +250,13 @@ interface PayrollResult {
 
 ### 3.6 薪資前端
 
-新增 `views/HR/Payroll.vue`，路由 `/hr/payroll`：
+新增 `views/HR/Payroll.vue`，路由 `/hr/payroll`（已實作，2026-10-04）：
 
-1. 選年月、variant、部門，按「計算」呼叫 preview，顯示 warnings 與每人薪資項目表格。
-2. **決議：手動欄位由前端輸入。** 獎金、特休加、特休減、借支、其他代扣、稅金代扣六欄在表格中為可編輯儲存格，輸入後即時重算加減合計與實領。按「建立 run」時隨 `manual_json` 存入 draft 並產 Excel；draft 狀態可再透過 PATCH `/manual` 修改並重產。Excel 不再供 HR 手改。
-3. run 列表：可檢視歷次 snapshot、下載檔案、定稿。
-4. 每日明細用展開列顯示，對應舊的打卡記錄工作表。
+1. 選年月、variant、部門，按「計算」呼叫 preview，顯示 warnings 與每人薪資項目表格（`components/PayrollWageTable.vue`，欄位順序沿用舊薪資表，另加工時／加班／請假／遲到四欄）。
+2. **決議：手動欄位由前端輸入。** 獎金、特休加、特休減、借支、其他代扣、稅金代扣六欄在表格中為可編輯儲存格，輸入後即時重算加減合計與實領（`services/payroll.ts` 的 `applyManual`，公式與 `domain/wage-items.ts` 相同）。按「建立 run」時隨 `manual_json` 存入 draft 並產 Excel；draft 狀態可再透過 PATCH `/manual` 修改並重產。Excel 不再供 HR 手改。
+3. run 列表：可依月份、版本、狀態篩選，檢視歷次 snapshot、下載檔案、定稿；定稿後表格唯讀。下載走 `services/api.ts` 的 `apiDownload`，後端 CORS 已 expose `Content-Disposition` 讓跨網域也能取得檔名。
+4. 每日明細（`components/PayrollDayTable.vue`）以員工下拉切換，對應舊的打卡記錄工作表；有薪假日期紅字、無薪假綠字。
+5. 權限：側欄「薪資計算」與頁面以 `authStore.hasFeature('hr-payroll')` 判斷；寫入動作（建立 run、修改手動欄位、定稿）需 write。`hr-payroll` 已在 `features.config.ts`，管理員在「設定 → 權限設定」建立職稱並勾選「薪資計算」指派給 HR 使用者即可，`feature` 資料表的列由後端在指派時自動建立，不需另外 seed。
 
 ### 3.7 外帳工時維護（`staff_manhour2`）
 
@@ -282,7 +283,7 @@ interface PayrollResult {
 | 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |（已實作：migration `1777200000000-AddPayrollRunSnapshot`、`source/mariadb-payroll-source.ts` 與 `payroll:dump-source` 共用同一組 SQL、`PayrollService` 五個 API；2026-10-04 以本機後端對 6 月正式資料實測 preview 與 fixture 528 個薪資欄位全部相符，建立／修改手動欄位／定稿流程正常）
 | 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |（已實作：builder 以 round-trip 測試驗證，6、7 月四組 fixture 整月資料寫入後讀回與計算結果完全一致；本機後端實測下載）
 | 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |（已實作：`/hr/leave` 頁面、外帳工時頁籤；本機後端加 Vite 開發伺服器實測跨日拆單、預設時段、已用時數、外帳列新增；寫入目標是 PostgreSQL，見 3.5 的資料來源注意）
-| 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |
+| 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |（已實作：`/hr/payroll` 計算／建立 run／run 列表／手動欄位修改／定稿／下載；2026-10-04 以本機後端加 Vite 實測 6 月正式版兩個部門，手動欄位即時重算與 PATCH 後數字一致，定稿後唯讀）
 | 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |
 | 7 | PostgreSQL loader，切換資料來源 | 不再依賴 MariaDB | 整體 HR 遷移翻轉寫入端後 |
 

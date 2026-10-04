@@ -146,11 +146,7 @@ interface StaffOption {
 const errorStore = useErrorStore();
 const authStore = useAuthStore();
 
-const canWrite = computed(() => {
-  if (authStore.isAdmin) return true;
-  const features = (authStore.user?.features ?? []) as Array<string | { feature: string; permission: string }>;
-  return features.some((f) => typeof f !== 'string' && f.feature === 'hr-staff-leave' && f.permission === 'write');
-});
+const canWrite = computed(() => authStore.hasFeature('hr-staff-leave', 'write'));
 
 const month = ref(todayTaipei().slice(0, 7));
 const filterName = ref('');

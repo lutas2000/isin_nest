@@ -26,6 +26,7 @@ export const API_CONFIG = {
     STAFF_MANHOUR2: '/staff-manhours2',
     STAFF_LEAVE: '/staff-leaves',
     STAFF_SEGMENT: '/staff-segment',
+    PAYROLL: '/hr/payroll',
   },
   
   // CRM 相關端點

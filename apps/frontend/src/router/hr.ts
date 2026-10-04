@@ -14,6 +14,7 @@ export const hrRoutes: RouteRecordRaw[] = [
       { path: 'staff-segment', name: 'HRStaffSegment', component: () => import('../views/HR/StaffSegment.vue'), meta: { title: '上班時段管理' } },
       { path: 'staff-vacation', name: 'HRStaffVacation', component: () => import('../views/HR/StaffVacation.vue'), meta: { title: '假期日曆' } },
       { path: 'leave', name: 'HRStaffLeave', component: () => import('../views/HR/StaffLeave.vue'), meta: { title: '請假登錄' } },
+      { path: 'payroll', name: 'HRPayroll', component: () => import('../views/HR/Payroll.vue'), meta: { title: '薪資計算' } },
     ],
   },
   { path: '/staff/m70-users', redirect: '/hr/m70-users' },

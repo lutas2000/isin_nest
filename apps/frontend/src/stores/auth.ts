@@ -47,6 +47,20 @@ export const useAuthStore = defineStore('auth', () => {
   const staffId = computed(() => user.value?.staff?.id || null)
   const staffName = computed(() => user.value?.staff?.name || '')
 
+  /**
+   * 是否擁有某功能權限。管理員一律通過；write 權限包含 read。
+   * 後端登入回傳的 features 是 `{ feature, permission }` 物件陣列。
+   */
+  const hasFeature = (feature: string, permission: 'read' | 'write' = 'read'): boolean => {
+    if (user.value?.isAdmin) return true
+    const features = (user.value?.features ?? []) as Array<string | { feature: string; permission: string }>
+    return features.some((item) => {
+      if (typeof item === 'string') return item === feature && permission === 'read'
+      if (item.feature !== feature) return false
+      return permission === 'read' ? true : item.permission === 'write'
+    })
+  }
+
   // 從 localStorage 恢復狀態
   const initializeAuth = () => {
     const savedToken = localStorage.getItem('auth_token')
@@ -153,6 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
     staff,
     staffId,
     staffName,
+    hasFeature,
     
     // 方法
     initializeAuth,

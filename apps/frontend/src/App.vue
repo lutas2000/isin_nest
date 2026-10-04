@@ -64,6 +64,10 @@
               <div class="nav-icon">📝</div>
               <span v-if="!sidebarCollapsed" class="nav-text">請假登錄</span>
             </router-link>
+            <router-link v-if="authStore.hasFeature('hr-payroll')" to="/hr/payroll" class="nav-item" active-class="active">
+              <div class="nav-icon">💰</div>
+              <span v-if="!sidebarCollapsed" class="nav-text">薪資計算</span>
+            </router-link>
             <router-link to="/hr/staff-vacation" class="nav-item" active-class="active">
               <div class="nav-icon">🏖️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">假期日曆</span>

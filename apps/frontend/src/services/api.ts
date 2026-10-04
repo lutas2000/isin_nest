@@ -132,3 +132,58 @@ export const apiPatch = <T>(endpoint: string, data?: any): Promise<T> => {
   })
 }
 
+export interface DownloadedFile {
+  blob: Blob
+  fileName: string
+}
+
+/** 解析 Content-Disposition 的檔名（支援 RFC 5987 `filename*=UTF-8''...`）。 */
+const parseDispositionFileName = (header: string | null, fallback: string): string => {
+  if (!header) return fallback
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1])
+    } catch {
+      return fallback
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header)
+  return plain ? plain[1] : fallback
+}
+
+/** 下載二進位檔案（xlsx 等）。錯誤處理與 apiRequest 一致。 */
+export const apiDownload = async (endpoint: string, fallbackFileName = 'download'): Promise<DownloadedFile> => {
+  const token = getAuthToken()
+  const errorStore = useErrorStore()
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const response = await fetch(buildApiUrl(endpoint), { method: 'GET', headers })
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: '' }))
+    const errorMessage = typeof errorData.message === 'string' ? errorData.message : ''
+    if (response.status === 401) {
+      errorStore.showLogoutError()
+    } else {
+      errorStore.showError(errorMessage || `下載失敗（HTTP ${response.status}）`)
+    }
+    throw new Error(errorMessage || `HTTP error! status: ${response.status}`)
+  }
+  return {
+    blob: await response.blob(),
+    fileName: parseDispositionFileName(response.headers.get('content-disposition'), fallbackFileName),
+  }
+}
+
+/** 觸發瀏覽器儲存檔案。 */
+export const saveDownloadedFile = ({ blob, fileName }: DownloadedFile): void => {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = fileName
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}

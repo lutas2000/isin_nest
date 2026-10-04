@@ -56,6 +56,8 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    // 讓前端跨網域下載時讀得到檔名（薪資表 xlsx）
+    exposedHeaders: ['Content-Disposition'],
   });
 
   // Swagger 配置
