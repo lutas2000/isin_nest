@@ -53,15 +53,18 @@ const WAGE_TITLES: Record<string, string> = {
   總合: 'netPay',
 };
 
+// exceljs 讀到快取值為 0 的公式時會省略 result，所以缺 result 視為 0；
+// 但若整本工作簿沒有任何公式帶 result，表示公式值未固化，直接報錯。
+let formulaCells = 0;
+let cachedFormulaCells = 0;
+
 function cellValue(cell: ExcelJS.Cell): unknown {
   const value = cell.value;
   if (value && typeof value === 'object' && 'formula' in value) {
     const formula = value as ExcelJS.CellFormulaValue;
-    if (formula.result === undefined || formula.result === null) {
-      throw new Error(
-        `${cell.worksheet.name}!${cell.address} has no cached formula result; open and re-save the workbook first`,
-      );
-    }
+    formulaCells++;
+    if (formula.result === undefined || formula.result === null) return 0;
+    cachedFormulaCells++;
     return formula.result;
   }
   if (value && typeof value === 'object' && 'richText' in value) {
@@ -140,6 +143,9 @@ async function main(): Promise<void> {
       days: hourSheet ? readHourSheet(hourSheet) : [],
       wages: readWageSheet(sheet),
     });
+  }
+  if (formulaCells > 0 && cachedFormulaCells === 0) {
+    throw new Error(`${xlsx} has no cached formula results; re-save it with LibreOffice or Excel first`);
   }
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, JSON.stringify({ departments }, null, 2));

@@ -1,7 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { summarizeStaffMonth } from './domain/month-summary';
 import { calculatePayroll } from './domain/payroll';
+import { pickLatestSegment } from './domain/segment';
 import { PayrollSourceData, WageItems } from './domain/types';
+import { calculateWageItems } from './domain/wage-items';
 
 /**
  * 與舊 Java Personnel 薪資 Excel 的逐格比對。
@@ -98,11 +101,30 @@ describe('legacy payroll parity', () => {
           const mismatches: string[] = [];
           for (const wage of expectedDepartment.wages) {
             if (IGNORED_NAMES.has(wage.name)) continue;
-            const got = actualWages.get(wage.name);
-            if (!got) {
+            const original = actualWages.get(wage.name);
+            if (!original) {
               mismatches.push(`${wage.name}: missing`);
               continue;
             }
+            // 2026-10-04 決議：舊 Excel 的伙食津貼 COUNTIF 範圍少了期間最後一天，
+            // 新版改為整月計算。比對時把 Nest 的伙食津貼換成「扣掉最後一天」的舊算法。
+            const staff = input.staff.find((row) => row.name === wage.name)!;
+            const legacyMeal = calculateWageItems({
+              staff,
+              latestSegment: pickLatestSegment(input.segments, staff.name),
+              summary: summarizeStaffMonth(
+                staff.name,
+                actual!.days.filter((day) => day.date !== input.period.end),
+              ),
+              variant: input.variant,
+            }).mealAllowance;
+            const mealDelta = legacyMeal - original.mealAllowance;
+            const got: WageItems = {
+              ...original,
+              mealAllowance: legacyMeal,
+              additionTotal: original.additionTotal + mealDelta,
+              netPay: original.netPay + mealDelta,
+            };
             for (const [key, value] of Object.entries(wage)) {
               if (key === 'name') continue;
               const actualValue = got[key as keyof WageItems];
