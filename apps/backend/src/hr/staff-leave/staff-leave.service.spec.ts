@@ -1,43 +1,35 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { StaffLeaveService } from './staff-leave.service';
 import { StaffLeave } from './entities/staff-leave.entity';
+import { LeaveSegment, StaffLeaveStore } from './staff-leave.store';
 
-/** 以 Map 模擬 repository；時間比對一律轉回台北牆上時間。 */
-function harness(options: { finalDates?: string[]; segment?: Partial<{ rest_time: number; rest_time2: number; begain_time: string; end_time: string; cross_day: number }> | null } = {}) {
+/** 以陣列模擬 StaffLeaveStore；時間比對一律轉回台北牆上時間。 */
+function harness(options: { finalDates?: string[]; segment?: Partial<LeaveSegment> | null } = {}) {
   let nextId = 1;
   const stored: StaffLeave[] = [];
-  const segment = options.segment === null ? null : { id: 1, name: '張三', begain_time: '08:00:00', end_time: '17:00:00', cross_day: 0, rest_time: 60, rest_time2: 60, create_date: '2020-01-01', ...options.segment };
+  const segment: LeaveSegment | null = options.segment === null ? null : { id: 1, name: '張三', begain_time: '08:00:00', end_time: '17:00:00', cross_day: 0, duty: 0, night_work: 0, rest_time: 60, rest_time2: 60, create_date: '2020-01-01', ...options.segment };
 
-  const leaves = {
-    findOne: jest.fn(async ({ where }: { where: { id: number } }) => stored.find((row) => row.id === where.id) ?? null),
-    find: jest.fn(async () => stored),
-    save: jest.fn(async (row: StaffLeave) => { if (!row.id) { row.id = nextId++; stored.push(row); } return row; }),
-    remove: jest.fn(async (row: StaffLeave) => { stored.splice(stored.indexOf(row), 1); }),
-    createQueryBuilder: jest.fn(() => {
-      const params: Record<string, unknown> = {};
-      const qb = {
-        select: () => qb,
-        where: (_s: string, p: Record<string, unknown>) => (Object.assign(params, p), qb),
-        andWhere: (_s: string, p: Record<string, unknown>) => (Object.assign(params, p), qb),
-        orderBy: () => qb,
-        getRawOne: async () => {
-          const total = stored
-            .filter((row) => row.name === params.name && row.type === params.type)
-            .filter((row) => row.start_time >= (params.start as Date) && row.start_time <= (params.end as Date))
-            .reduce((sum, row) => sum + row.time, 0);
-          return { total: String(total) };
-        },
-      };
-      return qb;
-    }),
+  const store: StaffLeaveStore = {
+    findPage: async () => ({ data: stored, total: stored.length }),
+    findOne: async (id) => stored.find((row) => row.id === id) ?? null,
+    findByName: async (name) => stored.filter((row) => row.name === name),
+    findByType: async (type) => stored.filter((row) => row.type === type),
+    findStartingBetween: async (start, end, name) => stored.filter((row) => row.start_time >= start && row.start_time <= end && (!name || row.name === name)),
+    findWithin: async (start, end) => stored.filter((row) => row.start_time >= start && row.end_time <= end),
+    sumHours: async (name, type, start, end) => stored
+      .filter((row) => row.name === name && row.type === type && row.start_time >= start && row.start_time <= end)
+      .reduce((sum, row) => sum + row.time, 0),
+    insertMany: async (rows) => rows.map((row) => { const saved = Object.assign(new StaffLeave(), row, { id: nextId++ }); stored.push(saved); return saved; }),
+    update: async (row) => { stored.splice(stored.findIndex((item) => item.id === row.id), 1, row); return row; },
+    delete: async (id) => { stored.splice(stored.findIndex((item) => item.id === id), 1); },
+    findStaffByName: async (name) => (name === '張三' ? { id: 'A01', name: '張三', begain_work: '2020-03-15' } : null),
+    findStaffById: async (id) => (id === 'A01' ? { id: 'A01', name: '張三', begain_work: '2020-03-15' } : null),
+    latestSegment: async () => segment,
   };
-  const staff = { findOne: jest.fn(async ({ where }: { where: { name: string } }) => (where.name === '張三' ? { id: 'A01', name: '張三', begain_work: '2020-03-15' } : null)) };
-  const segments = { createQueryBuilder: jest.fn(() => { const qb = { where: () => qb, andWhere: () => qb, orderBy: () => qb, addOrderBy: () => qb, getOne: async () => segment }; return qb; }) };
   const users = { findOne: jest.fn(async ({ where }: { where: { id: number } }) => (where.id === 7 ? { id: 7, userName: 'hr', staff: { name: '王主管' } } : { id: 8, userName: 'admin', staff: null })) };
   const payroll = { hasFinalRunCovering: jest.fn(async (date: string) => (options.finalDates ?? []).includes(date)) };
-  const dataSource = { transaction: jest.fn(async (work: (m: unknown) => Promise<unknown>) => work({ save: async (_entity: unknown, rows: StaffLeave[]) => Promise.all(rows.map((row) => leaves.save(row))) })) };
 
-  const service = new StaffLeaveService(leaves as never, staff as never, segments as never, users as never, payroll as never, dataSource as never);
+  const service = new StaffLeaveService(store, users as never, payroll as never);
   return { service, stored, payroll };
 }
 

@@ -1,14 +1,13 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { StaffLeave } from './entities/staff-leave.entity';
-import { Staff } from '../staff/entities/staff.entity';
-import { StaffSegment } from '../staff-segment/entities/staff-segment.entity';
 import { User } from '../../auth/entities/user.entity';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { PayrollService } from '../payroll/payroll.service';
@@ -18,7 +17,8 @@ import {
   segmentDefaultSpan,
   splitLeaveByDay,
 } from '../payroll/domain/leave-hours';
-import { dateToTaipeiWallClock, taipeiWallClockToDate, toTaipeiDateString } from '../taipei-time';
+import { dateToTaipeiWallClock, taipeiWallClockToDate } from '../taipei-time';
+import { LeaveSegment, LeaveStaff, NewStaffLeave, STAFF_LEAVE_STORE, StaffLeaveStore } from './staff-leave.store';
 import {
   CreateStaffLeaveDto,
   LeaveBalanceQueryDto,
@@ -37,78 +37,64 @@ export interface LeaveDefaults {
   date: string;
   start_time: string;
   end_time: string;
-  segment: StaffSegment | null;
+  segment: LeaveSegment | null;
 }
 
 /**
  * 請假登錄。規則移植自 Java `Dialog_Leave`（規劃文件 1.5／3.5）：
  * 時數 30 分鐘捨去再扣休息、跨日拆單、`verify` 取登入者的員工姓名、
  * 已定稿薪資 run 涵蓋期間內不可增刪改。
+ *
+ * 請假、員工、段別資料經 `StaffLeaveStore` 存取；第七階段前綁定 MariaDB 實作，
+ * 讓 Nest 登錄的請假直接進入 Java 與薪資計算共用的舊庫。登入者（`verify`）仍查 PostgreSQL。
  */
 @Injectable()
 export class StaffLeaveService {
   constructor(
-    @InjectRepository(StaffLeave) private readonly leaves: Repository<StaffLeave>,
-    @InjectRepository(Staff) private readonly staff: Repository<Staff>,
-    @InjectRepository(StaffSegment) private readonly segments: Repository<StaffSegment>,
+    @Inject(STAFF_LEAVE_STORE) private readonly store: StaffLeaveStore,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly payroll: PayrollService,
-    private readonly dataSource: DataSource,
   ) {}
 
   async findAll(page?: number, limit?: number): Promise<PaginatedResponseDto<StaffLeave>> {
     const pageNum = page ?? 1;
     const maxLimit = Math.min(limit ?? 50, 100);
-    const [data, total] = await this.leaves.findAndCount({
-      order: { start_time: 'DESC', id: 'DESC' },
-      take: maxLimit,
-      skip: (pageNum - 1) * maxLimit,
-    });
+    const { data, total } = await this.store.findPage(pageNum, maxLimit);
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
 
   async findOne(id: number): Promise<StaffLeave> {
-    const leave = await this.leaves.findOne({ where: { id } });
+    const leave = await this.store.findOne(id);
     if (!leave) throw new NotFoundException(`ID ${id} 的請假記錄不存在`);
     return leave;
   }
 
   async findByStaffId(staffId: string): Promise<StaffLeave[]> {
-    const staff = await this.staff.findOne({ where: { id: staffId } });
+    const staff = await this.store.findStaffById(staffId);
     return staff ? this.findByStaffName(staff.name) : [];
   }
 
   findByStaffName(name: string): Promise<StaffLeave[]> {
-    return this.leaves.find({ where: { name }, order: { start_time: 'DESC' } });
+    return this.store.findByName(name);
   }
 
   findByType(type: string): Promise<StaffLeave[]> {
-    return this.leaves.find({ where: { type }, order: { start_time: 'DESC' } });
+    return this.store.findByType(type);
   }
 
   /** 期間內（依開始時間，台北日期）的請假，可依員工篩選。 */
   findInRange(query: LeaveRangeQueryDto): Promise<StaffLeave[]> {
     if (query.start > query.end) throw new BadRequestException('start 不可晚於 end');
-    return this.leaves.find({
-      where: {
-        start_time: Between(
-          taipeiWallClockToDate(`${query.start} 00:00:00`),
-          taipeiWallClockToDate(`${query.end} 23:59:59`),
-        ),
-        ...(query.name ? { name: query.name } : {}),
-      },
-      order: { start_time: 'ASC', id: 'ASC' },
-    });
+    return this.store.findStartingBetween(
+      taipeiWallClockToDate(`${query.start} 00:00:00`),
+      taipeiWallClockToDate(`${query.end} 23:59:59`),
+      query.name,
+    );
   }
 
   /** 舊 API 相容：以 Date 範圍查詢。 */
   findByDateRange(startDate: Date, endDate: Date): Promise<StaffLeave[]> {
-    return this.leaves
-      .createQueryBuilder('leave')
-      .where('leave.start_time >= :startDate', { startDate })
-      .andWhere('leave.end_time <= :endDate', { endDate })
-      .orderBy('leave.start_time', 'DESC')
-      .getMany();
+    return this.store.findWithin(startDate, endDate);
   }
 
   /** 員工當日的預設請假時段：最新段別的上下班時間。 */
@@ -132,7 +118,7 @@ export class StaffLeaveService {
     await this.requireStaff(dto.name);
     const verify = await this.verifierName(userId);
 
-    const rows: Partial<StaffLeave>[] = [];
+    const rows: NewStaffLeave[] = [];
     for (const span of splitLeaveByDay(start, end)) {
       await this.assertNotFinalized(span.start_time.slice(0, 10));
       const time = await this.hoursFor(dto.name, span.start_time, span.end_time);
@@ -145,7 +131,7 @@ export class StaffLeaveService {
         verify,
       });
     }
-    return this.dataSource.transaction((manager) => manager.save(StaffLeave, rows));
+    return this.store.insertMany(rows);
   }
 
   async update(id: number, dto: UpdateStaffLeaveDto, userId: number | null): Promise<StaffLeave> {
@@ -164,20 +150,20 @@ export class StaffLeaveService {
     leave.end_time = taipeiWallClockToDate(end);
     leave.time = await this.hoursFor(leave.name, start, end);
     leave.verify = await this.verifierName(userId);
-    return this.leaves.save(leave);
+    return this.store.update(leave);
   }
 
   async remove(id: number): Promise<void> {
     const leave = await this.findOne(id);
     await this.assertNotFinalized(dateToTaipeiWallClock(leave.start_time).slice(0, 10));
-    await this.leaves.remove(leave);
+    await this.store.delete(id);
   }
 
   /** 特休依到職日週年區間、病假依曆年加總已用時數。 */
   async balance(query: LeaveBalanceQueryDto): Promise<LeaveBalance> {
     const staff = await this.requireStaff(query.name);
     const date = query.date ?? dateToTaipeiWallClock(new Date()).slice(0, 10);
-    const period = anniversaryPeriod(toTaipeiDateString(staff.begain_work), date);
+    const period = anniversaryPeriod(staff.begain_work, date);
     const year = Number(date.slice(0, 4));
     const [annual, sick] = await Promise.all([
       this.sumHours(query.name, '特休', period.start, period.end),
@@ -190,17 +176,13 @@ export class StaffLeaveService {
     };
   }
 
-  private async sumHours(name: string, type: string, start: string, end: string): Promise<number> {
-    const row = await this.leaves
-      .createQueryBuilder('leave')
-      .select('COALESCE(SUM(leave.time), 0)', 'total')
-      .where('leave.name = :name AND leave.type = :type', { name, type })
-      .andWhere('leave.start_time BETWEEN :start AND :end', {
-        start: taipeiWallClockToDate(`${start} 00:00:00`),
-        end: taipeiWallClockToDate(`${end} 23:59:59`),
-      })
-      .getRawOne<{ total: string }>();
-    return Number(row?.total ?? 0);
+  private sumHours(name: string, type: string, start: string, end: string): Promise<number> {
+    return this.store.sumHours(
+      name,
+      type,
+      taipeiWallClockToDate(`${start} 00:00:00`),
+      taipeiWallClockToDate(`${end} 23:59:59`),
+    );
   }
 
   private async hoursFor(name: string, start: string, end: string): Promise<number> {
@@ -209,19 +191,12 @@ export class StaffLeaveService {
     return calculateLeaveHours(start, end, { rest_time: segment.rest_time, rest_time2: segment.rest_time2 });
   }
 
-  /** 當日生效段別：create_date ≤ 當日的最新一筆（與薪資計算的 pickDaySegment 相同）。 */
-  private latestSegment(name: string, date: string): Promise<StaffSegment | null> {
-    return this.segments
-      .createQueryBuilder('segment')
-      .where('segment.name = :name', { name })
-      .andWhere('segment.create_date <= :date', { date })
-      .orderBy('segment.create_date', 'DESC')
-      .addOrderBy('segment.id', 'DESC')
-      .getOne();
+  private latestSegment(name: string, date: string): Promise<LeaveSegment | null> {
+    return this.store.latestSegment(name, date);
   }
 
-  private async requireStaff(name: string): Promise<Staff> {
-    const staff = await this.staff.findOne({ where: { name } });
+  private async requireStaff(name: string): Promise<LeaveStaff> {
+    const staff = await this.store.findStaffByName(name);
     if (!staff) throw new BadRequestException(`找不到員工 ${name}`);
     return staff;
   }
