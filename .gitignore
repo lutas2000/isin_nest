@@ -147,3 +147,6 @@ apps/backend/path
 
 # payroll parity fixtures contain real salary data
 apps/backend/src/hr/payroll/__fixtures__/**/*.json
+
+# 薪資 xlsx 輸出（含真實薪資）
+/files/payroll/

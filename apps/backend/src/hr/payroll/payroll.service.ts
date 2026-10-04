@@ -23,6 +23,13 @@ import { PayrollRunDay } from './entities/payroll-run-day.entity';
 import { PayrollRunStaff } from './entities/payroll-run-staff.entity';
 import { PayrollRun } from './entities/payroll-run.entity';
 import {
+  buildPayrollWorkbookBuffer,
+  payrollFileName,
+  WorkbookDayRow,
+  WorkbookStaffRow,
+} from './excel/payroll-workbook.builder';
+import { PayrollFileService } from './payroll-file.service';
+import {
   StaffMonthSummaryView,
   toRunDayRows,
   toRunStaffRows,
@@ -64,9 +71,14 @@ const MANUAL_KEYS: Array<keyof ManualWageFields> = [
   'taxWithheld',
 ];
 
+export interface PayrollRunFile {
+  fileName: string;
+  buffer: Buffer;
+}
+
 /**
- * 薪資流程：載入來源 → 純函式計算 → 存 snapshot。
- * Excel 產出在第 3 階段加入，`filePath` 與 `fileSha256` 先保持 null。
+ * 薪資流程：載入來源 → 純函式計算 → 存 snapshot → 從 snapshot 列產 Excel。
+ * Excel 永遠由 snapshot 的 staff/day 列產生，檔案遺失時可重建。
  */
 @Injectable()
 export class PayrollService {
@@ -76,6 +88,7 @@ export class PayrollService {
     @InjectRepository(PayrollRunStaff) private readonly runStaff: Repository<PayrollRunStaff>,
     @InjectRepository(PayrollRunDay) private readonly runDays: Repository<PayrollRunDay>,
     private readonly dataSource: DataSource,
+    private readonly files: PayrollFileService,
   ) {}
 
   /** 只計算不存。 */
@@ -117,16 +130,13 @@ export class PayrollService {
             finalizedAt: null,
           }),
         );
-        await manager.save(
-          PayrollRunStaff,
-          toRunStaffRows(input, department, manual).map((row) => ({ ...row, runId: run.id })),
-        );
-        await manager.save(
-          PayrollRunDay,
-          toRunDayRows(department).map((row) => ({ ...row, runId: run.id })),
-          { chunk: 500 },
-        );
-        created.push(this.withoutInput(run));
+        const staffRows = toRunStaffRows(input, department, manual).map((row) => ({ ...row, runId: run.id }));
+        const dayRows = toRunDayRows(department).map((row) => ({ ...row, runId: run.id }));
+        await manager.save(PayrollRunStaff, staffRows);
+        await manager.save(PayrollRunDay, dayRows, { chunk: 500 });
+        const file = await this.writeWorkbook(run, staffRows as WorkbookStaffRow[], dayRows as WorkbookDayRow[]);
+        await manager.update(PayrollRun, { id: run.id }, file);
+        created.push(this.withoutInput({ ...run, ...file }));
       }
       return created;
     });
@@ -188,15 +198,33 @@ export class PayrollService {
     const result = calculatePayroll(input, { departments: [run.department], manual });
     const department = result.departments[0];
 
+    const staffRows = toRunStaffRows(input, department, manual).map((row) => ({ ...row, runId: id }));
+    const dayRows = await this.runDays.find({ where: { runId: id }, order: { date: 'ASC', id: 'ASC' } });
     await this.dataSource.transaction(async (manager) => {
       await manager.delete(PayrollRunStaff, { runId: id });
-      await manager.save(
-        PayrollRunStaff,
-        toRunStaffRows(input, department, manual).map((row) => ({ ...row, runId: id })),
-      );
-      await manager.update(PayrollRun, { id }, { warningsJson: result.warnings });
+      await manager.save(PayrollRunStaff, staffRows);
+      const file = await this.writeWorkbook(run, staffRows as WorkbookStaffRow[], dayRows);
+      await manager.update(PayrollRun, { id }, { warningsJson: result.warnings, ...file });
     });
     return this.findRun(id);
+  }
+
+  /** 取得 xlsx；檔案不存在或與記錄的 sha256 不符時從 snapshot 重建並重新存檔。 */
+  async getFile(id: number): Promise<PayrollRunFile> {
+    const run = await this.runs.findOne({ where: { id } });
+    if (!run) throw new NotFoundException(`找不到薪資 run ${id}`);
+    const fileName = payrollFileName({ start: run.periodStart, end: run.periodEnd }, run.variant, run.id);
+    const existing = await this.files.read(run.filePath, run.fileSha256);
+    if (existing) return { fileName, buffer: existing };
+
+    const [staff, days] = await Promise.all([
+      this.runStaff.find({ where: { runId: id }, order: { wageOrder: 'ASC' } }),
+      this.runDays.find({ where: { runId: id }, order: { date: 'ASC', id: 'ASC' } }),
+    ]);
+    const buffer = await this.buildWorkbook(run, staff, days);
+    const file = await this.files.write(this.files.resolve(run.periodStart, fileName), buffer);
+    await this.runs.update({ id }, file);
+    return { fileName, buffer };
   }
 
   async finalize(id: number, userId: number | null): Promise<PayrollRun> {
@@ -261,6 +289,26 @@ export class PayrollService {
         wages: department.wages,
       })),
     };
+  }
+
+  private buildWorkbook(run: PayrollRun, staff: WorkbookStaffRow[], days: WorkbookDayRow[]): Promise<Buffer> {
+    return buildPayrollWorkbookBuffer({
+      period: { start: run.periodStart, end: run.periodEnd },
+      variant: run.variant,
+      department: run.department,
+      staff,
+      days,
+    });
+  }
+
+  private async writeWorkbook(
+    run: PayrollRun,
+    staff: WorkbookStaffRow[],
+    days: WorkbookDayRow[],
+  ): Promise<{ filePath: string; fileSha256: string }> {
+    const fileName = payrollFileName({ start: run.periodStart, end: run.periodEnd }, run.variant, run.id);
+    const buffer = await this.buildWorkbook(run, staff, days);
+    return this.files.write(this.files.resolve(run.periodStart, fileName), buffer);
   }
 
   private withoutInput(run: PayrollRun): PayrollRun {

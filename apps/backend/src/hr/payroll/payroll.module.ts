@@ -6,6 +6,7 @@ import { PayrollRun } from './entities/payroll-run.entity';
 import { PayrollRunDay } from './entities/payroll-run-day.entity';
 import { PayrollRunStaff } from './entities/payroll-run-staff.entity';
 import { PayrollController } from './payroll.controller';
+import { PayrollFileService } from './payroll-file.service';
 import { PayrollService } from './payroll.service';
 import { MariadbPayrollSourceLoader } from './source/mariadb-payroll-source.loader';
 import { PAYROLL_SOURCE_LOADER } from './source/payroll-source.loader';
@@ -23,6 +24,7 @@ import { PAYROLL_SOURCE_LOADER } from './source/payroll-source.loader';
   controllers: [PayrollController],
   providers: [
     PayrollService,
+    PayrollFileService,
     { provide: PAYROLL_SOURCE_LOADER, useClass: MariadbPayrollSourceLoader },
   ],
   exports: [PayrollService],

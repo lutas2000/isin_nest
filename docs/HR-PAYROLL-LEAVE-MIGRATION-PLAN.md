@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-04
 > 來源：isin-java `Personnel/src/wage/*`、`Personnel/src/gui/Dialog_Leave.java`、`Isin/src/isin/staff/*`
 > 目標：isin_nest `apps/backend/src/hr`、`apps/frontend/src/views/HR`
-> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試）與第 2 階段（snapshot 資料表、MariaDB loader、薪資 API）已實作，見 `apps/backend/src/hr/payroll/`；fixture 產出步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
+> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試）、第 2 階段（snapshot 資料表、MariaDB loader、薪資 API）與第 3 階段（exceljs 報表與下載）已實作，見 `apps/backend/src/hr/payroll/`；fixture 產出步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
 
 ## 0. 結論與原則
 
@@ -207,12 +207,12 @@ interface PayrollResult {
 
 | 方法 | 路徑 | 權限 | 說明 |
 |---|---|---|---|
-| POST | `/hr/payroll/runs` | write | body: `start`、`end`、`variant`、`departments[]`（可省略）、`manual`。載入資料、計算、每部門存一筆 draft run、產 Excel（第 3 階段）。回傳 run 清單與 warnings |
+| POST | `/hr/payroll/runs` | write | body: `start`、`end`、`variant`、`departments[]`（可省略）、`manual`。載入資料、計算、每部門存一筆 draft run、產 Excel。回傳 run 清單與 warnings |
 | GET | `/hr/payroll/runs` | read | query: `start`（精確比對期間起日）、`variant`、`department`、`status`、`limit` |
 | GET | `/hr/payroll/runs/:id` | read | run + staff + day 明細 |
-| PATCH | `/hr/payroll/runs/:id/manual` | write | body `manual`，以姓名為鍵只覆寫給定欄位；用 snapshot 內的 `input_json` 重算薪資項目，重產 Excel（第 3 階段）。final 回 409，不在 run 內的員工或未知欄位回 400 |
+| PATCH | `/hr/payroll/runs/:id/manual` | write | body `manual`，以姓名為鍵只覆寫給定欄位；用 snapshot 內的 `input_json` 重算薪資項目並重產 Excel。final 回 409，不在 run 內的員工或未知欄位回 400 |
 | POST | `/hr/payroll/runs/:id/finalize` | write | 改 final，記錄 `finalized_by/at`；已 final 回 409 |
-| GET | `/hr/payroll/runs/:id/file` | read | 下載 xlsx（第 3 階段） |
+| GET | `/hr/payroll/runs/:id/file` | read | 下載 xlsx；檔案遺失或 sha256 不符時從 snapshot 重建 |
 | POST | `/hr/payroll/preview` | read | 只計算不存，前端預覽用；回傳含 `source` |
 
 未登入 401，無 `hr-payroll` 權限 403，`SOURCE_DB_*` 未設定 503。`hr-payroll` 已加入 `features.config.ts`，管理員需在功能權限頁指派給 HR 使用者。
@@ -222,7 +222,8 @@ interface PayrollResult {
 - 套件：`exceljs`（純 JS、支援欄寬、合併、字型、列印設定）。不用 LibreOffice，避免與 `nesting.service.ts` 的轉檔流程耦合。
 - 版面沿用舊報表：每部門兩個工作表「打卡記錄-部門」「薪資-部門」，欄位順序、合併儲存格、隱藏欄、頁首「民國年月 部門 打卡記錄／薪資表」、橫向列印都保留，HR 看到的樣子不變。
 - 所有儲存格寫數值或文字，**不寫 formula**。總合欄也是後端算好的值。
-- 檔名 `{民國年}年{月}月薪資表-{variant}-run{id}.xlsx`，存到 `files/payroll/{yyyy}/`，路徑與 sha256 記在 `payroll_run`。
+- 檔名 `{民國年}年{月}月薪資表-{variant}-run{id}.xlsx`，存到 `PAYROLL_FILES_PATH`（預設 `files/payroll`）下的 `{yyyy}/`，路徑與 sha256 記在 `payroll_run`。容器環境需把 `PAYROLL_FILES_PATH` 指到掛載的持久化路徑；即使檔案遺失，下載時會從 snapshot 的 staff/day 列重建並重新存檔，所以 snapshot 才是真正的保存對象。
+- Excel 一律由 snapshot 列產生（`excel/payroll-workbook.builder.ts`），建立 run 與修改手動欄位後都會重產。`excel/payroll-workbook.reader.ts` 是舊 Excel 與新 Excel 共用的讀取器，`payroll:expected-from-xlsx` 與 builder 的 round-trip 測試都用它。
 - 舊 Excel 的外帳與外勞版本靠 `setRounding` 設定數字格式 `#,##0`，新版後端已經四捨五入，格式只做顯示。
 
 ### 3.5 請假登錄
@@ -275,7 +276,7 @@ interface PayrollResult {
 |---|---|---|---|
 | 1 | `domain/` 純函式 + fixture + parity 測試 | 計算核心通過比對 | 無 |（已實作：純函式與 32 個單元測試、parity spec、`payroll:dump-source` 與 `payroll:expected-from-xlsx` 腳本；待補 fixture）
 | 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |（已實作：migration `1777200000000-AddPayrollRunSnapshot`、`source/mariadb-payroll-source.ts` 與 `payroll:dump-source` 共用同一組 SQL、`PayrollService` 五個 API；2026-10-04 以本機後端對 6 月正式資料實測 preview 與 fixture 528 個薪資欄位全部相符，建立／修改手動欄位／定稿流程正常）
-| 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |
+| 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |（已實作：builder 以 round-trip 測試驗證，6、7 月四組 fixture 整月資料寫入後讀回與計算結果完全一致；本機後端實測下載）
 | 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |
 | 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |
 | 6 | 雙軌一個月：Java 與 Nest 各產一次，比對 | 差異為零或皆在允許清單 | 階段 5 |

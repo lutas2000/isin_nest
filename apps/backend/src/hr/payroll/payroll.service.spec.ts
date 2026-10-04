@@ -3,6 +3,7 @@ import { PayrollSourceData, SegmentRow, StaffRow } from './domain/types';
 import { PayrollRunDay } from './entities/payroll-run-day.entity';
 import { PayrollRunStaff } from './entities/payroll-run-staff.entity';
 import { PayrollRun } from './entities/payroll-run.entity';
+import { sha256 } from './payroll-file.service';
 import { PayrollService } from './payroll.service';
 import { PayrollSourceLoader } from './source/payroll-source.loader';
 
@@ -117,6 +118,19 @@ function harness(data: PayrollSourceData = sourceData()) {
     find: jest.fn(async ({ where }: { where: { runId: number } }) => dayRows.filter((row) => row.runId === where.runId)),
   };
   const loader: PayrollSourceLoader = { source: 'mariadb', load: jest.fn(async () => data) };
+  const written = new Map<string, Buffer>();
+  const files = {
+    resolve: (periodStart: string, fileName: string) => `files/payroll/${periodStart.slice(0, 4)}/${fileName}`,
+    write: jest.fn(async (filePath: string, buffer: Buffer) => {
+      written.set(filePath, buffer);
+      return { filePath, fileSha256: sha256(buffer) };
+    }),
+    read: jest.fn(async (filePath: string | null, expected: string | null) => {
+      const buffer = filePath ? written.get(filePath) : undefined;
+      if (!buffer || (expected && sha256(buffer) !== expected)) return null;
+      return buffer;
+    }),
+  };
 
   const service = new PayrollService(
     loader,
@@ -124,8 +138,9 @@ function harness(data: PayrollSourceData = sourceData()) {
     staffRepo as never,
     dayRepo as never,
     dataSource as never,
+    files as never,
   );
-  return { service, loader, runs, staffRows, dayRows, manager };
+  return { service, loader, runs, staffRows, dayRows, manager, files, written };
 }
 
 describe('PayrollService', () => {
@@ -147,7 +162,11 @@ describe('PayrollService', () => {
     );
     expect(runs).toHaveLength(2);
     expect(runs.map((run) => run.department)).toEqual(['銷管部', '生產部']);
-    expect(runs[0]).toMatchObject({ status: 'draft', source: 'mariadb', createdBy: 42, filePath: null });
+    expect(runs[0]).toMatchObject({ status: 'draft', source: 'mariadb', createdBy: 42 });
+    expect(runs[0].filePath).toBe(`files/payroll/2026/115年6月薪資表-official-run${runs[0].id}.xlsx`);
+    expect(runs[0].fileSha256).toHaveLength(64);
+    expect(h.written.size).toBe(2);
+    expect(h.runs.get(runs[0].id)).toMatchObject({ filePath: runs[0].filePath, fileSha256: runs[0].fileSha256 });
     expect(runs[0]).not.toHaveProperty('inputJson');
     expect(h.runs.get(runs[1].id)!.inputJson).toEqual(sourceData());
     expect(h.runs.get(runs[1].id)!.warningsJson).toEqual(warnings);
@@ -180,6 +199,8 @@ describe('PayrollService', () => {
     expect(after.deductionTotal).toBe(before.deductionTotal + 500);
     expect(after.netPay).toBe(before.netPay - 500);
     expect(detail.days).toHaveLength(3);
+    expect(detail.fileSha256).not.toBe(before.id && h.runs.get(id)!.fileSha256 === undefined);
+    expect(h.files.write).toHaveBeenCalledTimes(3); // 2 runs + 1 regenerate
 
     await expect(h.service.updateManual(id, { 王五: { bonus: 1 } })).rejects.toBeInstanceOf(BadRequestException);
     await expect(h.service.updateManual(id, { 張三: { wage: 1 } as never })).rejects.toBeInstanceOf(BadRequestException);
@@ -196,6 +217,22 @@ describe('PayrollService', () => {
     await expect(h.service.finalize(id, 9)).rejects.toBeInstanceOf(ConflictException);
     await expect(h.service.updateManual(id, { 李四: { bonus: 1 } })).rejects.toBeInstanceOf(ConflictException);
     await expect(h.service.findRun(999)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('getFile serves the stored workbook and rebuilds it from the snapshot when the file is gone', async () => {
+    const h = harness();
+    const { runs } = await h.service.createRuns({ start: '2026-06-01', end: '2026-06-03', variant: 'official' }, 7);
+    const id = runs[1].id;
+    const served = await h.service.getFile(id);
+    expect(served.fileName).toBe(`115年6月薪資表-official-run${id}.xlsx`);
+    expect(h.files.write).toHaveBeenCalledTimes(2);
+
+    h.written.clear();
+    const rebuilt = await h.service.getFile(id);
+    expect(h.files.write).toHaveBeenCalledTimes(3);
+    expect(rebuilt.buffer.length).toBeGreaterThan(1000);
+    expect(h.runs.get(id)!.fileSha256).toBe(sha256(rebuilt.buffer));
+    await expect(h.service.getFile(999)).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('rejects an inverted period before loading anything', async () => {

@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Request,
+  Res,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -19,6 +20,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { FeatureGuard } from '../../auth/guards/feature.guard';
 import { RequireFeature } from '../../auth/decorators/feature-permission.decorator';
@@ -95,6 +97,20 @@ export class PayrollController {
   @ApiResponse({ status: 409, description: 'run 已定稿' })
   updateManual(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePayrollManualDto) {
     return this.payroll.updateManual(id, dto.manual);
+  }
+
+  @Get('runs/:id/file')
+  @RequireFeature(PAYROLL_FEATURE, PermissionType.READ)
+  @ApiOperation({ summary: '下載薪資 run 的 xlsx；檔案遺失時從 snapshot 重建' })
+  @ApiParam({ name: 'id', example: 1 })
+  @ApiResponse({ status: 200, description: 'xlsx 檔案' })
+  @ApiResponse({ status: 404, description: '找不到 run' })
+  async downloadFile(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const file = await this.payroll.getFile(id);
+    res
+      .type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`)
+      .send(file.buffer);
   }
 
   @Post('runs/:id/finalize')
