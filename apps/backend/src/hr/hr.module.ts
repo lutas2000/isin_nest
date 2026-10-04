@@ -9,6 +9,7 @@ import { WorkingHoursModule } from './working-hours/working-hours.module';
 import { StaffVacationModule } from './staff-vacation/staff-vacation.module';
 import { StaffWorkhourModule } from './staff-workhour/staff-workhour.module';
 import { StaffAuthorityModule } from './staff-authority/staff-authority.module';
+import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { StaffAuthorityModule } from './staff-authority/staff-authority.module';
     StaffVacationModule,
     StaffWorkhourModule,
     StaffAuthorityModule,
+    PayrollModule,
   ],
   exports: [
     StaffModule,
@@ -34,6 +36,7 @@ import { StaffAuthorityModule } from './staff-authority/staff-authority.module';
     StaffVacationModule,
     StaffWorkhourModule,
     StaffAuthorityModule,
+    PayrollModule,
   ],
 })
 export class HrModule {}

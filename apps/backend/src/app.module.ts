@@ -27,6 +27,7 @@ import { AddUnitToCrmLineItems1776800000000 } from './migrations/1776800000000-A
 import { CrmConfigCodeSingleChar1776900000000 } from './migrations/1776900000000-CrmConfigCodeSingleChar';
 import { AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000 } from './migrations/1777000000000-AddQuoteDeliveryDaysAndOrderConfirmedAt';
 import { AlignHrSchemaToLegacy1777100000000 } from './migrations/1777100000000-AlignHrSchemaToLegacy';
+import { AddPayrollRunSnapshot1777200000000 } from './migrations/1777200000000-AddPayrollRunSnapshot';
 import { SystemModule } from './system/system.module';
 import { TimeClockModule } from './time-clock/time-clock.module';
 import { LegacyStaffModule } from './legacy-staff/legacy-staff.module';
@@ -85,6 +86,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           CrmConfigCodeSingleChar1776900000000,
           AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000,
           AlignHrSchemaToLegacy1777100000000,
+          AddPayrollRunSnapshot1777200000000,
         ],
         migrationsRun:
           parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,

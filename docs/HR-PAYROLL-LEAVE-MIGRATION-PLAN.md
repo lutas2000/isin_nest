@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-04
 > 來源：isin-java `Personnel/src/wage/*`、`Personnel/src/gui/Dialog_Leave.java`、`Isin/src/isin/staff/*`
 > 目標：isin_nest `apps/backend/src/hr`、`apps/frontend/src/views/HR`
-> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試架構）已實作，見 `apps/backend/src/hr/payroll/`；parity fixture 待以舊系統產出，步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
+> 狀態：規劃已定案（決議見第 6 節）。第 1 階段（純函式與 parity 測試）與第 2 階段（snapshot 資料表、MariaDB loader、薪資 API）已實作，見 `apps/backend/src/hr/payroll/`；fixture 產出步驟見 `apps/backend/src/hr/payroll/__fixtures__/README.md`。
 
 ## 0. 結論與原則
 
@@ -189,12 +189,15 @@ interface PayrollResult {
 | warnings_json | jsonb | |
 | file_path | varchar | 產出的 xlsx 路徑 |
 | file_sha256 | varchar(64) | |
-| created_by | varchar(10) | user id |
-| created_at | timestamptz | |
+| created_by | int | `users.id` |
+| finalized_by / finalized_at | int / timestamptz | 定稿者與時間 |
+| created_at / updated_at | timestamptz | |
 
-**`payroll_run_staff`**：每人一筆，欄位即 1.4 的每個薪資項目加上四桶加班、13 種假別時數、遲到次數。手動欄位（獎金、特休加、特休減、借支、其他代扣、稅金代扣）另存 `manual_json`，由前端在 draft 狀態下填入後重算合計。
+`input_json` 在 API 回應預設不帶（entity `select: false`），重算時以 query builder 讀回。
 
-**`payroll_run_day`**：每人每日一筆，欄位即 1.3 的每日欄位。這張表可取代目前沒人寫的 `staff_workhour`；建議保留 `staff_workhour` 不動，等遷移完成再決定是否刪除。
+**`payroll_run_staff`**：每人一筆，欄位即 1.4 的每個薪資項目（整數金額）加上月彙總（工時、加班、請假、遲到次數、有薪假出勤天數、出勤天數）、`overtime_json`（四桶加班）、`leave_by_type_json`（12 種假別時數）、`wage_order` 與 `hour_order`（薪資表與打卡記錄表的順序，未列入打卡記錄表者為 null）。手動欄位（獎金、特休加、特休減、借支、其他代扣、稅金代扣）另存 `manual_json`，由前端在 draft 狀態下填入後重算合計。(run_id, name) 唯一。
+
+**`payroll_run_day`**：每人每日一筆，欄位即 1.3 的每日欄位，(run_id, name, date) 唯一。這張表可取代目前沒人寫的 `staff_workhour`；建議保留 `staff_workhour` 不動，等遷移完成再決定是否刪除。
 
 同一 period + variant + department 可有多個 run。`status=final` 的 run 不可覆寫，只能新建 run。這樣每月定稿後，日後修改請假或工時不會改變已發出的薪資表。
 
@@ -204,13 +207,15 @@ interface PayrollResult {
 
 | 方法 | 路徑 | 權限 | 說明 |
 |---|---|---|---|
-| POST | `/hr/payroll/runs` | write | body: period、variant、departments[]。載入資料、計算、存 draft run、產 Excel。回傳 run 清單與 warnings |
-| GET | `/hr/payroll/runs` | read | 依 period 查詢 |
+| POST | `/hr/payroll/runs` | write | body: `start`、`end`、`variant`、`departments[]`（可省略）、`manual`。載入資料、計算、每部門存一筆 draft run、產 Excel（第 3 階段）。回傳 run 清單與 warnings |
+| GET | `/hr/payroll/runs` | read | query: `start`（精確比對期間起日）、`variant`、`department`、`status`、`limit` |
 | GET | `/hr/payroll/runs/:id` | read | run + staff + day 明細 |
-| PATCH | `/hr/payroll/runs/:id/manual` | write | 更新手動欄位，重算合計，重產 Excel。僅 draft |
-| POST | `/hr/payroll/runs/:id/finalize` | write | 改 final |
-| GET | `/hr/payroll/runs/:id/file` | read | 下載 xlsx |
-| POST | `/hr/payroll/preview` | read | 只計算不存，前端預覽用 |
+| PATCH | `/hr/payroll/runs/:id/manual` | write | body `manual`，以姓名為鍵只覆寫給定欄位；用 snapshot 內的 `input_json` 重算薪資項目，重產 Excel（第 3 階段）。final 回 409，不在 run 內的員工或未知欄位回 400 |
+| POST | `/hr/payroll/runs/:id/finalize` | write | 改 final，記錄 `finalized_by/at`；已 final 回 409 |
+| GET | `/hr/payroll/runs/:id/file` | read | 下載 xlsx（第 3 階段） |
+| POST | `/hr/payroll/preview` | read | 只計算不存，前端預覽用；回傳含 `source` |
+
+未登入 401，無 `hr-payroll` 權限 403，`SOURCE_DB_*` 未設定 503。`hr-payroll` 已加入 `features.config.ts`，管理員需在功能權限頁指派給 HR 使用者。
 
 ### 3.4 Excel 產出
 
@@ -269,7 +274,7 @@ interface PayrollResult {
 | 階段 | 內容 | 產出 | 依賴 |
 |---|---|---|---|
 | 1 | `domain/` 純函式 + fixture + parity 測試 | 計算核心通過比對 | 無 |（已實作：純函式與 32 個單元測試、parity spec、`payroll:dump-source` 與 `payroll:expected-from-xlsx` 腳本；待補 fixture）
-| 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |
+| 2 | snapshot entity + migration、`PayrollSourceLoader` MariaDB 版、`payroll.service` | 可用 API 產 run | 階段 1 |（已實作：migration `1777200000000-AddPayrollRunSnapshot`、`source/mariadb-payroll-source.ts` 與 `payroll:dump-source` 共用同一組 SQL、`PayrollService` 五個 API；2026-10-04 以本機後端對 6 月正式資料實測 preview 與 fixture 528 個薪資欄位全部相符，建立／修改手動欄位／定稿流程正常）
 | 3 | exceljs builder、下載 API | 與舊報表同版面的 xlsx | 階段 2 |
 | 4 | 請假後端修正 + `StaffLeave.vue`、`staff_manhour2` 維護 API 與外帳編輯 UI | HR 可在 Nest 登錄請假與維護外帳工時 | 無，可與 1–3 並行 |
 | 5 | `Payroll.vue`、feature 權限設定 | HR 可在 Nest 產薪資 | 階段 3 |

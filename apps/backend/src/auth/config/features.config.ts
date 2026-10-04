@@ -122,6 +122,13 @@ export const FEATURES: FeatureConfig[] = [
     category: 'staff-workhour',
   },
   {
+    name: 'hr-payroll',
+    label: '薪資計算',
+    description: '計算薪資、保存 snapshot 與下載薪資表',
+    module: 'hr',
+    category: 'payroll',
+  },
+  {
     name: 'hr-staff-authority',
     label: '員工權限',
     description: '管理員工模組權限設定',

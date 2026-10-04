@@ -1,6 +1,6 @@
 # Legacy Staff 相容流程
 
-此模組的 `/staff/*` 是獨立的 Nest 路由。打卡資料只讀 Realand M70，業務資料只讀寫舊 MariaDB 的 `staff`、`attend_record`、`staff_manhour`、`staff_m70_user`。舊 Nest HR 的 PostgreSQL 出勤流程不參與此模組。
+此模組的 `/staff/*` 是獨立的 Nest 路由。MariaDB 連線池在 `LegacyStaffDbModule`（`LegacyStaffDbService`），`hr/payroll` 也透過它讀舊庫。打卡資料只讀 Realand M70，業務資料只讀寫舊 MariaDB 的 `staff`、`attend_record`、`staff_manhour`、`staff_m70_user`。舊 Nest HR 的 PostgreSQL 出勤流程不參與此模組。
 
 ## 設定
 

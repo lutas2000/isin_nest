@@ -42,6 +42,7 @@ import { FeatureGuard } from './guards/feature.guard';
   ],
   controllers: [AuthController, FeatureConfigController, FeatureController],
   providers: [AuthService, FeatureConfigService, FeatureService, JwtStrategy, JwtAuthGuard, AdminGuard, FeatureGuard],
-  exports: [AuthService, JwtAuthGuard, AdminGuard, FeatureGuard],
+  // TypeOrmModule 一併匯出，讓其他模組的 FeatureGuard 能注入 User/Feature/UserFeature repository
+  exports: [AuthService, JwtAuthGuard, AdminGuard, FeatureGuard, TypeOrmModule],
 })
 export class AuthModule {}
