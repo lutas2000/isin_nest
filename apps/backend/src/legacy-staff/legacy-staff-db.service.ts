@@ -4,7 +4,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import mysql = require('mysql');
+import * as mysql from 'mysql';
 
 export interface LegacyConnection {
   query(sql: string, values?: unknown[]): Promise<any>;

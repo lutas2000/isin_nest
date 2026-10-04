@@ -389,6 +389,7 @@ export function decodeM70Text(payload: Buffer): string {
     return payload.subarray(0, asciiEnd).toString('ascii').trim();
   const utf16 = payload
     .toString('utf16le')
+    // eslint-disable-next-line no-control-regex -- 刻意去掉結尾的 NUL 填充
     .replace(/\u0000+$/g, '')
     .trim();
 
@@ -398,6 +399,7 @@ export function decodeM70Text(payload: Buffer): string {
 
   return payload
     .toString('latin1')
+    // eslint-disable-next-line no-control-regex -- 刻意去掉結尾的 NUL 填充
     .replace(/\u0000+$/g, '')
     .trim();
 }

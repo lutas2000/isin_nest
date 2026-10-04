@@ -53,7 +53,7 @@ export class HrAttendancePipelineService {
     );
     startTime.setUTCHours(6, 0, 0, 0);
 
-    let current = new Date(startTime);
+    const current = new Date(startTime);
     while (current <= endTime) {
       await this.manHourManager.calculateManHour(new Date(current));
       this.logger.log(`工時計算完成: ${current.toISOString().split('T')[0]}`);

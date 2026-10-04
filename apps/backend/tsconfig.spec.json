@@ -6,6 +6,8 @@
   "include": [
     "**/*.spec.ts",
     "**/*.test.ts",
+    "**/*-spec.ts",
     "**/*.d.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "dist"]
 }
