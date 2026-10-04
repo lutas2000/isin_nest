@@ -19,11 +19,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# LibreOffice：匯入 DOCX 時將 word/media 內 EMF/WMF 轉成 PNG 用
 # cifs-utils：NAS SMB 掛載用
-RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community libreoffice && \
-    apk add --no-cache cifs-utils
-ENV LIBREOFFICE_PATH=/usr/bin/soffice
+# LibreOffice 刻意不安裝：只有 Nesting 匯入 DOCX 時轉 EMF/WMF 用，目前沒在用，
+# 且 apk 安裝要數分鐘。nesting.service.ts 找不到 soffice 時會直接存原始 docx。
+# 之後要啟用時加回：
+#   RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community libreoffice
+#   ENV LIBREOFFICE_PATH=/usr/bin/soffice
+RUN apk add --no-cache cifs-utils
 
 # 只安裝 production dependencies
 COPY package.json package-lock.json ./
