@@ -1,5 +1,7 @@
 /// <reference types="jest" />
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { FeatureGuard } from '../../auth/guards/feature.guard';
 import { AttendRecordController } from './attend-record.controller';
 import { AttendRecordService } from './attend-record.service';
 
@@ -25,7 +27,12 @@ describe('AttendRecordController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AttendRecordController],
       providers: [{ provide: AttendRecordService, useValue: service }],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(FeatureGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
     controller = module.get(AttendRecordController);
   });
 

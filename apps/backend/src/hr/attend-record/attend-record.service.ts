@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -13,6 +14,10 @@ import {
   AttendRecordCsvReader,
   AttendRecordUsbReader,
 } from './attend-record-csv-reader';
+import {
+  ATTEND_RECORD_READ_STORE,
+  AttendRecordReadStore,
+} from './attend-record.store';
 
 export interface CreateAttendRecordDto {
   staffId: string;
@@ -28,11 +33,18 @@ export interface UpdateAttendRecordDto {
   attendType?: number;
 }
 
+/**
+ * 查詢一律走 `ATTEND_RECORD_READ_STORE`（第七階段前綁定 MariaDB，打卡排程寫入的資料）；
+ * 手動新增／修改／刪除與 CSV/USB 匯入仍寫 PostgreSQL 的 `attend_record`，
+ * 因此修改與刪除只能作用在 PostgreSQL 既有的紀錄上。
+ */
 @Injectable()
 export class AttendRecordService {
   private readonly logger = new Logger(AttendRecordService.name);
 
   constructor(
+    @Inject(ATTEND_RECORD_READ_STORE)
+    private readonly store: AttendRecordReadStore,
     @InjectRepository(AttendRecord)
     private readonly attendRecordRepository: Repository<AttendRecord>,
     @InjectRepository(Staff)
@@ -85,13 +97,8 @@ export class AttendRecordService {
 
     // 限制最大每頁筆數
     const maxLimit = Math.min(limitNum, 100);
-    const skip = (pageNum - 1) * maxLimit;
 
-    const [data, total] = await this.attendRecordRepository.findAndCount({
-      order: { createTime: 'DESC' },
-      take: maxLimit,
-      skip: skip,
-    });
+    const { data, total } = await this.store.findPage(pageNum, maxLimit);
 
     return new PaginatedResponseDto(data, total, pageNum, maxLimit);
   }
@@ -100,9 +107,7 @@ export class AttendRecordService {
    * 根據ID取得出勤記錄
    */
   async findOne(id: string): Promise<AttendRecord> {
-    const attendRecord = await this.attendRecordRepository.findOne({
-      where: { id },
-    });
+    const attendRecord = await this.store.findOne(id);
 
     if (!attendRecord) {
       throw new NotFoundException(`出勤記錄 ID ${id} 不存在`);
@@ -115,10 +120,7 @@ export class AttendRecordService {
    * 根據員工ID取得出勤記錄
    */
   async findByStaffId(staffId: string): Promise<AttendRecord[]> {
-    return await this.attendRecordRepository.find({
-      where: { staffId },
-      order: { createTime: 'DESC' },
-    });
+    return await this.store.find({ staffId });
   }
 
   /**
@@ -128,12 +130,7 @@ export class AttendRecordService {
     startDate: Date,
     endDate: Date,
   ): Promise<AttendRecord[]> {
-    return await this.attendRecordRepository
-      .createQueryBuilder('attendRecord')
-      .where('attendRecord.createTime >= :startDate', { startDate })
-      .andWhere('attendRecord.createTime <= :endDate', { endDate })
-      .orderBy('attendRecord.createTime', 'DESC')
-      .getMany();
+    return await this.store.find({ start: startDate, end: endDate });
   }
 
   /**
@@ -144,13 +141,7 @@ export class AttendRecordService {
     startDate: Date,
     endDate: Date,
   ): Promise<AttendRecord[]> {
-    return await this.attendRecordRepository
-      .createQueryBuilder('attendRecord')
-      .where('attendRecord.staffId = :staffId', { staffId })
-      .andWhere('attendRecord.createTime >= :startDate', { startDate })
-      .andWhere('attendRecord.createTime <= :endDate', { endDate })
-      .orderBy('attendRecord.createTime', 'DESC')
-      .getMany();
+    return await this.store.find({ staffId, start: startDate, end: endDate });
   }
 
   /**
@@ -160,7 +151,7 @@ export class AttendRecordService {
     id: string,
     updateAttendRecordDto: UpdateAttendRecordDto,
   ): Promise<AttendRecord> {
-    const attendRecord = await this.findOne(id);
+    const attendRecord = await this.findStoredOrThrow(id);
 
     Object.assign(attendRecord, updateAttendRecordDto);
 
@@ -174,7 +165,7 @@ export class AttendRecordService {
    * 刪除出勤記錄
    */
   async remove(id: string): Promise<void> {
-    const attendRecord = await this.findOne(id);
+    const attendRecord = await this.findStoredOrThrow(id);
     await this.attendRecordRepository.remove(attendRecord);
   }
 
@@ -182,10 +173,7 @@ export class AttendRecordService {
    * 根據出勤類型取得記錄
    */
   async findByAttendType(attendType: number): Promise<AttendRecord[]> {
-    return await this.attendRecordRepository.find({
-      where: { attendType },
-      order: { createTime: 'DESC' },
-    });
+    return await this.store.find({ attendType });
   }
 
   /**
@@ -208,6 +196,17 @@ export class AttendRecordService {
     );
 
     return await this.findByStaffIdAndDateRange(staffId, startOfDay, endOfDay);
+  }
+
+  /** 修改與刪除作用在 PostgreSQL 的紀錄，不經過讀取來源。 */
+  private async findStoredOrThrow(id: string): Promise<AttendRecord> {
+    const attendRecord = await this.attendRecordRepository.findOne({
+      where: { id },
+    });
+    if (!attendRecord) {
+      throw new NotFoundException(`出勤記錄 ID ${id} 不存在`);
+    }
+    return attendRecord;
   }
 
   /**

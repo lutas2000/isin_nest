@@ -8,8 +8,10 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiTags,
   ApiOperation,
   ApiResponse,
@@ -22,13 +24,22 @@ import {
   UpdateAttendRecordDto,
 } from './attend-record.service';
 import { AttendRecord } from './entities/attend-record.entity';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { FeatureGuard } from '../../auth/guards/feature.guard';
+import { RequireFeature } from '../../auth/decorators/feature-permission.decorator';
+import { PermissionType } from '../../auth/entities/user-feature.entity';
+
+export const ATTEND_RECORD_FEATURE = 'hr-attend-record';
 
 @ApiTags('出勤記錄管理')
+@ApiBearerAuth('JWT-auth')
 @Controller('attend-record')
+@UseGuards(JwtAuthGuard, FeatureGuard)
 export class AttendRecordController {
   constructor(private readonly attendRecordService: AttendRecordService) {}
 
   @Post()
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.WRITE)
   @ApiOperation({ summary: '建立出勤記錄' })
   @ApiResponse({
     status: 201,
@@ -64,6 +75,7 @@ export class AttendRecordController {
   }
 
   @Get()
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.READ)
   @ApiOperation({ summary: '取得所有出勤記錄' })
   @ApiResponse({
     status: 200,
@@ -143,6 +155,7 @@ export class AttendRecordController {
   }
 
   @Get('today/:staffId')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.READ)
   @ApiOperation({ summary: '取得特定員工今日出勤記錄' })
   @ApiParam({ name: 'staffId', description: '員工編號' })
   @ApiResponse({
@@ -157,6 +170,7 @@ export class AttendRecordController {
   }
 
   @Get(':id')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.READ)
   @ApiOperation({ summary: '根據ID取得出勤記錄' })
   @ApiParam({ name: 'id', description: '出勤記錄ID' })
   @ApiResponse({
@@ -170,6 +184,7 @@ export class AttendRecordController {
   }
 
   @Patch(':id')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.WRITE)
   @ApiOperation({ summary: '更新出勤記錄' })
   @ApiParam({ name: 'id', description: '出勤記錄ID' })
   @ApiResponse({
@@ -187,6 +202,7 @@ export class AttendRecordController {
   }
 
   @Delete(':id')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.WRITE)
   @ApiOperation({ summary: '刪除出勤記錄' })
   @ApiParam({ name: 'id', description: '出勤記錄ID' })
   @ApiResponse({ status: 200, description: '成功刪除出勤記錄' })
@@ -199,6 +215,7 @@ export class AttendRecordController {
   }
 
   @Post('process-files')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.WRITE)
   @ApiOperation({ summary: '手動處理出勤記錄檔案' })
   @ApiQuery({
     name: 'fileType',
@@ -219,6 +236,7 @@ export class AttendRecordController {
   }
 
   @Post('process-csv')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.WRITE)
   @ApiOperation({ summary: '處理 CSV 出勤記錄檔案' })
   @ApiResponse({ status: 200, description: '成功處理 CSV 檔案' })
   @ApiResponse({ status: 500, description: '處理檔案時發生錯誤' })
@@ -228,6 +246,7 @@ export class AttendRecordController {
   }
 
   @Post('process-usb')
+  @RequireFeature(ATTEND_RECORD_FEATURE, PermissionType.WRITE)
   @ApiOperation({ summary: '處理 USB 出勤記錄檔案' })
   @ApiResponse({ status: 200, description: '成功處理 USB 檔案' })
   @ApiResponse({ status: 500, description: '處理檔案時發生錯誤' })
