@@ -34,6 +34,11 @@ export class LegacyStaffM70Controller {
   @ApiResponse({ status: 200, schema: { type: 'array', items: { type: 'object', properties: { machine_id: { type: 'integer' }, name: { type: 'string', nullable: true } } } } })
   listDeviceUsers() { return this.service.listDeviceUsers(); }
 
+  @Post('device/time')
+  @ApiOperation({ summary: '將 M70 設備時間同步為伺服器時間並讀回驗證', description: '以伺服器目前時間（Asia/Taipei）寫入設備，再讀回設備時間；誤差超過 5 秒回 503。時間為台北當地時間字串，drift_seconds 為設備減伺服器的秒數。' })
+  @ApiResponse({ status: 201, schema: { type: 'object', properties: { device_time_before: { type: 'string', example: '2026-10-06 18:07:04' }, device_time: { type: 'string', example: '2026-10-06 18:08:25' }, server_time: { type: 'string', example: '2026-10-06 18:08:24' }, drift_seconds_before: { type: 'integer', example: -80 }, drift_seconds: { type: 'integer', example: 1 } } } })
+  syncDeviceTime() { return this.service.syncDeviceTime(); }
+
   @Post('device')
   @ApiOperation({ summary: '在 M70 新增密碼員工並讀回驗證；建立未連結的 MariaDB 對照', description: '姓名與密碼必填。ID 必須未出現在設備、mapping 與設備打卡歷史；不支援指紋、人臉、卡片、權限或啟用狀態。成功回傳更新後的 mapping；密碼不回傳。' })
   @ApiBody({ schema: { type: 'object', additionalProperties: false, required: ['machine_id', 'name', 'password'], properties: { machine_id: { type: 'integer', minimum: 1, maximum: 4294967295, example: 9999 }, name: { type: 'string', maxLength: 24, example: 'M70測試員工' }, password: { type: 'string', pattern: '^[0-9]+$', writeOnly: true, description: '十進位正整數，最大 4294967295；亦接受 JSON number' } } } })

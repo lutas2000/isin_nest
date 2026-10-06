@@ -10,6 +10,7 @@ export const M70_COMMAND = {
   ENABLE_USER: 0x010d,
   MODIFY_PRIVILEGE: 0x0111,
   GET_DEVICE_TIME: 0x010e,
+  SET_DEVICE_TIME: 0x010f,
   READ_ALL_USER_IDS: 0x0112,
   READ_GENERAL_ATTENDANCE_LOGS: 0x0106,
   READ_ALL_ATTENDANCE_LOGS: 0x0107,
@@ -355,6 +356,17 @@ export function decodeM70AttendanceLogs(payload: Buffer): {
     });
   }
   return rows;
+}
+
+/**
+ * The M70 clock stores Taipei wall-clock time with no zone. Device time
+ * values carry that wall clock in their UTC fields, so convert a real
+ * instant before encoding. Asia/Taipei has no DST.
+ */
+export const M70_DEVICE_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+export function toM70WallClock(value: Date): Date {
+  return new Date(value.getTime() + M70_DEVICE_UTC_OFFSET_MS);
 }
 
 export function encodeM70DeviceTime(value: Date): Buffer {

@@ -7,6 +7,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { toM70WallClock } from '../time-clock/realand-m70.protocol';
 import { TimeClockService } from '../time-clock/time-clock.service';
 import { LegacyStaffDbService } from './legacy-staff-db.service';
 
@@ -20,6 +21,26 @@ export interface M70Mapping {
   present_on_device: number;
   first_seen_at: string;
   last_synced_at: string | null;
+}
+
+export interface M70DeviceTimeSync {
+  device_time_before: string;
+  device_time: string;
+  server_time: string;
+  drift_seconds_before: number;
+  drift_seconds: number;
+}
+
+// The device clock has 1-second resolution and the read-back adds a round trip.
+const MAX_SYNCED_DRIFT_SECONDS = 5;
+
+// Device time values carry Taipei wall clock in their UTC fields.
+function wallClockText(value: Date): string {
+  return value.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function driftSeconds(device: Date, server: Date): number {
+  return Math.round((device.getTime() - toM70WallClock(server).getTime()) / 1000);
 }
 
 function machineId(value: unknown): number {
@@ -196,6 +217,26 @@ export class LegacyStaffM70Service {
     return this.deviceOperation('M70 employee read', async () =>
       (await this.clock.listUsers({ includeNames: true })).map(user => ({ machine_id: user.userId, name: user.name ?? null })),
     );
+  }
+
+  async syncDeviceTime(): Promise<M70DeviceTimeSync> {
+    return this.deviceOperation('M70 device time sync', async () => {
+      const before = (await this.clock.getDeviceTime()).date;
+      const driftBefore = driftSeconds(before, new Date());
+      await this.clock.setDeviceTime(new Date());
+      const after = (await this.clock.getDeviceTime()).date;
+      const server = new Date();
+      const drift = driftSeconds(after, server);
+      if (Math.abs(drift) > MAX_SYNCED_DRIFT_SECONDS)
+        throw new ServiceUnavailableException(`M70 clock read back ${drift}s off server time after sync`);
+      return {
+        device_time_before: wallClockText(before),
+        device_time: wallClockText(after),
+        server_time: wallClockText(toM70WallClock(server)),
+        drift_seconds_before: driftBefore,
+        drift_seconds: drift,
+      };
+    });
   }
 
   private async saveDeviceSnapshot(id: number, name: string, serial: string): Promise<M70Mapping> {

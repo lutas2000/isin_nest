@@ -206,6 +206,8 @@ device_time = 2000-01-01 00:00:00 + seconds
 
 本次測試設備時間與測試主機相差約數十秒，證明此命令可讀取目前設備時間。
 
+秒數代表**台北當地時間**（設備不帶時區）：解碼後的 `Date` 把台北的年月日時分秒放在 UTC 欄位，不是真正的 UTC instant。寫入方式見第 12 節。
+
 ### 4.4 人員資料
 
 人員摘要是兩階段流程：
@@ -881,7 +883,7 @@ ReadGeneralLogData 增量封包、持久化後完成確認與全量讀取已分�
 ### 必須人工確認後才能使用
 
 ~~~text
-SetDeviceInfo / SetDeviceTime / SetDeviceLongInfo
+SetDeviceInfo / SetDeviceLongInfo
 SetUserName / SetEnroll / SetUserName1
 DeleteEnrollData / DelEnroll / EmptyAllEnroll
 EnableDevice / EnableUser
@@ -911,6 +913,7 @@ RealandM70Client
 ├── getStatus()
 ├── getInfo()
 ├── getTime()
+├── setTime(value)
 ├── listUsers()
 ├── getUserName(userId)
 ├── upsertUser(user)
@@ -1009,3 +1012,27 @@ DeleteEnrollData 0x0103, arg2=5, arg3=userId
 首次測試找到原本 wrapper 的兩個問題：`SetEnrollData` 漏讀準備 result，導致下一個指令把殘留完成 result 誤當 ACK；姓名沿用舊 DLL 的 108-byte 欄位遭 M70 拒絕。修正為完整雙 result 握手及 48-byte 姓名後，同一連線新增密碼與姓名、修改、刪除全部通過。每次失敗測試也已清除測試員工並核對既有資料。
 
 本次未驗證測試密碼在設備上的實際打卡、人臉/指紋註冊、卡片、權限或 enabled 設定，也未建立 MariaDB `staff` 或人員 mapping。
+
+## 12. 設備時間寫入（SetDeviceTime）
+
+~~~text
+SetDeviceTime  0x010f, arg2=0, arg3=4
+command → ACK → 4-byte big-data payload → 完成 result（word=1 為成功）
+payload = uint32_le(台北當地時間 - 2000-01-01 00:00:00 的秒數)
+~~~
+
+`TimeClockService.setDeviceTime(value)` 接收真正的時間點，由 `toM70WallClock()` 加 8 小時轉成台北當地時間後再編碼（台北沒有日光節約時間）。HTTP 入口是管理員限定的 `POST /staff/m70-users/device/time`：讀取原設備時間 → 寫入伺服器目前時間 → 讀回比對；誤差超過 5 秒回 503。只能同步為伺服器時間，不接受任意時間。
+
+### 12.1 2026-10-06 實機驗證
+
+此指令代碼是依 `0x010E` 讀取／`0x011A`、`0x011B` 姓名讀寫的成對規律推定，經使用者同意後直接在 M70 v3.6.8 實測：
+
+| 步驟 | 結果 |
+|---|---|
+| 寫入前 | 設備 18:07:04，主機 18:08:24（設備慢約 80 秒） |
+| 送出 `0x010f` + 4-byte payload | 設備回 result word=1、status=0；同一連線無殘留資料 |
+| 同一輪讀回 | 設備 18:08:25，主機 18:08:24 |
+| 另開連線讀回 | 設備 18:08:29，主機 18:08:29 |
+
+未驗證 `_SetDeviceTime1` 變體、2099 年以後的範圍，以及寫入時間對既有打卡紀錄的影響（本次寫入前後未讀取打卡紀錄比對）。
+

@@ -23,6 +23,7 @@ import {
   parseDataFrame,
   parseM70GeneralLogCursor,
   parseResultFrame,
+  toM70WallClock,
 } from './realand-m70.protocol';
 import {
   ListUsersOptions,
@@ -745,12 +746,14 @@ export class RealandM70Client {
     );
   }
 
-  async setDeviceTime(_value: Date): Promise<void> {
-    // The M70 read command is verified, but the write payload variant is not
-    // yet verified against firmware 3.6.8. Do not guess a write frame.
-    encodeM70DeviceTime(_value);
-    throw new TimeClockUnsupportedError(
-      'M70 setDeviceTime is not enabled until its firmware 3.6.8 write frame is verified',
+  async setDeviceTime(value: Date): Promise<void> {
+    // Verified on firmware 3.6.8 (2026-10-06): command → ACK → 4-byte
+    // big-data payload → completion result.
+    const payload = encodeM70DeviceTime(toM70WallClock(value));
+    await this.enqueue(() =>
+      this.withSession((session) =>
+        session.requestWrite(M70_COMMAND.SET_DEVICE_TIME, 0, 4, payload),
+      ),
     );
   }
 

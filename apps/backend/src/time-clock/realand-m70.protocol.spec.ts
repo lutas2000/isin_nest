@@ -7,11 +7,13 @@ import {
   decodeM70AttendanceLogs,
   decodeM70Text,
   decodeM70UserSummary,
+  encodeM70DeviceTime,
   encodeM70Text,
   parseAckFrame,
   parseDataFrame,
   parseM70GeneralLogCursor,
   parseResultFrame,
+  toM70WallClock,
 } from './realand-m70.protocol';
 
 describe('Realand M70 protocol helpers', () => {
@@ -117,6 +119,18 @@ describe('Realand M70 protocol helpers', () => {
     expect(value.minute).toBe(34);
     expect(value.second).toBe(56);
     expect(value.rawSeconds).toBe(seconds);
+  });
+
+  it('encodes a real instant as Taipei wall-clock seconds', () => {
+    const instant = new Date(Date.UTC(2026, 9, 6, 10, 8, 24, 801));
+
+    const value = decodeM70DeviceTime(encodeM70DeviceTime(toM70WallClock(instant)));
+
+    expect([value.year, value.month, value.day]).toEqual([2026, 10, 6]);
+    expect([value.hour, value.minute, value.second]).toEqual([18, 8, 24]);
+    expect(() => encodeM70DeviceTime(new Date(Date.UTC(1999, 11, 31)))).toThrow(
+      'between 2000-01-01 and 2099-12-31',
+    );
   });
 
   it('round-trips the fixed-width UTF-16LE text field', () => {

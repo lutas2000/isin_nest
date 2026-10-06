@@ -21,6 +21,8 @@ describe('Staff M70 device API', () => {
     getAttendanceLogs: jest.fn(),
     upsertUser: jest.fn(),
     deleteUser: jest.fn(),
+    getDeviceTime: jest.fn(),
+    setDeviceTime: jest.fn(),
   };
   const db = { query: jest.fn() };
   const base = '/staff/m70-users/device';
@@ -73,11 +75,43 @@ describe('Staff M70 device API', () => {
   });
 
   it('protects every device route with JWT and the real AdminGuard', async () => {
-    for (const [method, url] of [['get', base], ['post', base], ['patch', `${base}/9999`], ['delete', `${base}/9999`]] as const) {
+    for (const [method, url] of [['get', base], ['post', base], ['patch', `${base}/9999`], ['delete', `${base}/9999`], ['post', `${base}/time`]] as const) {
       await request(app.getHttpServer())[method](url).expect(401);
       await request(app.getHttpServer())[method](url).set('Authorization', 'Bearer member').expect(403);
     }
     expect(clock.listUsers).not.toHaveBeenCalled();
+    expect(clock.setDeviceTime).not.toHaveBeenCalled();
+  });
+
+  describe('device time sync', () => {
+    // Device time values carry Taipei wall clock in their UTC fields.
+    let deviceOffsetMs: number;
+    const deviceTime = () => ({ date: new Date(Math.floor((Date.now() + 8 * 3600_000 + deviceOffsetMs) / 1000) * 1000) });
+    beforeEach(() => {
+      deviceOffsetMs = -80_000;
+      clock.getDeviceTime.mockImplementation(async () => deviceTime());
+    });
+
+    it('writes server time and reports the read-back drift', async () => {
+      clock.setDeviceTime.mockImplementation(async () => { deviceOffsetMs = 0; });
+      const { body } = await admin('post', `${base}/time`).expect(201);
+      expect(clock.setDeviceTime).toHaveBeenCalledTimes(1);
+      expect(clock.setDeviceTime.mock.calls[0][0]).toBeInstanceOf(Date);
+      expect(body.drift_seconds_before).toBeLessThanOrEqual(-79);
+      expect(body.drift_seconds_before).toBeGreaterThanOrEqual(-81);
+      expect(Math.abs(body.drift_seconds)).toBeLessThanOrEqual(1);
+      expect(body.device_time).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    });
+
+    it('fails when the device clock does not read back near server time', async () => {
+      clock.setDeviceTime.mockResolvedValue(undefined);
+      await admin('post', `${base}/time`).expect(503);
+    });
+
+    it('maps device write failures to 503', async () => {
+      clock.setDeviceTime.mockRejectedValue(new TimeClockConnectionError('offline'));
+      await admin('post', `${base}/time`).expect(503);
+    });
   });
 
   it('creates, modifies, deletes and keeps the historical mapping and staff link', async () => {

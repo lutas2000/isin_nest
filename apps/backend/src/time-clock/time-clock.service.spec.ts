@@ -58,6 +58,9 @@ describe('TimeClockService', () => {
     await expect(service.getDeviceTime()).resolves.toBe(deviceTime);
     await expect(service.listUsers()).resolves.toBe(users);
     await expect(service.getUserName(1001)).resolves.toBe('王小明');
+    const syncAt = new Date(Date.UTC(2026, 9, 6, 10, 8, 24));
+    await service.setDeviceTime(syncAt);
+    expect(client.setDeviceTime).toHaveBeenCalledWith(syncAt);
     const upsert: TimeClockUserUpsert = {
       userId: 1001,
       name: '王小明',
@@ -73,11 +76,6 @@ describe('TimeClockService', () => {
 
   it('does not silently issue still-unverified write or log commands', async () => {
     const client = {
-      setDeviceTime: jest
-        .fn()
-        .mockRejectedValue(
-          new TimeClockUnsupportedError('write frame not verified'),
-        ),
       setUserEnabled: jest
         .fn()
         .mockRejectedValue(
@@ -91,9 +89,6 @@ describe('TimeClockService', () => {
     };
     const service = new TimeClockService(client as never);
 
-    await expect(service.setDeviceTime(new Date())).rejects.toBeInstanceOf(
-      TimeClockUnsupportedError,
-    );
     await expect(service.setUserEnabled(1001, true)).rejects.toBeInstanceOf(
       TimeClockUnsupportedError,
     );

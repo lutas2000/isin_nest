@@ -292,3 +292,24 @@ describe('M70 user writes', () => {
     }
   });
 });
+
+describe('M70 device time write', () => {
+  it('sends Taipei wall-clock seconds as a 4-byte 0x010f payload', async () => {
+    const open = jest.spyOn(M70Session.prototype, 'open').mockResolvedValue();
+    const close = jest.spyOn(M70Session.prototype, 'close').mockImplementation();
+    const write = jest.spyOn(M70Session.prototype, 'requestWrite').mockResolvedValue({ dn: 3, status: 0, word: 1, value: 0, raw: resultFrame(0) });
+    try {
+      const client = new RealandM70Client({ get: () => undefined } as any, writeOptions);
+      await client.setDeviceTime(new Date(Date.UTC(2026, 9, 6, 10, 8, 24)));
+      expect(write).toHaveBeenCalledTimes(1);
+      expect(write.mock.calls[0].slice(0, 3)).toEqual([0x010f, 0, 4]);
+      const expected = (Date.UTC(2026, 9, 6, 18, 8, 24) - Date.UTC(2000, 0, 1)) / 1000;
+      expect(write.mock.calls[0][3]?.readUInt32LE(0)).toBe(expected);
+      expect(write.mock.calls[0][3]?.length).toBe(4);
+    } finally {
+      open.mockRestore();
+      close.mockRestore();
+      write.mockRestore();
+    }
+  });
+});
