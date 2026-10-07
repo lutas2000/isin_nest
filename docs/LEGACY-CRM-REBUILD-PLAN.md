@@ -5,6 +5,7 @@
 > 目標：isin_nest `apps/backend/src/legacy-crm`、`apps/frontend/src/legacy-crm`
 > 狀態：規劃已定案（2026-10-08 決議見第 11 節）。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
 > 相關文件：`../isin_vb6/docs/handoff-legacy-rebuild.md`（接手文件）、`legacy-ui-spec.md`（版面與操作規格）、`legacy-mdb-field-mapping.md`（MDB → 新表欄位對應與移轉範圍）、`legacy-migration-run.md`（正式移轉流程與耗時）
+> 研究報告（2026-10-08，獨立於 isin_vb6）：`research/ACCESS-MDB-LIBRARIES.md`（Access 97 讀寫套件）、`research/SMB-MOUNT-FROM-CONTAINER.md`（容器掛載 SMB）與 `research/smb-mount.compose.example.yml`
 
 ## 0. 起因與原則
 
@@ -135,12 +136,12 @@
 
 流程沿用 `legacy-migration-run.md`，只改匯入目標：
 
-1. 匯出：`export-legacy-mdb-set.sh`（Jackcess、`x-windows-950`）不變，產出 CSV。
+1. 匯出：`export-legacy-mdb-set.sh`（Jackcess、`x-windows-950`）流程不變，產出 CSV。Jackcess 由 2.1.2 升到 **5.0.3**（Java 11 以上；會自動讀檔頭字碼頁、修正 Jet 3 索引與日期精度），仍明確指定 `x-windows-950` 並把檔頭偵測結果記到 log；執行用的 JRE 必須含 `jdk.charsets` 模組，否則 950 會無聲變亂碼（`research/ACCESS-MDB-LIBRARIES.md` 2.1）。
 2. 匯入：新寫 `apps/backend/src/legacy-crm/migration/import-legacy-csv.ts`（或移植 `stage-legacy-import.mjs`），用 `pg` `COPY` 分表批次寫入 `legacy_crm`，交易邊界與排除規則（空白編號、孤兒明細）與現版相同；`--final` 同樣遇錯即停。
 3. 民國字串日期在匯入時解析成 `date`（失敗者留 `*_raw`，見 2.2）、預填 `staff.legacy_crm_code`、建索引、`ANALYZE`。
 4. 核對：`summary.json` 的筆數對照 `legacy-migration-run.md` 2026-10-07 表格（客戶 2,106、工件 407,327、訂單 174,950、出貨 181,558、工作 195,461…）。
 5. 演練兩次：一次用 10/02 副本比對筆數，一次在正式切換前用當天資料。預期 PostgreSQL 匯入時間與 SQLite 同量級（2～5 分鐘）。
-6. 切換日：舊系統停用、確認無 `.ldb`、複製、匯出、匯入、驗收、開放。舊系統保留唯讀備查。
+6. 切換日：舊系統停用、確認無 `.ldb`、複製、匯出、匯入、驗收、開放。舊系統保留唯讀備查。複製 MDB 用後端既有的容器內 cifs 掛載以唯讀（`ro,cache=none,actimeo=0`）掛 `\\ISIN\isin`，或一次性 `smbclient get`；Windows 端 `robocopy` 到 Mac 為備案。複製後比對大小與雜湊（`research/SMB-MOUNT-FROM-CONTAINER.md` 1 節）。
 7. **`legacy_crm` 的初始資料只來自 Access MDB**（決議）：新版 CRM 已輸入的 `customers`、`quotes`、`orders` 等資料不併入，原表保留不動。切換後若有需要，再另案評估人工補登。
 8. 切換前確認會計系統是否有連線 VB6 銷管（目前判斷沒有的可能性較高）：在 ISIN 主機檢查 `\\ISIN\isin` 的 SMB 連線來源與 `.ldb` 內的機器名稱、詢問會計；若有，會計端的讀取需求列入第 11.1 節的共存研究並優先處理。
 
@@ -169,7 +170,8 @@ apps/backend/src/legacy-crm/
 - 回寫與主寫入在同一 transaction（TypeORM `DataSource.transaction`），`write_log` 一併寫入。
 - 民國日期只在 API 邊界轉換：DTO 收 `yyy.mm.dd` 字串，`parseRocDate` 轉 `date`；回傳時 `formatRocDate`。service 與 SQL 內一律用 `date`。
 - 員工相關查詢直接 join `public.staff`（`hr/staff` 模組），legacy-crm 模組不自建員工 entity。
-- 環境變數：`LEGACY_DXF_PATH`（`\\Server\C\`）、`LEGACY_CNC_PATH`（`\\SERVER\n\`）、`LEGACY_DXF_LEGACY_ROOT`；由 docker compose 掛載 SMB 目錄。
+- 環境變數：`LEGACY_DXF_PATH`（`\\Server\C\` → `/nas/c`）、`LEGACY_CNC_PATH`（`\\SERVER\n\` → `/nas/n`）、`LEGACY_MDB_PATH`（`\\ISIN\isin` → `/nas/isin`，唯讀）、`LEGACY_DXF_LEGACY_ROOT`；掛載沿用既有 `NasService`（第 9 節）。
+- 所有 SMB 存取經過一個 `LegacyFileService`：同時最多 4 個請求、逾時 3 秒；DXF 逾時回 503「圖檔伺服器無回應」，CNC 檢查逾時回「未知」並拒絕存檔，**不可當作檔案不存在**（否則工作單 CNC_OK 規則會被繞過）。DXF 路徑一律由圖號推算，不列目錄、不建檔案索引。
 
 ## 5. 前端：獨立 route、layout 與 design tokens
 
@@ -242,9 +244,12 @@ apps/backend/src/legacy-crm/
 
 ## 9. 部署與維運
 
-- docker compose 新增 SMB 掛載（DXF、CNC 唯讀），環境變數對應 4 節。
+- **SMB 掛載沿用後端既有的 `NasService`**（`/etc/auto_nas` → 容器內 `mount -t cifs` 到 `/nas/<key>`），不另外加 compose volume，也**不要**用 macOS 主機先掛 smbfs 再 bind mount 進容器（本機 OrbStack 實測會讓 bind mount 機制整個卡死，見 `research/SMB-MOUNT-FROM-CONTAINER.md` 3.4）。
+- `NasService` 需改成每個 share 各自的掛載選項（研究報告 4 節）：DXF `ro,vers=2.1,actimeo=60`、CNC `ro,vers=2.1,actimeo=10`、MDB `ro,vers=2.1,cache=none,actimeo=0`，都加 `iocharset=utf8,echo_interval=10,soft`；帳密改用 docker secret 的 credentials 檔（現況是命令列明碼）；`privileged: true` 縮成 `cap_add: [SYS_ADMIN, DAC_READ_SEARCH]`；`isin` share 改唯讀。只有在 SERVER／ISIN 確認只支援 SMB1 時才用 `vers=1.0`，且只限唯讀。範例見 `research/smb-mount.compose.example.yml`。
+- 前置確認：ISIN、SERVER 的 Windows 版本與最高 SMB 版本（Win7 → SMB 2.1）；兩台主機做 DHCP 保留。
+- Node 端：設 `UV_THREADPOOL_SIZE`（建議 16），SMB I/O 一律有逾時與併發上限（第 4 節 `LegacyFileService`）；SMB 伺服器無回應時 cifs 呼叫會卡住 libuv 執行緒，沒有上限會拖垮整個後端。`/system/nas/status` 健康檢查對每個掛載點做一次帶逾時的 `stat`，並提供 remount API（密碼變更、長時間斷線後用）。
 - PostgreSQL 備份：每日 `pg_dump --schema=legacy_crm` 加整庫週備份；正式資料約 500 MB（SQLite 量級），PostgreSQL 預估 1～1.5 GB，確認 volume 容量。
-- 效能：`parts` 40 萬、`order_items`／`sales_items`／`work_items` 各約 57 萬列。頭筆～尾筆瀏覽與查詢視窗依單號、客戶編號、圖號、日期建索引；報表限制 1～2 個月區間（沿用現行預設）。
+- 效能：`parts` 40 萬、`order_items`／`sales_items`／`work_items` 各約 57 萬列。頭筆～尾筆瀏覽與查詢視窗依單號、客戶編號、圖號、日期建索引；報表限制 1～2 個月區間（沿用現行預設）。DXF／CNC 經 SMB 按路徑讀取，`stat` 約 1 個 RTT、`readFile` 約 3～4 個 RTT（區網約 0.5～5 ms），40 萬檔不成問題，前提是不掃描目錄。
 - 字型：`tw-sung-legacy.woff2` 由 frontend 提供；現場 Windows 電腦優先用 `MingLiU`。
 - 瀏覽器：現場電腦以 Chrome／Edge 為準，列印用瀏覽器列印對話框；第一次上線前依 handoff「未完成事項」實際印一張量測 HP 邊界。
 
@@ -259,8 +264,8 @@ apps/backend/src/legacy-crm/
 | 4. 前端單據與報表 | 六張單據、F 鍵、列印、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對；列印 PDF 與 XPS 座標比對 |
 | 5. 新功能 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理 |
 | 6. 隔離新版 CRM | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*` |
-| 7. 正式移轉與上線 | 確認會計系統是否連線舊銷管、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |
-| 8.（選配）共存研究 | 見 11.1 | 研究報告，決定做或不做 |
+| 7. 正式移轉與上線 | 確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |
+| 8.（選配）共存研究 | 套件層與檔案層研究已完成（11.1）；剩餘為區網實測 | 決定做或不做；預設不做 |
 
 每階段完成後更新本文件狀態列與 `Agent.md` 文件索引。
 
@@ -281,32 +286,34 @@ apps/backend/src/legacy-crm/
 
 目的：切換期若有人仍用 Win7 舊程式（或會計系統若確認有連線舊銷管），新系統能否即時讀寫同一份 `\\ISIN\isin\*.mdb`。
 
-**已知條件**
+**2026-10-08 研究結論（兩份獨立研究，均只用合成資料與本機 Samba，未連區網）**
 
-- 作業 MDB 在主機 ISIN 的 SMB 共用資料夾，白天有多台電腦寫入；Access 以 `.ldb` 檔做頁鎖。
-- Jackcess（Java）可開啟 Access 97 檔並讀寫；但 Jackcess 不實作 Jet 的 `.ldb` 多使用者鎖定協定，與執行中的 VB6/DAO 同時寫入會有損壞風險；部分索引回報 `SortOrder[1028(0)]` 不支援並標成唯讀。
-- 目前伺服器為 Mac mini（Docker）；沒有 Windows 版 Jet/ACE 驅動可用。
+> 詳見 `research/ACCESS-MDB-LIBRARIES.md`（套件層）與 `research/SMB-MOUNT-FROM-CONTAINER.md`（檔案層）。
 
-**要研究的套件與方法**
+1. **macOS／Linux 上沒有任何套件能寫入 Access 97 檔。** Jackcess（2.1.2、4.0.8、5.0.3）與 UCanAccess 5.1.8 對 Jet 3 都只能讀，官方 FAQ 亦明載；用反射硬開寫入，寫出的列連 Jackcess 自己都讀不回、中文索引鍵算錯，形同毀損。原規劃「Jackcess 可讀寫、是唯一跨平台可寫方案」的敘述**不成立**。
+2. **唯讀即時讀取可行，風險中低：** Jackcess 5.0.3 做 Java side-car 或 CLI。它依檔頭字碼頁自動用 950 解碼，造字（PUA）對應與 Windows 一致，Currency 四位小數精確，`SortOrder 1028` 辨識為繁中排序（Jet 3 非英文文字索引唯讀，對整表讀取無影響）。JRE 必須含 `jdk.charsets`。讀取方式應為「複製 MDB 成本機快照 → 讀副本」，複製前後比對 mtime 與大小、不同就重試；不要直接在 SMB 上逐頁解析正在被寫入的檔，也避免 Linux client 拿到 oplock 拖慢 Win7 DAO 開檔。
+3. **所有跨平台工具都不實作 Jet 的 `.ldb` 與頁鎖協定。** 與 VB6 同時讀不會弄壞檔案，但可能讀到寫到一半的頁；同時寫一定有損毀風險。
+4. **檔案層的鎖：** Linux cifs 只在 `vers>=2.1` 且 `cache=none,nolease` 時會把 byte-range lock 立即送到 server；`vers=1.0` 在本機實測中第二個 client 拿得到第一個 client 已鎖住的範圍，衝突沒被擋下。這代表任何 Linux 端寫 MDB 的想法都要求 ISIN 支援 SMB 2.1，而且就算鎖傳得對，Jet 協定仍然不對。
+5. **寫入唯一可行路線是 Windows 端 32 位元 Jet bridge**（.NET x86 + `Microsoft.Jet.OLEDB.4.0` 或 DAO 3.6，與 VB6 用同一個引擎、會參與 `.ldb` 鎖定）。限制：只能 x86；ACE 2013 以後不能開 Access 97，不能替代；要控管 Windows Update（2019-01 曾有 Jet 3 回歸）；SMB 伺服器端建議停用 oplock。代價是多一台 Windows 與一套服務。
+6. **macOS 主機掛 smbfs 再 bind mount 進 OrbStack 容器的路線排除**：實測卡死 bind mount 機制。
+7. 其他候選：mdbtools 在 macOS 依檔頭用 BIG-5 解碼造字正確，但手動指定 CP950 反而變 `?`、日期兩位數年、空字串與 NULL 不分、`mdb-sql` 對 Currency 條件無效，Linux 容器內造字處理未驗；Node `mdb-reader` 對 Jet 3 寫死 windows-1252，造字遺失，需改原始碼；Python `pandas_access` 已停更且 NumPy 2 崩潰，`access_parser` 不建議，`meza` 只是 mdbtools 包裝。
 
-| 方向 | 候選 | 驗證重點 |
-|---|---|---|
-| 唯讀即時讀取 | Jackcess（已在用）、`mdbtools`（C，`mdb-export`）、Python `pandas_access`／`mdbtools` 綁定、Node `node-mdb`／`mdb-reader`（純 JS，唯讀） | 開啟中（有 `.ldb`）能否安全讀；Access 97 (Jet 3.x) 支援度；中文 950 字碼頁；讀取延遲 |
-| 寫入 | Jackcess（唯一跨平台可寫方案）；Windows 端用 ODBC/DAO 的小型 bridge 服務（.NET + `Microsoft.Jet.OLEDB.4.0`，需 32 位元） | 與 VB6 同時開啟時的鎖定行為；索引相容；寫入後 VB6 畫面是否立即看到 |
-| 檔案層 | SMB 從容器掛載 `\\ISIN\isin`（`cifs-utils`，SMB1 相容性，Win7 預設 SMB1/2） | oplock／byte-range lock 是否透傳；Docker on Mac 掛載 SMB 的穩定度 |
-| 變更偵測 | 輪詢 MDB mtime + 增量讀取；或 Windows 端 bridge 用 `FileSystemWatcher` | 同步延遲、負載 |
+**決定**
 
-**可能的結論形態**
+- **預設維持「不共存，整批切換」**（結論形態 3）。移轉只需數分鐘，選下班後切換；兩份研究都支持此結論。
+- 若會計系統確認有連線舊銷管而需要過渡期，採**結論形態 1（單向唯讀）**：舊系統仍是 system of record，新系統以 Jackcess 5.0.3 定時從 `LEGACY_MDB_PATH`（`ro,cache=none,actimeo=0` 掛載）複製快照並讀取增量到 `legacy_crm`，新系統不寫。
+- **結論形態 2（Windows bridge 雙向）不做**，除非使用者另行決定；Linux 端寫入**禁止**。
 
-1. **只做單向唯讀共存**：新系統定時從 MDB 讀取增量到 `legacy_crm`（舊系統是 system of record），新系統只查詢不寫。風險低，但員工仍得在舊系統寫，意義不大。
-2. **Windows bridge 雙向**：在一台 Windows 機跑 32 位元 Jet 服務，新系統透過它讀寫 MDB。可行但多一台機器與一套服務要維護。
-3. **不共存，整批切換**：以目前移轉只需幾分鐘的事實，選一個下班後切換。**預設建議**，共存研究只作為備案。
+**尚待區網實測（需人員在現場，對 `_isin_YYYYMMDD` 副本操作，不碰正式檔）**
 
-研究輸出：`docs/LEGACY-CRM-COEXISTENCE-RESEARCH.md`，含每個套件實測結果（只對 `_isin_YYYYMMDD` 副本測，不碰正式檔）。
+- ISIN、SERVER 的 Windows 版本與最高 SMB 版本。
+- Win7 DAO 開著副本 MDB 時，Linux 端對 `.ldb` 範圍 `lockf` 是否得到 `EACCES`（驗證 SMB 2.1 對 Windows srv2 的行為，本研究只測了 Samba）。
+- 用 `mdb-ver` 或檔頭工具確認副本 code page 為 950、sort 為 1028；統計文字欄 `FA40–FEFE`、`8140–A0FE`、`C6A1–C8FE` 位元組出現次數確認造字範圍；比對 Jackcess 5.0.3 與 mdbtools 匯出 CSV 是否逐欄一致。
+- mdbtools 在 Linux 容器內的造字處理（本機 Docker 當時無回應，未測）。
 
 ### 11.2 其他待決
 
 - 現場是否有仍需用 Win7 + 舊程式的機台或流程（例如 CNC 檔產生），影響共存研究的優先度。
-- 會計系統連線舊銷管的實際確認結果（見 3 第 8 項）；若有，需要哪些表、唯讀還是寫入。
+- 會計系統連線舊銷管的實際確認結果（見 3 第 8 項）；若有，需要哪些表、唯讀還是寫入（寫入只能走 Windows Jet bridge，見 11.1）。
 - HR 使用者是否也要能看 legacy CRM 的員工相關資料（目前不給）。
 - 日期解析失敗的舊資料（兩位數年份等）是否在移轉前於舊系統修正，還是接受 `*_raw` 顯示。
