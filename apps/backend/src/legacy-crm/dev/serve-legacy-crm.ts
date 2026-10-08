@@ -1,5 +1,5 @@
 /**
- * 開發與比對用：只載入登入、權限與舊版銷管模組的後端，不讀 .env、不啟動排程與打卡機連線。
+ * 開發與比對用：只載入登入、權限、舊版銷管與回報模組的後端，不讀 .env、不啟動排程與打卡機連線。
  * 用來對測試資料庫驗證 legacy-crm API（例如與 isin_vb6 API 的錄製比對）；不要指向正式資料庫。
  *
  *   DB_HOST=127.0.0.1 DB_PORT=55432 DB_USER=test DB_PASS=test DB_NAME=isin_test \
@@ -12,6 +12,7 @@ import { NestFactory } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../../auth/auth.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
+import { FeedbackModule } from '../../feedback/feedback.module';
 import { LegacyCrmModule } from '../legacy-crm.module';
 
 for (const name of ['DB_HOST', 'DB_USER', 'DB_NAME', 'JWT_SECRET']) {
@@ -34,6 +35,8 @@ for (const name of ['DB_HOST', 'DB_USER', 'DB_NAME', 'JWT_SECRET']) {
     }),
     AuthModule,
     LegacyCrmModule,
+    // 回報系統（第 5 階段）：截圖存 FEEDBACK_UPLOAD_DIR；未設定 FEEDBACK_SLACK_WEBHOOK_URL 時不通知。
+    FeedbackModule,
   ],
 })
 class LegacyCrmDevModule {}

@@ -35,6 +35,7 @@ ISIN 管理系統是 Nx monorepo，主要包含：
 - `docs/LEGACY-CRM-MIGRATION-RUN.md`：舊版銷管資料移轉流程與演練紀錄
 - `docs/LEGACY-CRM-API.md`：舊版銷管 API 路由、權限與 isin_vb6 的差異、驗證方式
 - `docs/LEGACY-CRM-FRONTEND.md`：舊版銷管前端（`/legacy-crm`）的結構、移植約定、樣式隔離、與 isin_vb6 的差異、驗證方式
+- `docs/FEEDBACK-AND-LOGS.md`：回報系統（`/api/feedback`、`/settings/feedback`、舊版選單列「回報(B)」）與舊版銷管寫入／列印紀錄查詢的 API、權限、部署設定、驗證方式
 
 ### 按需加載規則（任務導向讀取）
 

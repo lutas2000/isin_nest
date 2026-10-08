@@ -31,10 +31,12 @@ import { AddPayrollRunSnapshot1777200000000 } from './migrations/1777200000000-A
 import { DropStaleHrNameForeignKeys1777300000000 } from './migrations/1777300000000-DropStaleHrNameForeignKeys';
 import { CreateLegacyCrmSchema1791438513900 } from './migrations/1791438513900-CreateLegacyCrmSchema';
 import { PrepareLegacyCrmApi1791460000000 } from './migrations/1791460000000-PrepareLegacyCrmApi';
+import { CreateFeedbackReports1791468000000 } from './migrations/1791468000000-CreateFeedbackReports';
 import { SystemModule } from './system/system.module';
 import { TimeClockModule } from './time-clock/time-clock.module';
 import { LegacyStaffModule } from './legacy-staff/legacy-staff.module';
 import { LegacyCrmModule } from './legacy-crm/legacy-crm.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 function parseBool(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -94,6 +96,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           DropStaleHrNameForeignKeys1777300000000,
           CreateLegacyCrmSchema1791438513900,
           PrepareLegacyCrmApi1791460000000,
+          CreateFeedbackReports1791468000000,
         ],
         migrationsRun:
           parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
@@ -115,6 +118,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
     TimeClockModule.register(),
     LegacyStaffModule,
     LegacyCrmModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService],

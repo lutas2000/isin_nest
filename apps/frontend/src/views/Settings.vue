@@ -16,6 +16,13 @@
         >
           {{ tab.label }}
         </button>
+        <router-link
+          v-if="authStore.hasFeature('feedback', 'write')"
+          to="/settings/feedback"
+          class="rounded-t-md border-b-[3px] border-transparent px-4 py-2 text-sm font-medium text-secondary-600 transition hover:bg-primary-50 hover:text-primary-600 md:px-6 md:py-3"
+        >
+          回報處理
+        </router-link>
       </div>
 
       <div v-if="activeTab === 'crm'" class="space-y-4">
@@ -275,11 +282,13 @@
 import { computed, onMounted, ref } from 'vue';
 import { EditableDataTable, CrmConfigModal, Modal, SectionHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
+import { useAuthStore } from '@/stores/auth';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { invalidateCrmConfigCache } from '@/services/crm/crm-config-autocomplete.service';
 import { API_CONFIG } from '@/config/api';
 
 const errorStore = useErrorStore();
+const authStore = useAuthStore();
 
 // 頁籤
 const tabs = [

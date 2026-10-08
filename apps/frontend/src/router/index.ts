@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuar
 import Home from '../views/Home.vue'
 import { hrRoutes } from './hr'
 import { legacyCrmRoutes } from './legacy-crm'
+import { feedbackRoutes } from './feedback'
 import { userHasFeature } from '../stores/auth'
 import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMContacts from '../views/CRM/Contacts.vue'
@@ -49,6 +50,7 @@ const routes = [
   },
   ...hrRoutes,
   ...legacyCrmRoutes,
+  ...feedbackRoutes,
   {
     path: '/crm',
     name: 'CRMCustomers',

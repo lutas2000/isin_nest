@@ -24,6 +24,7 @@ services:
     privileged: true
     volumes:
       - /etc/auto_nas:/etc/auto_nas:ro
+      - feedback_uploads:/app/files/feedback
     environment:
       PORT: ${PORT:-3000}
       NODE_ENV: ${NODE_ENV:-development}
@@ -50,6 +51,9 @@ services:
       TIME_CLOCK_PASSWORD: ${TIME_CLOCK_PASSWORD:-0}
       TIME_CLOCK_TIMEOUT_MS: ${TIME_CLOCK_TIMEOUT_MS:-5000}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      # 回報系統：截圖存在 feedback_uploads volume；未設定 FEEDBACK_SLACK_WEBHOOK_URL 時不通知
+      FEEDBACK_UPLOAD_DIR: ${FEEDBACK_UPLOAD_DIR:-/app/files/feedback}
+      FEEDBACK_SLACK_WEBHOOK_URL: ${FEEDBACK_SLACK_WEBHOOK_URL:-}
       STAFF_PAGE_LOCK_PASSWORD: ${STAFF_PAGE_LOCK_PASSWORD:-}
       DWG_PATH: ${DWG_PATH:-}
       CNC_PATH: ${CNC_PATH:-}
@@ -79,3 +83,4 @@ services:
 
 volumes:
   pgdata:
+  feedback_uploads:

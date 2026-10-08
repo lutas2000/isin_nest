@@ -37,6 +37,8 @@ import { LegacyReportsService } from './reports/reports.service';
 import { LegacyPrintLogController } from './print-log/print-log.controller';
 import { LegacyPrintLogService } from './print-log/print-log.service';
 import { LegacyWriteLogService } from './write-log/write-log.service';
+import { LegacyLogsController } from './log-query/logs.controller';
+import { LegacyLogsService } from './log-query/logs.service';
 
 /**
  * 舊版銷管（isin_vb6 遷入）。資料在 PostgreSQL 的 legacy_crm schema；
@@ -62,6 +64,7 @@ import { LegacyWriteLogService } from './write-log/write-log.service';
     LegacyPrintLogController,
     LegacyReportsController,
     LegacyDrawingsController,
+    LegacyLogsController,
   ],
   providers: [
     LegacyWriteLogService,
@@ -78,6 +81,7 @@ import { LegacyWriteLogService } from './write-log/write-log.service';
     LegacyReportsService,
     LegacyFileService,
     LegacyDrawingsService,
+    LegacyLogsService,
   ],
   exports: [TypeOrmModule, LegacyPrintLogService, LegacyWorksService],
 })

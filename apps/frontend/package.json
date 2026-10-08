@@ -23,6 +23,7 @@
     "docx-preview": "^0.3.7",
     "dxf-viewer": "^1.0.46",
     "gcode-preview": "^2.18.0",
+    "html-to-image": "^1.11.13",
     "pinia": "^2.1.7",
     "three": "^0.183.2",
     "vue": "^3.4.0",
