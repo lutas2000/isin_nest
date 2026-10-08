@@ -19,9 +19,11 @@ import {
 import { DeliveryWorkOrderService } from './delivery-work-order.service';
 import { DeliveryWorkOrder } from './entities/delivery-work-order.entity';
 import { DeliveryWorkOrderStatus } from '../enums/work-order-status.enum';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('送貨工作單管理')
 @Controller('crm/delivery-work-orders')
+@CrmV2Controller()
 export class DeliveryWorkOrderController {
   constructor(private readonly deliveryWorkOrderService: DeliveryWorkOrderService) {}
 

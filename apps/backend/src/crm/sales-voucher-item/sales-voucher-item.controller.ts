@@ -17,9 +17,11 @@ import {
 } from '@nestjs/swagger';
 import { SalesVoucherItemService } from './sales-voucher-item.service';
 import { SalesVoucherItem } from './entities/sales-voucher-item.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('銷貨單明細')
 @Controller('crm/sales-voucher-items')
+@CrmV2Controller()
 export class SalesVoucherItemController {
   constructor(
     private readonly salesVoucherItemService: SalesVoucherItemService,

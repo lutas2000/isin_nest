@@ -81,7 +81,8 @@
             </router-link>
           </div>
 
-          <div v-if="!isHrArea" class="nav-section">
+          <!-- 新版 CRM（銷售、生產、會計、加工項目）暫不使用，以 VITE_CRM_V2_ENABLED 開啟（config/crmV2.ts） -->
+          <div v-if="!isHrArea && showCrmV2" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">銷售管理</h3>
             <router-link to="/crm" class="nav-item" active-class="active">
               <div class="nav-icon">🤝</div>
@@ -117,7 +118,7 @@
             </router-link>
           </div>
 
-          <div v-if="!isHrArea" class="nav-section">
+          <div v-if="!isHrArea && showCrmV2" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">生產管理</h3>
             <router-link
               to="/crm/design-work-orders"
@@ -161,7 +162,7 @@
             </router-link>
           </div>
 
-          <div v-if="!isHrArea" class="nav-section">
+          <div v-if="!isHrArea && showCrmV2" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">會計管理</h3>
             <router-link
               to="/accounting/sales-statistics"
@@ -183,7 +184,7 @@
 
           <div v-if="!isHrArea" class="nav-section">
             <h3 v-if="!sidebarCollapsed" class="nav-section-title">系統管理</h3>
-            <router-link to="/crm/processings" class="nav-item" active-class="active">
+            <router-link v-if="showCrmV2" to="/crm/processings" class="nav-item" active-class="active">
               <div class="nav-icon">🔩</div>
               <span v-if="!sidebarCollapsed" class="nav-text">加工項目</span>
             </router-link>
@@ -304,6 +305,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { CRM_V2_ENABLED, CRM_V2_FEATURE } from './config/crmV2';
 import { useErrorStore } from './stores/error';
 import ErrorModal from './components/ErrorModal.vue';
 
@@ -318,6 +320,7 @@ const showUserMenu = ref(false); // 新增：控制用戶下拉選單的顯示
 
 const isHrArea = computed(() => route.meta.area === 'hr');
 const isLegacyLayout = computed(() => route.meta.layout === 'legacy');
+const showCrmV2 = computed(() => CRM_V2_ENABLED && authStore.hasFeature(CRM_V2_FEATURE));
 const currentPageTitle = computed(() => String(route.meta.title || '奕新雷射 銷管系統'));
 
 // 檢查是否為重設密碼頁面

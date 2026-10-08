@@ -15,19 +15,19 @@ import {
   ApiParam,
   ApiResponse,
   ApiTags,
-  ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
 import { CrmConfigService } from './config.service';
 import { CrmConfig } from './entities/crm-config.entity';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { AdminGuard } from '../../auth/admin.guard';
 import { CreateCrmConfigDto, UpdateCrmConfigDto } from './dto/crm-config.dto';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('CRM 設定')
 @Controller('crm/configs')
-@UseGuards(JwtAuthGuard, AdminGuard)
-@ApiBearerAuth('JWT-auth')
+// 先登入與 crm_v2，再檢查 admin（class decorator 由下往上套用，guard 依序附加）
+@UseGuards(AdminGuard)
+@CrmV2Controller()
 export class CrmConfigController {
   constructor(private readonly crmConfigService: CrmConfigService) {}
 

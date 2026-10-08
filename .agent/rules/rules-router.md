@@ -33,6 +33,9 @@
 - 舊版銷管畫面（`/legacy-crm`，從 isin_vb6 搬元件）
   - 必讀：`frontend/design-system.md`「舊版銷管」、`../../docs/LEGACY-CRM-FRONTEND.md`
   - 技能：`../skills/legacy-crm-screen-port/SKILL.md`
+- 新版 CRM（`views/CRM`、`services/crm`、`/crm/*`，暫不使用）
+  - 必讀：`../../README.md`「CRM 模組」、`../../docs/LEGACY-CRM-REBUILD-PLAN.md` 第 6 節
+  - 路由只放 `router/crm-v2.ts`、畫面入口要以 `config/crmV2.ts` 的旗標隱藏；後端 controller 用 `CrmV2Controller()`；不可與 `legacy-crm` 互相引用（ESLint 會擋）
 
 ### Docker
 

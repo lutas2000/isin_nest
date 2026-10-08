@@ -20,9 +20,11 @@ import { VendorService } from './vendor.service';
 import { Vendor } from './entities/vendor.entity';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('廠商管理')
 @Controller('crm/vendors')
+@CrmV2Controller()
 export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 

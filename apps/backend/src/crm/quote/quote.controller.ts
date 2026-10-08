@@ -3,9 +3,11 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/
 import { QuoteService } from './quote.service';
 import { Quote } from './entities/quote.entity';
 import { Order } from '../order/entities/order.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('報價單管理')
 @Controller('crm/quotes')
+@CrmV2Controller()
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 

@@ -278,16 +278,17 @@ import { useErrorStore } from '@/stores/error';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { invalidateCrmConfigCache } from '@/services/crm/crm-config-autocomplete.service';
 import { API_CONFIG } from '@/config/api';
+import { CRM_V2_ENABLED } from '@/config/crmV2';
 
 const errorStore = useErrorStore();
 
-// 頁籤
+// 頁籤；「銷管設定」是新版 CRM 的 crm_config，跟著 VITE_CRM_V2_ENABLED 隱藏（config/crmV2.ts）
 const tabs = [
-  { id: 'crm', label: '銷管設定' },
+  ...(CRM_V2_ENABLED ? [{ id: 'crm', label: '銷管設定' }] : []),
   { id: 'feature', label: '權限設定' },
 ];
 
-const activeTab = ref('crm');
+const activeTab = ref(tabs[0].id);
 
 // CRM 設定
 interface CrmConfig {
@@ -643,7 +644,7 @@ const getPermissionLabel = (permission: string) => {
 
 // 初始化
 onMounted(() => {
-  loadCrmConfigs();
+  if (CRM_V2_ENABLED) loadCrmConfigs();
   loadFeatureConfigs();
   loadFeatures();
   loadPermissionTypes();

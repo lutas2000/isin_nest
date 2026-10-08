@@ -281,7 +281,7 @@ apps/backend/src/legacy-crm/
 | 3. 前端殼與主檔 ✅ 2026-10-08 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔。**結果**：客戶、廠商、工件、材質、銀行、詞彙、郵遞區號搬入。員工建檔依 2.3 移除；圖組建檔有列印，改到第 4 階段。與 isin_vb6 的 16 個畫面逐像素相同，只差狀態列的登入者與登出、檔案選單少了員工建檔。端對端測試 8 項通過，含唯讀與權限（`LEGACY-CRM-FRONTEND.md`） |
 | 4. 前端單據與報表 | 六張單據、圖組建檔、F 鍵、列印（含 `@page`／`@media print`）、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對（`scripts/legacy-crm/compare-screens.mjs` 加場景）；列印 PDF 與 XPS 座標比對。**2026-10-08 移植**：五張交易表單、圖組建檔、報表、單據列印與列印紀錄搬入；新增的 32 個場景與 isin_vb6 逐像素相同（只差狀態列的登入者與登出）；列印紙張以 Chrome PDF 確認；端對端測試 10 項通過（`LEGACY-CRM-FRONTEND.md`）。待 Win7 驗收與列印座標比對 |
 | 5. 新功能 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理 |
-| 6. 隔離新版 CRM | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*` |
+| 6. 隔離新版 CRM ✅ 2026-10-08 | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*`。**結果**：`/crm/*` 19 條與讀新版銷貨單的 `/accounting/*` 2 條移到 `router/crm-v2.ts`，`VITE_CRM_V2_ENABLED` 預設關閉時導回首頁，bundle 不含新版 CRM 頁面（主 chunk 2.4 MB → 0.93 MB）；側欄、首頁訂單／報價、設定頁「銷管設定」同旗標隱藏。後端 17 個 CRM controller 掛 `CrmV2Controller()`（登入 + `crm_v2`，GET read、其餘 write），`crm_v2` 無人授權，只有 admin 可用（整個 AppModule 實測 401／403／200）。`no-restricted-imports` 禁止新舊版互相引用（含 `.vue`、動態 import、後端），以暫時違規驗證會報錯 |
 | 7. 正式移轉與上線 | 匯出腳本搬進 isin_nest 並升 Jackcess 5.0.3、確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |
 | 8.（選配）共存研究 | 套件層與檔案層研究已完成（11.1）；剩餘為區網實測 | 決定做或不做；預設不做 |
 

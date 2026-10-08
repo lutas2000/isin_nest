@@ -11,9 +11,10 @@ import { CuttingWorkOrderModule } from '../cutting-work-order/cutting-work-order
 import { ProcessingWorkOrderModule } from '../processing-work-order/processing-work-order.module';
 import { DeliveryWorkOrderModule } from '../delivery-work-order/delivery-work-order.module';
 import { Order } from '../order/entities/order.entity';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
-  imports: [
+  imports: [AuthModule, 
     TypeOrmModule.forFeature([Quote, Order]),
     QuoteItemModule,
     forwardRef(() => OrderModule),

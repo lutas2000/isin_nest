@@ -5,9 +5,10 @@ import { SalesVoucherItem } from '../sales-voucher-item/entities/sales-voucher-i
 import { SalesVoucherService } from './sales-voucher.service';
 import { SalesVoucherController } from './sales-voucher.controller';
 import { OrderModule } from '../order/order.module';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
-  imports: [
+  imports: [AuthModule, 
     TypeOrmModule.forFeature([SalesVoucher, SalesVoucherItem]),
     OrderModule,
   ],

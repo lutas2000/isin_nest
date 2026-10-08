@@ -19,9 +19,11 @@ import {
 import { ProcessingWorkOrderService } from './processing-work-order.service';
 import { ProcessingWorkOrder } from './entities/processing-work-order.entity';
 import { ProcessingWorkOrderStatus } from '../enums/work-order-status.enum';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('加工工作單管理')
 @Controller('crm/processing-work-orders')
+@CrmV2Controller()
 export class ProcessingWorkOrderController {
   constructor(private readonly processingWorkOrderService: ProcessingWorkOrderService) {}
 

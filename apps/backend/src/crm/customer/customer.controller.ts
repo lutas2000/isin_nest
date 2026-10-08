@@ -2,9 +2,11 @@ import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe, Logger
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { Customer } from './entities/customer.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('客戶管理')
 @Controller('crm/customers')
+@CrmV2Controller()
 export class CustomerController {
   private readonly logger = new Logger(CustomerController.name);
   

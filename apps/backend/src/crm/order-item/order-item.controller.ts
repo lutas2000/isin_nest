@@ -2,9 +2,11 @@ import { BadRequestException, Controller, Get, Post, Body, Param, Delete, Query,
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { OrderItemService } from './order-item.service';
 import { OrderItem } from './entities/order-item.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('訂單工件管理')
 @Controller('crm/order-items')
+@CrmV2Controller()
 export class OrderItemController {
   constructor(private readonly orderItemService: OrderItemService) {}
 

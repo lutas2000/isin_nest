@@ -2,9 +2,11 @@ import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from 
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { QuoteItemService } from './quote-item.service';
 import { QuoteItem } from './entities/quote-item.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('報價單工件管理')
 @Controller('crm/quote-items')
+@CrmV2Controller()
 export class QuoteItemController {
   constructor(private readonly quoteItemService: QuoteItemService) {}
 

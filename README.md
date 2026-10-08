@@ -21,6 +21,14 @@
 
 ### CRM 模組
 
+> **新版 CRM 暫不使用，現行為 legacy CRM（舊版銷管 `/legacy-crm`）。**（`docs/LEGACY-CRM-REBUILD-PLAN.md` 第 6 節）
+>
+> - 前端：新版 CRM 的路由（`/crm/*`、`/accounting/*`，`router/crm-v2.ts`）、側欄、首頁訂單與報價區塊、設定頁「銷管設定」只在 build 時 `VITE_CRM_V2_ENABLED=true` 才出現；預設關閉，`/crm`、`/crm/*` 導回首頁，bundle 也不含新版 CRM 頁面。
+> - 後端：`CrmModule` 與其 migration、資料表保留；所有 `/crm/*` API 需要登入與 `crm_v2` 功能權限（`crm/common/crm-v2-access.ts`）。`crm_v2` 不由任何 migration 或啟動流程建立，因此只有 admin 能呼叫。
+> - 重新啟用：以 `VITE_CRM_V2_ENABLED=true` 重新 build 前端（`.env` 或 `docker compose build --build-arg`／環境變數 `VITE_CRM_V2_ENABLED=true`），再由 admin 授權使用者 `crm_v2` 功能。
+> - 新舊版互不引用：`eslint.config.mjs` 以 `no-restricted-imports` 禁止 `legacy-crm` 引用 `views/CRM`、`services/crm` 等，反之亦然（含 `.vue` 的 `<script>`）。
+> - `tests/crm` 的 Playwright 測試只適用於開啟旗標的前端。
+
 - **功能範圍**：客戶、聯絡人、報價單、工單與工件管理，並提供設定項目給前端使用。
 - **設定中心**：`crm_config` 表集中保存原 enum 值（運送方式、付款方式、來源類型等），後端啟動時自動 upsert 預設資料。
 - **API**：

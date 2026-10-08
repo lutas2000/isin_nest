@@ -83,6 +83,7 @@ docker build -f docker/frontend.Dockerfile -t isin-frontend:local .
   - `JWT_SECRET=your-secret-key`（請在正式環境更換）
 - **Frontend**
   - build-time `VITE_API_BASE_URL=/api`
+  - build-time `VITE_CRM_V2_ENABLED=false`（新版 CRM 暫不使用；設為 `true` 並重新 build 才出現 `/crm/*`）
 
 你可以在正式環境把這些值改為更安全的設定（尤其是 `POSTGRES_PASSWORD` / `JWT_SECRET`），再重新 `docker compose up -d --build`。
 
