@@ -12,6 +12,13 @@ import { useRouter } from 'vue-router';
 import PartnersView from './components/PartnersView.vue';
 import MasterDataView from './components/MasterDataView.vue';
 import PartsView from './components/PartsView.vue';
+import GroupsView from './components/GroupsView.vue';
+import OrdersView from './components/OrdersView.vue';
+import SalesView from './components/SalesView.vue';
+import ReceiptsView from './components/ReceiptsView.vue';
+import QuotesView from './components/QuotesView.vue';
+import WorkView from './components/WorkView.vue';
+import ReportsView from './components/ReportsView.vue';
 import MdiChild from './components/MdiChild.vue';
 import { useAuthStore } from '../stores/auth';
 import { useLegacyReadOnly } from './utils/legacyAccess';
@@ -24,6 +31,7 @@ import {
 import { FORM_HINT, focusHint } from './utils/statusHints';
 import './styles/tokens.css';
 import './styles/legacy.css';
+import './styles/legacy-print.css';
 
 // The legacy main window (isin_vb6 src/App.vue, docs/legacy-ui-spec.md): a
 // menu bar, forms opened as child windows inside it, and a status bar along
@@ -650,14 +658,35 @@ function logout() {
                 v-else-if="window.key === 'parts'"
                 :title="windowTitle(window)"
               />
-              <!-- 圖組建檔、交易登錄、報表列印 move over in stage 4 (LEGACY-CRM-REBUILD-PLAN.md 10). -->
-              <section v-else class="legacy-coming-soon">
-                <p>
-                  「{{
-                    windowTitle(window)
-                  }}」尚未搬入新系統，請暫時使用舊系統。
-                </p>
-              </section>
+              <GroupsView
+                v-else-if="window.key === 'groups'"
+                :title="windowTitle(window)"
+              />
+              <OrdersView
+                v-else-if="window.key === 'orders'"
+                :title="windowTitle(window)"
+              />
+              <SalesView
+                v-else-if="window.key === 'sales'"
+                :title="windowTitle(window)"
+              />
+              <ReceiptsView
+                v-else-if="window.key === 'receipts'"
+                :title="windowTitle(window)"
+              />
+              <QuotesView
+                v-else-if="window.key === 'quotes'"
+                :title="windowTitle(window)"
+              />
+              <WorkView
+                v-else-if="window.key === 'work-orders'"
+                :title="windowTitle(window)"
+              />
+              <ReportsView
+                v-else-if="window.key.endsWith('-reports')"
+                :title="windowTitle(window)"
+                :group="window.key"
+              />
             </MdiChild>
           </div>
         </section>

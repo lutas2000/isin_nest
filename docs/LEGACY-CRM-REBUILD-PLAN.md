@@ -279,7 +279,7 @@ apps/backend/src/legacy-crm/
 | 1. 資料層 ✅ 2026-10-08 | `legacy_crm` schema、entities、第一支 migration、CSV 匯入 CLI（含民國日期解析）、`write_log`、`print_log`、`staff.legacy_crm_code` | 用 10/02 副本匯入 PostgreSQL，筆數對上 `legacy-migration-run.md`，日期解析失敗筆數可接受並已列表。**結果**：筆數與排除原因完全相同；19 張表約 290 萬列與 isin_vb6 匯入結果逐列逐欄一致；日期無法解析 0 筆；匯入 57 秒（`LEGACY-CRM-MIGRATION-RUN.md`） |
 | 2. 後端 API ✅ 2026-10-08 | 主檔、六張單據、瀏覽、F1、報表、列印資料；業務規則 Jest 測試 | 與 `isin_vb6` API 同一組請求輸出相同（錄製比對）。**結果**：1,105 個讀取請求、72 個寫入步驟、31 張報表逐值比對，差異全部是刻意修正（日期排序、拒收不合法日期、員工改由 staff）並列在 `LEGACY-CRM-API.md`；業務規則整合測試 15 項通過 |
 | 3. 前端殼與主檔 ✅ 2026-10-08 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔。**結果**：客戶、廠商、工件、材質、銀行、詞彙、郵遞區號搬入。員工建檔依 2.3 移除；圖組建檔有列印，改到第 4 階段。與 isin_vb6 的 16 個畫面逐像素相同，只差狀態列的登入者與登出、檔案選單少了員工建檔。端對端測試 8 項通過，含唯讀與權限（`LEGACY-CRM-FRONTEND.md`） |
-| 4. 前端單據與報表 | 六張單據、圖組建檔、F 鍵、列印（含 `@page`／`@media print`）、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對（`scripts/legacy-crm/compare-screens.mjs` 加場景）；列印 PDF 與 XPS 座標比對 |
+| 4. 前端單據與報表 | 六張單據、圖組建檔、F 鍵、列印（含 `@page`／`@media print`）、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對（`scripts/legacy-crm/compare-screens.mjs` 加場景）；列印 PDF 與 XPS 座標比對。**2026-10-08 移植**：五張交易表單、圖組建檔、報表、單據列印與列印紀錄搬入；新增的 32 個場景與 isin_vb6 逐像素相同（只差狀態列的登入者與登出）；列印紙張以 Chrome PDF 確認；端對端測試 10 項通過（`LEGACY-CRM-FRONTEND.md`）。待 Win7 驗收與列印座標比對 |
 | 5. 新功能 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理 |
 | 6. 隔離新版 CRM | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*` |
 | 7. 正式移轉與上線 | 匯出腳本搬進 isin_nest 並升 Jackcess 5.0.3、確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |

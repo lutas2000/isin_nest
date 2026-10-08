@@ -50,7 +50,32 @@ async function focusField(page, index, key) {
   await page.waitForTimeout(400);
 }
 
-// 每個場景從剛開好的主視窗開始。第 4 階段在這裡加上單據與報表的場景。
+// 單據明細第 row 列第 column 欄（從 1 起算，項次是第 1 欄）。
+async function focusLine(page, row, column, key) {
+  await page
+    .locator(
+      `.legacy-grid tbody tr:nth-child(${row}) td:nth-child(${column}) input`,
+    )
+    .first()
+    .focus();
+  await page.keyboard.press(key);
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(400);
+}
+
+// 報表對話框：選報表、填條件（{ 標籤: 值 }）。
+async function reportDialog(page, menuItem, report, fields = {}) {
+  await openForm(page, '報表列印(R)', menuItem);
+  if (report) await page.getByRole('radio', { name: report }).check();
+  for (const [label, value] of Object.entries(fields))
+    await page.getByLabel(`${label}：`).fill(value);
+  await page.waitForTimeout(200);
+}
+
+// 報表的資料期間；印表日期都是今天，兩邊相同。
+const PERIOD = { 開始日期: '115.09.01', 截止日期: '115.09.02' };
+
+// 每個場景從剛開好的主視窗開始。
 const SCENES = {
   backdrop: async () => {},
   fileMenu: async (p) => {
@@ -121,6 +146,158 @@ const SCENES = {
     await openForm(p, '檔案(F)', '材質建檔');
     await press(p, '頭筆 I');
     await openForm(p, '視窗(W)', '梯式排列');
+  },
+  // 第 4 階段：交易登錄、圖組建檔、單據列印與報表。
+  transactionMenu: async (p) => {
+    await p.getByRole('button', { name: '交易登錄(T)' }).click();
+    await p.waitForTimeout(200);
+  },
+  orders: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+  },
+  ordersFirst: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '頭筆 I');
+    await press(p, '下筆 K');
+  },
+  orderQuery: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+    await press(p, '查詢 R');
+  },
+  orderLineAssist: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+    await focusLine(p, 1, 2, 'F1');
+  },
+  orderPrint: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+    await press(p, '列印 P');
+  },
+  orderLabel: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+    await press(p, '列印標籤(L)');
+  },
+  orderDrawing: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+    await focusLine(p, 1, 2, 'F11');
+  },
+  orderHistory: async (p) => {
+    await openForm(p, '交易登錄(T)', '訂單登錄');
+    await press(p, '尾筆 M');
+    await focusLine(p, 1, 2, 'F12');
+  },
+  sales: async (p) => {
+    await openForm(p, '交易登錄(T)', '銷貨登錄');
+    await press(p, '尾筆 M');
+  },
+  salesQuery: async (p) => {
+    await openForm(p, '交易登錄(T)', '銷貨登錄');
+    await press(p, '尾筆 M');
+    await press(p, '查詢 R');
+  },
+  salePrint: async (p) => {
+    await openForm(p, '交易登錄(T)', '銷貨登錄');
+    await press(p, '尾筆 M');
+    await press(p, '列印 P');
+  },
+  receipts: async (p) => {
+    await openForm(p, '交易登錄(T)', '收款登錄');
+    await press(p, '尾筆 M');
+  },
+  receiptLineAssist: async (p) => {
+    await openForm(p, '交易登錄(T)', '收款登錄');
+    await press(p, '尾筆 M');
+    await focusLine(p, 1, 6, 'F1');
+  },
+  quotes: async (p) => {
+    await openForm(p, '交易登錄(T)', '報價登錄');
+    await press(p, '尾筆 M');
+  },
+  quoteHistory: async (p) => {
+    await openForm(p, '交易登錄(T)', '報價登錄');
+    await press(p, '尾筆 M');
+    await focusLine(p, 1, 2, 'F8');
+  },
+  quotePrint: async (p) => {
+    await openForm(p, '交易登錄(T)', '報價登錄');
+    await press(p, '尾筆 M');
+    await press(p, '列印 P');
+  },
+  work: async (p) => {
+    await openForm(p, '交易登錄(T)', '工作登錄');
+    await press(p, '尾筆 M');
+  },
+  workLineAssist: async (p) => {
+    await openForm(p, '交易登錄(T)', '工作登錄');
+    await press(p, '尾筆 M');
+    await focusLine(p, 1, 3, 'F1');
+  },
+  workAdd: async (p) => {
+    await openForm(p, '交易登錄(T)', '工作登錄');
+    await press(p, '新增 F5');
+  },
+  workPrint: async (p) => {
+    await openForm(p, '交易登錄(T)', '工作登錄');
+    await press(p, '尾筆 M');
+    await press(p, '列印 P');
+  },
+  groups: async (p) => {
+    await openForm(p, '檔案(F)', '圖組建檔');
+    await press(p, '頭筆 I');
+  },
+  groupQuery: async (p) => {
+    await openForm(p, '檔案(F)', '圖組建檔');
+    await press(p, '頭筆 I');
+    await press(p, '查詢 R');
+  },
+  groupPrint: async (p) => {
+    await openForm(p, '檔案(F)', '圖組建檔');
+    await press(p, '頭筆 I');
+    await press(p, '列印 P');
+  },
+  reportMenu: async (p) => {
+    await p.getByRole('button', { name: '報表列印(R)' }).click();
+    await p.waitForTimeout(200);
+  },
+  orderReportDialog: async (p) => {
+    await reportDialog(p, '訂單報表');
+  },
+  salesReportDialog: async (p) => {
+    await reportDialog(p, '銷貨報表', '日期別明細表', PERIOD);
+  },
+  salesReportPreview: async (p) => {
+    await reportDialog(p, '銷貨報表', '日期別明細表', PERIOD);
+    await press(p, '確　定');
+  },
+  orderReportPreview: async (p) => {
+    await reportDialog(p, '訂單報表', '未交貨工件明細表', {
+      應交起日: '115.09.01',
+      應交訖日: '115.09.30',
+    });
+    await press(p, '確　定');
+  },
+  invoicePreview: async (p) => {
+    await reportDialog(p, '收款報表', '請款單(簡要式)', PERIOD);
+    await press(p, '確　定');
+  },
+  customerReportOptions: async (p) => {
+    await reportDialog(p, '客戶報表', '聯絡摘要表(按編號順序)', {
+      開始客戶: '01A',
+      截止客戶: '01Z',
+    });
+    await press(p, '選　項');
+  },
+  reportFieldAssist: async (p) => {
+    await reportDialog(p, '訂單報表');
+    await p.getByLabel('客戶編號：').focus();
+    await p.keyboard.press('F1');
+    await p.waitForLoadState('networkidle');
+    await p.waitForTimeout(400);
   },
 };
 
