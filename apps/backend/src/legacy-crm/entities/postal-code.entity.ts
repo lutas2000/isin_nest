@@ -1,6 +1,7 @@
-import { Check, Entity, PrimaryColumn } from 'typeorm';
+import { Check, Entity } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   TextColumn,
   UpdatedAtColumn,
@@ -10,7 +11,7 @@ import {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'postal_codes' })
 @Check(`"postal_code" <> ''`)
 export class LegacyPostalCode {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   postal_code: string;
 
   @TextColumn(100) region_name: string;

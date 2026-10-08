@@ -95,6 +95,16 @@ function applyDates(
   return row;
 }
 
+/** 表頭日期先檢查（strict 時），讓錯誤訊息指到表頭欄位而不是沿用表頭日期的明細欄。 */
+function checkHeaderDates(
+  table: string,
+  header: Row,
+  mode: DateMode,
+  labels: Record<string, string>,
+) {
+  if (mode === 'strict') applyDates(table, { ...header }, mode, labels);
+}
+
 function lineNumber(
   item: Input,
   index: number,
@@ -516,6 +526,7 @@ export function normalizeOrder(
   const header = headerText(input, ORDER_HEADER, {
     order_no: boundedText('訂單編號', input.order_no, 10, { required: true }),
   });
+  checkHeaderDates('order_documents', header, mode, labelsOf(ORDER_HEADER));
   const inputItems = input.items ?? [];
   if (!Array.isArray(inputItems))
     throw new LegacyValidationError('訂單明細格式無效');
@@ -609,6 +620,7 @@ export function normalizeSale(
   const header = headerText(input, SALES_HEADER, {
     sale_no: boundedText('出貨編號', input.sale_no, 10, { required: true }),
   });
+  checkHeaderDates('sales_documents', header, mode, labelsOf(SALES_HEADER));
   const inputItems = input.items ?? [];
   if (!Array.isArray(inputItems))
     throw new LegacyValidationError('銷貨明細格式無效');

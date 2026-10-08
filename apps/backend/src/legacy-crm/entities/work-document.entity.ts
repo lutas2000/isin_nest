@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -23,7 +24,7 @@ import {
 @Index(['transfer_date', 'work_no'])
 @Index(['customer_code', 'transfer_date'])
 export class LegacyWorkDocument {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   work_no: string;
 
   @RocDateColumn() transfer_date: string | null;
@@ -44,7 +45,7 @@ export class LegacyWorkDocument {
 @Check(`"line_no" BETWEEN 1 AND 99`)
 @Index(['drawing_no', 'material', 'thickness'])
 export class LegacyWorkItem {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   work_no: string;
 
   @PrimaryColumn({ type: 'smallint' })

@@ -1,6 +1,7 @@
-import { Check, Entity, Index, PrimaryColumn } from 'typeorm';
+import { Check, Entity, Index } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -17,10 +18,10 @@ export type PartnerKind = 'customer' | 'supplier';
 @Check(`"code" <> ''`)
 @Index(['kind', 'full_name'])
 export class LegacyPartner {
-  @PrimaryColumn({ type: 'varchar', length: 8 })
+  @KeyColumn(8)
   kind: PartnerKind;
 
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   code: string;
 
   @TextColumn(100) full_name: string;

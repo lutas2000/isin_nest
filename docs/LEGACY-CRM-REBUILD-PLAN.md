@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-08
 > 來源專案：`../isin_vb6`（Vue 3 + Node `node:sqlite` 的舊版重建研究專案，即將收尾）
 > 目標：isin_nest `apps/backend/src/legacy-crm`、`apps/frontend/src/legacy-crm`
-> 狀態：規劃已定案（2026-10-08 決議見第 11 節）。**第 1 階段（資料層）已完成（2026-10-08）**，移轉操作與演練紀錄見 `LEGACY-CRM-MIGRATION-RUN.md`。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
+> 狀態：規劃已定案（2026-10-08 決議見第 11 節）。**第 1 階段（資料層）、第 2 階段（後端 API）已完成（2026-10-08）**，移轉操作與演練紀錄見 `LEGACY-CRM-MIGRATION-RUN.md`，API 與 isin_vb6 的差異見 `LEGACY-CRM-API.md`。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
 > 相關文件：`../isin_vb6/docs/handoff-legacy-rebuild.md`（接手文件）、`legacy-ui-spec.md`（版面與操作規格）、`legacy-mdb-field-mapping.md`（MDB → 新表欄位對應與移轉範圍）、`legacy-migration-run.md`（正式移轉流程與耗時）
 > 研究報告（2026-10-08，獨立於 isin_vb6）：`research/ACCESS-MDB-LIBRARIES.md`（Access 97 讀寫套件）、`research/SMB-MOUNT-FROM-CONTAINER.md`（容器掛載 SMB）與 `research/smb-mount.compose.example.yml`
 
@@ -169,7 +169,9 @@ apps/backend/src/legacy-crm/
   migration/         # CSV 匯入 CLI
 ```
 
-- 所有 controller 掛 `@UseGuards(JwtAuthGuard, FeatureGuard)`，GET 用 `@RequireFeature('crm', READ)`，寫入用 `WRITE`。路徑前綴 `/api/legacy-crm/*`。
+- 所有 controller 掛 `@UseGuards(JwtAuthGuard, FeatureGuard)`，GET 用 `@RequireFeature('crm', READ)`，寫入用 `WRITE`（`common/legacy-access.ts` 的 `LegacyController`、`LegacyRead`、`LegacyWrite`）。後端路徑 `/legacy-crm/*`，前端經代理為 `/api/legacy-crm/*`。路由、回應形狀與和 isin_vb6 的差異見 `LEGACY-CRM-API.md`。
+- 請求 body 沿用 isin_vb6 的欄位，驗證與錯誤訊息集中在 `common/legacy-records.ts`（與舊版逐條相同），不另定 class-validator DTO，避免兩套規則不一致。
+- 查詢以 raw SQL 移植 isin_vb6 的 SQL（`common/legacy-db.ts`），文字欄一律 `COLLATE "C"`，排序與區間比較與 SQLite 相同。
 - `db.mjs` 的業務規則逐條搬，並以 `legacy-ui-spec.md`、handoff 文件列出的實測行為寫成 Jest 測試：出貨回寫訂單出貨數（差額、多列分攤、不低於 0）、客戶最近交易日只往後推、收款自動沖銷順序與預收、單號 = 日期 + 當日序號、工作單 CNC_OK 檢查、同訂單不可重複圖號。
 - 回寫與主寫入在同一 transaction（TypeORM `DataSource.transaction`），`write_log` 一併寫入。
 - 民國日期只在 API 邊界轉換：DTO 收 `yyy.mm.dd` 字串，`parseRocDate` 轉 `date`；回傳時 `formatRocDate`。service 與 SQL 內一律用 `date`。
@@ -246,6 +248,8 @@ apps/backend/src/legacy-crm/
 | 維護員工資料與 `staff.legacy_crm_code` | 新系統 HR 既有權限 |
 | 執行正式移轉 CLI | 伺服器 shell，不開 API |
 
+- 2026-10-08 實作確認：`crm` 功能原本不存在（正式庫 `features`、`user_features` 都是空的，目前只有 admin 通過 `FeatureGuard`），由 migration `1791460000000-PrepareLegacyCrmApi` 建立；一般使用者要在設定頁授權 `crm` read／write 才能使用。新版 CRM 的 controller 目前沒有掛權限守衛，與本計畫無關，未處理。
+
 ## 9. 部署與維運
 
 - **SMB 掛載沿用後端既有的 `NasService`**（`/etc/auto_nas` → 容器內 `mount -t cifs` 到 `/nas/<key>`），不另外加 compose volume，也**不要**用 macOS 主機先掛 smbfs 再 bind mount 進容器（本機 OrbStack 實測會讓 bind mount 機制整個卡死，見 `research/SMB-MOUNT-FROM-CONTAINER.md` 3.4）。
@@ -263,7 +267,7 @@ apps/backend/src/legacy-crm/
 |---|---|---|
 | 0. 收尾 isin_vb6 | 處理 handoff 未完成事項中「操作」類（報價 F8、工作 F8、收款 F3／F4）；最終 commit 與 tag `v0-final` | `npm test`、`npm run build` 通過；handoff 更新 |
 | 1. 資料層 ✅ 2026-10-08 | `legacy_crm` schema、entities、第一支 migration、CSV 匯入 CLI（含民國日期解析）、`write_log`、`print_log`、`staff.legacy_crm_code` | 用 10/02 副本匯入 PostgreSQL，筆數對上 `legacy-migration-run.md`，日期解析失敗筆數可接受並已列表。**結果**：筆數與排除原因完全相同；19 張表約 290 萬列與 isin_vb6 匯入結果逐列逐欄一致；日期無法解析 0 筆；匯入 57 秒（`LEGACY-CRM-MIGRATION-RUN.md`） |
-| 2. 後端 API | 主檔、六張單據、瀏覽、F1、報表、列印資料；業務規則 Jest 測試 | 與 `isin_vb6` API 同一組請求輸出相同（錄製比對） |
+| 2. 後端 API ✅ 2026-10-08 | 主檔、六張單據、瀏覽、F1、報表、列印資料；業務規則 Jest 測試 | 與 `isin_vb6` API 同一組請求輸出相同（錄製比對）。**結果**：1,105 個讀取請求、72 個寫入步驟、31 張報表逐值比對，差異全部是刻意修正（日期排序、拒收不合法日期、員工改由 staff）並列在 `LEGACY-CRM-API.md`；業務規則整合測試 15 項通過 |
 | 3. 前端殼與主檔 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔 |
 | 4. 前端單據與報表 | 六張單據、F 鍵、列印、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對；列印 PDF 與 XPS 座標比對 |
 | 5. 新功能 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理 |

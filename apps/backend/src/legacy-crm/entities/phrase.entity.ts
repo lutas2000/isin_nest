@@ -1,6 +1,7 @@
-import { Check, Entity, PrimaryColumn } from 'typeorm';
+import { Check, Entity } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   TextColumn,
   UpdatedAtColumn,
@@ -10,7 +11,7 @@ import {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'phrases' })
 @Check(`"phrase_no" <> ''`)
 export class LegacyPhrase {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   phrase_no: string;
 
   @TextColumn(250) content: string;

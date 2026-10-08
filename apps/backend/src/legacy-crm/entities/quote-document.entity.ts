@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -23,7 +24,7 @@ import {
 @Index(['quote_date', 'quote_no'])
 @Index(['customer_code', 'quote_date'])
 export class LegacyQuoteDocument {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   quote_no: string;
 
   @RocDateColumn() quote_date: string | null;
@@ -48,7 +49,7 @@ export class LegacyQuoteDocument {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'quote_items' })
 @Check(`"line_no" BETWEEN 1 AND 99`)
 export class LegacyQuoteItem {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   quote_no: string;
 
   @PrimaryColumn({ type: 'smallint' })
@@ -73,7 +74,7 @@ export class LegacyQuoteItem {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'quote_note_lines' })
 @Check(`"line_no" BETWEEN 1 AND 99`)
 export class LegacyQuoteNoteLine {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   quote_no: string;
 
   @PrimaryColumn({ type: 'smallint' })

@@ -20,6 +20,10 @@
 - 不可跳過 DTO 或直接在 controller 接收未驗證的任意 payload。
 - 不可在 controller 寫過多商業邏輯，應下沉至 service。
 
+## 例外：舊版銷管（legacy-crm）
+
+`apps/backend/src/legacy-crm` 的請求 body 沿用 isin_vb6 的欄位，驗證與錯誤訊息集中在 `legacy-crm/common/legacy-records.ts`（與舊版逐條相同，正式移轉也用同一套），不另定 class-validator DTO，避免兩套規則不一致。controller 一律用 `LegacyController`／`LegacyRead`／`LegacyWrite`（`legacy-crm/common/legacy-access.ts`），寫入必須在同一個 transaction 內寫 `write_log`。
+
 ## 驗證方式
 
 - 模組可正常啟動，路由註冊正確。

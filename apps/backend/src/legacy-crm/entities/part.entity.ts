@@ -1,6 +1,7 @@
-import { Check, Entity, PrimaryColumn } from 'typeorm';
+import { Check, Entity } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -13,7 +14,7 @@ import {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'parts' })
 @Check(`"drawing_no" <> ''`)
 export class LegacyPart {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   drawing_no: string;
 
   @TextColumn(30) drawing_name: string;

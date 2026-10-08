@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -21,7 +22,7 @@ import {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'drawing_groups' })
 @Check(`"group_no" <> ''`)
 export class LegacyDrawingGroup {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   group_no: string;
 
   @RocDateColumn() created_date: string | null;
@@ -46,7 +47,7 @@ export class LegacyDrawingGroup {
 @Check(`"line_no" BETWEEN 1 AND 99`)
 @Index(['drawing_no', 'customer_drawing_no'])
 export class LegacyDrawingGroupItem {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   group_no: string;
 
   @PrimaryColumn({ type: 'smallint' })

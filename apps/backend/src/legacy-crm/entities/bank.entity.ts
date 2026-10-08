@@ -1,6 +1,7 @@
-import { Check, Column, Entity, Index, PrimaryColumn } from 'typeorm';
+import { Check, Column, Entity, Index } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   TextColumn,
   UnitsColumn,
@@ -12,7 +13,7 @@ import {
 @Check(`"code" <> ''`)
 @Index(['full_name', 'code'])
 export class LegacyBank {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   code: string;
 
   @TextColumn(10) short_name: string;

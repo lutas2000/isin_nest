@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -24,7 +25,7 @@ import {
 @Index(['order_date', 'order_no'])
 @Index(['customer_code', 'order_date'])
 export class LegacyOrderDocument {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   order_no: string;
 
   @RocDateColumn() order_date: string | null;
@@ -53,7 +54,7 @@ export class LegacyOrderDocument {
 @Unique(['order_no', 'legacy_sn'])
 @Index(['drawing_no', 'customer_model'])
 export class LegacyOrderItem {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   order_no: string;
 
   @PrimaryColumn({ type: 'smallint' })

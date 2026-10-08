@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import {
   CreatedAtColumn,
+  KeyColumn,
   LEGACY_CRM_SCHEMA,
   RocDateColumn,
   RocDateRawColumn,
@@ -23,7 +24,7 @@ import {
 @Index(['receipt_date', 'receipt_no'])
 @Index(['customer_code', 'receipt_date'])
 export class LegacyReceiptDocument {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   receipt_no: string;
 
   @RocDateColumn() receipt_date: string | null;
@@ -55,7 +56,7 @@ export class LegacyReceiptDocument {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'receipt_payment_lines' })
 @Check(`"line_no" BETWEEN 1 AND 99`)
 export class LegacyReceiptPaymentLine {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   receipt_no: string;
 
   @PrimaryColumn({ type: 'smallint' })
@@ -84,7 +85,7 @@ export class LegacyReceiptPaymentLine {
 @Check(`"line_no" BETWEEN 1 AND 999`)
 @Index(['sale_no'])
 export class LegacyReceiptAllocationLine {
-  @PrimaryColumn({ type: 'varchar', length: 10 })
+  @KeyColumn(10)
   receipt_no: string;
 
   @PrimaryColumn({ type: 'smallint' })
