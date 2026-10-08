@@ -62,6 +62,9 @@ services:
       LIBREOFFICE_PATH: ${LIBREOFFICE_PATH:-}
       # 啟動時由 NasService.mountAll() 掛載 /etc/auto_nas 內所有 SMB 分享
       NAS_AUTO_MOUNT: ${NAS_AUTO_MOUNT:-true}
+      # 舊版銷管讀的 \\SERVER\C\（DXF 外形）與 \\SERVER\n\（CNC 檔檢查），即上面掛載的 /nas/c、/nas/n
+      LEGACY_DXF_PATH: ${LEGACY_DXF_PATH:-/nas/c}
+      LEGACY_CNC_PATH: ${LEGACY_CNC_PATH:-/nas/n}
     ports:
       - "${HOST_BACKEND_PORT:-3000}:${PORT:-3000}"
     depends_on:

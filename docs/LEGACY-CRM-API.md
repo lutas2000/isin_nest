@@ -103,6 +103,7 @@
 - **環境變數**（預設值同 isin_vb6）：
   - `LEGACY_DXF_PATH`、`LEGACY_DXF_LEGACY_ROOT`（預設 `\\Server\C\`）。
   - `LEGACY_CNC_PATH`、`LEGACY_CNC_LEGACY_ROOT`（預設 `\\SERVER\n\`）。
+  - Docker（`docker-compose.yml`）預設 `LEGACY_DXF_PATH=/nas/c`、`LEGACY_CNC_PATH=/nas/n`，即 `NasService` 依 `/etc/auto_nas` 掛載的 `\\SERVER\C`、`\\SERVER\n`。
 - **檔案存取**：
   - 所有 SMB 存取都經過 `LegacyFileService`：同時最多 4 個操作，每個 3 秒逾時。
   - 檔案路徑只由圖號推得，不列目錄、不建索引。

@@ -33,11 +33,24 @@ interface SmbParts {
   password: string;
 }
 
-function parseSmbUrl(url: string): SmbParts {
-  // //user:pass@host/share
-  const match = url.match(/^\/\/([^:]+):([^@]+)@([^/]+)\/(.+)$/);
+export function parseSmbUrl(url: string): SmbParts {
+  // //user:pass@host/share；密碼可空白（例 //GUEST:@host/share 訪客登入）
+  const match = url.match(/^\/\/([^:@/]+)(?::([^@]*))?@([^/]+)\/(.+)$/);
   if (!match) throw new Error(`Invalid SMB URL: ${url}`);
-  return { username: match[1], password: match[2], host: match[3], share: match[4] };
+  return {
+    username: match[1],
+    password: match[2] ?? '',
+    host: match[3],
+    share: match[4],
+  };
+}
+
+/** mount -t cifs 的 -o；沒有密碼時以 guest 登入（不會停下來問密碼）。 */
+export function cifsOptions({ username, password }: SmbParts): string {
+  const login = password
+    ? `username=${username},password=${password}`
+    : `username=${username},guest`;
+  return `${login},vers=1.0`;
 }
 
 @Injectable()
@@ -129,12 +142,12 @@ export class NasService implements OnModuleInit {
     } else {
       // Linux (Docker/Alpine): mount -t cifs, container runs as root
       // vers=1.0 needed for older NAS devices that only support SMB1
-      const { host, share, username, password } = parseSmbUrl(url);
+      const smb = parseSmbUrl(url);
       await execFileAsync('/bin/mount', [
         '-t', 'cifs',
-        `//${host}/${share}`,
+        `//${smb.host}/${smb.share}`,
         mountPath,
-        '-o', `username=${username},password=${password},vers=1.0`,
+        '-o', cifsOptions(smb),
       ]);
     }
   }
