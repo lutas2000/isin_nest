@@ -192,7 +192,7 @@
               <div class="nav-icon">⚙️</div>
               <span v-if="!sidebarCollapsed" class="nav-text">系統設定</span>
             </router-link>
-            <router-link v-if="authStore.hasFeature('feedback', 'write')" to="/settings/feedback" class="nav-item" active-class="active">
+            <router-link to="/settings/feedback" class="nav-item" active-class="active">
               <div class="nav-icon">📮</div>
               <span v-if="!sidebarCollapsed" class="nav-text">回報處理</span>
             </router-link>

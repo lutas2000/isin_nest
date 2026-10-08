@@ -17,7 +17,6 @@
           {{ tab.label }}
         </button>
         <router-link
-          v-if="authStore.hasFeature('feedback', 'write')"
           to="/settings/feedback"
           class="rounded-t-md border-b-[3px] border-transparent px-4 py-2 text-sm font-medium text-secondary-600 transition hover:bg-primary-50 hover:text-primary-600 md:px-6 md:py-3"
         >
@@ -282,14 +281,12 @@
 import { computed, onMounted, ref } from 'vue';
 import { EditableDataTable, CrmConfigModal, Modal, SectionHeader } from '@/components';
 import { useErrorStore } from '@/stores/error';
-import { useAuthStore } from '@/stores/auth';
 import { apiGet, apiPost, apiRequest } from '@/services/api';
 import { invalidateCrmConfigCache } from '@/services/crm/crm-config-autocomplete.service';
 import { API_CONFIG } from '@/config/api';
 import { CRM_V2_ENABLED } from '@/config/crmV2';
 
 const errorStore = useErrorStore();
-const authStore = useAuthStore();
 
 // 頁籤；「銷管設定」是新版 CRM 的 crm_config，跟著 VITE_CRM_V2_ENABLED 隱藏（config/crmV2.ts）
 const tabs = [

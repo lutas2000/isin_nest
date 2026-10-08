@@ -9,14 +9,14 @@
 | 動作 | 需要 | 路由 |
 | --- | --- | --- |
 | 送出回報 | 任何登入者（不需要 `crm`） | `POST /api/feedback` |
-| 回報列表、可指派的處理者、改狀態／處理者／處理結果 | admin 或 `feedback` write | `GET /api/feedback`、`GET /api/feedback/assignees`、`PATCH /api/feedback/:id` |
+| 回報列表、可指派的處理者、改狀態／處理者／處理結果 | 任何登入者（不設功能權限） | `GET /api/feedback`、`GET /api/feedback/assignees`、`PATCH /api/feedback/:id` |
 | 看回報截圖 | 只有 admin（回報者本人也不行） | `GET /api/feedback/:id/screenshot` |
 | 查寫入紀錄、列印紀錄 | 只有 admin | `GET /api/legacy-crm/logs/*` |
 | 記錄列印 | `crm` read（第 2 階段已有） | `POST /api/legacy-crm/print-log` |
 
 - 未登入回 401，權限不足回 403。
-- `feedback` 功能由 migration `1791468000000-CreateFeedbackReports` 建立（與 `crm` 相同做法），在設定頁授權給使用者。`feedback` read 沒有用途：列表也要 write。
-- 前端 `/settings/feedback` 的路由守衛同樣要求 `feedback` write，側欄「系統管理」與系統設定頁的頁籤列有連結（有權限才顯示）。
+- 回報不建立功能權限（2026-10-08 決定：人人都能用）。
+- 前端 `/settings/feedback` 只要登入，側欄「系統管理」與系統設定頁的頁籤列都有連結。
 
 ## 回報 API（`/api/feedback`）
 
@@ -47,7 +47,7 @@
 ### 處理 `PATCH /api/feedback/:id`
 
 - JSON：`status`、`assignee_user_id`、`resolution`，只送要改的欄位。後兩個送 `null` 表示清除。
-- 處理者必須是 admin 或有 `feedback` write 的使用者（`GET /api/feedback/assignees` 的名單），否則 400。
+- 處理者必須是存在的使用者（`GET /api/feedback/assignees` 的名單），否則 400。
 - 回 `{ item }`；找不到回 404。
 
 ### 截圖 `GET /api/feedback/:id/screenshot`
@@ -129,7 +129,7 @@
 
 - **整合測試**：`apps/backend/src/feedback/feedback.integration.spec.ts`，18 項。
   - 用 Nest 起完整 HTTP（AuthModule、LegacyCrmModule、FeedbackModule），對可拋棄的 PostgreSQL 執行。執行方式寫在檔案開頭，資料庫名稱必須以 `_spec` 結尾。
-  - 權限：未登入、一般使用者、`feedback` read、`feedback` write、`crm` write、admin。
+  - 權限：未登入、一般使用者、`crm` write、admin。
   - 上傳：PNG 檔頭檢查、剛好 5 MB 可以、多 1 byte 回 413、欄位驗證。
   - 截圖：只有 admin、檔案不見回 404、竄改的路徑回 404。
   - 篩選、分頁、指派。
@@ -139,6 +139,6 @@
 - **Migration**：在測試資料庫 run → revert → run。之後 `migration:generate --dryrun` 已沒有 `feedback_reports` 的差異。
 - **端對端**：`tests/legacy-crm/feedback.spec.ts`，3 項。
   - 回報(B)：預設不勾、預覽後送出、Alt+B／Esc。
-  - feedback write：處理回報，看不到截圖。
+  - 一般使用者：處理回報，看不到截圖。
   - admin：看到截圖；紀錄查詢的兩個頁籤。
-  - 環境同 `legacy-crm.spec.ts`，另需一個有 `feedback` write 的帳號（預設 `lc_feedback`）。
+  - 環境同 `legacy-crm.spec.ts`，另需一個沒有 `crm` 的一般帳號（預設 `lc_feedback`）。

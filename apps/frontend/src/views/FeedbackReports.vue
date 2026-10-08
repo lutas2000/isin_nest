@@ -304,7 +304,7 @@ import {
   type FeedbackStatus,
 } from '@/services/feedback';
 
-// 回報處理（LEGACY-CRM-REBUILD-PLAN.md 7.2）：admin 或 `feedback` write 可用（路由守衛與後端都會擋），
+// 回報處理（LEGACY-CRM-REBUILD-PLAN.md 7.2）：任何登入者都能用，不設功能權限；
 // 截圖只有 admin 看得到，後端也只回給 admin。
 const authStore = useAuthStore();
 const inputClass =

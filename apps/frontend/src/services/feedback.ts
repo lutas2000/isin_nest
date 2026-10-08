@@ -1,8 +1,8 @@
 import { apiDownload, apiGet, apiPatch, apiRequest } from './api';
 
 /**
- * 回報系統（後端 `/feedback`，見 docs/FEEDBACK-AND-LOGS.md）。送出：任何登入者；列表與處理：admin 或
- * `feedback` write；截圖：只有 admin。
+ * 回報系統（後端 `/feedback`，見 docs/FEEDBACK-AND-LOGS.md）。送出、列表與處理：任何登入者；
+ * 截圖：只有 admin。
  */
 export type FeedbackKind = 'bug' | 'feature' | 'question';
 export type FeedbackStatus =

@@ -18,7 +18,7 @@ import { FeedbackModule } from './feedback.module';
 
 /**
  * 回報系統與舊版銷管紀錄查詢的權限、上傳限制與截圖存取，對真的 PostgreSQL 跑整個 HTTP 流程
- * （admin、feedback write、feedback read、一般使用者、未登入）。每次執行會清空並重建測試資料庫的
+ * （admin、crm write、一般使用者、未登入）。每次執行會清空並重建測試資料庫的
  * users、features、user_features、staff、feedback_reports 與 legacy_crm，所以只對可拋棄的資料庫執行：
  *
  *   FEEDBACK_TEST_HOST=127.0.0.1 FEEDBACK_TEST_PORT=55432 FEEDBACK_TEST_DB=p5_spec \
@@ -43,9 +43,8 @@ const JPEG = Buffer.from([
 const USERS = {
   admin: 1,
   plain: 2,
-  feedbackRead: 3,
-  feedbackWrite: 4,
-  crmWrite: 5,
+  handler: 3,
+  crmWrite: 4,
 } as const;
 
 (enabled ? describe : describe.skip)(
@@ -138,12 +137,10 @@ const USERS = {
          SELECT $1, id, $3 FROM public.features WHERE name = $2`,
           [userId, feature, permission],
         );
-      await grant(USERS.feedbackRead, 'feedback', 'read');
-      await grant(USERS.feedbackWrite, 'feedback', 'write');
       await grant(USERS.crmWrite, 'crm', 'write');
       await query(
         `INSERT INTO public.staff (id, "userId", name) VALUES ('S04', $1, '王處理')`,
-        [USERS.feedbackWrite],
+        [USERS.handler],
       );
 
       @Module({
@@ -344,13 +341,11 @@ const USERS = {
         }).expect(201);
       });
 
-      it('lists only for admin or feedback write', async () => {
-        await http().get('/feedback').set(as('plain')).expect(403);
-        await http().get('/feedback').set(as('feedbackRead')).expect(403);
-        await http().get('/feedback').set(as('crmWrite')).expect(403);
+      it('lists for any signed-in user, without feature permissions', async () => {
+        await http().get('/feedback').set(as('crmWrite')).expect(200);
         const writer = await http()
           .get('/feedback')
-          .set(as('feedbackWrite'))
+          .set(as('plain'))
           .expect(200);
         expect(writer.body).toMatchObject({ total: 2, page: 1, page_size: 50 });
         expect(
@@ -384,7 +379,7 @@ const USERS = {
         await http()
           .patch('/feedback/1')
           .set(as('admin'))
-          .send({ status: 'done', assignee_user_id: USERS.feedbackWrite })
+          .send({ status: 'done', assignee_user_id: USERS.handler })
           .expect(200);
         expect(
           (await get({ status: 'done' })).items.map(
@@ -402,7 +397,7 @@ const USERS = {
           ),
         ).toEqual([2]);
         expect(
-          (await get({ assignee: String(USERS.feedbackWrite) })).items.map(
+          (await get({ assignee: String(USERS.handler) })).items.map(
             (i: { id: number }) => i.id,
           ),
         ).toEqual([1]);
@@ -439,29 +434,20 @@ const USERS = {
           .expect(400);
       });
 
-      it('updates status, assignee and resolution for feedback write', async () => {
-        await http()
-          .patch('/feedback/1')
-          .set(as('plain'))
-          .send({ status: 'done' })
-          .expect(403);
-        await http()
-          .patch('/feedback/1')
-          .set(as('feedbackRead'))
-          .send({ status: 'done' })
-          .expect(403);
+      it('updates status, assignee and resolution for any signed-in user', async () => {
+        await http().patch('/feedback/1').send({ status: 'done' }).expect(401);
         const response = await http()
           .patch('/feedback/1')
-          .set(as('feedbackWrite'))
+          .set(as('plain'))
           .send({
             status: 'in_progress',
-            assignee_user_id: USERS.feedbackWrite,
+            assignee_user_id: USERS.handler,
             resolution: '  查看中  ',
           })
           .expect(200);
         expect(response.body.item).toMatchObject({
           status: 'in_progress',
-          assignee_user_id: USERS.feedbackWrite,
+          assignee_user_id: USERS.handler,
           assignee: '王處理',
           resolution: '查看中',
         });
@@ -483,11 +469,6 @@ const USERS = {
         await http()
           .patch('/feedback/1')
           .set(as('admin'))
-          .send({ assignee_user_id: USERS.plain })
-          .expect(400);
-        await http()
-          .patch('/feedback/1')
-          .set(as('admin'))
           .send({ assignee_user_id: 999 })
           .expect(400);
         await http()
@@ -497,18 +478,17 @@ const USERS = {
           .expect(404);
       });
 
-      it('lists assignees: admins and feedback write users', async () => {
-        await http()
-          .get('/feedback/assignees')
-          .set(as('feedbackRead'))
-          .expect(403);
+      it('lists every user as an assignee', async () => {
+        await http().get('/feedback/assignees').expect(401);
         const response = await http()
           .get('/feedback/assignees')
-          .set(as('feedbackWrite'))
+          .set(as('plain'))
           .expect(200);
         expect(response.body).toEqual([
           { id: USERS.admin, name: 'admin' },
-          { id: USERS.feedbackWrite, name: '王處理' },
+          { id: USERS.plain, name: 'plain' },
+          { id: USERS.handler, name: '王處理' },
+          { id: USERS.crmWrite, name: 'crmWrite' },
         ]);
       });
 
@@ -516,7 +496,7 @@ const USERS = {
         await http().get('/feedback/1/screenshot').set(as('plain')).expect(403);
         await http()
           .get('/feedback/1/screenshot')
-          .set(as('feedbackWrite'))
+          .set(as('handler'))
           .expect(403);
         const response = await http()
           .get('/feedback/1/screenshot')
@@ -560,7 +540,7 @@ const USERS = {
          VALUES ('2026-10-01 10:00+08', $1, 'S04', 'partner', 'customer:C1', 'create', NULL, '{"code":"C1"}'),
                 ('2026-10-02 23:30+08', $2, NULL, 'order_document', '1151002001', 'update', '{"a":1}', '{"a":2}'),
                 ('2026-10-03 00:30+08', NULL, NULL, 'import', 'final', 'import', NULL, '{"rows":10}')`,
-          [USERS.feedbackWrite, USERS.crmWrite],
+          [USERS.handler, USERS.crmWrite],
         );
         await query(
           `INSERT INTO legacy_crm.print_log (occurred_at, user_id, kind, target, entity_key, criteria, row_count)
@@ -572,7 +552,7 @@ const USERS = {
 
       it('rejects everyone but admin', async () => {
         await http().get('/legacy-crm/logs/write').expect(401);
-        for (const user of ['plain', 'crmWrite', 'feedbackWrite'] as const) {
+        for (const user of ['plain', 'crmWrite', 'handler'] as const) {
           await http().get('/legacy-crm/logs/write').set(as(user)).expect(403);
           await http().get('/legacy-crm/logs/print').set(as(user)).expect(403);
           await http()
@@ -601,7 +581,7 @@ const USERS = {
         ]);
         expect(all.items[0]).not.toHaveProperty('before');
         expect(all.items[2]).toMatchObject({
-          user_id: USERS.feedbackWrite,
+          user_id: USERS.handler,
           user_name: '王處理',
           action: 'create',
         });

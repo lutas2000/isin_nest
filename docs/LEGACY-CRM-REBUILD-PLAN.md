@@ -242,7 +242,7 @@ apps/backend/src/legacy-crm/
 - 後端：`POST /api/feedback`（multipart，截圖 PNG 上限 5 MB）；需登入，不需 `crm` 權限（HR 使用者也能回報）。截圖存 `FEEDBACK_UPLOAD_DIR`，檔名用 uuid，不放在靜態目錄。
 - **截圖決議：無保留期限，只有 admin 能看。** `GET /api/feedback/:id/screenshot` 掛 `AdminGuard`；回報者本人也看不到自己送出的截圖（送出前的預覽即為確認）。Slack 通知不附截圖。
 - 通知：寫入後透過既有 `slack/` 模組推一則訊息到指定頻道（可關閉）。
-- 管理畫面：新系統（非 legacy）`/settings/feedback` 列表、篩選、改狀態；admin 或 `feedback` feature write 可用，截圖欄位只對 admin 顯示。
+- 管理畫面：新系統（非 legacy）`/settings/feedback` 列表、篩選、改狀態；任何登入者都能用（不設功能權限），截圖欄位只對 admin 顯示。
 - 回報系統是新系統的共用模組，之後 HR 也可以用；只有「觸發按鈕」在 legacy 選單列。
 
 ## 8. 權限矩陣
@@ -253,7 +253,7 @@ apps/backend/src/legacy-crm/
 | 新增、修改、刪除、改編號、訂單轉工作單 | `crm` write |
 | 查看 `write_log`、`print_log` | admin |
 | 回報 bug / 需求 | 任何登入使用者 |
-| 處理回報 | admin 或 `feedback` write |
+| 處理回報 | 任何登入使用者 |
 | 查看回報截圖 | admin |
 | 維護員工資料與 `staff.legacy_crm_code` | 新系統 HR 既有權限 |
 | 執行正式移轉 CLI | 伺服器 shell，不開 API |
@@ -280,7 +280,7 @@ apps/backend/src/legacy-crm/
 | 2. 後端 API ✅ 2026-10-08 | 主檔、六張單據、瀏覽、F1、報表、列印資料；業務規則 Jest 測試 | 與 `isin_vb6` API 同一組請求輸出相同（錄製比對）。**結果**：1,105 個讀取請求、72 個寫入步驟、31 張報表逐值比對，差異全部是刻意修正（日期排序、拒收不合法日期、員工改由 staff）並列在 `LEGACY-CRM-API.md`；業務規則整合測試 15 項通過 |
 | 3. 前端殼與主檔 ✅ 2026-10-08 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔。**結果**：客戶、廠商、工件、材質、銀行、詞彙、郵遞區號搬入。員工建檔依 2.3 移除；圖組建檔有列印，改到第 4 階段。與 isin_vb6 的 16 個畫面逐像素相同，只差狀態列的登入者與登出、檔案選單少了員工建檔。端對端測試 8 項通過，含唯讀與權限（`LEGACY-CRM-FRONTEND.md`） |
 | 4. 前端單據與報表 | 六張單據、圖組建檔、F 鍵、列印（含 `@page`／`@media print`）、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對（`scripts/legacy-crm/compare-screens.mjs` 加場景）；列印 PDF 與 XPS 座標比對。**2026-10-08 移植**：五張交易表單、圖組建檔、報表、單據列印與列印紀錄搬入；新增的 32 個場景與 isin_vb6 逐像素相同（只差狀態列的登入者與登出）；列印紙張以 Chrome PDF 確認；端對端測試 10 項通過（`LEGACY-CRM-FRONTEND.md`）。待 Win7 驗收與列印座標比對 |
-| 5. 新功能 ✅ 2026-10-08 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理。**結果**：`public.feedback_reports` 與 `feedback` 功能（migration `1791468000000-CreateFeedbackReports`）；舊版選單列「回報(B)」可附截圖（預設不勾、先預覽），`/settings/feedback` 由 admin 或 `feedback` write 處理，截圖只有 admin 能看；admin 的「紀錄查詢」視窗分寫入／列印兩頁籤；Slack 只在設定 `FEEDBACK_SLACK_WEBHOOK_URL` 時通知、不附截圖。後端整合測試 18 項、端對端 3 項通過（`FEEDBACK-AND-LOGS.md`） |
+| 5. 新功能 ✅ 2026-10-08 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理。**結果**：`public.feedback_reports`（migration `1791468000000-CreateFeedbackReports`）；舊版選單列「回報(B)」可附截圖（預設不勾、先預覽），`/settings/feedback` 任何登入者都能處理，截圖只有 admin 能看；admin 的「紀錄查詢」視窗分寫入／列印兩頁籤；Slack 只在設定 `FEEDBACK_SLACK_WEBHOOK_URL` 時通知、不附截圖。後端整合測試 18 項、端對端 3 項通過（`FEEDBACK-AND-LOGS.md`） |
 | 6. 隔離新版 CRM ✅ 2026-10-08 | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*`。**結果**：`/crm/*` 19 條與讀新版銷貨單的 `/accounting/*` 2 條移到 `router/crm-v2.ts`，`VITE_CRM_V2_ENABLED` 預設關閉時導回首頁，bundle 不含新版 CRM 頁面（主 chunk 2.4 MB → 0.93 MB）；側欄、首頁訂單／報價、設定頁「銷管設定」同旗標隱藏。後端 17 個 CRM controller 掛 `CrmV2Controller()`（登入 + `crm_v2`，GET read、其餘 write），`crm_v2` 無人授權，只有 admin 可用（整個 AppModule 實測 401／403／200）。`no-restricted-imports` 禁止新舊版互相引用（含 `.vue`、動態 import、後端），以暫時違規驗證會報錯 |
 | 7. 正式移轉與上線 | 匯出腳本搬進 isin_nest 並升 Jackcess 5.0.3、確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |
 | 8.（選配）共存研究 | 套件層與檔案層研究已完成（11.1）；剩餘為區網實測 | 決定做或不做；預設不做 |

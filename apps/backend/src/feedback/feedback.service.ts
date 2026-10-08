@@ -49,7 +49,7 @@ interface FeedbackRow {
 }
 
 /**
- * 回報系統（LEGACY-CRM-REBUILD-PLAN.md 第 7 節）。任何登入者都能送出；處理需要 admin 或 `feedback` write；
+ * 回報系統（LEGACY-CRM-REBUILD-PLAN.md 第 7 節）。任何登入者都能送出與處理，不設功能權限；
  * 截圖只有 admin 能看，連回報者本人也看不到（送出前的預覽即為確認）。
  */
 @Injectable()
@@ -151,9 +151,7 @@ export class FeedbackService {
     if (dto.assignee_user_id !== undefined && dto.assignee_user_id !== null) {
       const eligible = await this.assignees();
       if (!eligible.some((user) => user.id === dto.assignee_user_id))
-        throw new BadRequestException(
-          '處理者必須是管理員或有回報處理權限的使用者',
-        );
+        throw new BadRequestException('找不到這個處理者');
     }
     if (dto.status !== undefined) report.status = dto.status;
     if (dto.assignee_user_id !== undefined)
@@ -165,17 +163,12 @@ export class FeedbackService {
     return { item: this.present(row, actor) };
   }
 
-  /** 可指派的處理者：admin 與有 `feedback` write 的使用者。 */
+  /** 可指派的處理者：所有使用者（回報處理不設功能權限）。 */
   async assignees(): Promise<{ id: number; name: string }[]> {
     return this.dataSource.query(
       `SELECT u.id, ${USER_LABEL} AS name
          FROM public.users u
          LEFT JOIN public.staff s ON s."userId" = u.id
-        WHERE u."isAdmin"
-           OR EXISTS (
-                SELECT 1 FROM public.user_features uf
-                  JOIN public.features ft ON ft.id = uf."featureId"
-                 WHERE uf."userId" = u.id AND ft.name = 'feedback' AND uf.permission = 'write')
         ORDER BY u.id`,
     );
   }

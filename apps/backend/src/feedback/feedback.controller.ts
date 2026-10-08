@@ -30,9 +30,6 @@ import {
 } from '@nestjs/swagger';
 import { createReadStream } from 'fs';
 import { AdminGuard } from '../auth/admin.guard';
-import { RequireFeature } from '../auth/decorators/feature-permission.decorator';
-import { PermissionType } from '../auth/entities/user-feature.entity';
-import { FeatureGuard } from '../auth/guards/feature.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   CreateFeedbackDto,
@@ -46,9 +43,6 @@ import {
   FeedbackService,
 } from './feedback.service';
 
-/** 處理回報需要的功能；admin 不需授權。 */
-export const FEEDBACK_FEATURE = 'feedback';
-
 type AuthedRequest = { user: { id: number; isAdmin: boolean } };
 
 const actorOf = (request: AuthedRequest): FeedbackActor => ({
@@ -58,14 +52,13 @@ const actorOf = (request: AuthedRequest): FeedbackActor => ({
 
 /**
  * 回報系統（LEGACY-CRM-REBUILD-PLAN.md 第 7、8 節）：
- * - 送出：任何登入者（不需要 `crm`），可附一張 PNG 截圖（上限 5 MB）。
- * - 列表、改狀態與處理者：admin 或 `feedback` write。
+ * - 送出、列表、改狀態與處理者：任何登入者（不設功能權限），送出可附一張 PNG 截圖（上限 5 MB）。
  * - 截圖：只有 admin。
  */
 @ApiTags('回報系統')
 @ApiBearerAuth('JWT-auth')
 @Controller('feedback')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class FeedbackController {
   constructor(private readonly feedback: FeedbackService) {}
@@ -115,40 +108,34 @@ export class FeedbackController {
   }
 
   @Get()
-  @RequireFeature(FEEDBACK_FEATURE, PermissionType.WRITE)
   @ApiOperation({
-    summary: '回報列表（admin 或 feedback write）',
+    summary: '回報列表（任何登入者）',
     description:
       '回 { items, total, page, page_size }，新的在前。`has_screenshot` 只在 admin 的回應中出現。',
   })
   @ApiResponse({ status: 200 })
   @ApiResponse({ status: 400, description: '篩選條件不合法' })
   @ApiResponse({ status: 401, description: '未登入' })
-  @ApiResponse({ status: 403, description: '沒有 feedback write 權限' })
   list(@Request() request: AuthedRequest, @Query() query: FeedbackQueryDto) {
     return this.feedback.list(actorOf(request), query);
   }
 
   @Get('assignees')
-  @RequireFeature(FEEDBACK_FEATURE, PermissionType.WRITE)
   @ApiOperation({
-    summary: '可指派的處理者：admin 與有 feedback write 的使用者',
+    summary: '可指派的處理者：所有使用者',
   })
   @ApiResponse({ status: 200, description: '[{ id, name }]' })
-  @ApiResponse({ status: 403, description: '沒有 feedback write 權限' })
   assignees() {
     return this.feedback.assignees();
   }
 
   @Patch(':id')
-  @RequireFeature(FEEDBACK_FEATURE, PermissionType.WRITE)
   @ApiOperation({
-    summary: '更新狀態、處理者、處理結果（admin 或 feedback write）',
+    summary: '更新狀態、處理者、處理結果（任何登入者）',
   })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: '{ item }' })
-  @ApiResponse({ status: 400, description: '欄位不合法或處理者沒有權限' })
-  @ApiResponse({ status: 403, description: '沒有 feedback write 權限' })
+  @ApiResponse({ status: 400, description: '欄位不合法或處理者不存在' })
   @ApiResponse({ status: 404, description: '找不到回報' })
   update(
     @Request() request: AuthedRequest,

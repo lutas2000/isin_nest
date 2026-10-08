@@ -7,7 +7,7 @@ import { test, expect, type Browser, type Page } from '@playwright/test';
  *   LEGACY_CRM_E2E_BASE_URL=http://127.0.0.1:3201   前端網址
  *   LEGACY_CRM_E2E_PASSWORD=…                       測試帳號共用的密碼
  *   LEGACY_CRM_E2E_ADMIN / _READ                     admin；crm read（預設 lc_admin、lc_read）
- *   LEGACY_CRM_E2E_FEEDBACK                          有 feedback write、沒有 crm（預設 lc_feedback）
+ *   LEGACY_CRM_E2E_FEEDBACK                          一般使用者，沒有 crm（預設 lc_feedback）
  *   LEGACY_CRM_E2E_CHANNEL=chrome
  *
  *   npx playwright test tests/legacy-crm/feedback.spec.ts --project=chromium --reporter=line
@@ -115,7 +115,7 @@ test('回報(B)：截圖預設不勾，勾選後先預覽再送出；非 admin �
   await page.context().close();
 });
 
-test('feedback write：可處理回報，看不到截圖', async ({ browser }) => {
+test('一般使用者：可處理回報，看不到截圖', async ({ browser }) => {
   const page = await signedIn(browser, USERS.feedback);
   await page.goto('/settings');
   // 非 admin 開系統設定頁本來就會跳「只有管理員…」（權限設定頁籤），先關掉。
