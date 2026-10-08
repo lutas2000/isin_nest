@@ -30,6 +30,9 @@
   - 必讀：`frontend/tailwind-css.md`
 - 新增或調整 API 呼叫與狀態流
   - 必讀：`frontend/api-state.md`
+- 舊版銷管畫面（`/legacy-crm`，從 isin_vb6 搬元件）
+  - 必讀：`frontend/design-system.md`「舊版銷管」、`../../docs/LEGACY-CRM-FRONTEND.md`
+  - 技能：`../skills/legacy-crm-screen-port/SKILL.md`
 
 ### Docker
 

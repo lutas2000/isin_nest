@@ -42,12 +42,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useErrorStore } from '../stores/error';
 import { PageHeader, FormField, SectionHeader } from '@/components';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const errorStore = useErrorStore();
 
@@ -57,6 +58,12 @@ const loginForm = ref({
 });
 
 const isLoading = ref(false);
+
+// 路由守衛帶來的原本頁面；只接受站內路徑
+const redirectTarget = (): string => {
+  const target = route.query.redirect;
+  return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '/';
+};
 
 const handleLogin = async () => {
   if (!loginForm.value.username || !loginForm.value.password) {
@@ -70,7 +77,7 @@ const handleLogin = async () => {
   const result = await authStore.login(loginForm.value.username, loginForm.value.password);
   
   if (result.success) {
-    router.push('/');
+    router.push(redirectTarget());
   } else {
     errorStore.showError(result.error || '登入失敗，請檢查您的帳戶資訊');
   }
@@ -81,7 +88,7 @@ const handleLogin = async () => {
 onMounted(() => {
   // 如果已經登入，重導向到首頁
   if (authStore.isAuthenticated) {
-    router.push('/');
+    router.push(redirectTarget());
   }
 });
 </script>

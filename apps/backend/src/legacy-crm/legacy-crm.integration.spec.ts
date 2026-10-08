@@ -502,11 +502,17 @@ const enabled =
       }
     });
 
-    it('moves the customer and its documents to a new code, and refuses a code in use', async () => {
+    it('moves the customer and its documents, not its drawing groups, to a new code, and refuses a code in use', async () => {
       await partners.create(
         { kind: 'customer', code: 'C2', full_name: '乙' },
         context,
       );
+      await expect(
+        partners.create(
+          { kind: 'customer', code: 'C2', full_name: '乙' },
+          context,
+        ),
+      ).rejects.toThrow('資料重覆。');
       await masters.createPart(
         { drawing_no: 'P1', customer_code: 'C1' },
         context,
@@ -525,7 +531,7 @@ const enabled =
       );
       await expect(
         partners.renameCustomer('C1', 'C2', context),
-      ).rejects.toThrow('客戶編號C2已經存在');
+      ).rejects.toThrow('編號已經存在，不接受此更改');
       await partners.renameCustomer('C1', 'C9', context);
       expect(await partners.get('customer', 'C1')).toBeNull();
       expect(
@@ -542,11 +548,12 @@ const enabled =
       const group = (await groups.get('G1')) as Record<string, unknown> & {
         items: Record<string, unknown>[];
       };
+      // 圖組照舊版 SQL 留在舊編號。
       expect([
         group.customer_code,
         group.items[0].customer_code,
         group.items[0].line_no,
-      ]).toEqual(['C9', 'C9', '1']);
+      ]).toEqual(['C1', 'C1', '1']);
     });
 
     it('numbers a new document by its date and the day’s next serial, and browses in text order', async () => {

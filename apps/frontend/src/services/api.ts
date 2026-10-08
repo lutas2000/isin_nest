@@ -39,9 +39,11 @@ export const apiRequest = async <T>(
       const errorMessage =
         typeof errorData.message === 'string' ? errorData.message : ''
 
-      // 僅在 JWT／登入失效時視為登出；業務錯誤誤回 401 時仍顯示實際訊息
+      // 僅在 JWT／登入失效時視為登出；業務錯誤誤回 401 時仍顯示實際訊息。
+      // token 過期或無效時 JwtAuthGuard 只回 Nest 預設的「Unauthorized」。
       const isAuthFailure =
         !errorMessage ||
+        /^unauthorized$/i.test(errorMessage) ||
         /token|jwt|登入|密碼|權限不足|admin|管理員/i.test(errorMessage)
 
       if (isAuthFailure) {

@@ -1,7 +1,8 @@
 # 舊版銷管 API（legacy-crm）
 
 > 對應規劃：`LEGACY-CRM-REBUILD-PLAN.md` 第 4、8 節，第 2 階段。
-> 程式：`apps/backend/src/legacy-crm/`。移植自 isin_vb6 `server/`，基準 commit 為 `c7ec2a8`；之後 isin_vb6 若再改後端，要比對差異補上。
+> 程式：`apps/backend/src/legacy-crm/`。移植自 isin_vb6 `server/`，基準為 tag `v0-final`（`7b9e36a`，isin_vb6 已收尾，不再修改）。
+> 第 2 階段以 `c7ec2a8` 移植。第 3 階段補上之後的兩個修改：主檔編號重複的訊息改為「資料重覆。」；更改客戶編號時，圖組的客戶編號不換。
 > 本文件給第 3、4 階段的前端移植使用：說明路由、回應形狀、權限，以及和 isin_vb6 不同的地方。
 
 ## 共通約定
@@ -42,7 +43,7 @@
 | `partners?kind=customer\|supplier&search=`                    | GET              | read        | 客戶／廠商列表                                       |
 | `partners`                                                    | POST             | write       | 新增（body 含 `kind`）                               |
 | `partners/:kind/:code`                                        | GET／PUT／DELETE | read／write |                                                      |
-| `partners/customer/:code/rename`                              | POST `{code}`    | write       | 更改編號，單據、工件、圖組上的客戶編號一起換；回 200 |
+| `partners/customer/:code/rename`                              | POST `{code}`    | write       | 更改編號，單據、工件上的客戶編號一起換，圖組不換；回 200 |
 | `materials`、`materials/:id`                                  | 標準             |             | 材質；`id` 取代 isin_vb6 的 rowid（移轉後編號相同）  |
 | `parts`、`parts/:drawingNo`                                   | 標準             |             | 工件；單筆含 `latest_sale_date`                      |
 | `parts/:drawingNo/sales?customer=&order=`                     | GET              | read        | 出貨記錄                                             |

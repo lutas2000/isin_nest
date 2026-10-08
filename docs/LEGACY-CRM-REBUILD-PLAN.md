@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-08
 > 來源專案：`../isin_vb6`（Vue 3 + Node `node:sqlite` 的舊版重建研究專案，即將收尾）
 > 目標：isin_nest `apps/backend/src/legacy-crm`、`apps/frontend/src/legacy-crm`
-> 狀態：規劃已定案（2026-10-08 決議見第 11 節）。**第 1 階段（資料層）、第 2 階段（後端 API）已完成（2026-10-08）**，移轉操作與演練紀錄見 `LEGACY-CRM-MIGRATION-RUN.md`，API 與 isin_vb6 的差異見 `LEGACY-CRM-API.md`。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
+> 狀態：規劃已定案（2026-10-08 決議見第 11 節）。**第 0 階段（isin_vb6 收尾，tag `v0-final`）、第 1 階段（資料層）、第 2 階段（後端 API）、第 3 階段（前端殼與主檔）已完成（2026-10-08）**，移轉操作與演練紀錄見 `LEGACY-CRM-MIGRATION-RUN.md`，API 與 isin_vb6 的差異見 `LEGACY-CRM-API.md`，前端的移植約定與差異見 `LEGACY-CRM-FRONTEND.md`。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
 > 相關文件：`../isin_vb6/docs/handoff-legacy-rebuild.md`（接手文件）、`legacy-ui-spec.md`（版面與操作規格）、`legacy-mdb-field-mapping.md`（MDB → 新表欄位對應與移轉範圍）、`legacy-migration-run.md`（正式移轉流程與耗時）
 > 研究報告（2026-10-08，獨立於 isin_vb6）：`research/ACCESS-MDB-LIBRARIES.md`（Access 97 讀寫套件）、`research/SMB-MOUNT-FROM-CONTAINER.md`（容器掛載 SMB）與 `research/smb-mount.compose.example.yml`
 
@@ -188,6 +188,7 @@ apps/backend/src/legacy-crm/
 - 單一入口：`/legacy-crm`；MDI 子視窗狀態在 Pinia store，不用子 route，與舊版行為一致。
 - 導航守衛：沒有 `crm` 權限者導回首頁；只有 read 的人進入後，所有新增／修改／刪除按鈕停用並在狀態列顯示「唯讀」。
 - 新系統首頁與側欄：在 Home 加「舊版銷管系統」卡片，點了開新分頁到 `/legacy-crm`；這是新系統到 legacy 的唯一入口，legacy 內部沒有回新系統的連結（登出除外）。
+- 2026-10-08 實作：未登入時導向登入頁，登入後回到 `/legacy-crm`；登出在狀態列右側。實作細節見 `LEGACY-CRM-FRONTEND.md`。
 
 ### 5.2 Design tokens
 
@@ -195,6 +196,11 @@ apps/backend/src/legacy-crm/
 - Tailwind `@theme` 不新增 legacy 色票，避免污染新版 token；legacy 元件只用自己的 CSS 變數與 class，`.legacy-root` 內 reset 新版的全域樣式（body 字型、min-width 1024px）。
 - 列印樣式（`@page` 230 × 139.7 mm、230 × 279.4 mm、90 × 38.1 mm 標籤）照 `legacyPapers.js` 原樣搬。
 - 文件：在 `.agent/rules/frontend/design-system.md` 加一節說明 legacy tokens 的作用域與「不可混用」規則。
+- 2026-10-08 實作：
+  - token 名稱為 `--lg-*`，值與 isin_vb6 相同。
+  - `.legacy-root` 內用 `all: revert-layer` 略過 Tailwind preflight，用 `revert` 還原 `style.css` 的全域 `h1`～`h6`、`p`、`a`。
+  - 字型放 `src/legacy-crm/assets/fonts/`：`public` 被 `.gitignore` 忽略。
+  - 列印的 `@page`、`@media print` 留到第 4 階段，且要限定在舊版列印頁。
 
 ### 5.3 元件搬移
 
@@ -202,6 +208,10 @@ apps/backend/src/legacy-crm/
 - API 呼叫改走 `services/api.ts`（自動帶 JWT、401 導登入）；`fetch('/api/...')` 全部替換。
 - JS → TS 分兩步：先改副檔名 + `// @ts-nocheck` 讓專案通過 lint；再逐檔補型別。純函式 utils 優先補型別與測試。
 - 新功能掛點：MDI 選單列最右側新增「回報(B)」、狀態列顯示登入者姓名與唯讀狀態。
+- 2026-10-08 實作（第 3 階段）：
+  - `.vue` 直接用 `<script setup lang="ts">`，型別先補在 props 與函式參數。專案沒有 `vue-tsc`，`.vue` 不做型別檢查。
+  - `utils` 改成 `.ts`。
+  - API 經 `legacy-crm/services/legacyApi.ts`。
 
 ## 6. 新版 CRM 標記暫不使用
 
@@ -268,8 +278,8 @@ apps/backend/src/legacy-crm/
 | 0. 收尾 isin_vb6 | 處理 handoff 未完成事項中「操作」類（報價 F8、工作 F8、收款 F3／F4）；最終 commit 與 tag `v0-final` | `npm test`、`npm run build` 通過；handoff 更新 |
 | 1. 資料層 ✅ 2026-10-08 | `legacy_crm` schema、entities、第一支 migration、CSV 匯入 CLI（含民國日期解析）、`write_log`、`print_log`、`staff.legacy_crm_code` | 用 10/02 副本匯入 PostgreSQL，筆數對上 `legacy-migration-run.md`，日期解析失敗筆數可接受並已列表。**結果**：筆數與排除原因完全相同；19 張表約 290 萬列與 isin_vb6 匯入結果逐列逐欄一致；日期無法解析 0 筆；匯入 57 秒（`LEGACY-CRM-MIGRATION-RUN.md`） |
 | 2. 後端 API ✅ 2026-10-08 | 主檔、六張單據、瀏覽、F1、報表、列印資料；業務規則 Jest 測試 | 與 `isin_vb6` API 同一組請求輸出相同（錄製比對）。**結果**：1,105 個讀取請求、72 個寫入步驟、31 張報表逐值比對，差異全部是刻意修正（日期排序、拒收不合法日期、員工改由 staff）並列在 `LEGACY-CRM-API.md`；業務規則整合測試 15 項通過 |
-| 3. 前端殼與主檔 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔 |
-| 4. 前端單據與報表 | 六張單據、F 鍵、列印、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對；列印 PDF 與 XPS 座標比對 |
+| 3. 前端殼與主檔 ✅ 2026-10-08 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔。**結果**：客戶、廠商、工件、材質、銀行、詞彙、郵遞區號搬入。員工建檔依 2.3 移除；圖組建檔有列印，改到第 4 階段。與 isin_vb6 的 16 個畫面逐像素相同，只差狀態列的登入者與登出、檔案選單少了員工建檔。端對端測試 8 項通過，含唯讀與權限（`LEGACY-CRM-FRONTEND.md`） |
+| 4. 前端單據與報表 | 六張單據、圖組建檔、F 鍵、列印（含 `@page`／`@media print`）、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對（`scripts/legacy-crm/compare-screens.mjs` 加場景）；列印 PDF 與 XPS 座標比對 |
 | 5. 新功能 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理 |
 | 6. 隔離新版 CRM | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*` |
 | 7. 正式移轉與上線 | 匯出腳本搬進 isin_nest 並升 Jackcess 5.0.3、確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |

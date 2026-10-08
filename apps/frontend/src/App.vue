@@ -1,8 +1,11 @@
 <template>
   <div id="app" class="app min-h-screen">
+    <!-- 舊版銷管：整頁交給 LegacyShell，不顯示新版側欄與頂欄 -->
+    <router-view v-if="isLegacyLayout && authStore.isLoggedIn" />
+
     <!-- 未登入時或重設密碼頁面時顯示滿版 -->
     <div
-      v-if="!authStore.isLoggedIn || isResetPasswordPage"
+      v-else-if="!authStore.isLoggedIn || isResetPasswordPage"
       class="full-page-container min-h-screen"
     >
       <router-view />
@@ -314,6 +317,7 @@ const showMobileOverlay = ref(false);
 const showUserMenu = ref(false); // 新增：控制用戶下拉選單的顯示
 
 const isHrArea = computed(() => route.meta.area === 'hr');
+const isLegacyLayout = computed(() => route.meta.layout === 'legacy');
 const currentPageTitle = computed(() => String(route.meta.title || '奕新雷射 銷管系統'));
 
 // 檢查是否為重設密碼頁面

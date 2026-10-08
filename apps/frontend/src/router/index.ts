@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import Home from '../views/Home.vue'
 import { hrRoutes } from './hr'
+import { legacyCrmRoutes } from './legacy-crm'
+import { userHasFeature } from '../stores/auth'
 import CRMCustomers from '../views/CRM/Customers.vue'
 import CRMContacts from '../views/CRM/Contacts.vue'
 import CRMOrders from '../views/CRM/Orders.vue'
@@ -46,6 +48,7 @@ const routes = [
     meta: { title: '儀表板', icon: '🏠', requiresAuth: true }
   },
   ...hrRoutes,
+  ...legacyCrmRoutes,
   {
     path: '/crm',
     name: 'CRMCustomers',
@@ -202,8 +205,8 @@ router.beforeEach(async (to: RouteLocationNormalized, _: RouteLocationNormalized
     const user = localStorage.getItem('auth_user')
     
     if (!token || !user) {
-      // 未登入，跳轉到登入頁面
-      next('/login')
+      // 未登入，跳轉到登入頁面；登入後回到原本要去的頁面
+      next(to.path === '/' ? '/login' : { path: '/login', query: { redirect: to.fullPath } })
       return
     }
     
@@ -214,6 +217,11 @@ router.beforeEach(async (to: RouteLocationNormalized, _: RouteLocationNormalized
           throw new Error('Invalid user data')
         }
         if (to.meta.requiresAdmin && !userData.isAdmin) {
+          next('/')
+          return
+        }
+        // 需要功能權限的頁面（例如舊版銷管的 `crm`），沒有權限導回首頁
+        if (typeof to.meta.feature === 'string' && !userHasFeature(userData, to.meta.feature)) {
           next('/')
           return
         }

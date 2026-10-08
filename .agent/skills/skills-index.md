@@ -24,6 +24,10 @@ This file maps task intent to skill folders for on-demand loading.
   - Trigger: import the legacy VB6/Access sales data (isin_vb6 rebuild) into PostgreSQL `legacy_crm`, rehearse the migration, or fill `staff.legacy_crm_code`.
   - Use with: `../../docs/LEGACY-CRM-MIGRATION-RUN.md`, `../../docs/LEGACY-CRM-REBUILD-PLAN.md` §2–3, `../rules/backend/typeorm-entity-migration.md`.
 
+- `legacy-crm-screen-port/SKILL.md`
+  - Trigger: move a legacy sales screen from isin_vb6 into `/legacy-crm` (stage 3–4), or change one that is already there.
+  - Use with: `../../docs/LEGACY-CRM-FRONTEND.md`, `../../docs/LEGACY-CRM-API.md`, `../rules/frontend/design-system.md` 「舊版銷管」.
+
 ## Deployment Skills
 
 - `prod-deploy-update-run/SKILL.md`

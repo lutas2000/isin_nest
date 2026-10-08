@@ -1,0 +1,38 @@
+/*
+ * 舊版銷管（/legacy-crm）的 design tokens，只在 .legacy-root 內有效。
+ * 來源：isin_vb6 src/style.css 的 :root 與 Win7 舊版畫面的配色；舊版畫面逐欄比對過，
+ * 數值不可改。新版頁面不可使用 --lg-*，舊版元件也不可使用 Tailwind 的 @theme token
+ * （.agent/rules/frontend/design-system.md「舊版銷管」）。
+ */
+
+/* 細明體 for printouts and the legacy screens. Windows machines use the
+   installed MingLiU; elsewhere 全字庫正宋體 (TW-Sung) stands in, a Ming font
+   with the same character forms and half-width monospaced ASCII
+   (../assets/fonts/README.md for its licence). */
+@font-face {
+  font-family: 'Legacy Ming';
+  src:
+    local('MingLiU'),
+    local('細明體'),
+    url('../assets/fonts/tw-sung-legacy.woff2') format('woff2');
+  font-display: block;
+}
+
+.legacy-root {
+  /* 主視窗外框（isin_vb6 :root） */
+  --lg-ui-font: 'DM Sans', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei',
+    sans-serif;
+  --lg-ui-ink: #203342;
+  --lg-canvas: #edf2f6;
+
+  /* 舊版表單：Win7 的按鈕面、框線、陰影，表單標籤的青色底 */
+  --lg-font: 'PMingLiU', 'Legacy Ming', serif;
+  --lg-font-ming: 'Legacy Ming', serif;
+  --lg-ink: #000;
+  --lg-paper: #fff;
+  --lg-face: #f0f0f0;
+  --lg-line: #a0a0a0;
+  --lg-shadow: #808080;
+  --lg-label: #00ffff;
+  --lg-error: #b00020;
+}

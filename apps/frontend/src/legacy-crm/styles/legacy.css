@@ -1,0 +1,1371 @@
+/*
+ * 舊版銷管畫面的樣式，搬自 isin_vb6 src/style.css（v0-final），只留舊版畫面用到的規則。
+ * 全部規則都以 .legacy-* 為選擇器，不影響新版頁面。顏色與字型見 tokens.css。
+ *
+ * isin_vb6 是在瀏覽器預設樣式上寫的；isin_nest 有 Tailwind preflight 與 style.css 的
+ * 全域 h1～h6、p、a 樣式，所以 .legacy-root 內先還原成瀏覽器預設，再套舊版規則：
+ * - preflight 在 base layer，用 revert-layer 整層略過。不用 revert：revert 會連 HTML
+ *   屬性帶來的預設（例如表格儲存格的 1px padding）一起略過，和瀏覽器預設不同。
+ * - style.css 的 h1～h6、p、a 不在 layer 內，用 revert 回到瀏覽器預設。
+ * 列印（@page、@media print）在第 4 階段搬單據列印時加入。
+ */
+
+@layer base {
+  .legacy-root,
+  .legacy-root *,
+  .legacy-root ::before,
+  .legacy-root ::after {
+    all: revert-layer;
+  }
+}
+
+.legacy-root :where(h1, h2, h3, h4, h5, h6, p, a) {
+  all: revert;
+}
+
+.legacy-root {
+  width: 100%;
+  min-width: 1024px;
+  min-height: 100vh;
+  font-family: var(--lg-ui-font);
+  font-size: 16px;
+  line-height: normal;
+  color: var(--lg-ui-ink);
+  background: var(--lg-canvas);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.legacy-root,
+.legacy-root * {
+  box-sizing: border-box;
+}
+
+:where(.legacy-root) :where(button, input, textarea) {
+  font: inherit;
+}
+:where(.legacy-root) button {
+  cursor: pointer;
+}
+:where(.legacy-root) button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.legacy-preview {
+  margin-top: 17px;
+  padding-top: 14px;
+  border-top: 1px solid #e9eef0;
+}
+
+.reports-page {
+  display: grid;
+  gap: 14px;
+  max-width: 1280px;
+}
+
+/* Legacy report sheets (src/components/LegacyReportSheet.vue). */
+.legacy-sheet {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: var(--lg-paper);
+  color: var(--lg-ink);
+  font-family: var(--lg-font-ming);
+  text-spacing-trim: space-all;
+}
+
+.legacy-sheet-origin {
+  position: absolute;
+  inset: 0;
+}
+
+.legacy-sheet-text {
+  position: absolute;
+  white-space: pre;
+}
+
+.legacy-sheet-rule {
+  position: absolute;
+  height: 0;
+  border-top: 0.25mm solid var(--lg-ink);
+}
+
+.legacy-sheet-vrule {
+  position: absolute;
+  width: 0;
+  border-left: 0.25mm solid var(--lg-ink);
+}
+
+.legacy-sheet-shape {
+  position: absolute;
+  overflow: visible;
+}
+
+.legacy-sheet-shape path {
+  fill: none;
+  stroke: var(--lg-ink);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.legacy-sheet-image {
+  position: absolute;
+  display: block;
+}
+
+.legacy-print-pages {
+  display: none;
+}
+
+/* Legacy 資料列印 preview window used by the invoice reports. */
+.legacy-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--lg-face);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+}
+
+.legacy-preview-titlebar {
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--lg-line);
+  font-size: 13px;
+}
+
+.legacy-preview-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--lg-line);
+}
+
+.legacy-preview-toolbar > * {
+  min-width: 78px;
+  padding: 3px 8px;
+  border: 1px solid #8080c0;
+  background: #c8c8f8;
+  color: var(--lg-ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: center;
+}
+
+.legacy-preview-toolbar button:disabled {
+  color: #8888a8;
+}
+
+.legacy-preview-toolbar button:not(:disabled) {
+  cursor: pointer;
+}
+
+.legacy-preview-canvas {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background: var(--lg-face);
+  border: 1px solid var(--lg-line);
+  margin: 6px;
+}
+
+@media (max-width: 640px) {
+  .legacy-preview-toolbar > * {
+    min-width: 0;
+    font-size: 13px;
+  }
+}
+
+/* Legacy 報表列印 dialog (docs/legacy-ui-spec.md). */
+.legacy-dialog {
+  width: fit-content;
+  max-width: 100%;
+  margin: 48px auto 0;
+  border: 1px solid #6d7d93;
+  border-radius: 6px;
+  background: #dfe9f5;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 35%);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+  font-size: 15px;
+}
+
+.legacy-dialog-title {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.legacy-dialog-body {
+  display: flex;
+  gap: 18px;
+  margin: 0 6px 6px;
+  padding: 12px 14px 14px 20px;
+  border: 1px solid var(--lg-line);
+  background: var(--lg-face);
+}
+
+.legacy-groupbox {
+  margin: 0 0 12px;
+  padding: 4px 20px 8px 40px;
+  border: 1px solid var(--lg-line);
+}
+
+.legacy-groupbox legend {
+  padding: 0 2px;
+}
+
+.legacy-radio-columns,
+.legacy-field-columns {
+  display: flex;
+  gap: 28px;
+}
+
+.legacy-radio-columns > div,
+.legacy-field-columns > div {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.legacy-radio {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.legacy-field {
+  display: grid;
+  grid-template-columns: auto 110px;
+  align-items: center;
+  justify-content: end;
+  white-space: nowrap;
+}
+
+.legacy-field input {
+  width: 110px;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid var(--lg-paper);
+  border-top-color: var(--lg-line);
+  border-left-color: var(--lg-line);
+  background: var(--lg-paper);
+  font: inherit;
+}
+
+.legacy-dialog-buttons {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.legacy-dialog-buttons button {
+  width: 82px;
+  height: 26px;
+  border: 1px solid #707070;
+  border-radius: 2px;
+  background: linear-gradient(#f6f6f6, #dddddd);
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-dialog-buttons button:disabled {
+  color: #8d8d8d;
+}
+
+/* 選項: the legacy 列印選擇 window. */
+.legacy-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px 16px;
+}
+
+.legacy-selection {
+  display: flex;
+  flex-direction: column;
+  width: min(600px, 100%);
+  height: min(640px, calc(100vh - 56px));
+  border: 1px solid #6d7d93;
+  border-radius: 6px;
+  background: #dfe9f5;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 35%);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+  font-size: 15px;
+}
+
+.legacy-selection-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 34px;
+  padding: 4px 8px;
+  background: var(--lg-face);
+}
+
+.legacy-selection-buttons button {
+  width: 76px;
+  height: 26px;
+  border: 1px solid #707070;
+  border-radius: 2px;
+  background: linear-gradient(#f6f6f6, #dddddd);
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-selection-grid {
+  flex: 1;
+  overflow: auto;
+  margin: 0 8px;
+  border: 1px solid var(--lg-line);
+  background: var(--lg-face);
+  outline: none;
+}
+
+.legacy-selection-grid table {
+  border-collapse: collapse;
+  background: var(--lg-paper);
+}
+
+.legacy-selection-grid th,
+.legacy-selection-grid td {
+  padding: 0 4px;
+  border: 1px solid #d0d0d0;
+  text-align: left;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.legacy-selection-grid th {
+  position: sticky;
+  top: 0;
+  background: var(--lg-face);
+  border-color: var(--lg-line);
+}
+
+.legacy-selection-grid .num {
+  min-width: 2.5em;
+  text-align: right;
+}
+
+.legacy-selection-grid .mark {
+  min-width: 4em;
+  text-align: center;
+}
+
+.legacy-selection-grid tr.current td:nth-child(2) {
+  background: #3399ff;
+  color: var(--lg-paper);
+}
+
+.legacy-selection-message {
+  margin: 8px;
+}
+
+.legacy-selection-message.error {
+  color: var(--lg-error);
+}
+
+.legacy-selection-hint {
+  min-height: 44px;
+  margin: 6px 8px 8px;
+  padding: 3px 4px;
+  border: 1px solid var(--lg-line);
+  background: #c0ffff;
+}
+
+.legacy-statusbar {
+  margin: 24px 0 0;
+  padding: 2px 6px;
+  border-top: 1px solid var(--lg-line);
+  background: var(--lg-face);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+}
+
+.legacy-statusbar.error {
+  color: var(--lg-error);
+}
+
+.legacy-preview-paper {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Sheets in the preview canvas sit on a grey desk like the legacy window. */
+.legacy-preview-paper .legacy-sheet {
+  outline: 1px solid var(--lg-shadow);
+}
+
+.legacy-report-truncated {
+  margin: 8px 0 0;
+  color: var(--lg-error);
+}
+
+@media (max-width: 640px) {
+  .legacy-dialog-body,
+  .legacy-radio-columns,
+  .legacy-field-columns {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .legacy-dialog-buttons {
+    display: flex;
+  }
+}
+
+/* Legacy main window (src/App.vue): title, menu bar, MDI area, status bar. */
+.legacy-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+  background: var(--lg-face);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+  font-size: 15px;
+}
+
+.legacy-app-title {
+  padding: 3px 8px;
+  background: linear-gradient(#e3edf8, #cfdcec);
+  border-bottom: 1px solid #9fb2c8;
+  font-size: 13px;
+}
+
+.legacy-menubar {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  min-height: 22px;
+  padding: 0 2px;
+  background: var(--lg-face);
+  border-bottom: 1px solid #c8c8c8;
+  font-size: 13px;
+}
+
+.legacy-menu {
+  position: relative;
+}
+
+.legacy-menu-title {
+  height: 100%;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-menu-title:hover,
+.legacy-menu-title.open {
+  border-color: #7da2ce;
+  background: #dceaf8;
+}
+
+.legacy-menu-items {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 2px;
+  border: 1px solid #979797;
+  background: var(--lg-face);
+  box-shadow: 2px 2px 3px rgb(0 0 0 / 30%);
+}
+
+.legacy-menu-items button {
+  display: flex;
+  gap: 4px;
+  padding: 3px 24px 3px 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--lg-ink);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.legacy-menu-items button.highlighted {
+  border-color: #aecff7;
+  background: #e3effc;
+}
+
+.legacy-menu-check {
+  width: 1.2em;
+}
+
+.legacy-menu-items hr {
+  margin: 3px 2px 3px 28px;
+  border: 0;
+  border-top: 1px solid #d7d7d7;
+}
+
+.legacy-menubar-spacer {
+  flex: 1;
+}
+
+.legacy-child-controls {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.legacy-child-controls button,
+.legacy-child-buttons button {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--lg-line);
+  background: #f6f6f6;
+  color: var(--lg-ink);
+  font: 12px/1 sans-serif;
+}
+
+.legacy-mdi {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #ababab;
+}
+
+.legacy-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.legacy-backdrop-panel {
+  width: min(1024px, 100%);
+  height: 100%;
+  padding: 50px 0 0 70px;
+  background: linear-gradient(90deg, #b9dcf7 0, var(--lg-paper) 170px);
+}
+
+.legacy-backdrop-title {
+  padding-left: 200px;
+  color: #d9a400;
+  font-size: 68px;
+  letter-spacing: 0.1em;
+  text-shadow: 1px 1px 0 #8a6a00;
+}
+
+.legacy-backdrop-rule {
+  height: 4px;
+  margin: 18px 0 0;
+  background: var(--lg-ink);
+}
+
+.legacy-backdrop-company {
+  margin: 120px 0 0 200px;
+  color: #b8925a;
+  font-size: 34px;
+  letter-spacing: 0.2em;
+}
+
+.legacy-mdi-children {
+  position: absolute;
+  inset: 0;
+}
+
+.legacy-mdi-max .legacy-mdi-children > .legacy-child {
+  position: absolute;
+  inset: 0;
+}
+
+.legacy-mdi-horizontal .legacy-mdi-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.legacy-mdi-vertical .legacy-mdi-children {
+  display: flex;
+}
+
+.legacy-mdi-horizontal .legacy-child,
+.legacy-mdi-vertical .legacy-child {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.legacy-mdi-cascade .legacy-child {
+  position: absolute;
+  width: 78%;
+  height: 78%;
+}
+
+.legacy-mdi-cascade .legacy-child.active {
+  z-index: 2;
+}
+
+.legacy-child {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--lg-face);
+  border: 1px solid #7f8fa4;
+}
+
+.legacy-mdi-max .legacy-child {
+  border: 0;
+}
+
+.legacy-child-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 2px 8px;
+  background: linear-gradient(#c9d6e6, #b6c6da);
+  font-size: 13px;
+  user-select: none;
+}
+
+.legacy-child.active .legacy-child-title {
+  background: linear-gradient(#a9c6ea, #7fa6d6);
+}
+
+.legacy-child-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.legacy-child-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.legacy-minimized {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.legacy-minimized button {
+  min-width: 160px;
+  padding: 2px 6px;
+  border: 1px solid #7f8fa4;
+  background: linear-gradient(#c9d6e6, #b6c6da);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+}
+
+.legacy-app-status {
+  min-height: 22px;
+  padding: 2px 4px;
+  border-top: 1px solid var(--lg-line);
+  background: var(--lg-face);
+  font-size: 14px;
+}
+
+.legacy-coming-soon {
+  padding: 24px;
+}
+
+.legacy-message-box {
+  width: min(460px, 100%);
+  margin-top: 120px;
+  border: 1px solid #6d7d93;
+  border-radius: 6px;
+  background: var(--lg-face);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 35%);
+  font-family: var(--lg-font);
+}
+
+.legacy-message-box p {
+  margin: 16px;
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+.legacy-message-buttons {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px 14px;
+}
+
+.legacy-message-buttons button {
+  width: 82px;
+  height: 26px;
+  border: 1px solid #707070;
+  background: linear-gradient(#f6f6f6, #dddddd);
+  font: inherit;
+}
+
+.legacy-dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.legacy-window-close {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--lg-line);
+  background: #e8a0a0;
+  font: 12px/1 sans-serif;
+}
+
+.legacy-query {
+  width: min(540px, 100%);
+}
+
+.legacy-order-to-work {
+  width: min(572px, 100%);
+  height: min(548px, calc(100vh - 56px));
+}
+
+.legacy-order-to-work-head {
+  display: grid;
+  grid-template-columns: 82px 92px 92px 26px 1fr 72px 72px;
+  gap: 6px 4px;
+  align-items: center;
+  padding: 10px 12px 8px;
+}
+
+.legacy-order-to-work-head .legacy-order-to-work-label {
+  background: var(--lg-label);
+  border: 1px solid var(--lg-shadow);
+  box-shadow: inset 1px 1px 0 var(--lg-paper);
+  padding: 2px 8px;
+}
+
+.legacy-order-to-work-head > :nth-child(5) {
+  grid-column: 6;
+}
+
+.legacy-order-to-work-head > :nth-child(6) {
+  grid-column: 7;
+}
+
+.legacy-order-to-work-head .legacy-order-to-work-customer {
+  grid-column: 2 / span 3;
+}
+
+.legacy-order-to-work-head > :nth-child(10) {
+  grid-column: 6;
+}
+
+.legacy-order-to-work-head > :nth-child(11) {
+  grid-column: 7;
+}
+
+.legacy-order-to-work table {
+  table-layout: fixed;
+  width: 456px;
+}
+
+/* 序 選擇 訂單編號 訂單日期 客戶 交貨期限, as wide as the legacy grid. */
+.legacy-order-to-work th:nth-child(1) {
+  width: 32px;
+}
+
+.legacy-order-to-work th:nth-child(2) {
+  width: 40px;
+}
+
+.legacy-order-to-work th:nth-child(n + 3) {
+  width: 96px;
+}
+
+.legacy-order-to-work-button {
+  background: #8080ff;
+  color: var(--lg-paper);
+}
+
+.legacy-part-sales {
+  width: min(808px, 100%);
+}
+
+.legacy-part-sales table {
+  table-layout: fixed;
+  width: 746px;
+}
+
+/* Column widths of the legacy grid: 項次 日期 出貨編號 訂單編號 材質 厚度 代料 出貨數 單價 金額. */
+.legacy-part-sales th:nth-child(1) {
+  width: 48px;
+}
+
+.legacy-part-sales th:nth-child(2),
+.legacy-part-sales th:nth-child(3),
+.legacy-part-sales th:nth-child(4),
+.legacy-part-sales th:nth-child(5) {
+  width: 88px;
+}
+
+.legacy-part-sales th:nth-child(6),
+.legacy-part-sales th:nth-child(7) {
+  width: 48px;
+}
+
+.legacy-part-sales th:nth-child(n + 8) {
+  width: 80px;
+}
+
+.legacy-part-sales-buttons {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 6px;
+}
+
+.legacy-part-sales-buttons button {
+  min-width: 74px;
+}
+
+.legacy-query.with-preview,
+.legacy-query.with-detail {
+  width: min(808px, 100%);
+}
+
+.legacy-query-body {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+}
+
+.legacy-query-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.legacy-query-detail {
+  flex: 0 0 34%;
+}
+
+/* F10 「詞彙輸入輔助」: asks for a phrase code. */
+.legacy-prompt-backdrop {
+  align-items: center;
+}
+
+.legacy-prompt {
+  width: min(326px, 100%);
+  border: 1px solid #6d7d93;
+  border-radius: 6px;
+  background: #dfe9f5;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 35%);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+  font-size: 15px;
+}
+
+.legacy-prompt-field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 6px;
+  padding: 18px 8px 10px;
+  border: 1px solid var(--lg-line);
+  border-bottom: 0;
+  background: var(--lg-face);
+}
+
+.legacy-prompt-field input {
+  width: 104px;
+  border: 0;
+  background: var(--lg-paper);
+  font: inherit;
+}
+
+.legacy-prompt-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  margin: 0 6px 6px;
+  padding: 4px 8px 12px;
+  border: 1px solid var(--lg-line);
+  border-top: 0;
+  background: var(--lg-face);
+}
+
+.legacy-prompt-buttons button {
+  width: 76px;
+  height: 26px;
+  border: 1px solid #707070;
+  border-radius: 2px;
+  background: linear-gradient(#f6f6f6, #dddddd);
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+/* 工件資料查詢: the drawing number, its size and the outline. */
+.legacy-query-preview {
+  display: flex;
+  flex: 0 0 264px;
+  flex-direction: column;
+  align-self: flex-start;
+  height: 330px;
+  margin: 0 8px 0 0;
+  padding: 4px;
+  border: 1px solid var(--lg-line);
+  background: var(--lg-paper);
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  text-align: center;
+}
+
+.legacy-query-preview svg {
+  flex: 1;
+  min-height: 0;
+  margin-top: 4px;
+  border: 1px solid var(--lg-ink);
+}
+
+/* Legacy transaction forms: lavender button row, cyan labels, cyan-headed
+   grids with a 項次 column. */
+.legacy-form {
+  min-width: 1000px;
+  padding: 4px 6px;
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+  font-size: 15px;
+}
+
+.legacy-record-toolbar {
+  display: flex;
+  gap: 2px;
+  margin: 0 0 8px;
+}
+
+.legacy-record-toolbar button {
+  min-width: 78px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid #8080c0;
+  background: #c8c8f8;
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-record-toolbar button:disabled {
+  opacity: 1;
+  color: #8888a8;
+}
+
+.legacy-record-toolbar-extra {
+  margin-left: 60px;
+}
+
+.legacy-form-fields {
+  display: flex;
+  gap: 18px;
+  margin: 0 0 8px;
+}
+
+.legacy-form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.legacy-form-field {
+  display: flex;
+  align-items: stretch;
+  height: 24px;
+}
+
+.legacy-form-field > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  border: 1px solid var(--lg-ink);
+  background: var(--lg-label);
+  white-space: nowrap;
+}
+
+.legacy-form-field input,
+.legacy-form-field select {
+  width: 94px;
+  min-width: 0;
+  padding: 0 3px;
+  border: 1px solid #7a7a7a;
+  border-left: 0;
+  background: var(--lg-paper);
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-form-field input.wide {
+  width: 186px;
+}
+
+.legacy-form-field input.wider {
+  width: 432px;
+}
+
+.legacy-form-field input.num {
+  text-align: right;
+}
+
+.legacy-form-field input:disabled,
+.legacy-form-field select:disabled {
+  background: var(--lg-paper);
+  color: var(--lg-ink);
+  opacity: 1;
+  -webkit-text-fill-color: var(--lg-ink);
+}
+
+.legacy-form-field input.readonly-value {
+  color: var(--lg-shadow);
+  -webkit-text-fill-color: var(--lg-shadow);
+}
+
+.legacy-grid {
+  max-width: 100%;
+  overflow: auto;
+  margin: 0 0 8px;
+  border: 1px solid var(--lg-shadow);
+  background: var(--lg-face);
+}
+
+.legacy-grid table {
+  border-collapse: collapse;
+  background: var(--lg-paper);
+}
+
+.legacy-grid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 3px;
+  border: 1px solid var(--lg-shadow);
+  background: var(--lg-label);
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.legacy-grid td {
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--lg-line);
+}
+
+.legacy-grid td.line-no {
+  min-width: 38px;
+  padding: 0 3px;
+  border-color: var(--lg-shadow);
+  background: var(--lg-label);
+  text-align: right;
+}
+
+.legacy-grid td input {
+  width: 100%;
+  height: 100%;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-grid td input:disabled {
+  opacity: 1;
+  color: var(--lg-ink);
+  -webkit-text-fill-color: var(--lg-ink);
+}
+
+.legacy-grid td input.num {
+  text-align: right;
+}
+
+.legacy-grid td input.readonly-value {
+  color: var(--lg-shadow);
+  -webkit-text-fill-color: var(--lg-shadow);
+}
+
+.legacy-form-message {
+  min-height: 20px;
+  margin: 0;
+}
+
+.legacy-form-message.error {
+  color: var(--lg-error);
+}
+
+.legacy-form-fields-nested {
+  margin: 0;
+}
+
+/* The legacy receipt form's amount columns start one row below the number. */
+.legacy-form-column-offset {
+  margin-top: 28px;
+}
+
+.legacy-mdi-max .legacy-child-dialog {
+  background: transparent;
+}
+
+/* Legacy master-file forms: 「標籤：」 cells in columns, borderless inputs. */
+.legacy-master-fields {
+  display: flex;
+  gap: 40px;
+  margin: 26px 0 8px 10px;
+}
+
+.legacy-master .legacy-form-column {
+  gap: 6px;
+}
+
+.legacy-master-field {
+  height: 20px;
+}
+
+.legacy-master-field > span {
+  justify-content: space-between;
+  width: 94px;
+  padding: 0 4px 0 8px;
+  border: 0;
+  border-left: 2px solid var(--lg-shadow);
+  border-top: 2px solid var(--lg-shadow);
+  white-space: pre;
+}
+
+.legacy-master-field.small-label > span {
+  font-size: 11px;
+}
+
+.legacy-master-field input {
+  border: 0;
+}
+
+.legacy-master-field input.short {
+  width: 130px;
+}
+
+.legacy-master-field input.medium {
+  width: 130px;
+}
+
+.legacy-master-field input.wide {
+  width: 264px;
+}
+
+.legacy-master-field input.wider {
+  width: 396px;
+}
+
+.legacy-master-field input.full {
+  width: 664px;
+}
+
+.legacy-master-gap {
+  height: 20px;
+}
+
+.legacy-browse-button {
+  width: 24px;
+  margin-left: 2px;
+  padding: 0;
+  border: 1px solid #707070;
+  background: linear-gradient(#f6f6f6, #dddddd);
+  font: inherit;
+  line-height: 1;
+}
+
+.legacy-check-layout {
+  align-self: flex-start;
+  border-collapse: separate;
+  border-spacing: 4px 6px;
+  margin-top: -6px;
+}
+
+.legacy-check-layout th {
+  height: 20px;
+  padding: 0 4px;
+  border-left: 2px solid var(--lg-shadow);
+  border-top: 2px solid var(--lg-shadow);
+  background: var(--lg-label);
+  font-weight: normal;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.legacy-check-layout thead th {
+  text-align: center;
+}
+
+.legacy-check-layout td input {
+  width: 44px;
+  height: 20px;
+  border: 0;
+  background: var(--lg-paper);
+  color: var(--lg-ink);
+  font: inherit;
+  text-align: right;
+  -webkit-text-fill-color: var(--lg-ink);
+}
+
+.legacy-check-layout td input:disabled {
+  opacity: 1;
+}
+
+.legacy-master-field input.file {
+  width: 304px;
+}
+
+.legacy-master-field input.legacy-master-side {
+  margin-left: 4px;
+}
+
+.legacy-master-inline-label {
+  display: flex;
+  align-items: center;
+  margin-left: 58px;
+  padding: 0 4px 0 8px;
+  border-left: 2px solid var(--lg-shadow);
+  border-top: 2px solid var(--lg-shadow);
+  background: var(--lg-label);
+  white-space: nowrap;
+}
+
+.legacy-master-field input.legacy-master-side + .legacy-master-inline-label,
+.legacy-master-inline-label + input {
+  width: 90px;
+}
+
+.legacy-part-preview {
+  display: grid;
+  place-items: center;
+  width: 396px;
+  height: 429px;
+  margin-top: 30px;
+  overflow: hidden;
+  background: var(--lg-paper);
+}
+
+.legacy-drawing-panel {
+  display: block;
+}
+
+.legacy-drawing-panel text {
+  font:
+    22px Arial,
+    sans-serif;
+}
+
+/* 圖型顯示 (F11): the drawing panel over 顯示尺寸框線 and 關閉. */
+.legacy-drawing-window {
+  width: auto;
+  height: auto;
+}
+
+.legacy-drawing-window-body {
+  padding: 16px 20px 10px;
+}
+
+.legacy-drawing-window-body .legacy-drawing-panel {
+  border: 1px solid var(--lg-line);
+}
+
+.legacy-drawing-window-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-top: 14px;
+}
+
+.legacy-drawing-window-actions label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legacy-drawing-window-actions button {
+  min-width: 72px;
+}
+
+/* F12 展開顯示 (LegacyExpandWindow.vue): 566 × 200 in the middle of the screen. */
+.legacy-expand-backdrop {
+  align-items: center;
+  padding-top: 16px;
+}
+
+.legacy-expand-window {
+  width: min(566px, 100%);
+  height: auto;
+}
+
+.legacy-expand-body {
+  display: flex;
+  flex-direction: column;
+  gap: 86px;
+  margin: 0 6px 6px;
+  padding: 14px 14px 10px;
+  border: 1px solid var(--lg-line);
+  background: var(--lg-face);
+}
+
+.legacy-expand-body input {
+  width: 100%;
+  height: 20px;
+  border: 0;
+  background: var(--lg-paper);
+  font: inherit;
+}
+
+.legacy-expand-actions {
+  display: flex;
+  justify-content: center;
+  gap: 74px;
+}
+
+.legacy-expand-actions button {
+  width: 76px;
+  height: 24px;
+}
+
+/* ---- isin_nest：加在舊版畫面外的固定位置（規劃 5.3） ---- */
+
+/* 狀態列右側的登入者、唯讀、登出。 */
+.legacy-app-status {
+  display: flex;
+  gap: 8px;
+}
+
+.legacy-app-status-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.legacy-app-status-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--lg-line);
+  white-space: nowrap;
+}
+
+.legacy-app-status-user button {
+  padding: 0 8px;
+  border: 1px solid var(--lg-line);
+  background: #f6f6f6;
+  color: var(--lg-ink);
+  font-size: 13px;
+}

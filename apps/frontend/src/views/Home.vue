@@ -1,5 +1,19 @@
 <template>
   <div class="home-page">
+    <!-- 舊版銷管系統：新系統到舊版的唯一入口，開新分頁（LEGACY-CRM-REBUILD-PLAN.md 5.1） -->
+    <div v-if="authStore.hasFeature('crm')" class="section-card">
+      <div class="section-header">
+        <h3>舊版銷管系統</h3>
+      </div>
+      <div class="section-body legacy-crm-entry">
+        <p class="legacy-crm-entry-text">
+          與舊系統相同的操作與畫面：主檔、交易登錄、報表列印。
+          <span v-if="!authStore.hasFeature('crm', 'write')">（您的權限為唯讀）</span>
+        </p>
+        <a class="btn-mount" href="/legacy-crm" target="_blank" rel="noopener">開啟</a>
+      </div>
+    </div>
+
     <!-- NAS 狀態（僅 admin 可見） -->
     <div v-if="authStore.isAdmin" class="section-card nas-status-card">
       <div class="section-header">
@@ -393,6 +407,22 @@ onMounted(() => {
 .btn-mount:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.legacy-crm-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.legacy-crm-entry-text {
+  margin: 0;
+}
+
+a.btn-mount,
+a.btn-mount:hover {
+  color: white;
 }
 
 .mount-error {

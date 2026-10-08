@@ -9,6 +9,7 @@ tests/
 ├── README.md              # 本說明文件
 ├── helpers/               # 測試輔助工具
 │   └── auth.ts           # 登入/登出輔助函數
+├── legacy-crm/            # 舊版銷管 /legacy-crm（只對測試資料庫執行，見檔頭說明）
 └── crm/                   # CRM 模組測試
     ├── login.spec.ts     # 登入功能測試
     ├── customers.spec.ts # 客戶管理測試

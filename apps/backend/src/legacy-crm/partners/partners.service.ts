@@ -8,7 +8,11 @@ import {
   present,
   units,
 } from '../common/legacy-db';
-import { LegacyNotFoundError, rethrowUnique } from '../common/legacy-errors';
+import {
+  LegacyNotFoundError,
+  MASTER_DUPLICATE,
+  rethrowUnique,
+} from '../common/legacy-errors';
 import { normalizePartner, Row } from '../common/legacy-records';
 import { LegacyValidationError } from '../common/legacy-validation.error';
 import { LegacyWriteLogService } from '../write-log/write-log.service';
@@ -43,11 +47,10 @@ const PARTNER_FIELDS = [
   'balance_units',
 ];
 
-// 客戶「更改編號」（Win7 2026-10-07 核對）：客戶換新編號，舊編號下的訂單、出貨、工件等一起換。
+// 客戶「更改編號」：客戶換新編號，舊編號下的訂單、出貨、工件等照舊版 SQL 一起換；
+// 圖組的客戶編號不動（isin_vb6 2026-10-08 依舊版 SQL 核對）。
 const CUSTOMER_CODE_COLUMNS: [string, string][] = [
   ['parts', 'customer_code'],
-  ['drawing_groups', 'customer_code'],
-  ['drawing_group_items', 'customer_code'],
   ['order_documents', 'customer_code'],
   ['order_items', 'legacy_factor_no'],
   ['sales_documents', 'customer_code'],
@@ -125,7 +128,7 @@ export class LegacyPartnersService {
            VALUES (${names.map((_, index) => `$${index + 1}`).join(', ')})`,
           names.map((name) => partner[name]),
         )
-        .catch((error) => rethrowUnique(error, '此類型已有相同編號'));
+        .catch((error) => rethrowUnique(error, MASTER_DUPLICATE));
       const after = await this.get(partner.kind, partner.code as string, db);
       await this.writeLog.record(manager, context, {
         entityType: 'partner',
@@ -209,7 +212,7 @@ export class LegacyPartnersService {
       if (!before) throw new LegacyNotFoundError();
       if (to === from) return before;
       if (await this.get('customer', to, db))
-        throw new LegacyValidationError(`客戶編號${to}已經存在`);
+        throw new LegacyValidationError('編號已經存在，不接受此更改');
       await db.run(
         `UPDATE legacy_crm.partners SET code = $1, updated_at = now() WHERE kind = 'customer' AND code = $2`,
         [to, from],

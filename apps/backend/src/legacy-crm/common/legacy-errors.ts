@@ -17,6 +17,9 @@ export class LegacyNotFoundError extends Error {
   }
 }
 
+/** 主檔表單「資料新增」遇到已有的編號時，舊版顯示的訊息（Win7 2026-10-08）。 */
+export const MASTER_DUPLICATE = '資料重覆。';
+
 /** 主鍵或唯一鍵重複（PostgreSQL 23505）時換成 isin_vb6 的訊息。 */
 export function rethrowUnique(error: unknown, message: string): never {
   const code =

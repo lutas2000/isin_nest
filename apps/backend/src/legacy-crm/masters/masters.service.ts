@@ -8,7 +8,11 @@ import {
   present,
   units,
 } from '../common/legacy-db';
-import { LegacyNotFoundError, rethrowUnique } from '../common/legacy-errors';
+import {
+  LegacyNotFoundError,
+  MASTER_DUPLICATE,
+  rethrowUnique,
+} from '../common/legacy-errors';
 import {
   normalizeBank,
   normalizeBankCheckLayout,
@@ -362,7 +366,7 @@ export class LegacyMastersService {
           `INSERT INTO legacy_crm.parts (${names.join(', ')}) VALUES (${names.map((_, i) => `$${i + 1}`).join(', ')})`,
           names.map((name) => part[name]),
         )
-        .catch((error) => rethrowUnique(error, '已有相同電腦圖號'));
+        .catch((error) => rethrowUnique(error, MASTER_DUPLICATE));
       const after = await this.getPart(part.drawing_no as string, db);
       await this.writeLog.record(manager, context, {
         entityType: 'part',
@@ -458,7 +462,7 @@ export class LegacyMastersService {
             name === 'check_layout' ? JSON.stringify(bank[name]) : bank[name],
           ),
         )
-        .catch((error) => rethrowUnique(error, '已有相同銀行編號'));
+        .catch((error) => rethrowUnique(error, MASTER_DUPLICATE));
       const after = await this.getBank(bank.code as string, db);
       await this.writeLog.record(manager, context, {
         entityType: 'bank',
@@ -564,7 +568,7 @@ export class LegacyMastersService {
           `INSERT INTO legacy_crm.${spec.table} (${spec.key}, ${spec.value}) VALUES ($1, $2)`,
           [record[spec.key], record[spec.value]],
         )
-        .catch((error) => rethrowUnique(error, `已有相同${spec.keyLabel}`));
+        .catch((error) => rethrowUnique(error, MASTER_DUPLICATE));
       const after = await this.getSimple(kind, record[spec.key] as string, db);
       await this.writeLog.record(manager, context, {
         entityType: spec.entityType,
