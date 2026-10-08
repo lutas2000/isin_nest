@@ -20,9 +20,11 @@ import { SalesVoucher } from './entities/sales-voucher.entity';
 import { CreateSalesVoucherDto } from './dto/create-sales-voucher.dto';
 import { SalesStatisticsQueryDto } from './dto/sales-statistics.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('銷貨單管理')
 @Controller('crm/sales-vouchers')
+@CrmV2Controller()
 export class SalesVoucherController {
   constructor(private readonly salesVoucherService: SalesVoucherService) {}
 

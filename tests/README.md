@@ -10,7 +10,7 @@ tests/
 ├── helpers/               # 測試輔助工具
 │   └── auth.ts           # 登入/登出輔助函數
 ├── legacy-crm/            # 舊版銷管 /legacy-crm（只對測試資料庫執行，見檔頭說明）
-└── crm/                   # CRM 模組測試
+└── crm/                   # 新版 CRM 測試（新版 CRM 暫不使用：前端需以 VITE_CRM_V2_ENABLED=true 啟動才跑得過）
     ├── login.spec.ts     # 登入功能測試
     ├── customers.spec.ts # 客戶管理測試
     ├── contacts.spec.ts  # 聯絡人管理測試

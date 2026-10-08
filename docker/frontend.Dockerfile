@@ -12,6 +12,9 @@ COPY apps/frontend/ ./
 # 讓 build 時把 API base 內嵌進 bundle（預設 /api）
 ARG VITE_API_BASE_URL=/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# 新版 CRM 暫不使用（LEGACY-CRM-REBUILD-PLAN.md 第 6 節），true 才編入新版 CRM 的路由與選單
+ARG VITE_CRM_V2_ENABLED=false
+ENV VITE_CRM_V2_ENABLED=$VITE_CRM_V2_ENABLED
 
 RUN npm run build
 

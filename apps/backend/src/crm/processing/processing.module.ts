@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProcessingService } from './processing.service';
 import { ProcessingController } from './processing.controller';
 import { Processing } from './entities/processing.entity';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Processing])],
+  imports: [AuthModule, TypeOrmModule.forFeature([Processing])],
   providers: [ProcessingService],
   controllers: [ProcessingController],
   exports: [ProcessingService],

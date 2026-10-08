@@ -17,9 +17,11 @@ import {
 } from '@nestjs/swagger';
 import { OutsourcingCostService } from './outsourcing-cost.service';
 import { OutsourcingCost } from './entities/outsourcing-cost.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('委外成本管理')
 @Controller('crm/outsourcing-costs')
+@CrmV2Controller()
 export class OutsourcingCostController {
   constructor(private readonly outsourcingCostService: OutsourcingCostService) {}
 

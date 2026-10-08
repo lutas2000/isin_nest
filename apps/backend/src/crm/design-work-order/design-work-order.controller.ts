@@ -20,9 +20,11 @@ import {
 import { DesignWorkOrderService } from './design-work-order.service';
 import { DesignWorkOrder } from './entities/design-work-order.entity';
 import { DesignWorkOrderStatus } from '../enums/work-order-status.enum';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('設計工作單管理')
 @Controller('crm/design-work-orders')
+@CrmV2Controller()
 export class DesignWorkOrderController {
   constructor(private readonly designWorkOrderService: DesignWorkOrderService) {}
 

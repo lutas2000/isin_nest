@@ -50,8 +50,8 @@
       </div>
     </div>
 
-    <!-- 未完成訂單 -->
-    <div class="section-card">
+    <!-- 未完成訂單（新版 CRM，暫不使用：見 config/crmV2.ts） -->
+    <div v-if="showCrmV2" class="section-card">
       <div class="section-header">
         <h3>未完成訂單</h3>
       </div>
@@ -94,8 +94,8 @@
       </div>
     </div>
 
-    <!-- 近 30 天未簽名報價單 -->
-    <div class="section-card">
+    <!-- 近 30 天未簽名報價單（新版 CRM） -->
+    <div v-if="showCrmV2" class="section-card">
       <div class="section-header">
         <h3>近 30 天未簽名報價單</h3>
       </div>
@@ -146,11 +146,15 @@ import { EditableDataTable, StatusBadge } from '@/components';
 import { apiGet, apiPost } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
 import { useAuthStore } from '@/stores/auth';
+import { CRM_V2_ENABLED, CRM_V2_FEATURE } from '@/config/crmV2';
 import { orderService, type Order } from '@/services/crm/order.service';
 import { quoteService, type Quote } from '@/services/crm/quote.service';
 import type { PaginatedResponse } from '@/types/pagination';
 
 const authStore = useAuthStore();
+
+// 新版 CRM 的訂單、報價單區塊：旗標關閉或沒有 crm_v2 權限時不顯示也不呼叫 API
+const showCrmV2 = CRM_V2_ENABLED && authStore.hasFeature(CRM_V2_FEATURE);
 
 // --- NAS ---
 interface NasShare {
@@ -296,8 +300,10 @@ const handleQuotePageSizeChange = (size: number) => {
 
 onMounted(() => {
   checkNas();
-  loadOrders();
-  loadQuotes();
+  if (showCrmV2) {
+    loadOrders();
+    loadQuotes();
+  }
 });
 </script>
 

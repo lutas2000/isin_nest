@@ -4,9 +4,10 @@ import { OrderItemService } from './order-item.service';
 import { OrderItemController } from './order-item.controller';
 import { OrderItem } from './entities/order-item.entity';
 import { DesignWorkOrderModule } from '../design-work-order/design-work-order.module';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
-  imports: [
+  imports: [AuthModule, 
     TypeOrmModule.forFeature([OrderItem]),
     forwardRef(() => DesignWorkOrderModule),
   ],

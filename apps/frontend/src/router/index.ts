@@ -2,27 +2,8 @@ import { createRouter, createWebHistory, RouteLocationNormalized, NavigationGuar
 import Home from '../views/Home.vue'
 import { hrRoutes } from './hr'
 import { legacyCrmRoutes } from './legacy-crm'
+import { crmV2Routes } from './crm-v2'
 import { userHasFeature } from '../stores/auth'
-import CRMCustomers from '../views/CRM/Customers.vue'
-import CRMContacts from '../views/CRM/Contacts.vue'
-import CRMOrders from '../views/CRM/Orders.vue'
-import CRMOrderItems from '../views/CRM/OrderItems.vue'
-import CRMDesignWorkOrders from '../views/CRM/DesignWorkOrders.vue'
-import CRMDesignWorkOrder from '../views/CRM/DesignWorkOrder.vue'
-import CRMDesignWorkOrderCncPreview from '../views/CRM/DesignWorkOrderCncPreview.vue'
-import CRMCuttingWorkOrders from '../views/CRM/CuttingWorkOrders.vue'
-import CRMProcessingWorkOrders from '../views/CRM/ProcessingWorkOrders.vue'
-import CRMProcessingList from '../views/CRM/ProcessingList.vue'
-import CRMDeliveryWorkOrders from '../views/CRM/DeliveryWorkOrders.vue'
-import CRMNestingManagement from '../views/CRM/nesting/NestingManagement.vue'
-import CRMNestingItems from '../views/CRM/nesting/NestingItems.vue'
-import CRMQuotes from '../views/CRM/Quotes.vue'
-import CRMQuoteItems from '../views/CRM/QuoteItems.vue'
-import CRMSalesVouchers from '../views/CRM/SalesVouchers.vue'
-import CRMSalesVoucherItems from '../views/CRM/SalesVoucherItems.vue'
-import CRMVendors from '../views/CRM/Vendors.vue'
-import AccountingSalesStatistics from '../views/Accounting/SalesStatistics.vue'
-import AccountingSalesStatisticsItems from '../views/Accounting/SalesStatisticsItems.vue'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
 import ResetPassword from '../views/ResetPassword.vue'
@@ -49,132 +30,7 @@ const routes = [
   },
   ...hrRoutes,
   ...legacyCrmRoutes,
-  {
-    path: '/crm',
-    name: 'CRMCustomers',
-    component: CRMCustomers,
-    meta: { title: '客戶', icon: '🤝', requiresAuth: true }
-  },
-  {
-    path: '/crm/contacts',
-    name: 'CRMContacts',
-    component: CRMContacts,
-    meta: { title: '聯絡人管理', icon: '👤', requiresAuth: true }
-  },
-  {
-    path: '/crm/contacts/:customerId',
-    name: 'CRMContactsByCustomer',
-    component: CRMContacts,
-    meta: { title: '聯絡人管理', icon: '👤', requiresAuth: true }
-  },
-  {
-    path: '/crm/orders',
-    name: 'CRMOrders',
-    component: CRMOrders,
-    meta: { title: '訂單管理', icon: '📋', requiresAuth: true }
-  },
-  {
-    path: '/crm/orders/:id/items',
-    name: 'CRMOrderItems',
-    component: CRMOrderItems,
-    meta: { title: '訂單詳情', icon: '📋', requiresAuth: true }
-  },
-  {
-    path: '/crm/sales-vouchers',
-    name: 'CRMSalesVouchers',
-    component: CRMSalesVouchers,
-    meta: { title: '銷貨單', icon: '🧾', requiresAuth: true }
-  },
-  {
-    path: '/crm/sales-vouchers/:id/items',
-    name: 'CRMSalesVoucherItems',
-    component: CRMSalesVoucherItems,
-    meta: { title: '銷貨單明細', icon: '🧾', requiresAuth: true }
-  },
-  {
-    path: '/crm/design-work-orders',
-    name: 'CRMDesignWorkOrders',
-    component: CRMDesignWorkOrders,
-    meta: { title: '設計工作單', icon: '✏️', requiresAuth: true }
-  },
-  {
-    path: '/crm/design-work-orders/:id',
-    name: 'CRMDesignWorkOrderDetail',
-    component: CRMDesignWorkOrder,
-    meta: { title: '設計工作單詳情', icon: '✏️', requiresAuth: true }
-  },
-  {
-    path: '/crm/design-work-orders/:id/cnc-preview',
-    name: 'CRMDesignWorkOrderCncPreview',
-    component: CRMDesignWorkOrderCncPreview,
-    meta: { title: 'CNC 預覽', icon: '✏️', requiresAuth: true }
-  },
-  {
-    path: '/crm/cutting-work-orders',
-    name: 'CRMCuttingWorkOrders',
-    component: CRMCuttingWorkOrders,
-    meta: { title: '切割工作單', icon: '✂️', requiresAuth: true }
-  },
-  {
-    path: '/crm/processing-work-orders',
-    name: 'CRMProcessingWorkOrders',
-    component: CRMProcessingWorkOrders,
-    meta: { title: '加工工作單', icon: '🔧', requiresAuth: true }
-  },
-  {
-    path: '/crm/processings',
-    name: 'CRMProcessingList',
-    component: CRMProcessingList,
-    meta: { title: '加工項目管理', icon: '⚙️', requiresAuth: true }
-  },
-  {
-    path: '/crm/delivery-work-orders',
-    name: 'CRMDeliveryWorkOrders',
-    component: CRMDeliveryWorkOrders,
-    meta: { title: '送貨工作單', icon: '🚚', requiresAuth: true }
-  },
-  {
-    path: '/crm/nestings',
-    name: 'CRMNestingManagement',
-    component: CRMNestingManagement,
-    meta: { title: '排版管理', icon: '📐', requiresAuth: true }
-  },
-  {
-    path: '/crm/nestings/:id/items',
-    name: 'CRMNestingItems',
-    component: CRMNestingItems,
-    meta: { title: '排版工件', icon: '📐', requiresAuth: true }
-  },
-  {
-    path: '/crm/vendors',
-    name: 'CRMVendors',
-    component: CRMVendors,
-    meta: { title: '廠商管理', icon: '🏭', requiresAuth: true }
-  },
-  {
-    path: '/crm/quotes',
-    name: 'CRMQuotes',
-    component: CRMQuotes,
-    meta: { title: '報價管理', icon: '💰', requiresAuth: true }
-  },
-  {
-    path: '/crm/quotes/:id/items',
-    name: 'CRMQuoteItems',
-    component: CRMQuoteItems,
-    meta: { title: '報價單詳情', icon: '💰', requiresAuth: true }
-  },
-  {
-    path: '/accounting/sales-statistics',
-    name: 'AccountingSalesStatistics',
-    component: AccountingSalesStatistics,
-    meta: { title: '銷貨單', icon: '📈', requiresAuth: true }
-  },
-  {
-    path: '/accounting/sales-statistics/items',
-    name: 'AccountingSalesStatisticsItems',
-    component: AccountingSalesStatisticsItems,
-    meta: { title: '銷貨明細', icon: '📋', requiresAuth: true }
-  },
+  ...crmV2Routes,
   {
     path: '/settings',
     name: 'Settings',

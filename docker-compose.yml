@@ -71,6 +71,7 @@ services:
       dockerfile: docker/frontend.Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_CRM_V2_ENABLED: ${VITE_CRM_V2_ENABLED:-false}
     ports:
       - "${HOST_FRONTEND_PORT:-3001}:80"
     depends_on:

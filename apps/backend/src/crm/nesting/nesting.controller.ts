@@ -23,9 +23,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { NestingService } from './nesting.service';
 import { Nesting } from './entities/nesting.entity';
 import { NestingItem } from './entities/nesting-item.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('排版管理')
 @Controller('crm/nestings')
+@CrmV2Controller()
 export class NestingController {
   constructor(private readonly nestingService: NestingService) {}
 

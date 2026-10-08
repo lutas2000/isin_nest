@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OutsourcingCostService } from './outsourcing-cost.service';
 import { OutsourcingCostController } from './outsourcing-cost.controller';
 import { OutsourcingCost } from './entities/outsourcing-cost.entity';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OutsourcingCost])],
+  imports: [AuthModule, TypeOrmModule.forFeature([OutsourcingCost])],
   providers: [OutsourcingCostService],
   controllers: [OutsourcingCostController],
   exports: [OutsourcingCostService, TypeOrmModule],

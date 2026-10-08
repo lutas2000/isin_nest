@@ -2,9 +2,11 @@ import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from 
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { Order, OrderStatus } from './entities/order.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('訂單管理')
 @Controller('crm/orders')
+@CrmV2Controller()
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 

@@ -2,9 +2,11 @@ import { Controller, Get, Post, Body, Param, Delete, Query, ParseIntPipe } from 
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ContactService } from './contact.service';
 import { Contact } from './entities/contact.entity';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('聯絡人管理')
 @Controller('crm/contacts')
+@CrmV2Controller()
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 

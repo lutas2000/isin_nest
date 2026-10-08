@@ -22,9 +22,11 @@ import { ProcessingService } from './processing.service';
 import { Processing } from './entities/processing.entity';
 import { CreateProcessingDto } from './dto/create-processing.dto';
 import { UpdateProcessingDto } from './dto/update-processing.dto';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('加工項目管理')
 @Controller('crm/processings')
+@CrmV2Controller()
 export class ProcessingController {
   constructor(private readonly processingService: ProcessingService) {}
 

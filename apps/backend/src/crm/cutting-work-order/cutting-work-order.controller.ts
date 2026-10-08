@@ -19,9 +19,11 @@ import {
 import { CuttingWorkOrderService } from './cutting-work-order.service';
 import { CuttingWorkOrder } from './entities/cutting-work-order.entity';
 import { CuttingWorkOrderStatus } from '../enums/work-order-status.enum';
+import { CrmV2Controller } from '../common/crm-v2-access';
 
 @ApiTags('切割工作單管理')
 @Controller('crm/cutting-work-orders')
+@CrmV2Controller()
 export class CuttingWorkOrderController {
   constructor(private readonly cuttingWorkOrderService: CuttingWorkOrderService) {}
 
