@@ -1673,3 +1673,200 @@
   color: var(--lg-ink);
   font-size: 13px;
 }
+
+/* ---- isin_nest 第 5 階段：回報(B) 與紀錄查詢（admin）（規劃 7.2、2.4）----
+   components/LegacyExtraMenus.vue、LegacyFeedbackDialog.vue、LegacyLogWindow.vue。
+   外框沿用 .legacy-prompt／.legacy-selection 的視窗樣式。 */
+.legacy-feedback,
+.legacy-log-window {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 56px);
+  border: 1px solid #6d7d93;
+  border-radius: 6px;
+  background: #dfe9f5;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 35%);
+  color: var(--lg-ink);
+  font-family: var(--lg-font);
+  font-size: 15px;
+}
+
+.legacy-feedback {
+  width: min(560px, 100%);
+}
+
+.legacy-feedback-body {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  margin: 0 6px;
+  padding: 10px 14px;
+  overflow: auto;
+  border: 1px solid var(--lg-line);
+  border-bottom: 0;
+  background: var(--lg-face);
+}
+
+.legacy-feedback-kinds {
+  display: flex;
+  gap: 20px;
+  margin: 0;
+  padding: 2px 12px 6px;
+}
+
+.legacy-feedback-field {
+  display: grid;
+  grid-template-columns: 3em 1fr;
+  align-items: start;
+  gap: 6px;
+}
+
+.legacy-feedback-field input,
+.legacy-feedback-field textarea,
+.legacy-log-filters input,
+.legacy-log-filters select {
+  padding: 1px 4px;
+  border: 1px solid var(--lg-paper);
+  border-top-color: var(--lg-line);
+  border-left-color: var(--lg-line);
+  background: var(--lg-paper);
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-feedback-field input,
+.legacy-feedback-field textarea {
+  width: 100%;
+}
+
+.legacy-feedback-field textarea {
+  resize: vertical;
+}
+
+.legacy-feedback-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legacy-feedback-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  border: 1px solid var(--lg-line);
+}
+
+.legacy-feedback-preview p {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.legacy-feedback-message {
+  min-height: 1.2em;
+  margin: 0;
+}
+
+.legacy-feedback-message.error {
+  color: var(--lg-error);
+}
+
+.legacy-feedback-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 6px 6px;
+  padding: 8px 14px 10px;
+  border: 1px solid var(--lg-line);
+  border-top: 0;
+  background: var(--lg-face);
+}
+
+.legacy-feedback-buttons button,
+.legacy-log-filters button,
+.legacy-log-footer button,
+.legacy-log-tabs button {
+  min-width: 76px;
+  height: 26px;
+  border: 1px solid #707070;
+  border-radius: 2px;
+  background: linear-gradient(#f6f6f6, #dddddd);
+  color: var(--lg-ink);
+  font: inherit;
+}
+
+.legacy-log-window {
+  width: min(1000px, 100%);
+  height: min(700px, calc(100vh - 56px));
+}
+
+.legacy-log-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 0 8px;
+}
+
+.legacy-log-tabs button {
+  padding: 0 14px;
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  background: #e2e2e2;
+}
+
+.legacy-log-tabs button.active {
+  background: var(--lg-face);
+}
+
+.legacy-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--lg-line);
+  background: var(--lg-face);
+}
+
+.legacy-log-grid {
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.legacy-log-grid tbody tr.current td {
+  background: #3399ff;
+  color: var(--lg-paper);
+}
+
+.legacy-log-detail {
+  display: flex;
+  gap: 6px;
+  margin: 6px 8px 0;
+}
+
+.legacy-log-detail > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.legacy-log-detail pre {
+  max-height: 200px;
+  margin: 2px 0 0;
+  padding: 4px;
+  overflow: auto;
+  border: 1px solid var(--lg-line);
+  background: var(--lg-paper);
+  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.legacy-log-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 8px;
+}
+
+.legacy-log-footer .legacy-feedback-message {
+  flex: 1;
+}

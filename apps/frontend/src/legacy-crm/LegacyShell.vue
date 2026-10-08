@@ -32,6 +32,8 @@ import { FORM_HINT, focusHint } from './utils/statusHints';
 import './styles/tokens.css';
 import './styles/legacy.css';
 import './styles/legacy-print.css';
+// 第 5 階段的新功能（回報、紀錄查詢）自成一個元件，選單列只放掛點。
+import LegacyExtraMenus from './components/LegacyExtraMenus.vue';
 
 // The legacy main window (isin_vb6 src/App.vue, docs/legacy-ui-spec.md): a
 // menu bar, forms opened as child windows inside it, and a status bar along
@@ -554,6 +556,11 @@ function logout() {
         結束
       </button>
       <div class="legacy-menubar-spacer"></div>
+      <!-- 第 5 階段：紀錄查詢（admin）、回報(B)，見 components/LegacyExtraMenus.vue -->
+      <LegacyExtraMenus
+        :window-title="activeWindow ? windowTitle(activeWindow) : ''"
+        @open="openMenuId = null"
+      />
       <div
         v-if="
           arrangement === 'max' &&

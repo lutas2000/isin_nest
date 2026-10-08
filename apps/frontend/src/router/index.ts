@@ -3,6 +3,7 @@ import Home from '../views/Home.vue'
 import { hrRoutes } from './hr'
 import { legacyCrmRoutes } from './legacy-crm'
 import { crmV2Routes } from './crm-v2'
+import { feedbackRoutes } from './feedback'
 import { userHasFeature } from '../stores/auth'
 import Settings from '../views/Settings.vue'
 import Login from '../views/Login.vue'
@@ -31,6 +32,7 @@ const routes = [
   ...hrRoutes,
   ...legacyCrmRoutes,
   ...crmV2Routes,
+  ...feedbackRoutes,
   {
     path: '/settings',
     name: 'Settings',
