@@ -20,6 +20,10 @@ This file maps task intent to skill folders for on-demand loading.
   - Trigger: NAS Access inventory, per-file schema/sample with optional row window and JSON output, or MySQL column diff via `scripts/analyze-access.ts` / `list-access-mdb.ts`.
   - Use with: `scripts/README.md` §3; `LEGACY_ACCESS_MDB_INVENTORY.md`; `.env.example` for variable names only—never read root `.env`.
 
+- `legacy-crm-data-migration/SKILL.md`
+  - Trigger: import the legacy VB6/Access sales data (isin_vb6 rebuild) into PostgreSQL `legacy_crm`, rehearse the migration, or fill `staff.legacy_crm_code`.
+  - Use with: `../../docs/LEGACY-CRM-MIGRATION-RUN.md`, `../../docs/LEGACY-CRM-REBUILD-PLAN.md` §2–3, `../rules/backend/typeorm-entity-migration.md`.
+
 ## Deployment Skills
 
 - `prod-deploy-update-run/SKILL.md`

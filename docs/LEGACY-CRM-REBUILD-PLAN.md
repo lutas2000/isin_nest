@@ -3,7 +3,7 @@
 > 撰寫日期：2026-10-08
 > 來源專案：`../isin_vb6`（Vue 3 + Node `node:sqlite` 的舊版重建研究專案，即將收尾）
 > 目標：isin_nest `apps/backend/src/legacy-crm`、`apps/frontend/src/legacy-crm`
-> 狀態：規劃已定案（2026-10-08 決議見第 11 節）。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
+> 狀態：規劃已定案（2026-10-08 決議見第 11 節）。**第 1 階段（資料層）已完成（2026-10-08）**，移轉操作與演練紀錄見 `LEGACY-CRM-MIGRATION-RUN.md`。第 0 節為原則，第 2～9 節為各工作包，第 10 節為階段排程，第 11 節為決議與研究。
 > 相關文件：`../isin_vb6/docs/handoff-legacy-rebuild.md`（接手文件）、`legacy-ui-spec.md`（版面與操作規格）、`legacy-mdb-field-mapping.md`（MDB → 新表欄位對應與移轉範圍）、`legacy-migration-run.md`（正式移轉流程與耗時）
 > 研究報告（2026-10-08，獨立於 isin_vb6）：`research/ACCESS-MDB-LIBRARIES.md`（Access 97 讀寫套件）、`research/SMB-MOUNT-FROM-CONTAINER.md`（容器掛載 SMB）與 `research/smb-mount.compose.example.yml`
 
@@ -71,15 +71,19 @@
 
 | SQLite（isin_vb6） | PostgreSQL | 說明 |
 |---|---|---|
-| `TEXT` 日期（民國 `yyy.mm.dd` 字串） | `date` 為正式欄位 | **決議：遷移時就改以 `date` 欄為主**，排序、區間查詢、單號序號都用 `date`。民國字串只供顯示，由共用 util（`formatRocDate`／`parseRocDate`）在 API 輸出與表單輸入時轉換，資料庫不存字串欄。移轉時解析失敗的值（空白、兩位數年份、不存在的日期）存成 `null`，原字串保留在對應的 `*_raw varchar(16)` 欄並計入 `summary.json` 的異常筆數，畫面上以原字串顯示但不可參與排序。瀏覽「頭筆～尾筆」依單號文字順序不受影響 |
-| `INTEGER` `*_units`（金額 × 10,000） | `bigint` | 保留整數精度策略；不改 `numeric` 以免重算差異 |
-| `INTEGER` 數量 | `integer` | |
+| `TEXT` 日期（民國 `yyy.mm.dd` 字串） | `date` 為正式欄位，另有 `*_raw varchar(20)` | **決議：遷移時就改以 `date` 欄為主**，排序、區間查詢、單號序號都用 `date`。民國字串只供顯示，由 `legacy-crm/common/roc-date.ts`（`parseRocDate`／`formatRocDate`／`splitRocDate`／`displayRocDate`）在 API 輸出與表單輸入時轉換。舊 MDB 存的是 10 碼靠右補空白的 `年.月.日`，年份 1～4 位數都能解析（民國 1–99 年本來就是兩位數，屬正常值）。原字串只在無法由 `date` 還原時存進 `*_raw`：解析失敗（`date` 為 null）或寫法不標準（例如年份有前導零）；顯示時有 `*_raw` 就用原字串，`date` 為 null 的列不參與排序。表單輸入一律嚴格解析，不合法就拒絕。瀏覽「頭筆～尾筆」依單號文字順序不受影響。10/02 副本實測見 `LEGACY-CRM-MIGRATION-RUN.md` |
+| `INTEGER` `*_units`（金額與數量 × 10,000） | `bigint` | 保留整數精度策略；不改 `numeric` 以免重算差異。entity 以 transformer 轉回 number（最大值仍在安全整數內） |
+| `INTEGER` 項次 `line_no` | `smallint` + CHECK（1–99；沖帳 1–999） | |
 | `TEXT CHECK(length(...) <= n)` | `varchar(n)` + CHECK | 長度上限照 schema 15、16 放寬後的值 |
 | 使用者造字（Unicode 私用區） | `text`，UTF-8 | PostgreSQL UTF-8 可存 PUA；只存字碼不補字形（`legacy-eudc.md`） |
 | `WITHOUT ROWID` 複合主鍵 | 複合 primary key | |
 | `audit_log` | 不搬 | 改用 2.4 的 `write_log` |
 | `app_settings` | 不搬 | 系統設定改用 `crm_config` 或環境變數 |
 | `employees` | 不搬（見 2.3） | |
+| `materials`（rowid 為鍵，另有從未有值的 `code`、`density`、`notes`） | `id serial`；`name` 改名 `product_name` | 未使用的欄不搬 |
+| `drawing_group_items` 主鍵 `(group_no, customer_code, line_no TEXT)` | 主鍵 `(group_no, line_no smallint)` | `customer_code` 一律取自表頭、項次在同一圖組內不重複 |
+| `banks.check_layout_json` | `check_layout jsonb` | |
+| `postal_codes` | 保留 | 舊 MDB 沒有可移轉的資料，表留給建檔畫面 |
 
 ### 2.3 員工資料的處理
 
@@ -88,7 +92,7 @@
 **決議：全系統只有唯一的 `staff`、`users` 表，`legacy_crm` 不建任何員工表或對照表。**
 
 - 單據上的員工編號與姓名欄**保留原字串快照**，不改成 `staff.id` 外鍵；舊資料 85 位員工多數已離職，強制對應會失敗。
-- `public.staff` 加一欄 `legacy_crm_code varchar(10) unique nullable`（舊版員工編號），正式移轉時用 `personel.mdb` 的姓名比對預填、人工確認；離職員工不補。
+- `public.staff` 加一欄 `legacy_crm_code varchar(10) unique nullable`（舊版員工編號）。正式移轉時，匯入 CLI 用 `personel.mdb` 的姓名比對 `staff`，產生 `<CSV 目錄>.staff-code-proposals.csv`；只有雙方都在職、姓名唯一對上的才預填 `confirm=Y`。人工確認後執行 `npm run legacy-crm:apply-staff-codes -- <建議表>` 寫入（同一 transaction，編號重複或已被占用就整批不寫）。離職員工不補。
 - 舊版「員工建檔」表單從 legacy 檔案選單移除；需要查員工時 F1 直接列出 `staff` 在職且有 `legacy_crm_code` 的員工，沒有 code 的不能選。員工資料的維護一律在新系統 HR。
 - 新單據存檔時，員工編號／姓名快照取自所選 `staff` 的 `legacy_crm_code` 與姓名。
 
@@ -98,11 +102,11 @@
 |---|---|---|
 | `id` | bigserial | |
 | `occurred_at` | timestamptz | |
-| `user_id` | int → `users.id` | 誰寫的 |
-| `staff_id` | int nullable | 使用者綁定的員工 |
+| `user_id` | int nullable | `users.id`；匯入等系統作業為 null。**不設外鍵**，紀錄要比帳號活得久 |
+| `staff_id` | varchar(10) nullable | 使用者綁定的 `staff.id`（`staff` 的主鍵是 varchar(10)） |
 | `entity_type` | varchar | `order_document`、`sales_document`、`partner`… |
-| `entity_key` | varchar | 單號／編號 |
-| `action` | varchar | `create`、`update`、`delete`、`rename`（改編號） |
+| `entity_key` | varchar(60) | 單號／編號；客戶與廠商為 `kind:code` |
+| `action` | varchar(10) + CHECK | `create`、`update`、`delete`、`rename`（改編號）、`import`（正式移轉的批次摘要） |
 | `before` | jsonb nullable | 修改／刪除前整筆（含明細） |
 | `after` | jsonb nullable | 新增／修改後整筆 |
 | `side_effects` | jsonb nullable | 連帶回寫：訂單出貨數差額、客戶最近交易日、銷貨已收金額 |
@@ -121,14 +125,14 @@
 | 欄位 | 型別 | 說明 |
 |---|---|---|
 | `id`、`occurred_at`、`user_id`、`staff_id`、`request_id`、`client` | 同 `write_log` | |
-| `kind` | varchar | `document_print`（訂貨單、出貨單、工作單、估價單、標籤、信封）、`report_query`（報表預覽）、`report_print`、`statement_print`（請款單） |
+| `kind` | varchar(20) + CHECK | `document_preview`、`document_print`（訂貨單、出貨單、工作單、估價單、標籤、信封）、`report_query`（報表預覽）、`report_print`、`statement_print`（請款單） |
 | `target` | varchar | 單據種類或報表名稱 |
 | `entity_key` | varchar nullable | 單號 |
 | `criteria` | jsonb nullable | 報表條件：日期起迄、客戶起迄、品號起迄 |
 | `row_count` | int nullable | 報表結果筆數 |
 | `page_count` | int nullable | 預覽頁數 |
 
-- 單據列印由前端在開啟列印預覽與按「印出 O」時各打一次 `POST /api/legacy-crm/print-log`；報表查詢由後端在報表 service 回傳結果時寫入。
+- 單據列印由前端在開啟列印預覽（`document_preview`）與按「印出 O」（`document_print`）時各打一次 `POST /api/legacy-crm/print-log`；報表查詢由後端在報表 service 回傳結果時寫入。
 - 含客戶資料的只有 `criteria` 的客戶編號範圍，不存報表內容。
 - 查詢畫面與 `write_log` 同一頁，分頁籤。
 
@@ -136,16 +140,16 @@
 
 流程沿用 `legacy-migration-run.md`，只改匯入目標：
 
-1. 匯出：`export-legacy-mdb-set.sh`（Jackcess、`x-windows-950`）流程不變，產出 CSV。Jackcess 由 2.1.2 升到 **5.0.3**（Java 11 以上；會自動讀檔頭字碼頁、修正 Jet 3 索引與日期精度），仍明確指定 `x-windows-950` 並把檔頭偵測結果記到 log；執行用的 JRE 必須含 `jdk.charsets` 模組，否則 950 會無聲變亂碼（`research/ACCESS-MDB-LIBRARIES.md` 2.1）。
-2. 匯入：新寫 `apps/backend/src/legacy-crm/migration/import-legacy-csv.ts`（或移植 `stage-legacy-import.mjs`），用 `pg` `COPY` 分表批次寫入 `legacy_crm`，交易邊界與排除規則（空白編號、孤兒明細）與現版相同；`--final` 同樣遇錯即停。
-3. 民國字串日期在匯入時解析成 `date`（失敗者留 `*_raw`，見 2.2）、預填 `staff.legacy_crm_code`、建索引、`ANALYZE`。
+1. 匯出：`export-legacy-mdb-set.sh`（Jackcess、`x-windows-950`）流程不變，產出 CSV。第 1 階段仍用 isin_vb6 的腳本與 Jackcess 2.1.2；正式移轉前（第 7 階段）把腳本搬進 isin_nest，並把 Jackcess 由 2.1.2 升到 **5.0.3**（Java 11 以上；會自動讀檔頭字碼頁、修正 Jet 3 索引與日期精度），仍明確指定 `x-windows-950` 並把檔頭偵測結果記到 log；執行用的 JRE 必須含 `jdk.charsets` 模組，否則 950 會無聲變亂碼（`research/ACCESS-MDB-LIBRARIES.md` 2.1）。
+2. 匯入：`npm run legacy-crm:import -- <CSV 目錄> --final`（`apps/backend/src/legacy-crm/migration/import-legacy-csv.ts`）。欄位對應與排除規則（空白編號、來源重複、孤兒明細）照搬 `stage-legacy-import.mjs`，驗證規則移植自 `db.mjs`（`legacy-crm/common/legacy-records.ts`）；以 `unnest` 陣列批次寫入，不需另裝 COPY 套件。`--final` 全部步驟同一個 transaction，任一步失敗就整批還原。已有資料時必須加 `--truncate` 才會清空重匯，且 `write_log` 一旦有使用者寫入紀錄就拒絕清空。
+3. 民國字串日期在匯入時拆成 `date` 與 `*_raw`（見 2.2）、產生員工編號建議表（見 2.3）、`ANALYZE`。索引由 migration 先建好。
 4. 核對：`summary.json` 的筆數對照 `legacy-migration-run.md` 2026-10-07 表格（客戶 2,106、工件 407,327、訂單 174,950、出貨 181,558、工作 195,461…）。
 5. 演練兩次：一次用 10/02 副本比對筆數，一次在正式切換前用當天資料。預期 PostgreSQL 匯入時間與 SQLite 同量級（2～5 分鐘）。
 6. 切換日：舊系統停用、確認無 `.ldb`、複製、匯出、匯入、驗收、開放。舊系統保留唯讀備查。複製 MDB 用後端既有的容器內 cifs 掛載以唯讀（`ro,cache=none,actimeo=0`）掛 `\\ISIN\isin`，或一次性 `smbclient get`；Windows 端 `robocopy` 到 Mac 為備案。複製後比對大小與雜湊（`research/SMB-MOUNT-FROM-CONTAINER.md` 1 節）。
 7. **`legacy_crm` 的初始資料只來自 Access MDB**（決議）：新版 CRM 已輸入的 `customers`、`quotes`、`orders` 等資料不併入，原表保留不動。切換後若有需要，再另案評估人工補登。
 8. 切換前確認會計系統是否有連線 VB6 銷管（目前判斷沒有的可能性較高）：在 ISIN 主機檢查 `\\ISIN\isin` 的 SMB 連線來源與 `.ldb` 內的機器名稱、詢問會計；若有，會計端的讀取需求列入第 11.1 節的共存研究並優先處理。
 
-> 注意：移轉匯入的單據 `preserveSourceAmounts`，不觸發回寫（出貨數、已收金額、最近交易日）；匯入也不寫 `write_log`，但記一筆 `action = 'import'` 的批次摘要。
+> 注意：移轉匯入的單據 `preserveSourceAmounts`，不觸發回寫（出貨數、已收金額、最近交易日）；匯入也不逐筆寫 `write_log`，只記一筆 `action = 'import'` 的批次摘要（只有筆數）。
 
 ## 4. 後端模組 `legacy-crm`
 
@@ -258,13 +262,13 @@ apps/backend/src/legacy-crm/
 | 階段 | 內容 | 完成條件 |
 |---|---|---|
 | 0. 收尾 isin_vb6 | 處理 handoff 未完成事項中「操作」類（報價 F8、工作 F8、收款 F3／F4）；最終 commit 與 tag `v0-final` | `npm test`、`npm run build` 通過；handoff 更新 |
-| 1. 資料層 | `legacy_crm` schema、entities、第一支 migration、CSV 匯入 CLI（含民國日期解析）、`write_log`、`print_log`、`staff.legacy_crm_code` | 用 10/02 副本匯入 PostgreSQL，筆數對上 `legacy-migration-run.md`，日期解析失敗筆數可接受並已列表 |
+| 1. 資料層 ✅ 2026-10-08 | `legacy_crm` schema、entities、第一支 migration、CSV 匯入 CLI（含民國日期解析）、`write_log`、`print_log`、`staff.legacy_crm_code` | 用 10/02 副本匯入 PostgreSQL，筆數對上 `legacy-migration-run.md`，日期解析失敗筆數可接受並已列表。**結果**：筆數與排除原因完全相同；19 張表約 290 萬列與 isin_vb6 匯入結果逐列逐欄一致；日期無法解析 0 筆；匯入 57 秒（`LEGACY-CRM-MIGRATION-RUN.md`） |
 | 2. 後端 API | 主檔、六張單據、瀏覽、F1、報表、列印資料；業務規則 Jest 測試 | 與 `isin_vb6` API 同一組請求輸出相同（錄製比對） |
 | 3. 前端殼與主檔 | `/legacy-crm` route、`LegacyShell`、tokens、主檔表單、唯讀模式 | 有 `crm` read 的帳號可登入並瀏覽主檔 |
 | 4. 前端單據與報表 | 六張單據、F 鍵、列印、報表、請款單 | 與 `isin_vb6` 畫面逐窗比對；列印 PDF 與 XPS 座標比對 |
 | 5. 新功能 | 回報系統（含截圖、admin 限定）、write_log／print_log 查詢畫面、Slack 通知 | 回報可送出、可在設定頁處理 |
 | 6. 隔離新版 CRM | 旗標隱藏路由與選單、lint 規則、文件 | 預設環境進不到 `/crm/*` |
-| 7. 正式移轉與上線 | 確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |
+| 7. 正式移轉與上線 | 匯出腳本搬進 isin_nest 並升 Jackcess 5.0.3、確認會計系統是否連線舊銷管、確認 ISIN／SERVER 的 SMB 版本、`NasService` 每 share 選項與 secrets、第二次演練、切換日、現場列印量測、備份排程 | 老員工在現場完成一天作業無阻斷 |
 | 8.（選配）共存研究 | 套件層與檔案層研究已完成（11.1）；剩餘為區網實測 | 決定做或不做；預設不做 |
 
 每階段完成後更新本文件狀態列與 `Agent.md` 文件索引。
@@ -316,4 +320,4 @@ apps/backend/src/legacy-crm/
 - 現場是否有仍需用 Win7 + 舊程式的機台或流程（例如 CNC 檔產生），影響共存研究的優先度。
 - 會計系統連線舊銷管的實際確認結果（見 3 第 8 項）；若有，需要哪些表、唯讀還是寫入（寫入只能走 Windows Jet bridge，見 11.1）。
 - HR 使用者是否也要能看 legacy CRM 的員工相關資料（目前不給）。
-- 日期解析失敗的舊資料（兩位數年份等）是否在移轉前於舊系統修正，還是接受 `*_raw` 顯示。
+- ~~日期解析失敗的舊資料是否在移轉前修正~~：10/02 副本無法解析 0 筆，不需處理。另有約 150 個日期值的年份明顯打錯但仍是合法日期（例如民國 7109 年、1 年），照樣存 `date`、顯示與舊版相同，只是日期排序會落在最前或最後；是否在舊系統修正由使用者決定，不影響移轉。

@@ -29,6 +29,11 @@ ISIN 管理系統是 Nx monorepo，主要包含：
 
 - `Agent.md`：唯一預設讀取的入口文件
 
+### 專案規劃文件（按需讀取）
+
+- `docs/LEGACY-CRM-REBUILD-PLAN.md`：舊版銷管（isin_vb6）遷入計畫與階段狀態
+- `docs/LEGACY-CRM-MIGRATION-RUN.md`：舊版銷管資料移轉流程與演練紀錄
+
 ### 按需加載規則（任務導向讀取）
 
 - `.agent/rules/rules-router.md`（先讀此檔，依任務映射加載其他規則）

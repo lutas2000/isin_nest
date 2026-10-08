@@ -29,9 +29,11 @@ import { AddQuoteDeliveryDaysAndOrderConfirmedAt1777000000000 } from './migratio
 import { AlignHrSchemaToLegacy1777100000000 } from './migrations/1777100000000-AlignHrSchemaToLegacy';
 import { AddPayrollRunSnapshot1777200000000 } from './migrations/1777200000000-AddPayrollRunSnapshot';
 import { DropStaleHrNameForeignKeys1777300000000 } from './migrations/1777300000000-DropStaleHrNameForeignKeys';
+import { CreateLegacyCrmSchema1791438513900 } from './migrations/1791438513900-CreateLegacyCrmSchema';
 import { SystemModule } from './system/system.module';
 import { TimeClockModule } from './time-clock/time-clock.module';
 import { LegacyStaffModule } from './legacy-staff/legacy-staff.module';
+import { LegacyCrmModule } from './legacy-crm/legacy-crm.module';
 
 function parseBool(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -89,6 +91,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           AlignHrSchemaToLegacy1777100000000,
           AddPayrollRunSnapshot1777200000000,
           DropStaleHrNameForeignKeys1777300000000,
+          CreateLegacyCrmSchema1791438513900,
         ],
         migrationsRun:
           parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,
@@ -109,6 +112,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
     // Realand M70 TCP communication layer; no controller or persistence.
     TimeClockModule.register(),
     LegacyStaffModule,
+    LegacyCrmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

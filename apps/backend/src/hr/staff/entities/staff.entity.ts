@@ -82,6 +82,15 @@ export class Staff {
   @Column({ type: 'boolean', default: false })
   have_fake: boolean;
 
+  @ApiProperty({
+    description:
+      '舊版銷管員工編號（單據上的業務、經手人編號）；沒有的員工不能在舊版銷管選用',
+    required: false,
+    example: 'A01',
+  })
+  @Column({ type: 'varchar', length: 10, nullable: true, unique: true })
+  legacy_crm_code?: string;
+
   @OneToOne(() => User, (user) => user.staff, { nullable: true })
   @JoinColumn({ name: 'userId' })
   user?: User;
