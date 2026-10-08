@@ -1,7 +1,7 @@
 /*
  * 舊版銷管（/legacy-crm）的 design tokens，只在 .legacy-root 內有效。
- * 來源：isin_vb6 src/style.css 的 :root 與 Win7 舊版畫面的配色；舊版畫面逐欄比對過，
- * 數值不可改。新版頁面不可使用 --lg-*，舊版元件也不可使用 Tailwind 的 @theme token
+ * 來源：Win7 上執行中的舊程式截圖（VNC 逐像素取色，2026-10-08 第 4 階段）。
+ * 數值以 Win7 為準，不可憑感覺改。新版頁面不可使用 --lg-*，舊版元件也不可使用 Tailwind 的 @theme token
  * （.agent/rules/frontend/design-system.md「舊版銷管」）。
  */
 
@@ -26,7 +26,10 @@
   --lg-canvas: #edf2f6;
 
   /* 舊版表單：Win7 的按鈕面、框線、陰影，表單標籤的青色底 */
-  --lg-font: 'PMingLiU', 'Legacy Ming', serif;
+  /* 舊程式的表單、欄位、按鈕用細明體 12 點（16px）；狀態列、選單、提示框與
+     小標籤用新細明體（執行檔內各表單的字型設定）。 */
+  --lg-font: 'Legacy Ming', serif;
+  --lg-font-p: 'PMingLiU', '新細明體', 'Legacy Ming', serif;
   --lg-font-ming: 'Legacy Ming', serif;
   --lg-ink: #000;
   --lg-paper: #fff;
@@ -34,5 +37,13 @@
   --lg-line: #a0a0a0;
   --lg-shadow: #808080;
   --lg-label: #00ffff;
+  /* Windows 傳統立體框：凹框外層左上 shadow、內層左上 dark，右下內層 light、
+     外層 hilite；凸起的按鈕相反。 */
+  --lg-3d-shadow: #a0a0a0;
+  --lg-3d-dark: #696969;
+  --lg-3d-light: #e3e3e3;
+  --lg-3d-hilite: #ffffff;
+  --lg-button: #c0c0ff;
+  --lg-disabled-ink: #6d6d6d;
   --lg-error: #b00020;
 }

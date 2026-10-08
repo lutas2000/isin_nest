@@ -18,6 +18,8 @@ interface MasterDefinition {
   queryTitle: string;
   columns: Record<string, any>[][];
   queryColumns: { key: string; label: string }[];
+  // Win7 geometry (LegacyMasterForm `layout`).
+  layout: { top?: number; pitch?: number; labelHeight?: number };
 }
 
 const definitions: Record<string, MasterDefinition> = {
@@ -27,17 +29,37 @@ const definitions: Record<string, MasterDefinition> = {
     searchField: 'material',
     noun: '材質',
     queryTitle: '材質資料查詢',
+    layout: { pitch: 28 },
     columns: [
       [
-        { key: 'material', label: '材　　質', size: 'short', maxLength: 10 },
-        { key: 'thickness', label: '厚　　度', size: 'short', maxLength: 6 },
+        {
+          key: 'material',
+          label: '材　　質',
+          width: 90,
+          size: 'short',
+          maxLength: 10,
+        },
+        {
+          key: 'thickness',
+          label: '厚　　度',
+          width: 90,
+          size: 'short',
+          maxLength: 6,
+        },
         {
           key: 'product_name',
           label: '品　　名',
+          width: 200,
           size: 'wide',
           maxLength: 100,
         },
-        { key: 'category', label: '分　　類', size: 'short', maxLength: 10 },
+        {
+          key: 'category',
+          label: '分　　類',
+          width: 90,
+          size: 'short',
+          maxLength: 10,
+        },
       ],
     ],
     queryColumns: [
@@ -52,24 +74,86 @@ const definitions: Record<string, MasterDefinition> = {
     key: 'code',
     noun: '銀行',
     queryTitle: '銀行資料查詢',
+    layout: { top: 91, pitch: 28, labelHeight: 24 },
     columns: [
       [
-        { key: 'code', label: '銀行編號', size: 'short', maxLength: 10 },
-        { key: 'full_name', label: '銀行全名', size: 'wider', maxLength: 40 },
-        { key: 'short_name', label: '銀行簡稱', size: 'short', maxLength: 10 },
-        { key: 'phone1', label: '電 話 一', size: 'short', maxLength: 20 },
-        { key: 'phone2', label: '電 話 二', size: 'short', maxLength: 20 },
-        { key: 'contact', label: '連 絡 人', size: 'short', maxLength: 10 },
-        { key: 'account_no', label: '帳戶號碼', size: 'short', maxLength: 30 },
         {
-          key: 'account_name',
-          label: '帳戶名稱',
+          key: 'code',
+          label: '銀行編號',
+          width: 133,
+          size: 'short',
+          maxLength: 10,
+        },
+        {
+          key: 'full_name',
+          label: '銀行全名',
+          width: 333,
+          size: 'wider',
+          maxLength: 40,
+        },
+        {
+          key: 'short_name',
+          label: '銀行簡稱',
+          width: 133,
+          size: 'short',
+          maxLength: 10,
+        },
+        {
+          key: 'phone1',
+          label: '電 話 一',
+          width: 133,
+          size: 'short',
+          maxLength: 20,
+        },
+        {
+          key: 'phone2',
+          label: '電 話 二',
+          width: 133,
+          size: 'short',
+          maxLength: 20,
+        },
+        {
+          key: 'contact',
+          label: '連 絡 人',
+          width: 133,
+          size: 'short',
+          maxLength: 10,
+        },
+        {
+          key: 'account_no',
+          label: '帳戶號碼',
+          width: 133,
           size: 'short',
           maxLength: 30,
         },
-        { key: 'balance', label: '存款金額', size: 'short', align: 'right' },
-        { key: 'address', label: '地　　址', size: 'wider', maxLength: 60 },
-        { key: 'notes', label: '備　　註', size: 'wider', maxLength: 100 },
+        {
+          key: 'account_name',
+          label: '帳戶名稱',
+          width: 133,
+          size: 'short',
+          maxLength: 30,
+        },
+        {
+          key: 'balance',
+          label: '存款金額',
+          width: 133,
+          size: 'short',
+          align: 'right',
+        },
+        {
+          key: 'address',
+          label: '地　　址',
+          width: 333,
+          size: 'wider',
+          maxLength: 60,
+        },
+        {
+          key: 'notes',
+          label: '備　　註',
+          width: 333,
+          size: 'wider',
+          maxLength: 100,
+        },
       ],
     ],
     queryColumns: [
@@ -83,11 +167,24 @@ const definitions: Record<string, MasterDefinition> = {
     endpoint: '/phrases',
     key: 'phrase_no',
     noun: '詞彙',
+    layout: { pitch: 28 },
     queryTitle: '詞彙資料查詢',
     columns: [
       [
-        { key: 'phrase_no', label: '詞彙編號', size: 'short', maxLength: 10 },
-        { key: 'content', label: '內　　容', size: 'full', maxLength: 250 },
+        {
+          key: 'phrase_no',
+          label: '詞彙編號',
+          width: 80,
+          size: 'short',
+          maxLength: 10,
+        },
+        {
+          key: 'content',
+          label: '內　　容',
+          width: 667,
+          size: 'full',
+          maxLength: 250,
+        },
       ],
     ],
     queryColumns: [
@@ -99,11 +196,24 @@ const definitions: Record<string, MasterDefinition> = {
     endpoint: '/postal-codes',
     key: 'postal_code',
     noun: '郵遞區號',
+    layout: { pitch: 28 },
     queryTitle: '郵遞區號查詢',
     columns: [
       [
-        { key: 'postal_code', label: '郵遞區號', size: 'short', maxLength: 10 },
-        { key: 'region_name', label: '地區名稱', size: 'wide', maxLength: 100 },
+        {
+          key: 'postal_code',
+          label: '郵遞區號',
+          width: 67,
+          size: 'short',
+          maxLength: 10,
+        },
+        {
+          key: 'region_name',
+          label: '地區名稱',
+          width: 200,
+          size: 'wide',
+          maxLength: 100,
+        },
       ],
     ],
     queryColumns: [
@@ -190,6 +300,7 @@ function fromItem(item: Record<string, any>) {
     :query-columns="definition.queryColumns"
     :query-title="definition.queryTitle"
     :noun="definition.noun"
+    :layout="definition.layout"
   >
     <template v-if="kind === 'banks'" #aside="{ current, editable }">
       <table class="legacy-check-layout" aria-label="支票列印位置設定">

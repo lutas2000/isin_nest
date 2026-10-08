@@ -42,6 +42,16 @@
   box-sizing: border-box;
 }
 
+/* Windows 的文字選取是 #3399ff 底白字；欄位取得焦點時沒有外框（Win7 實測）。 */
+.legacy-root ::selection {
+  background: #3399ff;
+  color: #fff;
+}
+
+.legacy-root :where(input, select, textarea):focus {
+  outline: none;
+}
+
 :where(.legacy-root) :where(button, input, textarea) {
   font: inherit;
 }
@@ -541,11 +551,18 @@
   min-height: 0;
   overflow: hidden;
   background: #ababab;
+  /* MDI 工作區的 2px 凹框（Win7 實測）；子元素內縮 1px 露出內層。 */
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-dark),
+    inset -1px -1px var(--lg-3d-light);
 }
 
 .legacy-backdrop {
   position: absolute;
-  inset: 0;
+  inset: 1px;
 }
 
 .legacy-backdrop-panel {
@@ -578,7 +595,7 @@
 
 .legacy-mdi-children {
   position: absolute;
-  inset: 0;
+  inset: 1px;
 }
 
 .legacy-mdi-max .legacy-mdi-children > .legacy-child {
@@ -670,12 +687,14 @@
   text-align: left;
 }
 
+/* 狀態列（Win7 實測）：25px 高，上方留 2px，下面是整列寬的 1px 凹框，
+   新細明體 12 點。 */
 .legacy-app-status {
-  min-height: 22px;
-  padding: 2px 4px;
-  border-top: 1px solid var(--lg-line);
+  height: 25px;
+  padding-top: 2px;
   background: var(--lg-face);
-  font-size: 14px;
+  font-family: var(--lg-font-p);
+  font-size: 16px;
 }
 
 .legacy-coming-soon {
@@ -940,34 +959,219 @@
    grids with a 項次 column. */
 .legacy-form {
   min-width: 1000px;
-  padding: 4px 6px;
+  padding: 0;
   color: var(--lg-ink);
   font-family: var(--lg-font);
-  font-size: 15px;
+  font-size: 16px;
 }
 
+/* 按鈕列（Win7 實測）：外面是 30px 高的 2px 凹框，按鈕 79×27 相連、從凹框內
+   (2,2) 開始，底下一列被凹框切掉，所以只看到 26px 與底部一條 shadow。 */
 .legacy-record-toolbar {
   display: flex;
-  gap: 2px;
-  margin: 0 0 8px;
+  height: 30px;
+  padding: 1px;
+  overflow: hidden;
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-dark),
+    inset -1px -1px var(--lg-3d-light);
 }
 
 .legacy-record-toolbar button {
-  min-width: 78px;
-  height: 26px;
-  padding: 0 6px;
-  border: 1px solid #8080c0;
-  background: #c8c8f8;
+  flex: 0 0 79px;
+  width: 79px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid;
+  border-color: var(--lg-3d-hilite) var(--lg-3d-dark) var(--lg-3d-dark)
+    var(--lg-3d-hilite);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-light),
+    inset -1px -1px var(--lg-3d-shadow);
+  background: var(--lg-button);
   color: var(--lg-ink);
   font: inherit;
+  white-space: pre;
 }
 
 .legacy-record-toolbar button:disabled {
   opacity: 1;
-  color: #8888a8;
+  cursor: default;
+  color: var(--lg-disabled-ink);
 }
 
-.legacy-record-toolbar-extra {
+.legacy-record-toolbar button:active:not(:disabled) {
+  border-color: var(--lg-3d-dark) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-dark);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-shadow),
+    inset -1px -1px var(--lg-3d-light);
+  padding: 2px 0 0 2px;
+}
+
+/* 按鈕取得焦點時舊版外圍多一圈黑線、文字外有虛線框。 */
+.legacy-record-toolbar button:focus-visible,
+.legacy-record-toolbar button.legacy-focused {
+  outline: 1px dotted var(--lg-ink);
+  outline-offset: -5px;
+}
+
+/* 標題中帶 & 的字母（查詢 R…）有底線。 */
+.legacy-accel {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Windows 7 Basic 視窗框（提示框、查詢與輔助輸入等小視窗；Win7 實測）：外框 1px
+   深色、標題列 28px 淡藍漸層、左右下各 6px，工作區外有 1px 深灰線；右上關閉鈕
+   47×21 紅色。 */
+.legacy-w7-window {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  padding: 0 6px 6px;
+  border: 1px solid #262c31;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(#d0e1f2, #c9dcee 28px, #c5ddf5 29px);
+  box-shadow:
+    inset 0 0 0 1px #f6f9fc,
+    0 0 7px 1px rgb(0 0 0 / 42%);
+  color: var(--lg-ink);
+  font-family: var(--lg-font-p);
+  font-size: 12px;
+  line-height: normal;
+}
+
+.legacy-w7-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 0 2px 2px;
+  user-select: none;
+}
+
+.legacy-w7-title {
+  white-space: pre;
+}
+
+.legacy-w7-close {
+  position: absolute;
+  top: -1px;
+  right: -5px;
+  width: 47px;
+  height: 21px;
+  padding: 0;
+  border: 1px solid #3a1109;
+  border-top: 0;
+  border-radius: 0 0 5px 5px;
+  background:
+    linear-gradient(45deg, transparent 43%, #fff 43%, #fff 57%, transparent 57%)
+      center / 13px 11px no-repeat,
+    linear-gradient(
+        -45deg,
+        transparent 43%,
+        #fff 43%,
+        #fff 57%,
+        transparent 57%
+      )
+      center / 13px 11px no-repeat,
+    linear-gradient(#f4b4ab, #c04733 50%, #d04833 75%, #e8a594);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 35%);
+}
+
+.legacy-w7-close:disabled {
+  opacity: 1;
+  cursor: default;
+  filter: saturate(0.35) brightness(1.25);
+}
+
+.legacy-w7-client {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #616c77;
+  outline: 1px solid rgb(255 255 255 / 55%);
+  background: var(--lg-face);
+}
+
+.legacy-msgbox-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+}
+
+.legacy-msgbox-body {
+  display: flex;
+  align-items: center;
+  padding: 28px 31px 28px 26px;
+  background: var(--lg-paper);
+}
+
+.legacy-msgbox-icon {
+  flex: 0 0 32px;
+  margin-right: 9px;
+}
+
+.legacy-msgbox-text {
+  margin: 0;
+  line-height: 32px;
+  white-space: pre;
+}
+
+.legacy-msgbox-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 9px 12px 42px;
+}
+
+/* 傳統按鈕（提示框、小視窗）：88×28，凸起 2px；預設（有焦點）的按鈕外圍多一圈
+   #646464，文字外有虛線框。 */
+.legacy-classic-button {
+  width: 88px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid;
+  border-color: var(--lg-3d-hilite) var(--lg-3d-dark) var(--lg-3d-dark)
+    var(--lg-3d-hilite);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-light),
+    inset -1px -1px var(--lg-3d-shadow);
+  background: var(--lg-face);
+  color: var(--lg-ink);
+  font: inherit;
+  outline: none;
+}
+
+.legacy-classic-button.default {
+  border-color: #646464;
+  box-shadow:
+    inset 1px 1px var(--lg-3d-hilite),
+    inset 2px 2px var(--lg-3d-light),
+    inset -1px -1px var(--lg-3d-dark),
+    inset -2px -2px var(--lg-3d-shadow);
+}
+
+.legacy-classic-button:focus {
+  outline: 1px dotted var(--lg-ink);
+  outline-offset: -5px;
+}
+
+.legacy-classic-button:active {
+  border-color: #646464;
+  box-shadow:
+    inset 1px 1px var(--lg-3d-shadow),
+    inset -1px -1px var(--lg-3d-shadow);
+  padding: 1px 0 0 1px;
+}
+
+.legacy-record-toolbar button.legacy-record-toolbar-extra {
+  flex-basis: 100px;
+  width: 100px;
   margin-left: 60px;
 }
 
@@ -1121,85 +1325,137 @@
   background: transparent;
 }
 
-/* Legacy master-file forms: 「標籤：」 cells in columns, borderless inputs. */
+/* Legacy master-file forms (Win7 實測，廠商建檔)：標籤 96×22、欄位高 24，
+   都是 2px 凹框；欄位壓住標籤右邊 2px；每列間隔 26px。第一列標籤在
+   工作區 (13,53)，右欄起點 x 413。 */
+/* 按鈕列在 DOM 裡排在欄位後面（Tab 先走欄位再到按鈕，同舊版），畫面上仍在最上方。 */
+.legacy-master {
+  display: flex;
+  flex-direction: column;
+}
+
+.legacy-master > .legacy-record-toolbar {
+  order: -1;
+  flex: none;
+}
+
 .legacy-master-fields {
   display: flex;
-  gap: 40px;
-  margin: 26px 0 8px 10px;
+  gap: 39px;
+  margin: 23px 0 8px 13px;
 }
 
 .legacy-master .legacy-form-column {
-  gap: 6px;
+  gap: var(--lg-row-gap, 2px);
 }
 
 .legacy-master-field {
-  height: 20px;
+  align-items: flex-start;
+  height: 24px;
+}
+
+.legacy-sunken,
+.legacy-master-field > span,
+.legacy-master-field input,
+.legacy-master-inline-label {
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-dark),
+    inset -1px -1px var(--lg-3d-light);
 }
 
 .legacy-master-field > span {
   justify-content: space-between;
-  width: 94px;
-  padding: 0 4px 0 8px;
-  border: 0;
-  border-left: 2px solid var(--lg-shadow);
-  border-top: 2px solid var(--lg-shadow);
+  width: 96px;
+  height: var(--lg-label-height, 22px);
+  padding: 0 5px 0 7px;
   white-space: pre;
 }
 
 .legacy-master-field.small-label > span {
-  font-size: 11px;
+  font-family: var(--lg-font-p);
+  font-size: 12px;
 }
 
 .legacy-master-field input {
-  border: 0;
+  height: 24px;
+  margin-left: -2px;
+  padding: 0 2px 2px;
+  color: var(--lg-ink);
+  -webkit-text-fill-color: var(--lg-ink);
 }
 
 .legacy-master-field input.short {
-  width: 130px;
+  width: 133px;
 }
 
 .legacy-master-field input.medium {
-  width: 130px;
+  width: 133px;
 }
 
 .legacy-master-field input.wide {
-  width: 264px;
+  width: 267px;
 }
 
 .legacy-master-field input.wider {
-  width: 396px;
+  width: 399px;
 }
 
 .legacy-master-field input.full {
-  width: 664px;
+  width: 667px;
 }
 
 .legacy-master-gap {
-  height: 20px;
+  height: 24px;
 }
 
 .legacy-browse-button {
-  width: 24px;
-  margin-left: 2px;
-  padding: 0;
-  border: 1px solid #707070;
-  background: linear-gradient(#f6f6f6, #dddddd);
-  font: inherit;
-  line-height: 1;
+  /* 「...」：26×21 凸起按鈕，蓋在欄位右端內側（Win7 實測：DXF 路徑欄 x 749～774）。 */
+  position: relative;
+  z-index: 1;
+  flex: none;
+  align-self: flex-start;
+  width: 26px;
+  height: 21px;
+  margin: 1px 0 0 -2px;
+  padding: 0 0 4px;
+  border: 1px solid;
+  border-color: var(--lg-3d-hilite) var(--lg-3d-dark) var(--lg-3d-dark)
+    var(--lg-3d-hilite);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-light),
+    inset -1px -1px var(--lg-3d-shadow);
+  background: var(--lg-face);
+  color: var(--lg-ink);
+  font: 12px/1 var(--lg-font-p);
+}
+
+.legacy-browse-button:disabled {
+  opacity: 1;
+  cursor: default;
 }
 
 .legacy-check-layout {
+  /* 銀行建檔的支票列印位置（Win7 實測）：標籤 133×24 從 x 469，數值格 47×24，
+     第二組 X／Y 再往右 3px；列距 28。 */
   align-self: flex-start;
   border-collapse: separate;
-  border-spacing: 4px 6px;
-  margin-top: -6px;
+  border-spacing: 0 4px;
+  margin: -4px 0 0 -12px;
 }
 
 .legacy-check-layout th {
-  height: 20px;
-  padding: 0 4px;
-  border-left: 2px solid var(--lg-shadow);
-  border-top: 2px solid var(--lg-shadow);
+  width: 133px;
+  height: 24px;
+  padding: 0 5px;
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-dark),
+    inset -1px -1px var(--lg-3d-light);
   background: var(--lg-label);
   font-weight: normal;
   text-align: right;
@@ -1207,13 +1463,42 @@
 }
 
 .legacy-check-layout thead th {
+  padding: 0;
   text-align: center;
 }
 
+.legacy-check-layout thead th + th {
+  width: 47px;
+}
+
+.legacy-check-layout td,
+.legacy-check-layout thead th + th {
+  padding: 0;
+}
+
+.legacy-check-layout td:nth-child(4),
+.legacy-check-layout thead th:nth-child(4) {
+  position: relative;
+  left: 3px;
+}
+
+.legacy-check-layout td:nth-child(5),
+.legacy-check-layout thead th:nth-child(5) {
+  position: relative;
+  left: 3px;
+}
+
 .legacy-check-layout td input {
-  width: 44px;
-  height: 20px;
-  border: 0;
+  display: block;
+  width: 47px;
+  height: 24px;
+  padding: 0 2px;
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-dark),
+    inset -1px -1px var(--lg-3d-light);
   background: var(--lg-paper);
   color: var(--lg-ink);
   font: inherit;
@@ -1229,33 +1514,42 @@
   width: 304px;
 }
 
+/* 工件建檔（Win7 實測）：客戶、繪圖者右邊的第二格 90px，壓住前一格 2px；
+   「最近交易：」標籤在 x 255，後面的欄位 93px。 */
 .legacy-master-field input.legacy-master-side {
-  margin-left: 4px;
+  width: 90px;
 }
 
 .legacy-master-inline-label {
   display: flex;
+  flex: none;
   align-items: center;
-  margin-left: 58px;
-  padding: 0 4px 0 8px;
-  border-left: 2px solid var(--lg-shadow);
-  border-top: 2px solid var(--lg-shadow);
+  width: 96px;
+  height: var(--lg-label-height, 22px);
+  margin-left: 56px;
+  padding: 0 5px 0 7px;
   background: var(--lg-label);
-  white-space: nowrap;
+  white-space: pre;
 }
 
-.legacy-master-field input.legacy-master-side + .legacy-master-inline-label,
-.legacy-master-inline-label + input {
-  width: 90px;
+.legacy-master-field .legacy-master-inline-label + input {
+  width: 93px;
 }
 
 .legacy-part-preview {
+  /* 工件圖面：400×433 的凹框，左上在 (478,136)。 */
   display: grid;
   place-items: center;
-  width: 396px;
-  height: 429px;
-  margin-top: 30px;
+  width: 400px;
+  height: 433px;
+  margin: 39px 0 0 -3px;
   overflow: hidden;
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  box-shadow:
+    inset 1px 1px var(--lg-3d-dark),
+    inset -1px -1px var(--lg-3d-light);
   background: var(--lg-paper);
 }
 
@@ -1345,20 +1639,30 @@
 /* 狀態列右側的登入者、唯讀、登出。 */
 .legacy-app-status {
   display: flex;
-  gap: 8px;
 }
 
 .legacy-app-status-text {
   flex: 1;
   min-width: 0;
+  height: 23px;
+  padding: 2px 0 0 1px;
+  overflow: hidden;
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  white-space: pre;
 }
 
 .legacy-app-status-user {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-left: 8px;
-  border-left: 1px solid var(--lg-line);
+  height: 23px;
+  padding: 0 4px 0 8px;
+  border: 1px solid;
+  border-color: var(--lg-3d-shadow) var(--lg-3d-hilite) var(--lg-3d-hilite)
+    var(--lg-3d-shadow);
+  font-size: 12px;
   white-space: nowrap;
 }
 

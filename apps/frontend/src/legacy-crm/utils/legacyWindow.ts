@@ -35,3 +35,21 @@ export const CLOSE_WINDOW_KEY: InjectionKey<() => void> = Symbol(
 export function useCloseWindow(): () => void {
   return inject(CLOSE_WINDOW_KEY, () => {});
 }
+
+// Alt+letter on a form presses the toolbar button with that underlined
+// letter before the menu bar sees it (Win7 2026-10-08: Alt+R on 客戶建檔 opens
+// 查詢, not 報表列印). The active form's toolbar registers its handler here;
+// the shell's menu key handler asks it first.
+const altKeyHandlers = new Set<(event: KeyboardEvent) => boolean>();
+
+export function registerAltKeyHandler(
+  handler: (event: KeyboardEvent) => boolean,
+): () => void {
+  altKeyHandlers.add(handler);
+  return () => altKeyHandlers.delete(handler);
+}
+
+export function handleToolbarAltKey(event: KeyboardEvent): boolean {
+  for (const handler of altKeyHandlers) if (handler(event)) return true;
+  return false;
+}

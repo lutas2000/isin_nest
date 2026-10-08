@@ -83,6 +83,7 @@ const columns = computed(() =>
       { key: 'contact3', label: '連絡人三', size: 'wide', maxLength: 30 },
       {
         key: 'start_date',
+        date: true,
         label: '開始交易日期',
         small: true,
         size: 'medium',
@@ -90,6 +91,7 @@ const columns = computed(() =>
       },
       {
         key: 'latest_transaction_date',
+        date: true,
         label: '最近交易日期',
         small: true,
         size: 'medium',
@@ -113,7 +115,7 @@ const columns = computed(() =>
         : [{ gap: true }]),
       { key: 'email', label: '電子郵箱', size: 'wide', maxLength: 60 },
       ...(isCustomer.value
-        ? [{ key: 'dxf_path', label: 'DXF 路徑', size: 'wide', maxLength: 100 }]
+        ? [{ key: 'dxf_path', label: 'DXF 路徑', width: 242, maxLength: 100 }]
         : []),
       { key: 'main_product', label: '主要產品', size: 'wide', maxLength: 60 },
       { key: 'notes', label: '備　　註', size: 'wide', maxLength: 100 },
@@ -283,6 +285,7 @@ async function confirmRename() {
       <button
         type="button"
         class="legacy-browse-button"
+        tabindex="-1"
         disabled
         title="瀏覽器無法取得完整路徑，請直接輸入"
       >

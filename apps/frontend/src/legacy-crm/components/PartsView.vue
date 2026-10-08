@@ -18,14 +18,22 @@ const priceField = (key: string, label: string) => ({
   key,
   label,
   size: 'short',
+  width: 120,
   decimals: 2,
 });
 const columns = [
   [
-    { key: 'drawing_no', label: '電腦圖號', size: 'short', maxLength: 10 },
+    {
+      key: 'drawing_no',
+      label: '電腦圖號',
+      width: 90,
+      size: 'short',
+      maxLength: 10,
+    },
     {
       key: 'customer_code',
       label: '客　　戶',
+      width: 90,
       size: 'short',
       maxLength: 10,
       onChange: (current: Current) => lookupCustomer(current.customer_code),
@@ -40,6 +48,7 @@ const columns = [
     {
       key: 'customer_model',
       label: '客戶型號',
+      width: 333,
       size: 'wider',
       maxLength: 40,
       hint: PART_MODEL_HINT,
@@ -51,10 +60,17 @@ const columns = [
         },
       },
     },
-    { key: 'drawing_name', label: '圖　　名', size: 'wider', maxLength: 30 },
+    {
+      key: 'drawing_name',
+      label: '圖　　名',
+      width: 333,
+      size: 'wider',
+      maxLength: 30,
+    },
     {
       key: 'actor_no',
       label: '繪 圖 者',
+      width: 90,
       size: 'short',
       maxLength: 6,
       assist: {
@@ -65,16 +81,53 @@ const columns = [
         },
       },
     },
-    { key: 'drawing_date', label: '繪製日期', size: 'short', maxLength: 10 },
-    { key: 'directory_path', label: '目錄位置', size: 'file', maxLength: 50 },
-    { key: 'cnc1', label: 'CNC 檔一', size: 'file', maxLength: 30 },
-    { key: 'cnc2', label: 'CNC 檔二', size: 'file', maxLength: 30 },
+    {
+      key: 'drawing_date',
+      label: '繪製日期',
+      width: 90,
+      date: true,
+      size: 'short',
+      maxLength: 10,
+    },
+    {
+      key: 'directory_path',
+      label: '目錄位置',
+      width: 308,
+      size: 'file',
+      maxLength: 50,
+    },
+    { key: 'cnc1', label: 'CNC 檔一', width: 308, size: 'file', maxLength: 30 },
+    { key: 'cnc2', label: 'CNC 檔二', width: 308, size: 'file', maxLength: 30 },
     // 加工內容 is the legacy CNC5 (Win7 2026-10-07).
-    { key: 'cnc5', label: '加工內容', size: 'wider', maxLength: 50 },
-    { key: 'notes', label: '備　　註', size: 'wider', maxLength: 50 },
-    { key: 'material', label: '材料規格', size: 'short', maxLength: 10 },
-    { key: 'thickness', label: '厚　　度', size: 'short', maxLength: 4 },
-    { key: 'unit', label: '單　　位', size: 'short', maxLength: 2 },
+    {
+      key: 'cnc5',
+      label: '加工內容',
+      width: 333,
+      size: 'wider',
+      maxLength: 50,
+    },
+    {
+      key: 'notes',
+      label: '備　　註',
+      width: 333,
+      size: 'wider',
+      maxLength: 50,
+    },
+    {
+      key: 'material',
+      label: '材料規格',
+      width: 120,
+      size: 'short',
+      maxLength: 10,
+    },
+    {
+      key: 'thickness',
+      label: '厚　　度',
+      width: 120,
+      size: 'short',
+      maxLength: 4,
+    },
+    { key: 'unit', label: '單　　位', width: 120, size: 'short', maxLength: 2 },
     priceField('price_ref', '備料單價'),
     priceField('price1', '代料單價'),
     priceField('price2', '折工單價'),
@@ -228,6 +281,7 @@ function cncChosen(event: Event) {
     :query-columns="queryColumns"
     query-title="工件資料查詢"
     noun="工件"
+    :layout="{ labelHeight: 23 }"
     @loaded="loaded"
   >
     <template #buttons="{ current, mode, selectedKey }">
@@ -259,8 +313,12 @@ function cncChosen(event: Event) {
     <template #after-drawing_date="{ current }">
       <span class="legacy-master-inline-label">最近交易：</span>
       <input
-        class="short num"
-        :value="current.cnc3"
+        class="short"
+        :value="
+          String(current.cnc3 ?? '')
+            .trim()
+            .padStart(10)
+        "
         disabled
         aria-label="最近交易"
       />
@@ -270,6 +328,7 @@ function cncChosen(event: Event) {
       <button
         type="button"
         class="legacy-browse-button"
+        tabindex="-1"
         disabled
         title="瀏覽器無法取得資料夾路徑，請直接輸入"
       >
@@ -284,6 +343,7 @@ function cncChosen(event: Event) {
       <button
         type="button"
         class="legacy-browse-button"
+        tabindex="-1"
         :disabled="!editable"
         title="CNC檔名設定"
         @click="chooseCnc(current, key)"
