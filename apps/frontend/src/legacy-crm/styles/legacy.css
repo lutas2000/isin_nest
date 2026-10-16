@@ -563,19 +563,20 @@
 .legacy-backdrop {
   position: absolute;
   inset: 1px;
+  overflow: auto;
 }
 
 .legacy-backdrop-panel {
   width: min(1024px, 100%);
-  height: 100%;
-  padding: 50px 0 0 70px;
+  min-height: 100%;
+  padding: 32px 48px;
   background: linear-gradient(90deg, #b9dcf7 0, var(--lg-paper) 170px);
 }
 
-.legacy-backdrop-title {
-  padding-left: 200px;
+.legacy-root .legacy-backdrop-title {
+  margin: 0;
   color: #d9a400;
-  font-size: 68px;
+  font-size: 36px;
   letter-spacing: 0.1em;
   text-shadow: 1px 1px 0 #8a6a00;
 }
@@ -586,16 +587,52 @@
   background: var(--lg-ink);
 }
 
-.legacy-backdrop-company {
-  margin: 120px 0 0 200px;
+.legacy-root .legacy-backdrop-company {
+  margin: 12px 0;
   color: #b8925a;
-  font-size: 34px;
+  font-size: 22px;
   letter-spacing: 0.2em;
+}
+
+.legacy-root .legacy-home-version {
+  margin: 16px 0 0;
+  font-weight: bold;
+}
+
+.legacy-release-notes {
+  padding-top: 24px;
+  line-height: 1.7;
+}
+
+.legacy-root .legacy-release-notes h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.legacy-release {
+  padding: 16px 0;
+  border-top: 1px solid var(--lg-line);
+}
+
+.legacy-root .legacy-release h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.legacy-release ul {
+  margin: 0;
+  padding-left: 24px;
 }
 
 .legacy-mdi-children {
   position: absolute;
   inset: 1px;
+  /* 空白區讓首頁接收捲動與文字選取，子視窗仍可正常操作。 */
+  pointer-events: none;
+}
+
+.legacy-mdi-children > .legacy-child {
+  pointer-events: auto;
 }
 
 .legacy-mdi-max .legacy-mdi-children > .legacy-child {

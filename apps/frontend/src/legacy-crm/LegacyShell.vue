@@ -20,6 +20,7 @@ import QuotesView from './components/QuotesView.vue';
 import WorkView from './components/WorkView.vue';
 import ReportsView from './components/ReportsView.vue';
 import MdiChild from './components/MdiChild.vue';
+import LegacyHome from './components/LegacyHome.vue';
 import { useAuthStore } from '../stores/auth';
 import { useLegacyReadOnly } from './utils/legacyAccess';
 import { companyProfile } from './utils/companyProfile';
@@ -595,13 +596,7 @@ function logout() {
     </nav>
 
     <main class="legacy-mdi" :class="`legacy-mdi-${arrangement}`">
-      <div v-if="showBackdrop" class="legacy-backdrop" aria-hidden="true">
-        <div class="legacy-backdrop-panel">
-          <div class="legacy-backdrop-title">雷射銷管軟體系統</div>
-          <div class="legacy-backdrop-rule"></div>
-          <div class="legacy-backdrop-company">{{ companyProfile.name }}</div>
-        </div>
-      </div>
+      <LegacyHome v-if="showBackdrop" />
       <div class="legacy-mdi-children">
         <section
           v-for="window in windows"
