@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>訂單查詢回歸測試</title>
+  </head>
+  <body>
+    <div id="app" class="legacy-root"></div>
+    <script type="module">
+      import { createApp, h } from 'vue';
+      import { createPinia } from 'pinia';
+      import OrdersView from '/apps/frontend/src/legacy-crm/components/OrdersView.vue';
+      import { useAuthStore } from '/apps/frontend/src/stores/auth';
+      import '/apps/frontend/src/legacy-crm/styles/tokens.css';
+      import '/apps/frontend/src/legacy-crm/styles/legacy.css';
+
+      const pinia = createPinia();
+      const auth = useAuthStore(pinia);
+      auth.user = {
+        id: 1,
+        userName: 'orders-search-test',
+        isAdmin: false,
+        features: [
+          {
+            feature: 'crm',
+            permission:
+              new URLSearchParams(location.search).get('permission') || 'write',
+          },
+        ],
+      };
+      localStorage.setItem('auth_token', 'test-only');
+      createApp({ render: () => h(OrdersView, { title: '訂單登錄' }) })
+        .use(pinia)
+        .mount('#app');
+    </script>
+  </body>
+</html>

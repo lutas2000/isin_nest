@@ -15,6 +15,7 @@ import {
 import { useLegacyFieldLock, useLegacyReadOnly } from '../utils/legacyAccess';
 import {
   ASSIST_CYCLES,
+  PART_MODEL_REQUIRED,
   nextCycleValue,
   useLegacyAssist,
   type AssistOpenOptions,
@@ -85,6 +86,13 @@ const isEditable = computed(
   () => !readOnly.value && (mode.value === 'new' || mode.value === 'edit'),
 );
 const lock = useLegacyFieldLock(isEditable, mode);
+// 尚未新增或載入訂單時，查詢欄位只作為暫存條件，不進入新增模式。
+// 唯讀使用者也可查詢；載入既有單據後仍沿用原本的欄位鎖定。
+const canLookup = computed(
+  () =>
+    isEditable.value || (mode.value === 'view' && selectedKey.value == null),
+);
+const lookupLock = computed(() => (canLookup.value ? {} : lock.value));
 const paymentOptions = ['收現', '月結', '訂單完工'];
 const deliveryOptions = ['客戶取件', '送達客戶', '寄貨', '指送'];
 
@@ -562,7 +570,7 @@ function assistCustomer() {
     prefix: current.value.customer_code,
     onSelect: (row) => {
       current.value.customer_code = row.code;
-      if (isEditable.value) syncCustomer();
+      if (canLookup.value) syncCustomer();
     },
   });
 }
@@ -586,12 +594,21 @@ function assistGroup() {
   });
 }
 
-function assistPart(item: Row) {
-  assistEdit('part', {
-    prefix: item.drawing_no,
+function assistPart(item: Row, byModel = false) {
+  if (byModel && !String(item.customer_model ?? '').trim()) {
+    window.alert(PART_MODEL_REQUIRED);
+    return;
+  }
+  void assist.open(byModel ? 'part-model' : 'part', {
+    prefix: byModel ? item.customer_model : item.drawing_no,
     customer: current.value.customer_code,
     onSelect: (row) => {
+      if (!canLookup.value) return;
       item.drawing_no = row.drawing_no;
+      item.customer_model = row.customer_model;
+      item.material = row.material;
+      item.thickness = row.thickness;
+      item.unit = row.unit;
       syncPart(item);
     },
   });
@@ -685,14 +702,14 @@ onMounted(() => {
             :data-hint="ASSIST_HINT"
             maxlength="10"
             aria-label="客戶編號"
-            @change="isEditable && syncCustomer()"
+            @change="canLookup && syncCustomer()"
             @keydown.enter.prevent="isEditable ? syncCustomer() : openQuery()"
             @keydown.f1.prevent="assistCustomer"
           />
           <input
             v-model="current.customer_name"
             :data-hint="ASSIST_HINT"
-            v-bind="lock"
+            v-bind="lookupLock"
             maxlength="10"
             aria-label="客戶名稱"
           />
@@ -822,7 +839,7 @@ onMounted(() => {
               <input
                 v-model="item.drawing_no"
                 :data-hint="LINE_HINTS.orders"
-                v-bind="lock"
+                v-bind="lookupLock"
                 maxlength="10"
                 :aria-label="`第 ${index + 1} 列電腦圖號`"
                 @change="syncPart(item)"
@@ -833,10 +850,11 @@ onMounted(() => {
               <input
                 v-model="item.customer_model"
                 :data-hint="ASSIST_HINT"
-                v-bind="lock"
+                v-bind="lookupLock"
                 maxlength="40"
                 :aria-label="`第 ${index + 1} 列客戶型號`"
                 @input="lineChanged"
+                @keydown.f1.prevent="assistPart(item, true)"
               />
             </td>
             <td>
