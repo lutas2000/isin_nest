@@ -213,15 +213,38 @@ const hline = (page: PaperPage, x1: number, x2: number, y: number) =>
 const vline = (page: PaperPage, x: number, y1: number, y2: number) =>
   page.rules.push({ x, y1, y2 });
 
-// 訂貨單: a ruled box with the customer block, ten lines a page and the
+// 訂貨單: a ruled box with the customer block, ten printed lines a page and the
 // sign-off row beneath. 「<以下空白>」 follows the last line when the page has
-// room.
+// room. 後加工 fits ten half-width cells; continuation lines reserve space
+// before the next item. Keep an item's lines together whenever they fit a page.
 export function orderDocumentPages(
   order: Row,
   ctx: DocumentPrintContext,
 ): PaperPage[] {
   const lines = filledLines(order.items as Row[]);
-  const groups = chunks(lines, ORDER_ROWS);
+  type OrderRow = { item?: Row; number?: number; postProcess: string };
+  const groups: OrderRow[][] = [[]];
+  for (const [index, item] of lines.entries()) {
+    const processes = wrapText(item.post_process, 10);
+    const block: OrderRow[] = (processes.length ? processes : ['']).map(
+      (postProcess, row) => ({
+        ...(row === 0 ? { item, number: index + 1 } : {}),
+        postProcess,
+      }),
+    );
+    let current = groups[groups.length - 1];
+    if (current.length && current.length + block.length > ORDER_ROWS) {
+      current = [];
+      groups.push(current);
+    }
+    for (const row of block) {
+      if (current.length === ORDER_ROWS) {
+        current = [];
+        groups.push(current);
+      }
+      current.push(row);
+    }
+  }
   const customer = ctx.customer ?? {};
   const name = text(customer.full_name) || text(order.customer_name);
   return groups.map((group, pageIndex) => {
@@ -267,9 +290,11 @@ export function orderDocumentPages(
       write(x, 161.28, label);
     }
 
-    group.forEach((item, row) => {
+    group.forEach(({ item, number, postProcess }, row) => {
       const y = 181.76 + row * 20.48;
-      write(12.8, y, padStart(String(pageIndex * ORDER_ROWS + row + 1), 3));
+      write(627.22, y, postProcess);
+      if (!item) return;
+      write(12.8, y, padStart(String(number), 3));
       write(57.6, y, text(item.drawing_no));
       write(153.61, y, text(item.customer_model));
       write(332.81, y, text(item.material));
@@ -282,7 +307,6 @@ export function orderDocumentPages(
         );
       write(537.62, y, text(item.outsource));
       write(582.42, y, text(item.source));
-      write(627.22, y, text(item.post_process));
     });
     if (pageIndex === groups.length - 1 && group.length < ORDER_ROWS)
       write(57.6, 181.76 + group.length * 20.48, '<以下空白>');

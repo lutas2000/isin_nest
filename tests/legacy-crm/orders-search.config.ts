@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   testDir: '.',
-  testMatch: 'orders-search.spec.ts',
+  testMatch: ['orders-search.spec.ts', 'order-print.spec.ts'],
   fullyParallel: true,
   reporter: 'list',
   metadata: { ordersSearchFixture: true },

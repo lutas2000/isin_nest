@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>訂貨單後加工列印回歸測試</title>
+  </head>
+  <body>
+    <div id="app" class="legacy-root"></div>
+    <script type="module">
+      import { createApp, h } from 'vue';
+      import LegacyReportSheet from '/apps/frontend/src/legacy-crm/components/LegacyReportSheet.vue';
+      import { orderDocumentPages } from '/apps/frontend/src/legacy-crm/utils/legacyDocumentPaper';
+      import '/apps/frontend/src/legacy-crm/styles/tokens.css';
+      import '/apps/frontend/src/legacy-crm/styles/legacy.css';
+      import '/apps/frontend/src/legacy-crm/styles/legacy-print.css';
+
+      const pages = orderDocumentPages(
+        {
+          order_no: 'PRINT001',
+          customer_name: '列印測試客戶',
+          items: [
+            {
+              drawing_no: 'D001',
+              post_process: '折彎攻牙沉孔焊接研磨烤漆電鍍包裝',
+              quantity: 1,
+              unit: '片',
+            },
+            {
+              drawing_no: 'NEXT',
+              post_process: '檢驗',
+              quantity: 2,
+              unit: '片',
+            },
+          ],
+        },
+        {
+          customer: null,
+          shapes: {},
+          profile: { name: '測試公司', address: '', phone: '', fax: '' },
+        },
+      );
+      createApp({
+        render: () =>
+          h('div', { class: 'legacy-child active' }, [
+            h(
+              'section',
+              { class: 'legacy-print-pages' },
+              pages.map((page) => h(LegacyReportSheet, { page })),
+            ),
+          ]),
+      }).mount('#app');
+    </script>
+  </body>
+</html>

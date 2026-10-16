@@ -273,6 +273,8 @@ apps/backend/src/legacy-crm/
 
 ## 10. 階段排程
 
+2026-10-16 列印修正：訂貨單後加工依欄寬自動換行並保留續行、分頁，8 項列印回歸測試及原有 30 項查詢／跳欄測試通過；驗證細節見 `LEGACY-CRM-FRONTEND.md`「列印」。現場印表機驗收仍依第 7 階段執行。
+
 | 階段 | 內容 | 完成條件 |
 |---|---|---|
 | 0. 收尾 isin_vb6 | 處理 handoff 未完成事項中「操作」類（報價 F8、工作 F8、收款 F3／F4）；最終 commit 與 tag `v0-final` | `npm test`、`npm run build` 通過；handoff 更新 |

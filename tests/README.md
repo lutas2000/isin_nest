@@ -108,6 +108,8 @@ LEGACY_CRM_E2E_CHANNEL=chrome npx playwright test -c tests/legacy-crm/orders-sea
 
 涵蓋：未新增時客戶首碼 F1 與舊訂單查詢、圖號 F1 與圖面預覽、空白／新增／舊單的客戶型號 F1、新增及取消、唯讀限制，以及查詢不可發出寫入請求。一般 E2E 設定會略過此檔，請使用上述專用設定執行。
 
+同一設定亦執行 `legacy-crm/order-print.spec.ts`：驗證訂貨單後加工長內容換行、分頁、項次與 Chrome 列印樣式下的文字邊界。測試頁 `fixtures/legacy-order-print.html` 僅使用合成資料，不呼叫 API；瀏覽器測試輸出 `order-print.png` 供版面檢查。
+
 圖號長度案例另涵蓋工件、銷貨、工作單與圖組的真實元件，驗證鍵盤最多可輸入 12 碼；訂單 F1 查詢會送出完整圖號。
 
 Enter 案例另涵蓋訂單、銷貨、工作單、圖組、報價、收款、客戶／廠商／工件、材質／銀行／詞彙／郵遞區號及報表條件，驗證跳欄、明細換行、略過鎖定欄位、視窗邊界與既有查詢／中文選字／文字區換行。
