@@ -309,6 +309,65 @@ const enabled =
       );
     });
 
+    it('lists an order while any of five lines remains unshipped, removes completed orders and reopens after deleting a sale', async () => {
+      await orders.create(
+        {
+          order_no: 'OPEN001',
+          customer_code: 'C1',
+          items: Array.from({ length: 5 }, (_, index) => ({
+            line_no: index + 1,
+            drawing_no: `P${index + 1}`,
+            quantity: '10',
+          })),
+        },
+        context,
+      );
+      await orders.create(
+        { order_no: 'EMPTY', customer_code: 'C1', items: [] },
+        context,
+      );
+      const openOrders = async (filters: Record<string, string> = {}) =>
+        (await browse.assist('open-order', filters)).items as {
+          order_no: string;
+          lines: { quantity: string; shipped: string }[];
+        }[];
+      await sales.create(
+        sale(
+          'S1',
+          [
+            ['P1', '10'],
+            ['P2', '10'],
+            ['P3', '10'],
+            ['P4', '12'],
+          ],
+          'OPEN001',
+        ),
+        context,
+      );
+      const fourShipped = await openOrders();
+      expect(fourShipped.map((row) => row.order_no)).toEqual(['OPEN001']);
+      expect(fourShipped[0].lines).toHaveLength(5);
+      expect(Number(fourShipped[0].lines[4].shipped)).toBe(0);
+      await sales.create(sale('S2', [['P5', '7']], 'OPEN001'), context);
+      const partiallyShipped = await openOrders({
+        customer: 'C1',
+        prefix: 'OPEN',
+      });
+      expect(partiallyShipped).toHaveLength(1);
+      expect(
+        Number(partiallyShipped[0].lines[4].quantity) -
+          Number(partiallyShipped[0].lines[4].shipped),
+      ).toBe(3);
+      expect(await openOrders({ customer: 'OTHER' })).toEqual([]);
+      expect(await openOrders({ prefix: 'OTHER' })).toEqual([]);
+      await sales.create(sale('S3', [['P5', '3']], 'OPEN001'), context);
+      expect(await openOrders()).toEqual([]);
+      await sales.remove('S3', context);
+      expect((await openOrders()).map((row) => row.order_no)).toEqual([
+        'OPEN001',
+      ]);
+    });
+
     it('spreads sale quantities over the order lines by drawing number', async () => {
       await orders.create(
         {

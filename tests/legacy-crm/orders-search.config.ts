@@ -5,6 +5,7 @@ export default defineConfig({
   testDir: '.',
   testMatch: [
     'orders-search.spec.ts',
+    'sales-open-orders.spec.ts',
     'order-print.spec.ts',
     'paper-size.spec.ts',
   ],

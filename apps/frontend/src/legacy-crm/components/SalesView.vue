@@ -65,6 +65,11 @@ const readOnly = useLegacyReadOnly();
 const isOpen = computed(() => mode.value === 'new' || mode.value === 'edit');
 const isEditable = computed(() => !readOnly.value && isOpen.value);
 const lock = useLegacyFieldLock(isEditable, mode);
+// 空白畫面可先帶入訂單查詢，不切換新增模式，也不取得新銷貨單號。
+const canSelectOrder = computed(
+  () =>
+    isEditable.value || (mode.value === 'view' && selectedKey.value == null),
+);
 const subtotal = computed(() =>
   (current.value.items as Row[]).reduce(
     (sum, item) => sum + lineAmount(item),
@@ -509,13 +514,14 @@ function assistActor() {
   });
 }
 
-// 訂單編號 F1 lists the open orders; choosing one copies its customer,
-// terms and the quantities still to ship.
-function assistOrder() {
-  assistEdit('open-order', {
-    prefix: current.value.linked_order_no,
-    customer: current.value.customer_code,
+// 雙擊列出全部未完成訂單；F1 保留單號與客戶篩選。
+// 空白或新增畫面只帶入未完成品項及尚欠數量。
+function assistOrder(allOrders = false) {
+  void assist.open('open-order', {
+    prefix: allOrders ? '' : current.value.linked_order_no,
+    customer: allOrders ? '' : current.value.customer_code,
     onSelect: (order) => {
+      if (!canSelectOrder.value) return;
       Object.assign(current.value, {
         linked_order_no: order.order_no,
         customer_code: order.customer_code,
@@ -527,9 +533,8 @@ function assistOrder() {
       // The order's own customer name stays; the customer file adds the address.
       syncCustomer();
       current.value.customer_name = order.customer_name;
-      // Only a new sale takes the order's lines; on a shown sale the legacy
-      // form changes the header alone.
-      if (mode.value !== 'new') return;
+      // 已載入銷貨單時維持原本只改表頭的行為，避免覆蓋既有明細。
+      if (selectedKey.value != null) return;
       const lines = (order.lines as Row[])
         .map(
           (line): Row => ({
@@ -692,9 +697,10 @@ onMounted(() => {
               ><input
                 v-model="current.linked_order_no"
                 :data-hint="ASSIST_HINT"
-                v-bind="lock"
+                :readonly="!canSelectOrder"
                 maxlength="10"
-                @keydown.f1.prevent="assistOrder"
+                @dblclick="assistOrder(true)"
+                @keydown.f1.prevent="assistOrder()"
             /></label>
             <label class="legacy-form-field"
               ><span>收款方式</span
