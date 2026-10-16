@@ -611,6 +611,9 @@ onMounted(() => {
           ><span>工作編號</span
           ><input
             v-model="current.work_no"
+            :data-enter-action="
+              mode !== 'new' && Boolean(current.work_no?.trim())
+            "
             :data-hint="FORM_HINT"
             maxlength="10"
             @keydown.enter.prevent="lookupNumber"
@@ -630,6 +633,7 @@ onMounted(() => {
           <span>客　　戶</span>
           <input
             v-model="current.customer_code"
+            :data-enter-action="!isEditable"
             :data-hint="ASSIST_HINT"
             maxlength="10"
             aria-label="客戶編號"

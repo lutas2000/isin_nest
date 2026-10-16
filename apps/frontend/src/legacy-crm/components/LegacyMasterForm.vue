@@ -16,6 +16,7 @@ import {
 import { legacyAlert, legacyConfirm } from '../utils/legacyMessage';
 import { useCloseWindow } from '../utils/legacyWindow';
 import { FORM_HINT } from '../utils/statusHints';
+import { nextEditableField } from '../utils/enterNavigation';
 
 // A legacy master-file form (檔案 menu, isin_vb6 docs/legacy-ui-spec.md): the
 // 新增 F5 … 關閉 C button row and columns of cyan 「標籤：」 fields. Records
@@ -342,7 +343,7 @@ async function lookupKey(event: KeyboardEvent) {
   const input = event.target;
   const value = String(current.value[searchField.value] ?? '').trim();
   if (mode.value === 'new' || !value) {
-    moveFocus(input, 1);
+    nextEditableField(input);
     return;
   }
   if (props.searchField) {
@@ -351,12 +352,12 @@ async function lookupKey(event: KeyboardEvent) {
   }
   const found = await open(value);
   await nextTick();
-  moveFocus(input, 1, found);
+  nextEditableField(input, found);
 }
 
 function nextField(field: Record<string, any>, event: KeyboardEvent) {
   field.onEnter?.(current.value, isEditable.value);
-  moveFocus(event.target, 1);
+  nextEditableField(event.target);
 }
 
 function display(
@@ -478,6 +479,7 @@ defineExpose({
                   field.key !== searchField)
               "
               :data-field="field.key"
+              data-enter-action="true"
               :maxlength="field.maxLength"
               :data-hint="
                 field.hint ??

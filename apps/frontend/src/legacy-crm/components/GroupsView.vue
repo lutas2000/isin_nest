@@ -410,6 +410,9 @@ async function printDocument() {
           ><span>圖組編號</span
           ><input
             v-model="current.group_no"
+            :data-enter-action="
+              mode !== 'new' && Boolean(current.group_no?.trim())
+            "
             :data-hint="FORM_HINT"
             maxlength="10"
             @keydown.enter.prevent="lookupNumber"
@@ -419,6 +422,7 @@ async function printDocument() {
           <span>客　　戶</span>
           <input
             v-model="current.customer_code"
+            :data-enter-action="!isEditable"
             maxlength="10"
             aria-label="客戶編號"
             @keydown.enter.prevent="!isEditable && openQuery()"

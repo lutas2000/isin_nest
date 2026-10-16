@@ -46,6 +46,8 @@ test.beforeEach(async ({ page }, testInfo) => {
       case '/assist/customer':
         result = { items: [customer] };
         break;
+      case '/banks':
+      case '/reports/catalog':
       case '/orders':
         result = { items: [] };
         break;
@@ -81,11 +83,16 @@ test.beforeEach(async ({ page }, testInfo) => {
           truncated: false,
         };
         break;
+      case '/quotes/LONG':
+      case '/receipts/LONG':
       case '/sales/LONG':
       case '/work-orders/LONG':
       case '/groups/LONG':
         result = {
           item: {
+            quote_no: 'LONG',
+            receipt_no: 'LONG',
+            payments: [{ line_no: 1 }],
             sale_no: 'LONG',
             work_no: 'LONG',
             group_no: 'LONG',
@@ -286,3 +293,172 @@ for (const view of ['parts', 'sales', 'work', 'groups']) {
     await expect(field).toHaveValue('D12345678901');
   });
 }
+
+// Enter 與 Tab 使用相同欄位順序，但不進入唯讀欄位或執行存檔。
+test('Enter：訂單新增的日期與客戶代碼依序跳欄，客戶名稱先帶入', async ({
+  page,
+}) => {
+  await openOrders(page);
+  await page.getByRole('button', { name: '新增 F5', exact: true }).click();
+  const date = page
+    .locator('.legacy-form-field')
+    .filter({ hasText: '訂單日期' })
+    .locator('input');
+  const delivery = page
+    .locator('.legacy-form-field')
+    .filter({ hasText: '交貨日期' })
+    .locator('input');
+  await date.press('Enter');
+  await expect(delivery).toBeFocused();
+  const code = page.getByLabel('客戶編號', { exact: true });
+  await code.fill('C001');
+  await code.press('Enter');
+  const name = page.getByLabel('客戶名稱', { exact: true });
+  await expect(name).toHaveValue(customer.full_name);
+  await expect(name).toBeFocused();
+});
+
+for (const view of [
+  'orders',
+  'sales',
+  'work',
+  'groups',
+  'quotes',
+  'receipts',
+]) {
+  test(`Enter：${view} 明細向右跳欄，行末跳下一行`, async ({ page }) => {
+    await page.goto(`/tests/fixtures/legacy-orders.html?view=${view}`);
+    const number = page.locator('.legacy-form-field input').first();
+    await number.fill(view === 'orders' ? 'OLD001' : 'LONG');
+    await number.press('Enter');
+    await page.getByRole('button', { name: '更新 F6', exact: true }).click();
+    const rows = page.locator('tbody tr[data-index]');
+    const inputs = rows
+      .first()
+      .locator(
+        'input:not([readonly]):not([disabled]):not([tabindex="-1"]), select:not([disabled])',
+      );
+    await inputs.first().press('Enter');
+    await expect(inputs.nth(1)).toBeFocused();
+    await inputs.last().press('Enter');
+    await expect(
+      rows
+        .nth(1)
+        .locator(
+          'input:not([readonly]):not([disabled]):not([tabindex="-1"]), select:not([disabled])',
+        )
+        .first(),
+    ).toBeFocused();
+  });
+}
+
+test('Enter：跳過不可編輯與隱藏欄位，保留選字、換行、按鈕與視窗邊界', async ({
+  page,
+}) => {
+  await openOrders(page);
+  await page.locator('.legacy-root').evaluate((root) => {
+    root.insertAdjacentHTML(
+      'beforeend',
+      `<section class="legacy-form" id="enter-case">
+      <input id="enter-first"><input readonly><input disabled><input hidden><input style="display:none"><input tabindex="-1">
+      <select id="enter-select"><option>A</option></select><textarea id="enter-note"></textarea>
+      <button id="enter-save">存檔</button><input id="enter-last">
+    </section><section class="legacy-form"><input id="other-window"></section>`,
+    );
+  });
+  const first = page.locator('#enter-first');
+  await first.press('Enter');
+  await expect(page.locator('#enter-select')).toBeFocused();
+  await page.locator('#enter-select').press('Enter');
+  await expect(page.locator('#enter-note')).toBeFocused();
+  await page.locator('#enter-note').press('Enter');
+  await expect(page.locator('#enter-note')).toHaveValue('\n');
+  await first.focus();
+  await first.dispatchEvent('keydown', {
+    key: 'Enter',
+    isComposing: true,
+    bubbles: true,
+  });
+  await expect(first).toBeFocused();
+  await page.locator('#enter-save').evaluate((button) => {
+    button.addEventListener('click', () =>
+      button.setAttribute('data-clicked', 'true'),
+    );
+  });
+  await page.locator('#enter-save').press('Enter');
+  await expect(page.locator('#enter-save')).toHaveAttribute(
+    'data-clicked',
+    'true',
+  );
+  await page.locator('#enter-last').press('Enter');
+  await expect(page.locator('#enter-last')).toBeFocused();
+});
+
+test('Enter：單號仍載入舊訂單，中文選字不觸發單號查詢', async ({ page }) => {
+  await openOrders(page);
+  const number = orderNumber(page);
+  await number.fill('OLD001');
+  const requests: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
+  await number.dispatchEvent('keydown', {
+    key: 'Enter',
+    isComposing: true,
+    bubbles: true,
+  });
+  await expect(drawing(page)).toHaveValue('');
+  expect(requests.filter((url) => url.includes('/orders/OLD001'))).toHaveLength(
+    0,
+  );
+  await number.press('Enter');
+  await expect(drawing(page)).toHaveValue('D001');
+});
+
+for (const [view, kind] of [
+  ['parts', ''],
+  ['partners', 'customer'],
+  ['partners', 'supplier'],
+  ['master', 'materials'],
+  ['master', 'banks'],
+  ['master', 'phrases'],
+  ['master', 'postal-codes'],
+]) {
+  test(`Enter：基本資料 ${view}/${kind} 新增依序跳欄且不重複跳欄`, async ({
+    page,
+  }) => {
+    await page.goto(
+      `/tests/fixtures/legacy-orders.html?view=${view}&kind=${kind}`,
+    );
+    await page.getByRole('button', { name: '新增 F5', exact: true }).click();
+    const fields = page.locator(
+      '.legacy-master-fields input:not([disabled]):not([readonly])',
+    );
+    await fields.first().press('Enter');
+    await expect(fields.nth(1)).toBeFocused();
+    await fields.nth(1).press('Enter');
+    if ((await fields.count()) > 2) await expect(fields.nth(2)).toBeFocused();
+    else await expect(fields.nth(1)).toBeFocused();
+  });
+}
+
+test('Enter：報表條件跳下一欄，不直接執行報表', async ({ page }) => {
+  await page.goto('/tests/fixtures/legacy-orders.html?view=reports');
+  const fields = page.locator('.legacy-field input');
+  await fields.first().press('Enter');
+  await expect(fields.nth(1)).toBeFocused();
+  await fields.last().press('Enter');
+  await expect(fields.last()).toBeFocused();
+});
+
+test('Enter：查詢視窗保留選取功能', async ({ page }) => {
+  await openOrders(page);
+  await page.getByLabel('客戶編號', { exact: true }).press('F1');
+  const dialog = page.getByRole('dialog', { name: '客戶資料查詢' });
+  await expect(
+    dialog.getByRole('cell', { name: 'C001', exact: true }),
+  ).toBeVisible();
+  await dialog.locator('.legacy-selection-grid').first().press('Enter');
+  await expect(dialog).toBeHidden();
+  await expect(page.getByLabel('客戶編號', { exact: true })).toHaveValue(
+    'C001',
+  );
+});

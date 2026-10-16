@@ -21,6 +21,7 @@ import WorkView from './components/WorkView.vue';
 import ReportsView from './components/ReportsView.vue';
 import MdiChild from './components/MdiChild.vue';
 import LegacyHome from './components/LegacyHome.vue';
+import { handleLegacyEnter } from './utils/enterNavigation';
 import { useAuthStore } from '../stores/auth';
 import { useLegacyReadOnly } from './utils/legacyAccess';
 import { companyProfile } from './utils/companyProfile';
@@ -513,7 +514,7 @@ function logout() {
 </script>
 
 <template>
-  <div class="legacy-root legacy-app">
+  <div class="legacy-root legacy-app" @keydown.capture="handleLegacyEnter">
     <div class="legacy-app-title">{{ titleText }}</div>
 
     <nav class="legacy-menubar" aria-label="主選單">

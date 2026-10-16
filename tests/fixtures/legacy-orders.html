@@ -2,18 +2,24 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <title>訂單查詢回歸測試</title>
+    <title>舊版輸入畫面回歸測試</title>
   </head>
   <body>
     <div id="app" class="legacy-root"></div>
     <script type="module">
       import { createApp, h } from 'vue';
+      import { handleLegacyEnter } from '/apps/frontend/src/legacy-crm/utils/enterNavigation';
       import { createPinia } from 'pinia';
       import OrdersView from '/apps/frontend/src/legacy-crm/components/OrdersView.vue';
       import PartsView from '/apps/frontend/src/legacy-crm/components/PartsView.vue';
       import SalesView from '/apps/frontend/src/legacy-crm/components/SalesView.vue';
       import WorkView from '/apps/frontend/src/legacy-crm/components/WorkView.vue';
       import GroupsView from '/apps/frontend/src/legacy-crm/components/GroupsView.vue';
+      import QuotesView from '/apps/frontend/src/legacy-crm/components/QuotesView.vue';
+      import ReceiptsView from '/apps/frontend/src/legacy-crm/components/ReceiptsView.vue';
+      import ReportsView from '/apps/frontend/src/legacy-crm/components/ReportsView.vue';
+      import PartnersView from '/apps/frontend/src/legacy-crm/components/PartnersView.vue';
+      import MasterDataView from '/apps/frontend/src/legacy-crm/components/MasterDataView.vue';
       import { useAuthStore } from '/apps/frontend/src/stores/auth';
       import '/apps/frontend/src/legacy-crm/styles/tokens.css';
       import '/apps/frontend/src/legacy-crm/styles/legacy.css';
@@ -34,6 +40,11 @@
       };
       localStorage.setItem('auth_token', 'test-only');
       const views = {
+        quotes: QuotesView,
+        receipts: ReceiptsView,
+        reports: ReportsView,
+        partners: PartnersView,
+        master: MasterDataView,
         orders: OrdersView,
         parts: PartsView,
         sales: SalesView,
@@ -42,7 +53,18 @@
       };
       const view =
         views[new URLSearchParams(location.search).get('view')] || OrdersView;
-      createApp({ render: () => h(view, { title: '圖號回歸測試' }) })
+      document
+        .querySelector('.legacy-root')
+        .addEventListener('keydown', handleLegacyEnter, true);
+      createApp({
+        render: () =>
+          h(view, {
+            title: '舊版輸入回歸測試',
+            kind:
+              new URLSearchParams(location.search).get('kind') || 'customer',
+            group: 'order-reports',
+          }),
+      })
         .use(pinia)
         .mount('#app');
     </script>
