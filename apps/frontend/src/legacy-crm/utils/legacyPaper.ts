@@ -1,3 +1,8 @@
+import {
+  onPrintPaper,
+  printContentHeight,
+  type PrintPaperSize,
+} from './printPaperSize';
 import type { PaperPage, PaperText } from './legacyPapers';
 
 // Paper layouts of the legacy 資料列印 reports (isin_vb6 src/utils/legacyPaper.js,
@@ -22,6 +27,7 @@ export interface ReportResult {
 }
 
 export interface ReportContext {
+  paperSize?: PrintPaperSize;
   company: string;
   profile: { name: string; address: string; phone: string; fax: string };
   printDate: string;
@@ -1370,7 +1376,13 @@ function invoicePages(
   };
   // The next line goes on a new half sheet when its baseline would pass the bottom.
   const room = () => {
-    if (y > INVOICE_PX.bottom) newPage(true);
+    if (
+      y >
+      (ctx.paperSize
+        ? printContentHeight(ctx.paperSize) - 32
+        : INVOICE_PX.bottom)
+    )
+      newPage(true);
   };
 
   for (const customer of result.pages ?? []) {
@@ -1737,9 +1749,16 @@ export function buildLegacyPages(
 ): PaperPage[] {
   const layout = legacyPaperLayouts[reportKey];
   if (!layout || !result) return [];
-  if (layout.kind === 'label') return labelPages(result);
-  if (layout.kind === 'envelope') return envelopePages(result, ctx);
-  if (layout.kind === 'invoice')
-    return invoicePages(result, ctx, layout.detailed);
-  return pxPages(layout, ctx, layout.lines(result, ctx));
+  let pages: PaperPage[] = [];
+  if (layout.kind === 'label') pages = labelPages(result);
+  else if (layout.kind === 'envelope') pages = envelopePages(result, ctx);
+  else if ('detailed' in layout)
+    pages = invoicePages(result, ctx, layout.detailed);
+  else if ('unit' in layout) {
+    const sized = ctx.paperSize
+      ? { ...layout, bottom: printContentHeight(ctx.paperSize) - 32 }
+      : layout;
+    pages = pxPages(sized, ctx, layout.lines(result, ctx));
+  }
+  return ctx.paperSize ? onPrintPaper(pages, ctx.paperSize) : pages;
 }

@@ -6,12 +6,14 @@
 // these papers on 2026-10-07. styles/legacy-print.css sets the same sizes.
 const mm = (twips: number) => (twips / 1440) * 25.4;
 
-export type LegacyPaperName = 'half' | 'full' | 'label';
+export type LegacyPaperName = 'half' | 'full' | 'label' | 'b5' | 'a4';
 
 export const LEGACY_PAPERS: Record<
   LegacyPaperName,
   { width: number; height: number }
 > = {
+  b5: { width: 176, height: 250 },
+  a4: { width: 210, height: 297 },
   // 訂貨單, 出貨單, 工作單, 信封, and 請款單 with 慣例設定 紙張大小 半張 (on site).
   half: { width: mm(13040), height: mm(7920) },
   // 估價單, 完工記錄單, 圖組組合表 and the reports.
@@ -66,6 +68,7 @@ export interface PaperImage {
 }
 
 export interface PaperPage {
+  contentScale?: number;
   number: number;
   kind?: string;
   paper?: LegacyPaperName;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import LegacyAssistHost from './LegacyAssistHost.vue';
 import LegacyPreviewWindow from './LegacyPreviewWindow.vue';
 import LegacyReportSheet from './LegacyReportSheet.vue';
@@ -7,6 +7,7 @@ import LegacySelectionWindow from './LegacySelectionWindow.vue';
 import { legacyGet, queryString } from '../services/legacyApi';
 import { logLegacyPrint } from '../services/legacyPrintLog';
 import { formatRocDate } from '../utils/reportDates';
+import type { PrintPaperSize } from '../utils/printPaperSize';
 import { canPrintReport } from '../utils/reportPrinting';
 import { useLegacyAssist } from '../utils/legacyAssist';
 import {
@@ -74,6 +75,10 @@ const paperTitle = computed(
     dialog.value.labels[selectedKey.value] ?? selectedReport.value?.title ?? '',
 );
 const previewOpen = ref(false);
+const paperSize = ref<PrintPaperSize>('b5');
+watch(paperSize, () => {
+  previewPage.value = 0;
+});
 const previewZoom = ref(1);
 const canPrint = computed(() =>
   canPrintReport(selectedReport.value?.key, result.value),
@@ -88,6 +93,7 @@ let selectionToken = 0;
 const pages = computed(() =>
   result.value
     ? buildLegacyPages(selectedKey.value, result.value, {
+        paperSize: paperSize.value,
         company: companyProfile.name,
         profile: companyProfile,
         printDate: printDate.value,
@@ -183,6 +189,7 @@ async function previewReport() {
       statusMessage.value = '沒有符合條件的未收帳款。';
       return;
     }
+    paperSize.value = 'b5';
     previewOpen.value = true;
   } catch (error) {
     result.value = null;
@@ -265,7 +272,11 @@ async function printReport() {
   logLegacyPrint({
     kind: isInvoice.value ? 'statement_print' : 'report_print',
     target: paperTitle.value || selectedKey.value,
-    criteria: { report: selectedKey.value, ...criteria() },
+    criteria: {
+      report: selectedKey.value,
+      ...criteria(),
+      paper_size: paperSize.value,
+    },
     // 請款單 counts its sales, as the backend's report_query does.
     row_count: isInvoice.value
       ? (result.value.pages ?? []).reduce(
@@ -363,6 +374,7 @@ onMounted(loadCatalog);
       v-if="previewOpen && result"
       v-model:page="previewPage"
       v-model:zoom="previewZoom"
+      v-model:paper-size="paperSize"
       :label="paperTitle"
       :page-count="pages.length"
       :printable="canPrint"

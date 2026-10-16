@@ -603,6 +603,7 @@ async function printDocument() {
       v-if="printState"
       :label="printState.label"
       :pages="printState.pages"
+      :build-pages="printState.buildPages"
       :log="printState.log"
       @close="printState = null"
     />

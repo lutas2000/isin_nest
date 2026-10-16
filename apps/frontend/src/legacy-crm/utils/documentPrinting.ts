@@ -1,3 +1,4 @@
+import { onPrintPaper, type PrintPaperSize } from './printPaperSize';
 import { legacyGet } from '../services/legacyApi';
 import { companyProfile } from './companyProfile';
 import {
@@ -90,6 +91,7 @@ const documents: Record<
 export interface DocumentPrint {
   label: string;
   pages: PaperPage[];
+  buildPages: (size: PrintPaperSize) => PaperPage[];
   // What the print log records (services/legacyPrintLog.ts).
   log: { target: string; entityKey: string; criteria?: Record<string, string> };
 }
@@ -107,9 +109,19 @@ export async function buildDocumentPrint(
     number,
     definition.shapes,
   );
+  const buildPages = (size: PrintPaperSize) =>
+    onPrintPaper(
+      kind === 'label'
+        ? partLabelPages(data.document, data, {
+            quantityDecimals: type === 'sale' ? 2 : 0,
+          })
+        : definition.pages(data.document, { ...data, paperSize: size }),
+      size,
+    );
   if (kind === 'label') {
     return {
       label: '標籤',
+      buildPages,
       pages: partLabelPages(data.document, data, {
         quantityDecimals: type === 'sale' ? 2 : 0,
       }),
@@ -122,6 +134,7 @@ export async function buildDocumentPrint(
   }
   return {
     label: definition.label,
+    buildPages,
     pages: definition.pages(data.document, data),
     log: { target: definition.label, entityKey: number },
   };

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue';
+import type { PrintPaperSize } from '../utils/printPaperSize';
 
 // The legacy 資料列印 window (isin_vb6 src/components/LegacyPreviewWindow.vue):
 // page and zoom toolbar along the top right with the same shortcut letters,
@@ -12,6 +13,7 @@ const props = defineProps({
   printTitle: { type: String, default: '列印版面尚待核對' },
 });
 const pageIndex = defineModel<number>('page', { default: 0 });
+const paperSize = defineModel<PrintPaperSize>('paperSize', { default: 'b5' });
 const zoom = defineModel<number>('zoom', { default: 1 });
 const emit = defineEmits(['close', 'print']);
 
@@ -43,6 +45,12 @@ const shortcuts: Record<string, () => unknown> = {
 
 function handleKey(event: KeyboardEvent) {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
+  if (
+    event.target instanceof HTMLSelectElement ||
+    event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLTextAreaElement
+  )
+    return;
   const action = shortcuts[event.key.toLowerCase()];
   if (!action) return;
   event.preventDefault();
@@ -63,6 +71,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKey, true));
   >
     <div class="legacy-preview-titlebar">資料列印</div>
     <div class="legacy-preview-toolbar">
+      <label
+        >紙張
+        <select v-model="paperSize" aria-label="列印紙張">
+          <option value="b5">B5</option>
+          <option value="a4">A4</option>
+        </select></label
+      >
       <span class="legacy-preview-page"
         >第{{ Math.max(pageCount, 1) }}-{{ pageIndex + 1 }}頁</span
       >

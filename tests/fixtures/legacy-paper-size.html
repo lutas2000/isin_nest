@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>紙張切換回歸測試</title>
+  </head>
+  <body>
+    <div id="app" class="legacy-root"></div>
+    <script type="module">
+      import { createApp, h, ref } from 'vue';
+      import { createPinia } from 'pinia';
+      import LegacyDocumentPrint from '/apps/frontend/src/legacy-crm/components/LegacyDocumentPrint.vue';
+      import ReportsView from '/apps/frontend/src/legacy-crm/components/ReportsView.vue';
+      import { buildDocumentPrint } from '/apps/frontend/src/legacy-crm/utils/documentPrinting';
+      import '/apps/frontend/src/legacy-crm/styles/tokens.css';
+      import '/apps/frontend/src/legacy-crm/styles/legacy.css';
+      import '/apps/frontend/src/legacy-crm/styles/legacy-print.css';
+      const type = new URLSearchParams(location.search).get('type') || 'order';
+      localStorage.setItem('auth_token', 'test-only');
+      createApp({
+        setup() {
+          const printed = ref(null);
+          const open = async () => {
+            printed.value = await buildDocumentPrint(
+              type === 'label' ? 'label' : 'document',
+              type === 'label' ? 'order' : type,
+              'P001',
+            );
+          };
+          if (type !== 'report') open();
+          return () =>
+            h(
+              'div',
+              { class: 'legacy-child active' },
+              type === 'report'
+                ? [
+                    h(ReportsView, {
+                      title: '訂單報表',
+                      group: 'order-reports',
+                    }),
+                  ]
+                : [
+                    h('button', { onClick: open }, '重新開啟'),
+                    printed.value &&
+                      h(LegacyDocumentPrint, {
+                        ...printed.value,
+                        onClose: () => {
+                          printed.value = null;
+                        },
+                      }),
+                  ],
+            );
+        },
+      })
+        .use(createPinia())
+        .mount('#app');
+    </script>
+  </body>
+</html>

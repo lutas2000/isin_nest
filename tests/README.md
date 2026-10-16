@@ -266,3 +266,13 @@ export default defineConfig({
 - [Playwright 官方文檔](https://playwright.dev/docs/intro)
 - [Playwright 測試生成器](https://playwright.dev/docs/codegen)
 - [Playwright 最佳實踐](https://playwright.dev/docs/best-practices)
+
+### 舊版列印 B5／A4
+
+`tests/legacy-crm/paper-size.spec.ts` 與查詢、跳欄、後加工測試使用相同獨立設定：
+
+```bash
+LEGACY_CRM_E2E_CHANNEL=chrome npx playwright test -c tests/legacy-crm/orders-search.config.ts
+```
+
+`tests/fixtures/legacy-paper-size.html` 載入真實單據預覽與報表元件，API 由固定測試資料攔截；不連資料庫。涵蓋 B5 預設、A4 切換、重開重設、各種單據／報表／請款單長資料分頁與邊界、簡圖和報價備註不漏印、列印紀錄；訂貨單另以 Chrome PDF 驗證紙張尺寸及頁數，PDF 與截圖保存在忽略的 `test-results/`。

@@ -1,11 +1,12 @@
 /*
  * 舊版銷管的列印（單據列印 P、列印標籤 L、報表印出 O），搬自 isin_vb6 src/style.css
  * 的 @page 與 @media print（v0-final）。紙張見 utils/legacyPapers.ts：
+ * 預覽預設直式 B5、可切換 A4；另保留原始座標比對用的
  * 9.06 吋連續報表紙全張（230 × 279.4 mm）、半張（230 × 139.7 mm），以及
  * 90 × 38.1 mm 標籤。
  *
  * 只在舊版畫面有列印頁時作用，不影響新版頁面的列印：
- * - 只用具名的 @page（legacy-full、legacy-half、legacy-label），不改預設紙張。
+ * - 只用具名的 @page（legacy-b5、legacy-a4 與原始紙張），不改預設紙張。
  *   具名頁只套在 .legacy-print-pages 的紙上。
  * - @media print 的規則都以「作用中視窗的 .legacy-print-pages」為條件（:has）。
  *   同時開著好幾個單據視窗時，只印作用中的那一個。
@@ -15,6 +16,16 @@
  * 實際上都印在預設的全張上。這裡改成列印時只留列印頁、讓它在一般排版流中，半張
  * 與標籤才會用自己的紙張（2026-10-08 以 Chrome PDF 確認）。
  */
+
+@page legacy-b5 {
+  size: 176mm 250mm;
+  margin: 0;
+}
+
+@page legacy-a4 {
+  size: 210mm 297mm;
+  margin: 0;
+}
 
 @page legacy-full {
   size: 230.011mm 279.4mm;
@@ -96,6 +107,13 @@
   .legacy-print-pages .legacy-sheet:last-child {
     break-after: auto;
     page-break-after: auto;
+  }
+
+  .legacy-print-pages .legacy-paper-b5 {
+    page: legacy-b5;
+  }
+  .legacy-print-pages .legacy-paper-a4 {
+    page: legacy-a4;
   }
 
   .legacy-print-pages .legacy-paper-full {

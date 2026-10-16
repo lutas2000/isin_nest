@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, type PropType } from 'vue';
+import { computed, onMounted, ref, watch, type PropType } from 'vue';
 import LegacyPreviewWindow from './LegacyPreviewWindow.vue';
 import LegacyReportSheet from './LegacyReportSheet.vue';
 import { logLegacyPrint } from '../services/legacyPrintLog';
 import type { DocumentPrint } from '../utils/documentPrinting';
+import { onPrintPaper, type PrintPaperSize } from '../utils/printPaperSize';
 import type { PaperPage } from '../utils/legacyPapers';
 
 // 列印 P / 列印標籤(L) of a transaction form (isin_vb6
@@ -13,18 +14,25 @@ import type { PaperPage } from '../utils/legacyPapers';
 const props = defineProps({
   label: { type: String, required: true },
   pages: { type: Array as PropType<PaperPage[]>, required: true },
+  buildPages: {
+    type: Function as PropType<(size: PrintPaperSize) => PaperPage[]>,
+    default: undefined,
+  },
   log: { type: Object as PropType<DocumentPrint['log'] | null>, default: null },
 });
 const emit = defineEmits(['close']);
 const page = ref(0);
+const paperSize = ref<PrintPaperSize>('b5');
+const renderedPages = computed(() =>
+  props.buildPages
+    ? props.buildPages(paperSize.value)
+    : onPrintPaper(props.pages, paperSize.value),
+);
 const zoom = ref(1);
 
-watch(
-  () => props.pages,
-  () => {
-    page.value = 0;
-  },
-);
+watch(renderedPages, () => {
+  page.value = 0;
+});
 
 function record(kind: 'document_preview' | 'document_print') {
   if (!props.log) return;
@@ -32,8 +40,8 @@ function record(kind: 'document_preview' | 'document_print') {
     kind,
     target: props.log.target,
     entity_key: props.log.entityKey,
-    criteria: props.log.criteria ?? null,
-    page_count: props.pages.length,
+    criteria: { ...props.log.criteria, paper_size: paperSize.value },
+    page_count: renderedPages.value.length,
   });
 }
 
@@ -49,17 +57,18 @@ function printPages() {
   <LegacyPreviewWindow
     v-model:page="page"
     v-model:zoom="zoom"
+    v-model:paper-size="paperSize"
     :label="label"
-    :page-count="pages.length"
+    :page-count="renderedPages.length"
     printable
     @print="printPages"
     @close="emit('close')"
   >
-    <LegacyReportSheet v-if="pages[page]" :page="pages[page]" />
+    <LegacyReportSheet v-if="renderedPages[page]" :page="renderedPages[page]" />
   </LegacyPreviewWindow>
   <section class="legacy-print-pages" aria-hidden="true">
     <LegacyReportSheet
-      v-for="(sheet, index) in pages"
+      v-for="(sheet, index) in renderedPages"
       :key="index"
       :page="sheet"
     />

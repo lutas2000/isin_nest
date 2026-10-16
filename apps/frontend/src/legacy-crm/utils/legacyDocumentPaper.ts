@@ -1,3 +1,4 @@
+import { printContentHeight, type PrintPaperSize } from './printPaperSize';
 import type { LegacyPaperName, PaperPage, PaperShape } from './legacyPapers';
 
 // Printouts of single documents (isin_vb6 src/utils/legacyDocumentPaper.js,
@@ -21,6 +22,7 @@ type Row = Record<string, any>;
 
 // What a document printout is built from (documentPrinting.ts).
 export interface DocumentPrintContext {
+  paperSize?: PrintPaperSize;
   customer: Row | null;
   shapes: Record<string, DrawingShape | null | undefined>;
   profile: { name: string; address: string; phone: string; fax: string };
@@ -221,6 +223,11 @@ export function orderDocumentPages(
   order: Row,
   ctx: DocumentPrintContext,
 ): PaperPage[] {
+  const rowsPerPage = ctx.paperSize
+    ? Math.floor((printContentHeight(ctx.paperSize) - 206) / 20.48)
+    : ORDER_ROWS;
+  const bottom = 166.4 + rowsPerPage * 20.48;
+  const footer = bottom + 19.2;
   const lines = filledLines(order.items as Row[]);
   type OrderRow = { item?: Row; number?: number; postProcess: string };
   const groups: OrderRow[][] = [[]];
@@ -233,12 +240,12 @@ export function orderDocumentPages(
       }),
     );
     let current = groups[groups.length - 1];
-    if (current.length && current.length + block.length > ORDER_ROWS) {
+    if (current.length && current.length + block.length > rowsPerPage) {
       current = [];
       groups.push(current);
     }
     for (const row of block) {
-      if (current.length === ORDER_ROWS) {
+      if (current.length === rowsPerPage) {
         current = [];
         groups.push(current);
       }
@@ -258,11 +265,11 @@ export function orderDocumentPages(
     });
     spaced(page, '訂貨單', { x: 313.6, y: 52.48, size: 24, advance: 55.2 });
 
-    for (const y of [64, 145.92, 166.4, 371.2]) hline(page, 6.4, 716.8, y);
-    vline(page, 6.4, 64, 371.2);
-    vline(page, 716.8, 64, 371.2);
+    for (const y of [64, 145.92, 166.4, bottom]) hline(page, 6.4, 716.8, y);
+    vline(page, 6.4, 64, bottom);
+    vline(page, 716.8, 64, bottom);
     for (const x of [51.2, 147.2, 326.4, 409.6, 454.4, 531.2, 576, 620.8])
-      vline(page, x, 145.92, 371.2);
+      vline(page, x, 145.92, bottom);
 
     write(
       12.8,
@@ -308,12 +315,12 @@ export function orderDocumentPages(
       write(537.62, y, text(item.outsource));
       write(582.42, y, text(item.source));
     });
-    if (pageIndex === groups.length - 1 && group.length < ORDER_ROWS)
+    if (pageIndex === groups.length - 1 && group.length < rowsPerPage)
       write(57.6, 181.76 + group.length * 20.48, '<以下空白>');
 
-    write(12.8, 390.4, '覆核：');
-    write(268.81, 390.4, '製圖：');
-    write(524.82, 390.4, `業務：${text(order.actor_name)}`);
+    write(12.8, footer, '覆核：');
+    write(268.81, footer, '製圖：');
+    write(524.82, footer, `業務：${text(order.actor_name)}`);
     return page;
   });
 }
@@ -332,6 +339,19 @@ export function saleDocumentPages(
   sale: Row,
   ctx: DocumentPrintContext,
 ): PaperPage[] {
+  let rowsPerPage = SALE_ROWS;
+  if (ctx.paperSize) {
+    const height = printContentHeight(ctx.paperSize);
+    while (
+      171.84 +
+        (rowsPerPage + 1) * 15.36 +
+        85 +
+        Math.ceil((rowsPerPage + 1) / 7) * 96 <
+      height
+    )
+      rowsPerPage++;
+  }
+  const drawingsTop = ctx.paperSize ? 171.84 + rowsPerPage * 15.36 + 85 : 353.6;
   const customer = ctx.customer ?? {};
   const name = text(customer.full_name) || text(sale.customer_name);
   const rows: SaleRow[] = [];
@@ -347,7 +367,7 @@ export function saleDocumentPages(
     let end = index + 1;
     while (end < rows.length && !rows[end].item) end += 1;
     const block = rows.slice(index, end);
-    if (current.length + block.length > SALE_ROWS && current.length) {
+    if (current.length + block.length > rowsPerPage && current.length) {
       groups.push(current);
       current = [];
     }
@@ -403,28 +423,44 @@ export function saleDocumentPages(
       );
 
       const shape = ctx.shapes?.[text(item.drawing_no)];
-      const cx = 61.2 + slot * 101.76;
+      const cx = 61.2 + (slot % 7) * 101.76;
       const placed = fitShape(shape, {
         cx,
-        cy: 393.6,
+        cy: drawingsTop + 40 + Math.floor(slot / 7) * 96,
         width: 96.64,
         height: 66.88,
       });
       if (placed) {
         page.shapes.push(placed);
         const size = shapeSize(shape);
-        write(cx + 9.52 - (cells(size) * SALE_FONT) / 4, 353.6, size);
+        write(
+          cx + 9.52 - (cells(size) * SALE_FONT) / 4,
+          drawingsTop + Math.floor(slot / 7) * 96,
+          size,
+        );
       }
       slot += 1;
     });
     if (pageIndex === groups.length - 1) {
-      if (group.length < SALE_ROWS)
+      if (group.length < rowsPerPage)
         write(65.28, rowY(group.length), '以下空白');
       const amount = (value: unknown) =>
         Number(value) ? padStart(wholeNumber(value), 12) : '';
-      write(totalsX, rowY(8), amount(sale.amount));
-      write(totalsX, rowY(9), amount(sale.tax_amount));
-      write(totalsX, rowY(10), amount(sale.total_amount));
+      write(
+        totalsX,
+        rowY(ctx.paperSize ? rowsPerPage + 1 : 8),
+        amount(sale.amount),
+      );
+      write(
+        totalsX,
+        rowY(ctx.paperSize ? rowsPerPage + 2 : 9),
+        amount(sale.tax_amount),
+      );
+      write(
+        totalsX,
+        rowY(ctx.paperSize ? rowsPerPage + 3 : 10),
+        amount(sale.total_amount),
+      );
     }
     return page;
   });
@@ -587,6 +623,20 @@ export function workDocumentPages(
   work: Row,
   ctx: DocumentPrintContext,
 ): PaperPage[] {
+  let rowsPerPage = WORK_ROWS;
+  if (ctx.paperSize) {
+    const height = printContentHeight(ctx.paperSize) / 1.28;
+    while (
+      100 +
+        (rowsPerPage + 1) * 16 +
+        Math.ceil((rowsPerPage + 1) / 7) * 85 +
+        12 <
+      height
+    )
+      rowsPerPage++;
+  }
+  const tableBottom = 96 + rowsPerPage * 16;
+  const drawingsTop = tableBottom + 2;
   const items = ((work.items ?? []) as Row[]).filter((item) =>
     [
       'drawing_no',
@@ -604,8 +654,8 @@ export function workDocumentPages(
     lines.push({ item, number: index + 1, post: first });
     if (rest) lines.push({ post: rest });
   });
-  if (lines.length % WORK_ROWS) lines.push({ blank: true });
-  const pages = chunks(lines, WORK_ROWS);
+  if (lines.length % rowsPerPage) lines.push({ blank: true });
+  const pages = chunks(lines, rowsPerPage);
   const code = text(work.customer_code);
 
   return pages.map((group, pageIndex) => {
@@ -615,7 +665,7 @@ export function workDocumentPages(
     print.spread(340, 790, 0, ctx.profile.name);
     print.spread(490, 640, 24, '工作單');
     print.font(12);
-    for (const y of [48, 80, 96, 208]) print.line(30, y, 1130, y);
+    for (const y of [48, 80, 96, tableBottom]) print.line(30, y, 1130, y);
     print.text(40, 50, `客戶名稱：${text(work.customer_name)}      [${code}]`);
     print.text(
       790,
@@ -636,9 +686,10 @@ export function workDocumentPages(
     ].forEach((label, index) => {
       print.centre(WORK_COLUMNS[index], WORK_COLUMNS[index + 1], 82, label);
     });
-    print.line(30, 48, 30, 208);
-    print.line(1130, 48, 1130, 208);
-    for (const x of WORK_COLUMNS.slice(1, -1)) print.line(x, 80, x, 208);
+    print.line(30, 48, 30, tableBottom);
+    print.line(1130, 48, 1130, tableBottom);
+    for (const x of WORK_COLUMNS.slice(1, -1))
+      print.line(x, 80, x, tableBottom);
 
     group.forEach((line, row) => {
       const y = 98 + row * 16;
@@ -659,12 +710,12 @@ export function workDocumentPages(
 
       // 'J': the outline, in the box of this line's position.
       const shape = code ? ctx.shapes?.[text(item.drawing_no)] : null;
-      const left = unitX(row * 157 + 30);
+      const left = unitX((row % 7) * 157 + 30);
       const width = unitX(157);
       const cx = left + width / 2;
       const placed = fitShape(shape, {
         cx,
-        cy: print.y(230) + 27.5 * 1.28,
+        cy: print.y(drawingsTop + 20 + Math.floor(row / 7) * 85) + 27.5 * 1.28,
         width: width - 5.12,
         height: 66.88,
       });
@@ -673,7 +724,9 @@ export function workDocumentPages(
         const size = shapeSize(shape);
         page.items.push({
           x: cx + 9.52 - textWidth(size, print.size()) / 2,
-          y: print.y(215) + print.size() * 0.8,
+          y:
+            print.y(drawingsTop + 5 + Math.floor(row / 7) * 85) +
+            print.size() * 0.8,
           baseline: true,
           size: print.size(),
           text: size,
@@ -681,16 +734,19 @@ export function workDocumentPages(
       }
     });
 
-    print.line(30, 210, 1129, 210);
-    for (let box = 0; box < WORK_ROWS; box += 1) {
-      const x = 30 + box * 157;
-      print.line(x, 225, x + 30, 225);
-      print.line(x, 210, x, 295);
-      print.line(x + 30, 210, x + 30, 225);
-      print.centre(x, x + 30, 212, String(box + 1));
+    for (let band = 0; band < Math.ceil(rowsPerPage / 7); band++) {
+      const top = drawingsTop + band * 85;
+      print.line(30, top, 1129, top);
+      for (let box = 0; box < 7; box++) {
+        const x = 30 + box * 157;
+        print.line(x, top + 15, x + 30, top + 15);
+        print.line(x, top, x, top + 85);
+        print.line(x + 30, top, x + 30, top + 15);
+        print.centre(x, x + 30, top + 2, String(band * 7 + box + 1));
+      }
+      print.line(1129, top, 1129, top + 85);
+      print.line(30, top + 85, 1129, top + 85);
     }
-    print.line(1129, 210, 1129, 295);
-    print.line(30, 295, 1129, 295);
     return page;
   });
 }
@@ -740,72 +796,139 @@ export function quoteDocumentPages(
     }
   });
 
-  const page = newPage(1, 'document', 'full');
-  const print = legacyCommands(page);
-  print.font(18);
-  print.spread(380, 870, 0, profile.name);
-  print.font(12);
-  print.spread(380, 870, 20, profile.address);
-  print.spread(
-    380,
-    870,
-    34,
-    `TEL:${text(profile.phone)}    FAX:${text(profile.fax)}`,
+  const notes = (quote.notes ?? []) as Row[];
+  const noteRows = Math.max(
+    1,
+    ...notes.map((note, index) =>
+      Number(note.line_no) > 0 ? Number(note.line_no) : index + 1,
+    ),
   );
-  print.font(18);
-  print.spread(500, 750, 48, '估價單');
-  print.font(12);
-  for (const y of [69, 117, 133, 613, 635]) print.line(40, y, 1155, y);
-  print.text(
-    50,
-    74,
-    `客戶名稱 ：${text(customer.full_name) || text(quote.customer_name)}    [${text(quote.customer_code)}]`,
-  );
-  print.text(880, 74, `報價編號：${text(quote.quote_no)}`);
-  print.text(50, 88, `ATTENTION：${text(quote.attention)}`);
-  print.text(880, 88, `日    期：${text(quote.quote_date)}`);
-  print.text(50, 102, `聯絡電話 ：${text(customer.phone1)}`);
-  print.text(460, 102, `傳真號碼：${text(customer.fax)}`);
-  print.text(880, 102, `經 手 人：${text(quote.actor_name)}`);
-  [
-    '項次',
-    '客 戶 型 號',
-    '材  質',
-    '厚度',
-    '摘       要',
-    '數  量',
-    '單  價',
-    '金  額',
-  ].forEach((label, index) => {
-    print.centre(QUOTE_COLUMNS[index], QUOTE_COLUMNS[index + 1], 119, label);
-  });
-  print.line(40, 69, 40, 635);
-  print.line(1155, 69, 1155, 635);
-  for (const x of [110, 310, 450, 530, 730]) print.line(x, 117, x, 613);
-  for (const x of [870, 1010]) print.line(x, 117, x, 635);
+  // Reserve the notes block and totals. Long notes continue on their own pages below.
+  const reservedNotes = ctx.paperSize ? Math.min(noteRows, 10) : noteRows;
+  const rowsPerPage = ctx.paperSize
+    ? Math.max(
+        1,
+        Math.floor(
+          (printContentHeight(ctx.paperSize) / 1.28 -
+            220 -
+            reservedNotes * 16) /
+            16,
+        ),
+      )
+    : QUOTE_LINES;
+  const groups = ctx.paperSize
+    ? chunks(lines, rowsPerPage)
+    : [lines.slice(0, QUOTE_LINES)];
+  if (!groups.length) groups.push([]);
+  const noteCapacity = ctx.paperSize
+    ? Math.floor((printContentHeight(ctx.paperSize) / 1.28 - 80) / 16)
+    : 1;
+  const noteGroups =
+    ctx.paperSize && notes.length > reservedNotes
+      ? chunks(notes.slice(reservedNotes), noteCapacity)
+      : [];
+  const totalPages = groups.length + noteGroups.length;
+  const bottom = 133 + rowsPerPage * 16;
+  const offset = bottom - 613;
+  const pages = groups.map((group, pageIndex) => {
+    const page = newPage(pageIndex + 1, 'document', 'full');
+    const print = legacyCommands(page);
+    print.font(18);
+    print.spread(380, 870, 0, profile.name);
+    print.font(12);
+    print.spread(380, 870, 20, profile.address);
+    print.spread(
+      380,
+      870,
+      34,
+      `TEL:${text(profile.phone)}    FAX:${text(profile.fax)}`,
+    );
+    print.font(18);
+    print.spread(500, 750, 48, '估價單');
+    print.font(12);
+    for (const y of [69, 117, 133, bottom, 635 + offset])
+      print.line(40, y, 1155, y);
+    print.text(
+      50,
+      74,
+      `客戶名稱 ：${text(customer.full_name) || text(quote.customer_name)}    [${text(quote.customer_code)}]`,
+    );
+    print.text(880, 74, `報價編號：${text(quote.quote_no)}`);
+    print.text(50, 88, `ATTENTION：${text(quote.attention)}`);
+    print.text(880, 88, `日    期：${text(quote.quote_date)}`);
+    print.text(50, 102, `聯絡電話 ：${text(customer.phone1)}`);
+    print.text(460, 102, `傳真號碼：${text(customer.fax)}`);
+    print.text(880, 102, `經 手 人：${text(quote.actor_name)}`);
+    [
+      '項次',
+      '客 戶 型 號',
+      '材  質',
+      '厚度',
+      '摘       要',
+      '數  量',
+      '單  價',
+      '金  額',
+    ].forEach((label, index) => {
+      print.centre(QUOTE_COLUMNS[index], QUOTE_COLUMNS[index + 1], 119, label);
+    });
+    print.line(40, 69, 40, 635 + offset);
+    print.line(1155, 69, 1155, 635 + offset);
+    for (const x of [110, 310, 450, 530, 730]) print.line(x, 117, x, bottom);
+    for (const x of [870, 1010]) print.line(x, 117, x, 635 + offset);
 
-  lines.slice(0, QUOTE_LINES).forEach((line, row) => {
-    const y = 136 + row * 16;
-    print.text(120, y, line.model);
-    print.text(540, y, line.summary);
-    const item = line.item;
-    if (!item) return;
-    print.text(50, y, padStart(String(line.number), 3));
-    print.text(320, y, text(item.material));
-    print.text(460, y, text(item.thickness));
-    print.text(740, y, legacyNumber(item.quantity, 10, 2));
-    print.text(880, y, legacyNumber(item.unit_price, 10, 2));
-    print.text(1020, y, legacyNumber(item.line_total ?? item.amount, 10, 2));
+    group.forEach((line, row) => {
+      const y = 136 + row * 16;
+      print.text(120, y, line.model);
+      print.text(540, y, line.summary);
+      const item = line.item;
+      if (!item) return;
+      print.text(50, y, padStart(String(line.number), 3));
+      print.text(320, y, text(item.material));
+      print.text(460, y, text(item.thickness));
+      print.text(740, y, legacyNumber(item.quantity, 10, 2));
+      print.text(880, y, legacyNumber(item.unit_price, 10, 2));
+      print.text(1020, y, legacyNumber(item.line_total ?? item.amount, 10, 2));
+    });
+    if (ctx.paperSize)
+      print.text(880, 54, `頁次：${pageIndex + 1}/${totalPages}`);
+    if (pageIndex === groups.length - 1) {
+      print.centre(870, 1010, 616 + offset, '合  計');
+      print.text(
+        1020,
+        616 + offset,
+        legacyNumber(quote.total ?? quote.amount, 10, 2),
+      );
+      print.text(50, 656 + offset, '備註：');
+      notes
+        .filter((_, index) => !ctx.paperSize || index < reservedNotes)
+        .forEach((note, index) => {
+          const position =
+            Number(note.line_no) > 0 ? Number(note.line_no) - 1 : index;
+          print.text(
+            120,
+            672 + offset + (ctx.paperSize ? index : position) * 16,
+            text(note.note),
+          );
+        });
+    }
+    return page;
   });
-  print.centre(870, 1010, 616, '合  計');
-  print.text(1020, 616, legacyNumber(quote.total ?? quote.amount, 10, 2));
-  print.text(50, 656, '備註：');
-  ((quote.notes ?? []) as Row[]).forEach((note, index) => {
-    const position =
-      Number(note.line_no) > 0 ? Number(note.line_no) - 1 : index;
-    print.text(120, 672 + position * 16, text(note.note));
-  });
-  return [page];
+  if (noteGroups.length) {
+    for (const group of noteGroups) {
+      const page = newPage(pages.length + 1, 'document', 'full');
+      const print = legacyCommands(page);
+      print.text(
+        50,
+        24,
+        `估價單 ${text(quote.quote_no)} 備註（續） ${pages.length + 1}/${totalPages}`,
+      );
+      group.forEach((note, index) =>
+        print.text(50, 56 + index * 16, text(note.note)),
+      );
+      pages.push(page);
+    }
+  }
+  return pages;
 }
 
 // 圖組組合表 (圖組建檔 列印 P), from the legacy routine at 0x5b1860 (class
@@ -815,7 +938,13 @@ export function quoteDocumentPages(
 // without a drawing number are skipped.
 const GROUP_BOTTOM = 772;
 
-export function groupDocumentPages(group: Row): PaperPage[] {
+export function groupDocumentPages(
+  group: Row,
+  ctx?: DocumentPrintContext,
+): PaperPage[] {
+  const bottom = ctx?.paperSize
+    ? (printContentHeight(ctx.paperSize) - 20) / 1.28
+    : GROUP_BOTTOM;
   const items = ((group.items ?? []) as Row[]).filter((item) =>
     text(item.drawing_no),
   );
@@ -861,7 +990,7 @@ export function groupDocumentPages(group: Row): PaperPage[] {
     print.text(830, y, legacyNumber(item.quantity, 10, 2));
     print.text(980, y, text(item.is_laser));
     print.line(30, y + 15, 1150, y + 15);
-    if (y + 15 > GROUP_BOTTOM && index < items.length - 1) start();
+    if (y + 15 > bottom && index < items.length - 1) start();
     else y += 18;
   });
   return pages;

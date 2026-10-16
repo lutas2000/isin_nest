@@ -102,7 +102,19 @@ function itemStyle(item: PaperText) {
     ]"
     :style="sheetStyle"
   >
-    <div class="legacy-sheet-origin">
+    <div
+      class="legacy-sheet-origin"
+      :style="
+        page.contentScale
+          ? {
+              left: `${(LEGACY_PAPERS[paperName].width - 166) / 2}mm`,
+              top: '5mm',
+              transformOrigin: 'top left',
+              transform: `scale(${page.contentScale})`,
+            }
+          : undefined
+      "
+    >
       <div
         v-for="(rule, index) in page.rules"
         :key="`r${index}`"
