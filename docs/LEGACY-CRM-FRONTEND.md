@@ -86,6 +86,13 @@
 - **字型**：細明體優先用本機 `MingLiU`；沒有時用全字庫正宋體子集 `assets/fonts/tw-sung-legacy.woff2`（3.2 MB，授權見同目錄 `README.md`）。
   - 放 `src/` 而不是 `public/`：專案的 `.gitignore` 會忽略 `public`。
 
+## 電腦圖號長度
+
+- 電腦圖號上限為 12 個字元；工件建檔、訂單、銷貨、工作單與圖組的輸入及後端驗證一致。原有 10 碼以下圖號仍可使用，客戶型號／客戶圖號維持 40 字元。
+- 部署時須先套用 `ExpandLegacyDrawingNumber1792140180016` migration，將 `legacy_crm.parts`、`order_items`、`sales_items`、`work_items`、`drawing_group_items` 的 `drawing_no` 擴充至 `varchar(12)`，保留資料、索引、主鍵及 C collation。
+- 降版前須先處理所有 11–12 碼圖號；migration 會拒絕縮欄造成截斷，不會自動裁切圖號。
+- 回歸驗證涵蓋後端 12 碼接受／13 碼拒絕、五表實際寫入、migration 升降版及前端鍵盤輸入與 F1 查詢。
+
 ## 訂單未新增時的查詢
 
 - 訂單登錄剛開啟、尚未載入舊單或取消新增後，不需要按「新增」或填訂單編號，即可輸入客戶編號、客戶名稱、明細的電腦圖號與客戶型號。

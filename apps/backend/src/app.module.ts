@@ -32,6 +32,7 @@ import { DropStaleHrNameForeignKeys1777300000000 } from './migrations/1777300000
 import { CreateLegacyCrmSchema1791438513900 } from './migrations/1791438513900-CreateLegacyCrmSchema';
 import { PrepareLegacyCrmApi1791460000000 } from './migrations/1791460000000-PrepareLegacyCrmApi';
 import { CreateFeedbackReports1791468000000 } from './migrations/1791468000000-CreateFeedbackReports';
+import { ExpandLegacyDrawingNumber1792140180016 } from './migrations/1792140180016-ExpandLegacyDrawingNumber';
 import { SystemModule } from './system/system.module';
 import { TimeClockModule } from './time-clock/time-clock.module';
 import { LegacyStaffModule } from './legacy-staff/legacy-staff.module';
@@ -97,6 +98,7 @@ const rootEnvPath = path.resolve(__dirname, '../../../.env');
           CreateLegacyCrmSchema1791438513900,
           PrepareLegacyCrmApi1791460000000,
           CreateFeedbackReports1791468000000,
+          ExpandLegacyDrawingNumber1792140180016,
         ],
         migrationsRun:
           parseBool(configService.get<string>('DB_MIGRATIONS_RUN')) ?? false,

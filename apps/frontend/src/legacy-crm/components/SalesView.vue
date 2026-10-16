@@ -784,7 +784,7 @@ onMounted(() => {
       <table>
         <colgroup>
           <col style="width: 40px" />
-          <col style="width: 96px" />
+          <col style="width: 110px" />
           <col style="width: 299px" />
           <col style="width: 89px" />
           <col style="width: 59px" />
@@ -820,7 +820,7 @@ onMounted(() => {
                 v-model="item.drawing_no"
                 :data-hint="LINE_HINTS.sales"
                 v-bind="lock"
-                maxlength="10"
+                maxlength="12"
                 :aria-label="`第 ${index + 1} 列電腦圖號`"
                 @change="
                   syncPart(item);

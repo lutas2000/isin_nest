@@ -292,8 +292,8 @@ export function normalizePart(
   for (const [field, limit] of Object.entries(PART_TEXT_LIMITS)) {
     row[field] = boundedText(FIELD_LABELS[field], input[field], limit);
   }
-  if (charLength(drawingNo) > 10)
-    throw new LegacyValidationError('電腦圖號最多 10 個字元');
+  if (charLength(drawingNo) > 12)
+    throw new LegacyValidationError('電腦圖號最多 12 個字元');
   for (const field of PART_PRICE_FIELDS)
     row[`${field}_units`] = toUnits(FIELD_LABELS[field], input[field]);
   return applyDates('parts', row, options.dates ?? 'strict', FIELD_LABELS);
@@ -474,7 +474,7 @@ const ORDER_ITEM: Record<string, [string, number]> = {
   legacy_factor_no: ['明細客戶編號', 10],
   legacy_factor: ['明細客戶名稱', 10],
   legacy_d_dwgok: ['舊欄位 D_DWGOK', 10],
-  drawing_no: ['電腦圖號', 10],
+  drawing_no: ['電腦圖號', 12],
   customer_model: ['客戶型號', 40],
   material: ['材質', 10],
   thickness: ['厚度', 4],
@@ -602,7 +602,7 @@ const SALES_ITEM: Record<string, [string, number]> = {
   legacy_date_r: ['明細出貨日期', 10],
   legacy_factor_no: ['明細客戶編號', 10],
   legacy_factor: ['明細客戶名稱', 10],
-  drawing_no: ['電腦圖號', 10],
+  drawing_no: ['電腦圖號', 12],
   customer_model: ['客戶型號', 40],
   material: ['材質', 10],
   thickness: ['厚度', 6],
@@ -967,7 +967,7 @@ const WORK_HEADER: Record<string, [string, number]> = {
 };
 const WORK_ITEM_LIMITS: Record<string, number> = {
   order_no: 10,
-  drawing_no: 10,
+  drawing_no: 12,
   material: 10,
   thickness: 6,
   outsource: 10,
@@ -1039,7 +1039,7 @@ const GROUP_HEADER: Record<string, [string, number]> = {
   legacy_xx: ['舊欄位 XX', 1],
 };
 const GROUP_ITEM: Record<string, [string, number]> = {
-  drawing_no: ['電腦圖號', 10],
+  drawing_no: ['電腦圖號', 12],
   customer_drawing_no: ['客戶圖號', 40],
   material: ['材質', 10],
   thickness: ['厚度', 6],

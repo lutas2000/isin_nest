@@ -68,7 +68,7 @@ export class LegacyOrderItem {
   @TextColumn(10) legacy_factor_no: string;
   @TextColumn(10) legacy_factor: string;
   @TextColumn(10) legacy_d_dwgok: string;
-  @TextColumn(10) drawing_no: string;
+  @TextColumn(12) drawing_no: string;
   @TextColumn(40) customer_model: string;
   @TextColumn(10) material: string;
   @TextColumn(4) thickness: string;

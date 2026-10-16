@@ -9,6 +9,7 @@ import {
   normalizeQuote,
   normalizeReceipt,
   normalizeSale,
+  normalizeWork,
 } from './legacy-records';
 import { multiplyUnits, toUnits } from './units';
 
@@ -31,6 +32,50 @@ describe('units', () => {
 });
 
 describe('legacy-records', () => {
+  it.each([10, 11, 12])(
+    'accepts a %i-character part drawing number',
+    (length) => {
+      const drawing_no = 'D'.repeat(length);
+      expect(normalizePart({ drawing_no }).drawing_no).toBe(drawing_no);
+    },
+  );
+
+  it('rejects part drawing numbers longer than 12 characters', () => {
+    expect(() => normalizePart({ drawing_no: 'D'.repeat(13) })).toThrow(
+      '電腦圖號最多 12 個字元',
+    );
+  });
+
+  it.each([
+    [
+      'order',
+      (drawing_no: string) =>
+        normalizeOrder({ order_no: 'O1', items: [{ drawing_no }] }),
+    ],
+    [
+      'sale',
+      (drawing_no: string) =>
+        normalizeSale({ sale_no: 'S1', items: [{ drawing_no }] }),
+    ],
+    [
+      'work',
+      (drawing_no: string) =>
+        normalizeWork({ work_no: 'W1', items: [{ drawing_no }] }),
+    ],
+    [
+      'group',
+      (drawing_no: string) =>
+        normalizeDrawingGroup({ group_no: 'G1', items: [{ drawing_no }] }),
+    ],
+  ] as const)(
+    'preserves 12-character drawing numbers on %s lines and rejects 13',
+    (_name, normalize) => {
+      const drawing_no = 'D12345678901';
+      expect(normalize(drawing_no).lines.items[0].drawing_no).toBe(drawing_no);
+      expect(() => normalize(drawing_no + '2')).toThrow('最多 12 個字元');
+    },
+  );
+
   it('trims partner text and checks the legacy limits', () => {
     const row = normalizePartner(
       { code: ' C001 ', full_name: ' 測試 ', credit_limit: '100' },

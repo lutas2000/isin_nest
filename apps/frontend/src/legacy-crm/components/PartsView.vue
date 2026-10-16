@@ -26,9 +26,9 @@ const columns = [
     {
       key: 'drawing_no',
       label: '電腦圖號',
-      width: 90,
+      width: 110,
       size: 'short',
-      maxLength: 10,
+      maxLength: 12,
     },
     {
       key: 'customer_code',

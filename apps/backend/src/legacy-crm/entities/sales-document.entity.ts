@@ -71,7 +71,7 @@ export class LegacySalesItem {
   @RocDateRawColumn() legacy_date_r_raw: string | null;
   @TextColumn(10) legacy_factor_no: string;
   @TextColumn(10) legacy_factor: string;
-  @TextColumn(10) drawing_no: string;
+  @TextColumn(12) drawing_no: string;
   @TextColumn(40) customer_model: string;
   @TextColumn(10) material: string;
   @TextColumn(6) thickness: string;

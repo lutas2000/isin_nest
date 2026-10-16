@@ -46,6 +46,9 @@ test.beforeEach(async ({ page }, testInfo) => {
       case '/assist/customer':
         result = { items: [customer] };
         break;
+      case '/orders':
+        result = { items: [] };
+        break;
       case '/parts':
         result = { items: [part] };
         break;
@@ -76,6 +79,18 @@ test.beforeEach(async ({ page }, testInfo) => {
         result = {
           items: [{ number: order.order_no, party: order.customer_name }],
           truncated: false,
+        };
+        break;
+      case '/sales/LONG':
+      case '/work-orders/LONG':
+      case '/groups/LONG':
+        result = {
+          item: {
+            sale_no: 'LONG',
+            work_no: 'LONG',
+            group_no: 'LONG',
+            items: [{ ...part, line_no: 1 }],
+          },
         };
         break;
       case '/orders/OLD001':
@@ -236,3 +251,38 @@ test('唯讀使用者可在空白單查圖，載入既有單據後 F1 不改明�
   await expect(drawing(page)).toHaveValue('D001');
   await expect(model(page)).toHaveValue('MODEL-A');
 });
+
+test('電腦圖號可完整輸入 12 碼，並以完整圖號執行 F1 查詢', async ({ page }) => {
+  await openOrders(page);
+  const number = 'D12345678901';
+  await drawing(page).pressSequentially(number + 'X');
+  await expect(drawing(page)).toHaveValue(number);
+  const lookup = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      url.pathname.endsWith('/assist/part') &&
+      url.searchParams.get('prefix') === number
+    );
+  });
+  await drawing(page).press('F1');
+  await lookup;
+});
+
+for (const view of ['parts', 'sales', 'work', 'groups']) {
+  test(`${view}：電腦圖號輸入上限為 12 碼`, async ({ page }) => {
+    await page.goto(`/tests/fixtures/legacy-orders.html?view=${view}`);
+    const key = page.locator('.legacy-form-field input').first();
+    if (view !== 'parts') {
+      await key.fill('LONG');
+      await key.press('Enter');
+    }
+    const field =
+      view === 'parts'
+        ? page.locator('input[data-field="drawing_no"]')
+        : drawing(page);
+    await expect(field).toBeEditable();
+    await field.fill('');
+    await field.pressSequentially('D12345678901X');
+    await expect(field).toHaveValue('D12345678901');
+  });
+}

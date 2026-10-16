@@ -465,7 +465,7 @@ async function printDocument() {
       <table>
         <colgroup>
           <col style="width: 40px" />
-          <col style="width: 89px" />
+          <col style="width: 110px" />
           <col style="width: 269px" />
           <col style="width: 89px" />
           <col style="width: 62px" />
@@ -495,7 +495,7 @@ async function printDocument() {
                 v-model="item.drawing_no"
                 :data-hint="LINE_HINTS.groups"
                 v-bind="lock"
-                maxlength="10"
+                maxlength="12"
                 :aria-label="`第 ${index + 1} 列電腦圖號`"
                 @input="lineChanged"
                 @keydown.f1.prevent="isEditable && assistPart(index)"

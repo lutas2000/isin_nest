@@ -14,7 +14,7 @@ import {
 @Entity({ schema: LEGACY_CRM_SCHEMA, name: 'parts' })
 @Check(`"drawing_no" <> ''`)
 export class LegacyPart {
-  @KeyColumn(10)
+  @KeyColumn(12)
   drawing_no: string;
 
   @TextColumn(30) drawing_name: string;

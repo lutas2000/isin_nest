@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
 import { CreateLegacyCrmSchema1791438513900 } from '../migrations/1791438513900-CreateLegacyCrmSchema';
 import { PrepareLegacyCrmApi1791460000000 } from '../migrations/1791460000000-PrepareLegacyCrmApi';
+import { ExpandLegacyDrawingNumber1792140180016 } from '../migrations/1792140180016-ExpandLegacyDrawingNumber';
 import { LegacyBrowseService } from './browse/browse.service';
 import { LegacyRequestContext } from './common/legacy-access';
 import { LegacyGroupsService } from './documents/groups.service';
@@ -97,6 +98,7 @@ const enabled =
       const runner = dataSource.createQueryRunner();
       await new CreateLegacyCrmSchema1791438513900().up(runner);
       await new PrepareLegacyCrmApi1791460000000().up(runner);
+      await new ExpandLegacyDrawingNumber1792140180016().up(runner);
       await runner.release();
 
       const writeLog = new LegacyWriteLogService();
@@ -138,6 +140,113 @@ const enabled =
        WHERE table_schema = 'legacy_crm' AND table_name = 'order_documents' AND column_name = 'order_no'`,
       );
       expect(column.collation_name).toBe('C');
+    });
+
+    it('reverts and reapplies drawing lengths without losing data or indexes, and refuses truncation', async () => {
+      const columns = () =>
+        query(
+          `SELECT table_name, character_maximum_length, collation_name FROM information_schema.columns WHERE table_schema = 'legacy_crm' AND column_name = 'drawing_no' ORDER BY table_name`,
+        );
+      const indexes = () =>
+        query(
+          `SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'legacy_crm' AND tablename IN ('parts', 'order_items', 'sales_items', 'work_items', 'drawing_group_items') ORDER BY indexname`,
+        );
+      await masters.createPart({ drawing_no: 'SHORT1' }, context);
+      const before = await indexes();
+      const runner = dataSource.createQueryRunner();
+      const migration = new ExpandLegacyDrawingNumber1792140180016();
+      try {
+        await migration.down(runner);
+        expect(
+          (await columns()).map(
+            (row: { character_maximum_length: number }) =>
+              row.character_maximum_length,
+          ),
+        ).toEqual([10, 10, 10, 10, 10]);
+        await migration.up(runner);
+        expect(await indexes()).toEqual(before);
+        expect(
+          await query(
+            `SELECT drawing_no FROM legacy_crm.parts WHERE drawing_no = 'SHORT1'`,
+          ),
+        ).toHaveLength(1);
+        await masters.createPart({ drawing_no: 'D12345678901' }, context);
+        await runner.startTransaction();
+        await expect(migration.down(runner)).rejects.toThrow(
+          'character varying(10)',
+        );
+        await runner.rollbackTransaction();
+        const expanded = await columns();
+        expect(expanded).toHaveLength(5);
+        expect(
+          expanded.every(
+            (row: {
+              character_maximum_length: number;
+              collation_name: string;
+            }) =>
+              row.character_maximum_length === 12 && row.collation_name === 'C',
+          ),
+        ).toBe(true);
+        expect(
+          await query(
+            `SELECT drawing_no FROM legacy_crm.parts WHERE drawing_no = 'D12345678901'`,
+          ),
+        ).toHaveLength(1);
+      } finally {
+        if (runner.isTransactionActive) await runner.rollbackTransaction();
+        await runner.release();
+      }
+    });
+
+    it('stores and looks up 12-character drawing numbers across parts and documents', async () => {
+      const drawing_no = 'D12345678901';
+      await masters.createPart({ drawing_no, customer_code: 'C1' }, context);
+      await orders.create(
+        {
+          order_no: 'LONG1',
+          customer_code: 'C1',
+          items: [{ drawing_no, quantity: '1' }],
+        },
+        context,
+      );
+      await sales.create(
+        {
+          sale_no: 'LONG1',
+          customer_code: 'C1',
+          items: [{ drawing_no, quantity: '1' }],
+        },
+        context,
+      );
+      await works.create(
+        {
+          work_no: 'LONG1',
+          customer_code: 'C1',
+          items: [{ drawing_no, order_quantity: '1' }],
+        },
+        context,
+      );
+      await groups.create(
+        { group_no: 'LONG1', items: [{ drawing_no, quantity: '1' }] },
+        context,
+      );
+      for (const table of [
+        'parts',
+        'order_items',
+        'sales_items',
+        'work_items',
+        'drawing_group_items',
+      ]) {
+        const [row] = await query(
+          `SELECT drawing_no FROM legacy_crm.${table} WHERE drawing_no = $1`,
+          [drawing_no],
+        );
+        expect(row.drawing_no).toBe(drawing_no);
+      }
+      expect(
+        (await browse.assist('part', { prefix: drawing_no })).items,
+      ).toEqual(
+        expect.arrayContaining([expect.objectContaining({ drawing_no })]),
+      );
     });
 
     it('returns dates as ROC text and rejects impossible dates on entry', async () => {

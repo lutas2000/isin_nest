@@ -97,7 +97,7 @@ npx playwright test tests/crm/login.spec.ts --debug
 npx playwright test --trace on
 ```
 
-## 訂單查詢回歸測試
+## 訂單查詢與圖號長度回歸測試
 
 `legacy-crm/orders-search.spec.ts` 載入真實的 `OrdersView` 與子元件，以 Playwright 模擬 API，無須登入帳號、啟動後端或連接資料庫。專用設定會啟動獨立 Vite 測試頁，避免依賴其他頁面的套件或正在執行的開發伺服器。
 
@@ -107,6 +107,8 @@ LEGACY_CRM_E2E_CHANNEL=chrome npx playwright test -c tests/legacy-crm/orders-sea
 ```
 
 涵蓋：未新增時客戶首碼 F1 與舊訂單查詢、圖號 F1 與圖面預覽、空白／新增／舊單的客戶型號 F1、新增及取消、唯讀限制，以及查詢不可發出寫入請求。一般 E2E 設定會略過此檔，請使用上述專用設定執行。
+
+圖號長度案例另涵蓋工件、銷貨、工作單與圖組的真實元件，驗證鍵盤最多可輸入 12 碼；訂單 F1 查詢會送出完整圖號。
 
 ## 📋 測試涵蓋範圍
 

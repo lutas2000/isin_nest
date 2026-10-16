@@ -54,7 +54,7 @@ export class LegacyDrawingGroupItem {
   line_no: number;
 
   @TextColumn(10) customer_code: string;
-  @TextColumn(10) drawing_no: string;
+  @TextColumn(12) drawing_no: string;
   @TextColumn(40) customer_drawing_no: string;
   @TextColumn(10) material: string;
   @TextColumn(6) thickness: string;

@@ -10,6 +10,10 @@
       import { createApp, h } from 'vue';
       import { createPinia } from 'pinia';
       import OrdersView from '/apps/frontend/src/legacy-crm/components/OrdersView.vue';
+      import PartsView from '/apps/frontend/src/legacy-crm/components/PartsView.vue';
+      import SalesView from '/apps/frontend/src/legacy-crm/components/SalesView.vue';
+      import WorkView from '/apps/frontend/src/legacy-crm/components/WorkView.vue';
+      import GroupsView from '/apps/frontend/src/legacy-crm/components/GroupsView.vue';
       import { useAuthStore } from '/apps/frontend/src/stores/auth';
       import '/apps/frontend/src/legacy-crm/styles/tokens.css';
       import '/apps/frontend/src/legacy-crm/styles/legacy.css';
@@ -29,7 +33,16 @@
         ],
       };
       localStorage.setItem('auth_token', 'test-only');
-      createApp({ render: () => h(OrdersView, { title: '訂單登錄' }) })
+      const views = {
+        orders: OrdersView,
+        parts: PartsView,
+        sales: SalesView,
+        work: WorkView,
+        groups: GroupsView,
+      };
+      const view =
+        views[new URLSearchParams(location.search).get('view')] || OrdersView;
+      createApp({ render: () => h(view, { title: '圖號回歸測試' }) })
         .use(pinia)
         .mount('#app');
     </script>

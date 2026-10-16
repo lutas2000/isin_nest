@@ -51,7 +51,7 @@ export class LegacyWorkItem {
   @PrimaryColumn({ type: 'smallint' })
   line_no: number;
 
-  @TextColumn(10) drawing_no: string;
+  @TextColumn(12) drawing_no: string;
   @TextColumn(10) material: string;
   @TextColumn(6) thickness: string;
   @TextColumn(10) outsource: string;
