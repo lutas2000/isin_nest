@@ -309,6 +309,81 @@ const enabled =
       );
     });
 
+    it('lists the order lines of a drawing or customer model, newest order first, for one customer', async () => {
+      await partners.create(
+        { kind: 'customer', code: 'C2', full_name: '乙' },
+        context,
+      );
+      const order = (
+        order_no: string,
+        order_date: string,
+        customer_code: string,
+        items: Record<string, string>[],
+      ) =>
+        orders.create(
+          {
+            order_no,
+            order_date,
+            customer_code,
+            items: items.map((item, index) => ({
+              line_no: index + 1,
+              ...item,
+            })),
+          },
+          context,
+        );
+      await order('O1', '115.09.01', 'C1', [
+        { drawing_no: 'P1', material: 'SPCC', thickness: '1.0', quantity: '3' },
+      ]);
+      await order('O2', '115.10.01', 'C1', [
+        {
+          drawing_no: 'P9',
+          customer_model: 'M-1',
+          material: 'SUS304',
+          thickness: '2.0',
+          outsource: '代料',
+          unit: 'PCS',
+          post_process: '折彎+攻牙',
+          quantity: '5',
+        },
+      ]);
+      await order('O3', '115.10.05', 'C2', [
+        { drawing_no: 'P1', material: 'AL', quantity: '1' },
+      ]);
+
+      const list = (options = {}) =>
+        masters
+          .listPartOrders('P1', options)
+          .then((rows) => rows.map((row) => row.order_no));
+      expect(await list()).toEqual(['O3', 'O1']);
+      expect(await list({ customerCode: 'C1' })).toEqual(['O1']);
+      expect(await list({ customerCode: 'C1', customerModel: 'M-1' })).toEqual([
+        'O2',
+        'O1',
+      ]);
+      expect(
+        await list({
+          customerCode: 'C1',
+          customerModel: 'M-1',
+          excludeOrderNo: 'O2',
+        }),
+      ).toEqual(['O1']);
+      const [latest] = await masters.listPartOrders('P1', {
+        customerCode: 'C1',
+        customerModel: 'M-1',
+      });
+      expect(latest).toMatchObject({
+        order_date: '115.10.01',
+        drawing_no: 'P9',
+        material: 'SUS304',
+        thickness: '2.0',
+        outsource: '代料',
+        unit: 'PCS',
+        post_process: '折彎+攻牙',
+        quantity: 5,
+      });
+    });
+
     it('lists an order while any of five lines remains unshipped, removes completed orders and reopens after deleting a sale', async () => {
       await orders.create(
         {

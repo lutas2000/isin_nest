@@ -1892,7 +1892,11 @@
   overflow: auto;
   border: 1px solid var(--lg-line);
   background: var(--lg-paper);
-  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  font:
+    12px/1.4 ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -1906,4 +1910,36 @@
 
 .legacy-log-footer .legacy-feedback-message {
   flex: 1;
+}
+
+.legacy-part-orders {
+  width: min(960px, 100%);
+}
+
+.legacy-part-orders table {
+  table-layout: fixed;
+  width: 898px;
+}
+
+/* 項次 日期 訂單編號 電腦圖號 客戶型號 數量 單位 材質 厚度 代料 圖源 後加工. */
+.legacy-part-orders th:nth-child(1),
+.legacy-part-orders th:nth-child(6),
+.legacy-part-orders th:nth-child(7),
+.legacy-part-orders th:nth-child(9),
+.legacy-part-orders th:nth-child(11) {
+  width: 48px;
+}
+
+.legacy-part-orders th:nth-child(2),
+.legacy-part-orders th:nth-child(3),
+.legacy-part-orders th:nth-child(4),
+.legacy-part-orders th:nth-child(8),
+.legacy-part-orders th:nth-child(10) {
+  width: 80px;
+}
+
+.legacy-part-orders td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

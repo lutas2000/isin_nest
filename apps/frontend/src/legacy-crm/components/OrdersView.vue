@@ -3,6 +3,7 @@ import { computed, inject, onMounted, ref } from 'vue';
 import LegacyAssistHost from './LegacyAssistHost.vue';
 import LegacyDocumentPrint from './LegacyDocumentPrint.vue';
 import LegacyDrawingWindow from './LegacyDrawingWindow.vue';
+import LegacyPartOrdersWindow from './LegacyPartOrdersWindow.vue';
 import LegacyPartSalesWindow from './LegacyPartSalesWindow.vue';
 import LegacyQueryWindow from './LegacyQueryWindow.vue';
 import LegacyRecordToolbar from './LegacyRecordToolbar.vue';
@@ -30,6 +31,12 @@ import {
 } from '../utils/legacyBrowse';
 import { lineKeyItems } from '../utils/lineKeys';
 import { OPEN_PART_DRAFT_KEY } from '../utils/partDraft';
+import {
+  LAST_ORDER_FIELDS,
+  blankLastOrderFields,
+  fillFromLastOrder,
+  loadPartOrders,
+} from '../utils/partOrders';
 import {
   QUOTE_HISTORY_COLUMNS,
   QUOTE_HISTORY_HINT,
@@ -420,12 +427,16 @@ function lineChanged() {
 }
 
 // Detail keys (Win7 2026-10-07):「F2建立工件圖檔，F3插入一筆，F4刪除此筆，
-// F8查報價記錄，F9查完成數，F11秀圖，F12查交易歷史」. F9 reads the 完工單,
-// which was never used, so it is left out (isin_vb6 docs/legacy-ui-spec.md).
+// F8查報價記錄，F9查完成數，F11秀圖，F12查交易歷史」. F9 read the 完工單,
+// which was never used (isin_vb6 docs/legacy-ui-spec.md); it opens 訂單記錄
+// instead (業務 2026-10), the customer's earlier orders of the drawing.
 const openPartDraft = inject(OPEN_PART_DRAFT_KEY, null);
 const quotePicker = ref<PickerState | null>(null);
 const drawingFor = ref<string | null>(null);
 const salesFor = ref<{ drawingNo: string; orderNo: string } | null>(null);
+const ordersFor = ref<{ drawingNo: string; customerModel: string } | null>(
+  null,
+);
 const drawingAt = (index: number) =>
   String(current.value.items[index]?.drawing_no ?? '').trim();
 const customerCode = () => String(current.value.customer_code ?? '').trim();
@@ -437,6 +448,15 @@ function lineKey(event: KeyboardEvent) {
     actions: {
       F2: createPart,
       F8: openQuoteHistory,
+      F9: (index) => {
+        if (drawingAt(index))
+          ordersFor.value = {
+            drawingNo: drawingAt(index),
+            customerModel: String(
+              current.value.items[index]?.customer_model ?? '',
+            ).trim(),
+          };
+      },
       F11: (index) => {
         if (drawingAt(index)) drawingFor.value = drawingAt(index);
       },
@@ -540,7 +560,9 @@ function duplicateDrawing(item: Row) {
   return true;
 }
 
-function syncPart(item: Row) {
+// `blanks` are the fields left blank before the drawing was chosen (F1 fills
+// some before calling this).
+function syncPart(item: Row, blanks = blankLastOrderFields(item)) {
   if (duplicateDrawing(item)) return;
   const part = parts.value.find(
     (entry) => entry.drawing_no === item.drawing_no,
@@ -552,6 +574,39 @@ function syncPart(item: Row) {
     item.unit ||= part.unit;
   }
   lineChanged();
+  void fillLastOrder(item, blanks);
+}
+
+// 上次製作 (業務 2026-10): the blank 材質／厚度／代料／單位／後加工 of the line
+// take the customer's latest order of the same 電腦圖號 or 客戶型號; a field
+// changed while the order is fetched is left as it is.
+async function fillLastOrder(item: Row, blanks: string[]) {
+  const drawingNo = String(item.drawing_no ?? '').trim();
+  const customer = customerCode();
+  if (!drawingNo || !customer || !blanks.length) return;
+  const before = Object.fromEntries(
+    LAST_ORDER_FIELDS.map((field) => [field, item[field]]),
+  );
+  let rows;
+  try {
+    rows = await loadPartOrders(drawingNo, {
+      customerCode: customer,
+      customerModel: String(item.customer_model ?? '').trim(),
+      excludeOrderNo: String(current.value.order_no ?? '').trim(),
+    });
+  } catch {
+    return; // The line keeps the part's values.
+  }
+  if (
+    !canLookup.value ||
+    !current.value.items.includes(item) ||
+    String(item.drawing_no ?? '').trim() !== drawingNo
+  )
+    return;
+  const untouched = LAST_ORDER_FIELDS.filter(
+    (field) => blanks.includes(field) && item[field] === before[field],
+  );
+  if (fillFromLastOrder(item, untouched, rows[0])) lineChanged();
 }
 
 // F1 輔助輸入 on each field, as the legacy 訂單登錄 does it. A user with
@@ -604,12 +659,13 @@ function assistPart(item: Row, byModel = false) {
     customer: current.value.customer_code,
     onSelect: (row) => {
       if (!canLookup.value) return;
+      const blanks = blankLastOrderFields(item);
       item.drawing_no = row.drawing_no;
       item.customer_model = row.customer_model;
       item.material = row.material;
       item.thickness = row.thickness;
       item.unit = row.unit;
-      syncPart(item);
+      syncPart(item, blanks);
     },
   });
 }
@@ -1002,6 +1058,14 @@ onMounted(() => {
       :customer-code="current.customer_code"
       :order-no="salesFor.orderNo"
       @close="salesFor = null"
+    />
+    <LegacyPartOrdersWindow
+      v-if="ordersFor"
+      :drawing-no="ordersFor.drawingNo"
+      :customer-code="current.customer_code"
+      :customer-model="ordersFor.customerModel"
+      :exclude-order-no="current.order_no"
+      @close="ordersFor = null"
     />
     <LegacyAssistHost :assist="assist" />
     <LegacyDocumentPrint

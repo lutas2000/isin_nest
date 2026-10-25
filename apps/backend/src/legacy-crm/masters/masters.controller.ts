@@ -112,6 +112,27 @@ export class LegacyPartsController {
     };
   }
 
+  @ApiOperation({
+    summary:
+      '訂單記錄：圖號（或客戶型號）的訂單明細，新的在前，可限定客戶、排除訂單',
+  })
+  @LegacyRead()
+  @Get(':drawingNo/orders')
+  async orders(
+    @Param('drawingNo') drawingNo: string,
+    @Query('customer') customerCode = '',
+    @Query('model') customerModel = '',
+    @Query('exclude') excludeOrderNo = '',
+  ) {
+    return {
+      items: await this.masters.listPartOrders(drawingNo, {
+        customerCode,
+        customerModel,
+        excludeOrderNo,
+      }),
+    };
+  }
+
   @LegacyRead()
   @Get(':drawingNo')
   async get(@Param('drawingNo') drawingNo: string) {

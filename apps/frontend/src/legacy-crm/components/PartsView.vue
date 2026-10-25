@@ -2,6 +2,7 @@
 import { inject, onMounted, ref, watch, type Ref } from 'vue';
 import LegacyMasterForm from './LegacyMasterForm.vue';
 import LegacyDrawingPanel from './LegacyDrawingPanel.vue';
+import LegacyPartOrdersWindow from './LegacyPartOrdersWindow.vue';
 import LegacyPartSalesWindow from './LegacyPartSalesWindow.vue';
 import { legacyGet } from '../services/legacyApi';
 import type { DrawingShape } from '../utils/legacyDocumentPaper';
@@ -205,6 +206,22 @@ function showSales(selectedKey: string | null, current: Current) {
     };
 }
 
+// 訂單記錄 (業務 2026-10) lists the orders of the part on screen, for its
+// customer and 客戶型號 too.
+const ordersFor = ref<{
+  drawingNo: string;
+  customerCode: string;
+  customerModel: string;
+} | null>(null);
+function showOrders(selectedKey: string | null, current: Current) {
+  if (selectedKey != null)
+    ordersFor.value = {
+      drawingNo: String(selectedKey),
+      customerCode: String(current.customer_code ?? '').trim(),
+      customerModel: String(current.customer_model ?? '').trim(),
+    };
+}
+
 // 訂單登錄 F2 hands over a new part to fill in (LegacyShell.vue).
 const form = ref<InstanceType<typeof LegacyMasterForm> | null>(null);
 const partDraft = inject<Ref<PartDraft | null>>(PART_DRAFT_KEY, ref(null));
@@ -292,6 +309,13 @@ function cncChosen(event: Event) {
       >
         出貨記錄
       </button>
+      <button
+        type="button"
+        :disabled="mode === 'new' || selectedKey == null"
+        @click="showOrders(selectedKey, current)"
+      >
+        訂單記錄
+      </button>
     </template>
     <template #after-customer_code>
       <input
@@ -369,5 +393,12 @@ function cncChosen(event: Event) {
     :drawing-no="salesFor.drawingNo"
     :customer-code="salesFor.customerCode"
     @close="salesFor = null"
+  />
+  <LegacyPartOrdersWindow
+    v-if="ordersFor"
+    :drawing-no="ordersFor.drawingNo"
+    :customer-code="ordersFor.customerCode"
+    :customer-model="ordersFor.customerModel"
+    @close="ordersFor = null"
   />
 </template>

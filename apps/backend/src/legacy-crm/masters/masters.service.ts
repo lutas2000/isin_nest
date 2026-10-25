@@ -356,6 +356,46 @@ export class LegacyMastersService {
     });
   }
 
+  /**
+   * 訂單記錄：同電腦圖號、或同客戶型號（有填時）的訂單明細，可限定客戶、排除某張訂單（正在登錄的那張）；
+   * 訂單日期新的在前，第一筆即「上次製作」，訂單登錄選圖時用它補空白欄位。
+   */
+  async listPartOrders(
+    drawingNo: string,
+    { customerCode = '', customerModel = '', excludeOrderNo = '' } = {},
+  ) {
+    const params: unknown[] = [String(drawingNo ?? '').trim()];
+    let match = 'i.drawing_no = $1';
+    const model = String(customerModel ?? '').trim();
+    if (model) {
+      params.push(model);
+      match = `(${match} OR btrim(i.customer_model) = $${params.length})`;
+    }
+    const filters = [match];
+    const customer = String(customerCode ?? '').trim();
+    if (customer) {
+      params.push(customer);
+      filters.push(`d.customer_code = $${params.length}`);
+    }
+    const exclude = String(excludeOrderNo ?? '').trim();
+    if (exclude) {
+      params.push(exclude);
+      filters.push(`d.order_no <> $${params.length}`);
+    }
+    const rows = await this.db().all(
+      `SELECT d.order_date::text AS order_date, d.order_date_raw, d.order_no, i.drawing_no, i.customer_model,
+              i.quantity_units, i.unit, i.material, i.thickness, i.outsource, i.source, i.post_process
+       FROM legacy_crm.order_items i JOIN legacy_crm.order_documents d ON d.order_no = i.order_no
+       WHERE ${filters.join(' AND ')}
+       ORDER BY d.order_date DESC NULLS LAST, d.order_no DESC, i.line_no`,
+      params,
+    );
+    return rows.map((row): Row => {
+      const { quantity_units, ...rest } = present('order_documents', row);
+      return { ...rest, quantity: units(quantity_units) };
+    });
+  }
+
   async createPart(input: unknown, context: LegacyRequestContext) {
     const part = normalizePart(input);
     return this.dataSource.transaction(async (manager) => {
