@@ -7,7 +7,7 @@
 
 ## 0. 結論與原則
 
-1. **薪資改為「後端算完、寫值進 Excel、保存當次 snapshot」。** Excel 不再含任何公式，也不再跨工作表參照。每次產出的輸入資料與計算結果都存進 PostgreSQL，Excel 只是 snapshot 的一種輸出格式。
+1. **薪資改為「後端算完、寫值進 Excel、保存當次 snapshot」。** 打卡記錄表不含公式；薪資表只在加項合計、減項合計、總合與右側總合欄保留同表內的加減公式（2026-10-26 調整，見 3.4），不再跨工作表參照打卡記錄表。每次產出的輸入資料與計算結果都存進 PostgreSQL，Excel 只是 snapshot 的一種輸出格式。
 2. **計算邏輯寫成純函式。** 輸入是一個月的員工、段別、工時、請假、假日資料，輸出是逐日明細與薪資項目。純函式不碰資料庫，才能用舊 Java 產出的 Excel 做 parity 測試。
 3. **資料來源先接 MariaDB，再切 PostgreSQL。** 依 [先前的遷移風險評估](../apps/backend/src/legacy-staff/README.md)，MariaDB 目前仍是 system of record。薪資模組透過一個 `PayrollSourceLoader` 介面取資料，第一版實作讀 MariaDB（沿用 `LegacyStaffDbService`），第二版換成 TypeORM repository。純函式與 snapshot 表完全不受影響。
 4. **請假登錄先補齊規則再開放。** Nest 現有 `staff-leaves` API 的時數算法與 Java 不同、沒有權限守衛、沒有跨日拆單。要先修正，否則薪資計算的輸入就錯了。
@@ -220,10 +220,11 @@ interface PayrollResult {
 ### 3.4 Excel 產出
 
 - 套件：`exceljs`（純 JS、支援欄寬、合併、字型、列印設定）。不用 LibreOffice，避免與 `nesting.service.ts` 的轉檔流程耦合。
-- 版面沿用舊報表：每部門兩個工作表「打卡記錄-部門」「薪資-部門」，欄位順序、合併儲存格、隱藏欄、頁首「民國年月 部門 打卡記錄／薪資表」、橫向列印都保留，HR 看到的樣子不變。
-- 所有儲存格寫數值或文字，**不寫 formula**。總合欄也是後端算好的值。
+- 版面沿用舊報表：每部門兩個工作表「打卡記錄-部門」「薪資-部門」，合併儲存格、頁首「民國年月 部門 打卡記錄／薪資表」、橫向列印都保留。
+- **打卡記錄表**（2026-10-26 調整）：每人 6 欄「日期、打卡時段、上班、加班、請假、時數」，全部寫值、沒有公式。舊版的隱藏欄（遲到、平日旗標）與放在隱藏欄裡的四桶加班已拿掉；各假別時數緊接在總合列下。遲到次數與四桶加班仍存在 snapshot（`payroll_run_day.late`、`payroll_run_staff.overtime_json`），前端每日明細照常顯示遲到。
+- **薪資表**（2026-10-26 調整）：各項金額寫後端算好的值；只有「加項合計 = SUM(本薪:伙食津貼)」「減項合計 = SUM(病假:其他代扣)」「總合 = 加項合計 − 減項合計」與右側總合欄（每列 SUM 跨所有人）是公式，並附上後端算好的快取值，HR 在 Excel 改手動欄位時合計會跟著變。公式只參照同一工作表，不關聯打卡記錄表。builder 測試以真實資料 fixture 逐格驗算公式結果等於快取值；以 LibreOffice 重算後與 Java 報表比對結果相同。
 - 檔名 `{民國年}年{月}月薪資表-{variant}-run{id}.xlsx`，存到 `PAYROLL_FILES_PATH`（預設 `files/payroll`）下的 `{yyyy}/`，路徑與 sha256 記在 `payroll_run`。容器環境需把 `PAYROLL_FILES_PATH` 指到掛載的持久化路徑；即使檔案遺失，下載時會從 snapshot 的 staff/day 列重建並重新存檔，所以 snapshot 才是真正的保存對象。
-- Excel 一律由 snapshot 列產生（`excel/payroll-workbook.builder.ts`），建立 run 與修改手動欄位後都會重產。`excel/payroll-workbook.reader.ts` 是舊 Excel 與新 Excel 共用的讀取器，`payroll:expected-from-xlsx` 與 builder 的 round-trip 測試都用它。
+- Excel 一律由 snapshot 列產生（`excel/payroll-workbook.builder.ts`），建立 run 與修改手動欄位後都會重產。`excel/payroll-workbook.reader.ts` 是舊 Excel 與新 Excel 共用的讀取器（以第 2 列「日期」標題切分每人欄區塊，舊版 8 欄、新版 6 欄都能讀；只有舊版讀得到遲到），`payroll:expected-from-xlsx`、`payroll:dual-track` 與 builder 的 round-trip 測試都用它。
 - 舊 Excel 的外帳與外勞版本靠 `setRounding` 設定數字格式 `#,##0`，新版後端已經四捨五入，格式只做顯示。
 
 ### 3.5 請假登錄
@@ -255,7 +256,7 @@ interface PayrollResult {
 1. 選年月、variant、部門，按「計算」呼叫 preview，顯示 warnings 與每人薪資項目表格（`components/PayrollWageTable.vue`，欄位順序沿用舊薪資表，另加工時／加班／請假／遲到四欄）。
 2. **決議：手動欄位由前端輸入。** 獎金、特休加、特休減、借支、其他代扣、稅金代扣六欄在表格中為可編輯儲存格，輸入後即時重算加減合計與實領（`services/payroll.ts` 的 `applyManual`，公式與 `domain/wage-items.ts` 相同）。按「建立 run」時隨 `manual_json` 存入 draft 並產 Excel；draft 狀態可再透過 PATCH `/manual` 修改並重產。Excel 不再供 HR 手改。
 3. run 列表：可依月份、版本、狀態篩選，檢視歷次 snapshot、下載檔案、定稿；定稿後表格唯讀。下載走 `services/api.ts` 的 `apiDownload`，後端 CORS 已 expose `Content-Disposition` 讓跨網域也能取得檔名。
-4. 每日明細（`components/PayrollDayTable.vue`）以員工下拉切換，對應舊的打卡記錄工作表；有薪假日期紅字、無薪假綠字。
+4. 每日明細（`components/PayrollDayTable.vue`）以員工下拉切換，對應舊的打卡記錄工作表；有薪假日期紅字、無薪假綠字；上方列出有時數的各假別合計（對應打卡記錄表總合列下的假別時數）。
 5. 權限：側欄「薪資計算」與頁面以 `authStore.hasFeature('hr-payroll')` 判斷；寫入動作（建立 run、修改手動欄位、定稿）需 write。`hr-payroll` 已在 `features.config.ts`，管理員在「設定 → 權限設定」建立職稱並勾選「薪資計算」指派給 HR 使用者即可，`feature` 資料表的列由後端在指派時自動建立，不需另外 seed。
 
 ### 3.7 外帳工時維護（`staff_manhour2`）
@@ -274,7 +275,8 @@ interface PayrollResult {
 3. **測試**：`domain/*.spec.ts` 對每人每日與每人每月項目逐格比對。允許差異只有三項：舊報表的防疫假列（已移除）、「林慶豐」排除（改以 `stop_work` 判斷）、伙食津貼少算最後一天（parity 測試以舊算法換算後比對）。其餘必須完全相等，段別選取照舊所以不會有差異。2026-10-04 以 6、7 月正式與外帳共四組 fixture 驗證：1,318 個每日列與全部薪資項目相符，唯一差異即伙食津貼最後一天。
 4. **邊界案例**：跨日段別、夜班、責任制、外勞有薪假、請假起點等於段別起點、缺下班打卡、無薪假自動補登。每項至少一個單元測試。
 5. 現有 `legacy-attendance-parity.spec.ts` 的作法可直接沿用。
-6. **雙軌比對（階段 6）**：`npm run payroll:dual-track -- --start 2026-06-01 --java <Java Excel> --nest <Nest 部門 Excel> [--nest ...]`。與第 3 點的差別是走完整 API 流程（真實 MariaDB loader、snapshot、exceljs 輸出），比對的是兩邊最後的 Excel 而非 domain 函式結果；部門清單、員工順序、每日列、薪資欄位任一不同就以非零退出碼結束，允許差異僅伙食津貼最後一天 +0 或 +50（加項合計與總合須同步）。
+6. **2026-10-26 版面調整後重驗**：打卡記錄表拿掉隱藏欄、薪資表加入加減公式後，以四組 fixture 的 `input.json` 用 builder 產出 10 個部門檔，對 isin-java `payroll-export/20261004-153636` 的 6、7 月正式與外帳 Excel 跑 `payroll:dual-track`：結果與 10-04 相同（每日列、薪資欄位全部相同，僅伙食津貼最後一天 6 處 +50）；再用 LibreOffice 重算 Nest 檔的公式後比對，結果不變。遲到欄 Nest 報表已無，dual-track 只在兩邊都有時比對，遲到的 parity 由 `legacy-payroll-parity.spec.ts` 對 domain 結果檢查。
+7. **雙軌比對（階段 6）**：`npm run payroll:dual-track -- --start 2026-06-01 --java <Java Excel> --nest <Nest 部門 Excel> [--nest ...]`。與第 3 點的差別是走完整 API 流程（真實 MariaDB loader、snapshot、exceljs 輸出），比對的是兩邊最後的 Excel 而非 domain 函式結果；部門清單、員工順序、每日列、薪資欄位任一不同就以非零退出碼結束，允許差異僅伙食津貼最後一天 +0 或 +50（加項合計與總合須同步）。
 
 ## 5. 實作順序
 

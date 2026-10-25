@@ -4,8 +4,11 @@ import { OvertimeBuckets, PayrollPeriod, PayrollVariant, VacationType } from '..
 
 /**
  * 薪資 Excel 產出。版面沿用舊 Java `ManHourReport` / `WageReport`：
- * 每部門「打卡記錄-部門」與「薪資-部門」兩個工作表，欄位順序、合併儲存格、隱藏欄、
- * 頁首與橫向列印都相同。所有儲存格只寫值，不寫公式；總合欄也是後端算好的值。
+ * 每部門「打卡記錄-部門」與「薪資-部門」兩個工作表，合併儲存格、頁首與橫向列印都相同。
+ *
+ * - 打卡記錄表只寫值，拿掉舊版的隱藏欄（遲到、平日旗標）與隱藏欄裡的四桶加班。
+ * - 薪資表的各項金額由後端算好寫值，只有加項合計、減項合計、總合與右側總合欄是
+ *   同表內的加減公式（附快取值），HR 在 Excel 改手動欄位時合計會跟著變；不再參照打卡記錄表。
  */
 
 export interface WorkbookDayRow {
@@ -20,6 +23,9 @@ export interface WorkbookDayRow {
   late: number;
   weekdayFlag: number;
 }
+
+/** 打卡記錄表每人的欄位（舊版 8 欄，去掉隱藏的遲到、平日）。 */
+export const HOUR_SHEET_TITLES = ['日期', '打卡時段', '上班', '加班', '請假', '時數'] as const;
 
 export interface WorkbookStaffRow {
   name: string;
@@ -65,7 +71,7 @@ export interface PayrollWorkbookInput {
   days: WorkbookDayRow[];
 }
 
-const HOUR_COLUMNS = 8;
+const HOUR_COLUMNS = HOUR_SHEET_TITLES.length;
 const FONT_NAME = '新細明體';
 /** POI 欄寬單位是 1/256 字元，exceljs 用字元數。 */
 const poiWidth = (units: number) => units / 256;
@@ -170,9 +176,7 @@ function buildHourSheet(workbook: ExcelJS.Workbook, input: PayrollWorkbookInput)
     const base = index * HOUR_COLUMNS + 1;
     sheet.mergeCells(1, base, 1, base + HOUR_COLUMNS - 1);
     write(1, base, staff.name);
-    ['日期', '打卡時段', '上班', '加班', '請假', '時數', '遲到', '平日'].forEach((title, offset) =>
-      write(2, base + offset, title),
-    );
+    HOUR_SHEET_TITLES.forEach((title, offset) => write(2, base + offset, title));
 
     for (const day of input.days.filter((row) => row.name === staff.name)) {
       const index = dayIndex.get(day.date);
@@ -192,8 +196,6 @@ function buildHourSheet(workbook: ExcelJS.Workbook, input: PayrollWorkbookInput)
         write(row, base + 4, null);
         write(row, base + 5, null);
       }
-      write(row, base + 6, day.late);
-      write(row, base + 7, day.weekdayFlag);
     }
 
     // 總合列：舊版對請假欄也 SUM，文字欄結果為 0
@@ -204,27 +206,16 @@ function buildHourSheet(workbook: ExcelJS.Workbook, input: PayrollWorkbookInput)
     write(sumRow, base + 4, 0);
     write(sumRow, base + 5, staff.leaveHours);
 
-    // 四桶加班（隱藏欄）
-    const buckets = staff.overtimeJson;
-    [buckets.paidHolidayWithin8, buckets.paidHolidayOver8, buckets.weekdayWithin2, buckets.weekdayOver2].forEach(
-      (hours, offset) => write(sumRow + 1 + offset, base + 7, hours),
-    );
-
-    // 各假別時數
+    // 各假別時數，緊接在總合列下（舊版中間隔著四列隱藏的加班分桶）
     LEAVE_TYPES.forEach((type, offset) => {
-      write(sumRow + 5 + offset, base + 4, type);
-      write(sumRow + 5 + offset, base + 5, staff.leaveByTypeJson[type] ?? 0);
+      write(sumRow + 1 + offset, base + 4, type);
+      write(sumRow + 1 + offset, base + 5, staff.leaveByTypeJson[type] ?? 0);
     });
   });
 
   for (let column = 0; column < names.length * HOUR_COLUMNS; column++) {
     sheet.getColumn(column + 1).width = poiWidth(column % HOUR_COLUMNS === 1 ? 3500 : 1700);
   }
-  names.forEach((_, index) => {
-    const base = index * HOUR_COLUMNS + 1;
-    sheet.getColumn(base + 6).hidden = true;
-    sheet.getColumn(base + 7).hidden = true;
-  });
 }
 
 function buildWageSheet(workbook: ExcelJS.Workbook, input: PayrollWorkbookInput): void {
@@ -248,20 +239,37 @@ function buildWageSheet(workbook: ExcelJS.Workbook, input: PayrollWorkbookInput)
   };
 
   const rows = wageRows(input.variant);
+  const rowOf = (key: WageRowSpec['key']) => rows.findIndex((spec) => spec.key === key) + 1;
+  const additionRow = rowOf('additionTotal');
+  const deductionRow = rowOf('deductionTotal');
   const staff = [...input.staff].sort((a, b) => a.wageOrder - b.wageOrder);
+
+  // 合計列的公式：加項 = 本薪到伙食津貼、減項 = 病假到其他代扣、總合 = 加項 − 減項（退休提撥不扣）
+  const totalFormula = (key: WageRowKey, column: string): string | null => {
+    if (key === 'additionTotal') return `SUM(${column}2:${column}${additionRow - 1})`;
+    if (key === 'deductionTotal') return `SUM(${column}${additionRow + 1}:${column}${deductionRow - 1})`;
+    if (key === 'netPay') return `${column}${additionRow}-${column}${deductionRow}`;
+    return null;
+  };
+
   staff.forEach((person, index) => {
     const titleColumn = index * 2 + 1;
+    const valueColumn = sheet.getColumn(titleColumn + 1).letter;
     rows.forEach((spec, offset) => {
       const row = offset + 1;
       write(row, titleColumn, spec.title);
       if (spec.key === 'name') write(row, titleColumn + 1, person.name);
       else if (spec.key === 'sign') write(row, titleColumn + 1, null);
-      else write(row, titleColumn + 1, person[spec.key]);
+      else {
+        const formula = totalFormula(spec.key, valueColumn);
+        write(row, titleColumn + 1, formula ? { formula, result: person[spec.key] } : person[spec.key]);
+      }
     });
   });
 
-  // 總合欄：每列跨所有人加總（WageReport.writeTotal）
+  // 總合欄：每列跨所有人加總（WageReport.writeTotal），標題欄是文字，SUM 會略過
   const totalColumn = staff.length * 2 + 1;
+  const lastValueColumn = staff.length ? sheet.getColumn(totalColumn - 1).letter : null;
   write(1, totalColumn, '總合');
   rows.forEach((spec, offset) => {
     if (offset === 0) return;
@@ -271,7 +279,8 @@ function buildWageSheet(workbook: ExcelJS.Workbook, input: PayrollWorkbookInput)
       sheet.getRow(row).height = 25;
       return;
     }
-    write(row, totalColumn, staff.reduce((sum, person) => sum + (person[spec.key as WageRowKey] ?? 0), 0));
+    const result = staff.reduce((sum, person) => sum + (person[spec.key as WageRowKey] ?? 0), 0);
+    write(row, totalColumn, lastValueColumn ? { formula: `SUM(B${row}:${lastValueColumn}${row})`, result } : result);
   });
 
   for (let column = 0; column < staff.length * 2; column++) {

@@ -9,6 +9,9 @@
         工時 {{ totals.work }}、加班 {{ totals.overtime }}、請假 {{ totals.leave }} 小時、遲到 {{ totals.late }} 次
       </span>
     </div>
+    <div v-if="leaveByType.length" class="leave-types">
+      <span v-for="[type, hours] in leaveByType" :key="type" class="badge badge-secondary">{{ type }} {{ hours }}</span>
+    </div>
     <table class="table day-rows">
       <thead>
         <tr>
@@ -68,6 +71,16 @@ const totals = computed(() => ({
   leave: round1(rows.value.reduce((sum, day) => sum + day.leaveHours, 0)),
   late: rows.value.filter((day) => day.late).length,
 }));
+
+// 對應打卡記錄表總合列下的各假別時數（舊版 SUMIF），只列有時數的假別
+const leaveByType = computed(() => {
+  const hours = new Map<string, number>();
+  for (const day of rows.value) {
+    if (!day.leaveType || !day.leaveHours) continue;
+    hours.set(day.leaveType, (hours.get(day.leaveType) ?? 0) + day.leaveHours);
+  }
+  return [...hours].map(([type, total]) => [type, round1(total)] as const);
+});
 </script>
 
 <style scoped>
@@ -98,6 +111,13 @@ const totals = computed(() => ({
 .day-summary {
   color: var(--secondary-600);
   font-size: 0.875rem;
+}
+
+.leave-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .day-rows {

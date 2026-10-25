@@ -47,4 +47,4 @@ fixture 內含員工薪資資料，請勿提交到版本控制；`.gitignore` �
 npm run payroll:dual-track -- --start 2026-06-01 --java "/path/official/2026年6月薪資表.xlsx" --nest "/path/official-2026-06-銷管部.xlsx" --nest "/path/official-2026-06-生產部.xlsx"
 ```
 
-Nest 每個部門一個檔案，全部用 `--nest` 傳入。允許差異與上面相同。
+Nest 每個部門一個檔案，全部用 `--nest` 傳入。允許差異與上面相同。Nest 報表已拿掉隱藏的遲到欄，遲到只在兩邊都有時比對。

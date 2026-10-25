@@ -5,8 +5,6 @@ import * as ExcelJS from 'exceljs';
  * 給 `scripts/payroll-expected-from-xlsx.ts` 與 builder 的 round-trip 測試共用。
  */
 
-/** 打卡記錄表每人 8 欄（ManHourReport.hourColumns） */
-export const HOUR_COLUMNS = 8;
 
 /** 薪資表標題 → WageItems 欄位。重複出現的「勤務津貼」第二次視為特休減。 */
 export const WAGE_TITLES: Record<string, string> = {
@@ -44,7 +42,8 @@ export interface ReadDay {
   overtime: number;
   leaveType: string;
   leaveHours: number;
-  late: number;
+  /** 只有舊 Java 報表有（隱藏的遲到欄）；Nest 報表已拿掉此欄。 */
+  late?: number;
 }
 
 export type ReadWage = { name: string } & Record<string, number | string>;
@@ -87,33 +86,39 @@ class Reader {
     return value;
   }
 
+  /**
+   * 每人一個欄區塊，以第 2 列的「日期」標題切分：舊 Java 報表每人 8 欄（含隱藏的遲到、平日），
+   * Nest 報表每人 6 欄。
+   */
   readHourSheet(sheet: ExcelJS.Worksheet): ReadDay[] {
     const days: ReadDay[] = [];
-    const names: string[] = [];
-    for (let column = 1; column <= sheet.columnCount; column += HOUR_COLUMNS) {
+    const blocks: { name: string; base: number; late: number | null }[] = [];
+    for (let column = 1; column <= sheet.columnCount; column++) {
+      if (text(this.cellValue(sheet.getCell(2, column))) !== '日期') continue;
       const name = text(this.cellValue(sheet.getCell(1, column)));
       if (!name) break;
-      names.push(name);
+      const lateOffset = text(this.cellValue(sheet.getCell(2, column + 6))) === '遲到' ? 6 : null;
+      blocks.push({ name, base: column, late: lateOffset === null ? null : column + lateOffset });
     }
     for (let row = 3; row <= sheet.rowCount; row++) {
       const firstCell = text(this.cellValue(sheet.getCell(row, 1)));
       if (!/^\d{1,2}\/\d{1,2}$/.test(firstCell)) break; // 總合列之後不是逐日資料
-      names.forEach((name, index) => {
-        const base = index * HOUR_COLUMNS + 1;
+      for (const { name, base, late } of blocks) {
         const dateText = text(this.cellValue(sheet.getCell(row, base)));
         const work = this.cellValue(sheet.getCell(row, base + 2));
-        if (!dateText || work === null || work === undefined) return; // 未到職的空白列
+        if (!dateText || work === null || work === undefined) continue; // 未到職的空白列
         const [month, day] = dateText.split('/').map(Number);
-        days.push({
+        const result: ReadDay = {
           name,
           date: `${this.year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
           work: num(work),
           overtime: num(this.cellValue(sheet.getCell(row, base + 3))),
           leaveType: text(this.cellValue(sheet.getCell(row, base + 4))),
           leaveHours: num(this.cellValue(sheet.getCell(row, base + 5))),
-          late: num(this.cellValue(sheet.getCell(row, base + 6))),
-        });
-      });
+        };
+        if (late !== null) result.late = num(this.cellValue(sheet.getCell(row, late)));
+        days.push(result);
+      }
     }
     return days;
   }

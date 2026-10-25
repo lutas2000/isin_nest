@@ -62,7 +62,8 @@ function compareDays(java: ReadDay[], nest: ReadDay[], report: Report): void {
       report.mismatches.push(`day ${key}: missing in Nest`);
       continue;
     }
-    const diff = DAY_KEYS.filter((field) => got[field] !== day[field]).map(
+    // Nest 報表已拿掉隱藏的遲到欄，只在兩邊都有時才比
+    const diff = DAY_KEYS.filter((field) => got[field] !== undefined && got[field] !== day[field]).map(
       (field) => `${field} java=${JSON.stringify(day[field])} nest=${JSON.stringify(got[field])}`,
     );
     if (diff.length) report.mismatches.push(`day ${key}: ${diff.join(', ')}`);

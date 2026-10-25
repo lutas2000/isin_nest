@@ -43,6 +43,46 @@ function workbookInput(input: PayrollSourceData, department: DepartmentResult) {
   };
 }
 
+const dayFields = (d: { name: string; date: string; work: number; overtime: number; leaveType: string; leaveHours: number }) => ({
+  name: d.name, date: d.date, work: d.work, overtime: d.overtime, leaveType: d.leaveType, leaveHours: d.leaveHours,
+});
+
+const numeric = (sheet: ExcelJS.Worksheet, address: string): number => {
+  const value = sheet.getCell(address).value;
+  if (value && typeof value === 'object' && 'formula' in value) return Number((value as ExcelJS.CellFormulaValue).result ?? 0);
+  return typeof value === 'number' ? value : 0; // 文字與空白在 SUM 中略過
+};
+
+/** 只支援 builder 會寫的兩種公式：`SUM(A1:B2)` 與 `A1-A2`。回傳 [公式數, 與快取值不符的清單]。 */
+function checkFormulas(sheet: ExcelJS.Worksheet): [number, string[]] {
+  let count = 0;
+  const wrong: string[] = [];
+  sheet.eachRow((row) =>
+    row.eachCell((cell) => {
+      if (!cell.formula) return;
+      count++;
+      const formula = cell.formula;
+      let value: number;
+      const sum = /^SUM\(([A-Z]+)(\d+):([A-Z]+)(\d+)\)$/.exec(formula);
+      const minus = /^([A-Z]+\d+)-([A-Z]+\d+)$/.exec(formula);
+      if (sum) {
+        value = 0;
+        const [fromCol, toCol] = [sheet.getColumn(sum[1]).number, sheet.getColumn(sum[3]).number];
+        for (let r = Number(sum[2]); r <= Number(sum[4]); r++) {
+          for (let c = fromCol; c <= toCol; c++) value += numeric(sheet, sheet.getCell(r, c).address);
+        }
+      } else if (minus) {
+        value = numeric(sheet, minus[1]) - numeric(sheet, minus[2]);
+      } else {
+        wrong.push(`${cell.address} unsupported ${formula}`);
+        return;
+      }
+      if (value !== numeric(sheet, cell.address)) wrong.push(`${cell.address} ${formula}=${value} cached=${numeric(sheet, cell.address)}`);
+    }),
+  );
+  return [count, wrong];
+}
+
 async function roundTrip(workbook: ExcelJS.Workbook, year: number) {
   const buffer = await workbook.xlsx.writeBuffer();
   const reloaded = new ExcelJS.Workbook();
@@ -51,7 +91,7 @@ async function roundTrip(workbook: ExcelJS.Workbook, year: number) {
 }
 
 describe('buildPayrollWorkbook', () => {
-  it('reproduces the legacy layout: two sheets, merged names, hidden columns, sums, no formulas', async () => {
+  it('reproduces the legacy layout without hidden columns; wage totals are in-sheet +/- formulas', async () => {
     const input = sourceData();
     const result = calculatePayroll(input);
     const production = result.departments.find((d) => d.department === '生產部')!;
@@ -62,24 +102,24 @@ describe('buildPayrollWorkbook', () => {
     const hour = reloaded.getWorksheet('打卡記錄-生產部')!;
     expect(hour.getCell('A1').value).toBe('張三');
     expect(hour.getCell('A1').isMerged).toBe(true);
-    expect(hour.getCell('A2').value).toBe('日期');
+    expect(hour.getCell('F1').isMerged).toBe(true);
+    expect(hour.getCell('G1').isMerged).toBe(false);
+    expect([1, 2, 3, 4, 5, 6].map((c) => hour.getCell(2, c).value)).toEqual(['日期', '打卡時段', '上班', '加班', '請假', '時數']);
+    expect(hour.getCell('G2').value).toBeNull(); // 遲到、平日欄已拿掉
+    expect(hour.columns.filter((column) => column.hidden)).toHaveLength(0);
     expect(hour.getCell('A3').value).toBe('6/1');
     expect(hour.getCell('A4').font?.color?.argb).toBe('FFFF0000'); // 6/2 有薪假紅字
     expect(hour.getCell('A6').value).toBe('總合');
     expect(hour.getCell('C6').value).toBe(production.summaries[0].workHours);
-    expect(hour.getColumn(7).hidden).toBe(true);
-    expect(hour.getColumn(8).hidden).toBe(true);
-    expect(hour.getCell('H7').value).toBe(production.summaries[0].overtime.paidHolidayWithin8);
-    // 假別列從總合列下第 5 列起，順序同 LEAVE_TYPES；6/3 只請半天又沒打卡，依舊規則記為曠職 4 小時
-    expect(hour.getCell('E11').value).toBe('事假');
-    expect(hour.getCell('F11').value).toBe(0);
-    expect(hour.getCell('E20').value).toBe('曠職');
-    expect(hour.getCell('F20').value).toBe(4);
+    // 假別列緊接總合列，順序同 LEAVE_TYPES；6/3 只請半天又沒打卡，依舊規則記為曠職 4 小時
+    expect(hour.getCell('E7').value).toBe('事假');
+    expect(hour.getCell('F7').value).toBe(0);
+    expect(hour.getCell('E16').value).toBe('曠職');
+    expect(hour.getCell('F16').value).toBe(4);
     expect(hour.getCell('E5').value).toBe('曠職');
     expect(hour.pageSetup.orientation).toBe('landscape');
     expect(hour.headerFooter.oddHeader).toBe('&L115年6月 生產部 打卡記錄');
-    // 李四 need_check=false 不在打卡記錄表
-    expect(hour.getCell('I1').value).toBeNull();
+    expect(checkFormulas(hour)).toEqual([0, []]);
 
     const wage = reloaded.getWorksheet('薪資-生產部')!;
     expect(wage.getCell('A1').value).toBe('姓名');
@@ -89,19 +129,24 @@ describe('buildPayrollWorkbook', () => {
     expect(wage.getCell('E1').value).toBe('總合');
     expect(wage.getCell('A26').value).toBe('簽章');
     expect(wage.getRow(26).height).toBe(25);
-    expect(wage.getCell('E25').value).toBe(production.wages[0].netPay + production.wages[1].netPay);
     expect(wage.getCell('A16').value).toBe('勤務津貼'); // 特休減沿用舊標題
     expect(wage.getCell('A17').value).toBe('無薪假'); // 舊標題「公假」
     expect(wage.getCell('A22').value).toBe('其他代扣'); // 正式版沒有稅金代扣列
-
-    let formulas = 0;
-    reloaded.eachSheet((sheet) => sheet.eachRow((row) => row.eachCell((cell) => { if (cell.formula) formulas++; })));
-    expect(formulas).toBe(0);
+    // 一般項目寫值；合計三列與總合欄是同表加減公式，不參照打卡記錄表
+    expect(wage.getCell('B4').value).toBe(production.wages[0].overtimePay);
+    expect(wage.getCell('B11').formula).toBe('SUM(B2:B10)');
+    expect(wage.getCell('B23').formula).toBe('SUM(B12:B22)');
+    expect(wage.getCell('B25').formula).toBe('B11-B23');
+    expect(wage.getCell('B24').value).toBe(production.wages[0].pension); // 退休提撥不扣
+    expect(wage.getCell('E25').formula).toBe('SUM(B25:D25)');
+    expect(numeric(wage, 'E25')).toBe(production.wages[0].netPay + production.wages[1].netPay);
+    const [wageFormulas, wrong] = checkFormulas(wage);
+    expect(wrong).toEqual([]);
+    expect(wageFormulas).toBe(2 * 3 + 24); // 每人 3 個合計 + 總合欄第 2–25 列
+    reloaded.eachSheet((sheet) => sheet.eachRow((row) => row.eachCell((cell) => expect(cell.formula ?? '').not.toContain('!'))));
 
     expect(read.departments).toHaveLength(1);
-    expect(read.departments[0].days).toEqual(
-      production.days.map((d) => ({ name: d.name, date: d.date, work: d.work, overtime: d.overtime, leaveType: d.leaveType, leaveHours: d.leaveHours, late: d.late })),
-    );
+    expect(read.departments[0].days).toEqual(production.days.map(dayFields));
     for (const wageRow of production.wages) {
       const got = read.departments[0].wages.find((w) => w.name === wageRow.name)!;
       for (const key of Object.keys(got)) {
@@ -143,11 +188,10 @@ describe('buildPayrollWorkbook round-trip on fixtures', () => {
     const input: PayrollSourceData = JSON.parse(fs.readFileSync(path.join(fixturesDir, name, 'input.json'), 'utf8'));
     const result = calculatePayroll(input);
     for (const department of result.departments) {
-      const { read } = await roundTrip(buildPayrollWorkbook(workbookInput(input, department)), Number(input.period.start.slice(0, 4)));
+      const { reloaded, read } = await roundTrip(buildPayrollWorkbook(workbookInput(input, department)), Number(input.period.start.slice(0, 4)));
       const got = read.departments[0];
-      expect(got.days).toEqual(
-        department.days.map((d) => ({ name: d.name, date: d.date, work: d.work, overtime: d.overtime, leaveType: d.leaveType, leaveHours: d.leaveHours, late: d.late })),
-      );
+      expect(got.days).toEqual(department.days.map(dayFields));
+      expect(checkFormulas(reloaded.getWorksheet(`薪資-${department.department}`)!)[1]).toEqual([]);
       expect(got.wages.map((w) => w.name)).toEqual(department.wageSheetNames);
       for (const [index, wageRow] of department.wages.entries()) {
         for (const [key, value] of Object.entries(got.wages[index])) {
