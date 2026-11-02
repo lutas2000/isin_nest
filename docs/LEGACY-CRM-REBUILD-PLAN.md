@@ -279,6 +279,8 @@ apps/backend/src/legacy-crm/
 
 2026-10-16 列印修正：訂貨單後加工依欄寬自動換行並保留續行、分頁，8 項列印回歸測試及原有 30 項查詢／跳欄測試通過；驗證細節見 `LEGACY-CRM-FRONTEND.md`「列印」。現場印表機驗收仍依第 7 階段執行。
 
+2026-11-02 訂單客戶修正：依完整代碼即時查詢公司簡稱，清空／查無資料不保留舊名稱，忽略過時回應；列印維持全名與英文代碼。66 項瀏覽器回歸、前端正式建置與 legacy CRM ESLint 通過；既有 TypeScript 17 項錯誤及 A4 全報表案例未完成的限制，見 `LEGACY-CRM-FRONTEND.md`「訂單未新增時的查詢」。
+
 | 階段 | 內容 | 完成條件 |
 |---|---|---|
 | 0. 收尾 isin_vb6 | 處理 handoff 未完成事項中「操作」類（報價 F8、工作 F8、收款 F3／F4）；最終 commit 與 tag `v0-final` | `npm test`、`npm run build` 通過；handoff 更新 |

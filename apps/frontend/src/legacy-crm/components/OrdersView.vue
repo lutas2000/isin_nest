@@ -76,7 +76,6 @@ interface PickerState {
   error: string;
 }
 
-const customers = ref<Row[]>([]);
 const parts = ref<Row[]>([]);
 const selectedKey = ref<string | null>(null);
 const current = ref<Row>(blankOrder());
@@ -207,13 +206,21 @@ function withVisibleRows(order: Row): Row {
   return { ...blankOrder(), ...order, items };
 }
 
-function selectOrder(order: Row) {
+async function selectOrder(order: Row) {
   selectedKey.value = recordKey(order);
   current.value = withVisibleRows(order);
   mode.value = 'edit';
-  savedForm = JSON.stringify(current.value);
+  const form = current.value;
+  // Normalize only the saved name; edits made during the lookup stay dirty.
+  const saved = JSON.parse(JSON.stringify(form));
+  savedForm = JSON.stringify(saved);
   errorMessage.value = '';
   statusMessage.value = '';
+  const name = await syncCustomer();
+  if (current.value === form && name !== undefined) {
+    saved.customer_name = name;
+    savedForm = JSON.stringify(saved);
+  }
 }
 
 async function openOrder(orderNo: string) {
@@ -221,19 +228,16 @@ async function openOrder(orderNo: string) {
     const payload = await legacyGet<{ item: Row }>(
       `/orders/${encodeURIComponent(orderNo)}`,
     );
-    selectOrder(payload.item);
+    await selectOrder(payload.item);
   } catch (error) {
     errorMessage.value = (error as Error).message;
   }
 }
 
 async function loadLookups() {
-  const [customerResult, partResult] = await Promise.allSettled([
-    legacyGet<{ items: Row[] }>('/partners?kind=customer'),
+  const [partResult] = await Promise.allSettled([
     legacyGet<{ items: Row[] }>('/parts'),
   ]);
-  if (customerResult.status === 'fulfilled')
-    customers.value = customerResult.value.items;
   if (partResult.status === 'fulfilled') parts.value = partResult.value.items;
 }
 
@@ -280,7 +284,7 @@ async function saveOrder() {
       isNew ? 'POST' : 'PUT',
       order,
     );
-    selectOrder(payload.item);
+    await selectOrder(payload.item);
     statusMessage.value = '存檔完成';
     if (isNew) await previewThenAdd();
   } catch (error) {
@@ -533,14 +537,31 @@ function pickQuotes(keys: Set<unknown>) {
   lineChanged();
 }
 
-function syncCustomer() {
-  const customer = customers.value.find(
-    (item) => item.code === current.value.customer_code,
-  );
-  if (customer)
-    current.value.customer_name = Array.from(String(customer.full_name ?? ''))
-      .slice(0, 10)
-      .join('');
+// Resolve the exact code, rather than the first 500 customers in the list.
+// Clear immediately and ignore obsolete responses (including A → B → A).
+let customerLookup = 0;
+async function syncCustomer(): Promise<string | undefined> {
+  const request = ++customerLookup;
+  const form = current.value;
+  const code = String(form.customer_code ?? '').trim();
+  form.customer_name = '';
+  if (!code) return '';
+  const customer = await legacyGet<{ item: Row | null }>(
+    `/partners/customer/${encodeURIComponent(code)}`,
+  )
+    .then(({ item }) => item)
+    // Unknown codes or a failed lookup leave the name blank, never stale.
+    .catch(() => null);
+  if (
+    request !== customerLookup ||
+    current.value !== form ||
+    String(form.customer_code ?? '').trim() !== code ||
+    form.customer_name !== ''
+  )
+    return;
+  const name = String(customer?.short_name ?? '').trim();
+  form.customer_name = name;
+  return name;
 }
 
 // The legacy form refuses a drawing number already on another line
@@ -762,7 +783,7 @@ onMounted(() => {
             :data-hint="ASSIST_HINT"
             maxlength="10"
             aria-label="客戶編號"
-            @change="canLookup && syncCustomer()"
+            @input="syncCustomer()"
             @keydown.enter.prevent="isEditable ? syncCustomer() : openQuery()"
             @keydown.f1.prevent="assistCustomer"
           />
