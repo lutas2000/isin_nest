@@ -206,21 +206,16 @@ function withVisibleRows(order: Row): Row {
   return { ...blankOrder(), ...order, items };
 }
 
-async function selectOrder(order: Row) {
+function selectOrder(order: Row) {
   selectedKey.value = recordKey(order);
   current.value = withVisibleRows(order);
   mode.value = 'edit';
-  const form = current.value;
-  // Normalize only the saved name; edits made during the lookup stay dirty.
-  const saved = JSON.parse(JSON.stringify(form));
-  savedForm = JSON.stringify(saved);
+  // Keep the stored customer name. Rewriting it to the master short name
+  // would mark that rewrite as clean, so the next save of any other field
+  // would persist it (or a blank, if the lookup failed).
+  savedForm = JSON.stringify(current.value);
   errorMessage.value = '';
   statusMessage.value = '';
-  const name = await syncCustomer();
-  if (current.value === form && name !== undefined) {
-    saved.customer_name = name;
-    savedForm = JSON.stringify(saved);
-  }
 }
 
 async function openOrder(orderNo: string) {
@@ -228,7 +223,7 @@ async function openOrder(orderNo: string) {
     const payload = await legacyGet<{ item: Row }>(
       `/orders/${encodeURIComponent(orderNo)}`,
     );
-    await selectOrder(payload.item);
+    selectOrder(payload.item);
   } catch (error) {
     errorMessage.value = (error as Error).message;
   }
@@ -284,7 +279,7 @@ async function saveOrder() {
       isNew ? 'POST' : 'PUT',
       order,
     );
-    await selectOrder(payload.item);
+    selectOrder(payload.item);
     statusMessage.value = '存檔完成';
     if (isNew) await previewThenAdd();
   } catch (error) {
@@ -539,8 +534,12 @@ function pickQuotes(keys: Set<unknown>) {
 
 // Resolve the exact code, rather than the first 500 customers in the list.
 // Clear immediately and ignore obsolete responses (including A → B → A).
+// The order stores at most 10 characters (the old full-name slice).
 let customerLookup = 0;
 async function syncCustomer(): Promise<string | undefined> {
+  // A loaded read-only order still accepts a customer code as a query key.
+  // Don't replace the document name in that case.
+  if (!canLookup.value) return;
   const request = ++customerLookup;
   const form = current.value;
   const code = String(form.customer_code ?? '').trim();
@@ -559,7 +558,9 @@ async function syncCustomer(): Promise<string | undefined> {
     form.customer_name !== ''
   )
     return;
-  const name = String(customer?.short_name ?? '').trim();
+  const name = Array.from(String(customer?.short_name ?? '').trim())
+    .slice(0, 10)
+    .join('');
   form.customer_name = name;
   return name;
 }
@@ -783,7 +784,7 @@ onMounted(() => {
             :data-hint="ASSIST_HINT"
             maxlength="10"
             aria-label="客戶編號"
-            @input="syncCustomer()"
+            @input="canLookup && syncCustomer()"
             @keydown.enter.prevent="isEditable ? syncCustomer() : openQuery()"
             @keydown.f1.prevent="assistCustomer"
           />

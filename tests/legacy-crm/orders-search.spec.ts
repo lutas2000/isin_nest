@@ -478,6 +478,11 @@ const shortNameCustomers = [
   { code: '111', full_name: '臨時客戶有限公司', short_name: '臨時' },
   { code: 'VBU', full_name: '新益精密工業有限公司', short_name: '新益' },
   { code: 'NO-SHORT', full_name: '只有全名有限公司', short_name: '' },
+  {
+    code: 'LONG-NAME',
+    full_name: '名稱很長的客戶有限公司',
+    short_name: '一二三四五六七八九十多',
+  },
 ];
 
 async function mockExactCustomers(page: Page) {
@@ -578,7 +583,9 @@ for (const next of ['VBU', '', 'cancel']) {
   });
 }
 
-test('舊訂單顯示簡稱，未修改即可列印公司全名與英文代碼', async ({ page }) => {
+test('舊訂單保留已存名稱，未修改即可列印公司全名與英文代碼', async ({
+  page,
+}) => {
   await mockExactCustomers(page);
   await page.route('**/api/legacy-crm/orders/OLD001', (route) =>
     route.fulfill({
@@ -593,14 +600,55 @@ test('舊訂單顯示簡稱，未修改即可列印公司全名與英文代碼',
   await openOrders(page);
   await orderNumber(page).fill('OLD001');
   await orderNumber(page).press('Enter');
-  await expect(page.getByLabel('客戶名稱', { exact: true })).toHaveValue(
-    '新益',
-  );
+  const name = page.getByLabel('客戶名稱', { exact: true });
+  await expect(name).toHaveValue('舊的全名');
   await page.getByRole('button', { name: '列印 P', exact: true }).click();
   const preview = page.getByRole('dialog', { name: '訂貨單預覽', exact: true });
   await expect(preview).toBeVisible();
   await expect(preview).toContainText('新益精密工業有限公司');
   await expect(preview).toContainText('[VBU]');
+  await preview.getByRole('button', { name: '關閉 C', exact: true }).click();
+  await expect(preview).toBeHidden();
+  const code = page.getByLabel('客戶編號', { exact: true });
+  await code.fill('111');
+  await expect(name).toHaveValue('臨時');
+  await code.fill('');
+  await expect(name).toHaveValue('');
+  await code.fill('VBU');
+  await expect(name).toHaveValue('新益');
+});
+
+test('唯讀已載入訂單：客戶代碼只供查詢，不改已存名稱，還原後仍可列印', async ({
+  page,
+}) => {
+  await page.route('**/api/legacy-crm/print-log', (route) =>
+    route.fulfill({ status: 204 }),
+  );
+  await openOrders(page, 'read');
+  await orderNumber(page).fill('OLD001');
+  await orderNumber(page).press('Enter');
+  const code = page.getByLabel('客戶編號', { exact: true });
+  const name = page.getByLabel('客戶名稱', { exact: true });
+  await expect(code).toHaveValue(customer.code);
+  await expect(name).toHaveValue(customer.full_name);
+  await code.fill('VBU');
+  await code.press('Tab');
+  await expect(name).toHaveValue(customer.full_name);
+  await code.fill(customer.code);
+  await expect(name).toHaveValue(customer.full_name);
+  await page.getByRole('button', { name: '列印 P', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: '訂貨單預覽', exact: true }),
+  ).toBeVisible();
+});
+
+test('客戶簡稱超過十個字時，訂單名稱只取前十字', async ({ page }) => {
+  await mockExactCustomers(page);
+  await openOrders(page);
+  await page.getByLabel('客戶編號', { exact: true }).fill('LONG-NAME');
+  await expect(page.getByLabel('客戶名稱', { exact: true })).toHaveValue(
+    '一二三四五六七八九十',
+  );
 });
 
 for (const view of ['quotes', 'work']) {
