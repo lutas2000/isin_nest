@@ -642,6 +642,64 @@ test('唯讀已載入訂單：客戶代碼只供查詢，不改已存名稱，�
   ).toBeVisible();
 });
 
+test('客戶簡稱：連續輸入只查完整代碼，Enter 與換欄立即送出且不重複', async ({
+  page,
+}) => {
+  await mockExactCustomers(page);
+  const lookedUp: string[] = [];
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    const marker = '/partners/customer/';
+    const at = path.lastIndexOf(marker);
+    if (at >= 0)
+      lookedUp.push(decodeURIComponent(path.slice(at + marker.length)));
+  });
+  await openOrders(page);
+  const code = page.getByLabel('客戶編號', { exact: true });
+  const name = page.getByLabel('客戶名稱', { exact: true });
+
+  await code.pressSequentially('VBU', { delay: 40 });
+  await page.waitForTimeout(120);
+  expect(lookedUp).toEqual([]);
+  await expect(name).toHaveValue('新益');
+  expect(lookedUp).toEqual(['VBU']);
+
+  await code.press('Enter');
+  await page.waitForTimeout(400);
+  expect(lookedUp).toEqual(['VBU']);
+
+  lookedUp.length = 0;
+  await code.fill('');
+  await expect(name).toHaveValue('');
+  expect(lookedUp).toEqual([]);
+  await code.pressSequentially('111', { delay: 20 });
+  const started = Date.now();
+  const pending = page.waitForRequest('**/partners/customer/111');
+  await code.press('Enter');
+  await pending;
+  expect(Date.now() - started).toBeLessThan(250);
+  await expect(name).toHaveValue('臨時');
+  expect(lookedUp).toEqual(['111']);
+
+  lookedUp.length = 0;
+  await code.fill('');
+  await code.pressSequentially('VBU', { delay: 20 });
+  const blurred = page.waitForRequest('**/partners/customer/VBU');
+  await code.press('Tab');
+  await blurred;
+  await expect(name).toHaveValue('新益');
+  expect(lookedUp).toEqual(['VBU']);
+
+  lookedUp.length = 0;
+  await code.fill('');
+  await code.pressSequentially('111', { delay: 20 });
+  await code.press('F5');
+  await expect(orderNumber(page)).toHaveValue('NEW001');
+  await page.waitForTimeout(400);
+  expect(lookedUp).toEqual([]);
+  await expect(name).toHaveValue('');
+});
+
 test('客戶簡稱超過十個字時，訂單名稱只取前十字', async ({ page }) => {
   await mockExactCustomers(page);
   await openOrders(page);
