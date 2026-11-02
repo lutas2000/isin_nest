@@ -243,7 +243,7 @@ test.describe('功能名稱', () => {
 export default defineConfig({
   testDir: './tests', // 測試目錄
   fullyParallel: true, // 平行執行測試
-  retries: process.env.CI ? 2 : 0, // CI 環境重試次數
+  retries: process.env.CI ? 2 : 0, // 測試僅在本機執行
   use: {
     baseURL: 'http://localhost:3001', // 前端 URL
     trace: 'on-first-retry', // 失敗時產生追蹤
