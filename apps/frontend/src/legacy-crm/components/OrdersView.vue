@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue';
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 import LegacyAssistHost from './LegacyAssistHost.vue';
 import LegacyDocumentPrint from './LegacyDocumentPrint.vue';
 import LegacyDrawingWindow from './LegacyDrawingWindow.vue';
@@ -76,7 +76,6 @@ interface PickerState {
   error: string;
 }
 
-const customers = ref<Row[]>([]);
 const parts = ref<Row[]>([]);
 const selectedKey = ref<string | null>(null);
 const current = ref<Row>(blankOrder());
@@ -208,9 +207,13 @@ function withVisibleRows(order: Row): Row {
 }
 
 function selectOrder(order: Row) {
+  dropCustomerLookup();
   selectedKey.value = recordKey(order);
   current.value = withVisibleRows(order);
   mode.value = 'edit';
+  // Keep the stored customer name. Rewriting it to the master short name
+  // would mark that rewrite as clean, so the next save of any other field
+  // would persist it (or a blank, if the lookup failed).
   savedForm = JSON.stringify(current.value);
   errorMessage.value = '';
   statusMessage.value = '';
@@ -228,16 +231,14 @@ async function openOrder(orderNo: string) {
 }
 
 async function loadLookups() {
-  const [customerResult, partResult] = await Promise.allSettled([
-    legacyGet<{ items: Row[] }>('/partners?kind=customer'),
+  const [partResult] = await Promise.allSettled([
     legacyGet<{ items: Row[] }>('/parts'),
   ]);
-  if (customerResult.status === 'fulfilled')
-    customers.value = customerResult.value.items;
   if (partResult.status === 'fulfilled') parts.value = partResult.value.items;
 }
 
 function addOrder() {
+  dropCustomerLookup();
   selectedKey.value = null;
   current.value = blankOrder();
   mode.value = 'new';
@@ -255,6 +256,7 @@ async function editOrder() {
 
 async function cancelEdit() {
   if (mode.value === 'new' || selectedKey.value == null) {
+    dropCustomerLookup();
     selectedKey.value = null;
     current.value = blankOrder();
     mode.value = 'view';
@@ -267,6 +269,7 @@ async function cancelEdit() {
 
 async function saveOrder() {
   if (readOnly.value) return;
+  await flushCustomerLookup();
   errorMessage.value = '';
   statusMessage.value = '';
   const isNew = mode.value === 'new';
@@ -292,6 +295,7 @@ async function deleteOrder() {
   if (selectedKey.value == null || readOnly.value) return;
   if (!window.confirm('確定刪除這筆資料？')) return;
   const deletedKey = selectedKey.value;
+  dropCustomerLookup();
   try {
     // The record to show next, found while the deleted one is still on file.
     const neighbour = await neighbourDocument('orders', deletedKey);
@@ -374,6 +378,7 @@ let savedForm = '';
 
 async function printDocument(kind: 'document' | 'label') {
   if (selectedKey.value == null || mode.value === 'new') return;
+  await flushCustomerLookup();
   if (JSON.stringify(current.value) !== savedForm) {
     window.alert('內容已變動，請先執行更新再繼續');
     return;
@@ -533,14 +538,117 @@ function pickQuotes(keys: Set<unknown>) {
   lineChanged();
 }
 
-function syncCustomer() {
-  const customer = customers.value.find(
-    (item) => item.code === current.value.customer_code,
-  );
-  if (customer)
-    current.value.customer_name = Array.from(String(customer.full_name ?? ''))
+// Resolve the exact code, rather than the first 500 customers in the list.
+// Keystrokes wait so a code sends one request; Enter, blur, save, and print
+// run that request at once. Clear a blank code immediately. Ignore obsolete
+// responses (including A → B → A). The order stores at most 10 characters.
+const CUSTOMER_LOOKUP_DELAY = 300;
+let customerLookup = 0;
+let customerLookupTimer: number | undefined;
+let customerLookupFlight: Promise<void> | undefined;
+// Code already in flight or applied. Repeating it does not fetch again.
+let customerLookupCode: string | undefined;
+
+function cancelCustomerLookupTimer() {
+  if (customerLookupTimer === undefined) return;
+  clearTimeout(customerLookupTimer);
+  customerLookupTimer = undefined;
+}
+
+function dropCustomerLookup() {
+  cancelCustomerLookupTimer();
+  customerLookup += 1;
+  customerLookupFlight = undefined;
+  customerLookupCode = undefined;
+}
+
+function scheduleCustomerLookup() {
+  if (!canLookup.value) return;
+  const code = String(current.value.customer_code ?? '').trim();
+  cancelCustomerLookupTimer();
+  if (!code) {
+    customerLookup += 1;
+    current.value.customer_name = '';
+    customerLookupFlight = undefined;
+    customerLookupCode = '';
+    return;
+  }
+  if (code === customerLookupCode) return;
+  customerLookupTimer = window.setTimeout(() => {
+    customerLookupTimer = undefined;
+    void syncCustomer();
+  }, CUSTOMER_LOOKUP_DELAY);
+}
+
+async function flushCustomerLookup() {
+  if (!canLookup.value) {
+    cancelCustomerLookupTimer();
+    return;
+  }
+  if (customerLookupTimer !== undefined) {
+    cancelCustomerLookupTimer();
+    await syncCustomer();
+    return;
+  }
+  if (customerLookupFlight) await customerLookupFlight;
+}
+
+function onCustomerCodeEnter() {
+  void flushCustomerLookup();
+  if (!isEditable.value) openQuery();
+}
+
+async function syncCustomer(): Promise<string | undefined> {
+  // A loaded read-only order still accepts a customer code as a query key.
+  // Don't replace the document name in that case.
+  if (!canLookup.value) return;
+  cancelCustomerLookupTimer();
+  const form = current.value;
+  const code = String(form.customer_code ?? '').trim();
+  if (!code) {
+    customerLookup += 1;
+    form.customer_name = '';
+    customerLookupFlight = undefined;
+    customerLookupCode = '';
+    return '';
+  }
+  if (code === customerLookupCode) {
+    if (customerLookupFlight) await customerLookupFlight;
+    return;
+  }
+  const request = ++customerLookup;
+  form.customer_name = '';
+  customerLookupCode = code;
+  let finished!: () => void;
+  const flight = new Promise<void>((resolve) => {
+    finished = resolve;
+  });
+  customerLookupFlight = flight;
+  try {
+    const customer = await legacyGet<{ item: Row | null }>(
+      `/partners/customer/${encodeURIComponent(code)}`,
+    )
+      .then(({ item }) => item)
+      // Unknown codes or a failed lookup leave the name blank, never stale.
+      .catch(() => null);
+    if (
+      request !== customerLookup ||
+      current.value !== form ||
+      String(form.customer_code ?? '').trim() !== code ||
+      form.customer_name !== ''
+    ) {
+      if (customerLookupCode === code) customerLookupCode = undefined;
+      return;
+    }
+    const name = Array.from(String(customer?.short_name ?? '').trim())
       .slice(0, 10)
       .join('');
+    form.customer_name = name;
+    return name;
+  } finally {
+    finished();
+    if (customerLookupFlight === flight) customerLookupFlight = undefined;
+  }
 }
 
 // The legacy form refuses a drawing number already on another line
@@ -625,7 +733,7 @@ function assistCustomer() {
     prefix: current.value.customer_code,
     onSelect: (row) => {
       current.value.customer_code = row.code;
-      if (canLookup.value) syncCustomer();
+      if (canLookup.value) void syncCustomer();
     },
   });
 }
@@ -697,6 +805,7 @@ function assistPhrase(item: Row) {
 onMounted(() => {
   void loadLookups();
 });
+onUnmounted(dropCustomerLookup);
 </script>
 
 <template>
@@ -762,8 +871,9 @@ onMounted(() => {
             :data-hint="ASSIST_HINT"
             maxlength="10"
             aria-label="客戶編號"
-            @change="canLookup && syncCustomer()"
-            @keydown.enter.prevent="isEditable ? syncCustomer() : openQuery()"
+            @input="canLookup && scheduleCustomerLookup()"
+            @blur="flushCustomerLookup()"
+            @keydown.enter.prevent="onCustomerCodeEnter"
             @keydown.f1.prevent="assistCustomer"
           />
           <input

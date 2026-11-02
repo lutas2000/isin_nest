@@ -42,6 +42,9 @@ test.beforeEach(async ({ page }, testInfo) => {
     expect(request.method(), '查詢流程不可寫入訂單').toBe('GET');
     let result: unknown;
     switch (url.pathname.replace('/api/legacy-crm', '')) {
+      case '/partners/customer/C001':
+        result = { item: customer };
+        break;
       case '/partners':
       case '/assist/customer':
         result = { items: [customer] };
@@ -49,6 +52,10 @@ test.beforeEach(async ({ page }, testInfo) => {
       case '/banks':
       case '/reports/catalog':
       case '/orders':
+        result = { items: [] };
+        break;
+      case '/parts/D/orders':
+      case '/parts/D001/orders':
         result = { items: [] };
         break;
       case '/parts':
@@ -107,6 +114,10 @@ test.beforeEach(async ({ page }, testInfo) => {
         result = { number: 'NEW001' };
         break;
       default:
+        if (url.pathname.includes('/partners/customer/')) {
+          await route.fulfill({ status: 404, json: { message: '查無客戶' } });
+          return;
+        }
         throw new Error(`未預期的 API：${request.url()}`);
     }
     await route.fulfill({ json: result });
@@ -135,7 +146,7 @@ test('未新增：客戶首碼 F1 帶出代碼與名稱，可輸入名稱並查�
   await customers.getByRole('cell', { name: 'C001', exact: true }).dblclick();
   await expect(code).toHaveValue('C001');
   await expect(page.getByLabel('客戶名稱', { exact: true })).toHaveValue(
-    customer.full_name,
+    customer.short_name,
   );
   await page.getByLabel('客戶名稱', { exact: true }).fill('自行輸入名稱');
   const query = page.waitForRequest('**/documents/orders/query?party=C001');
@@ -314,7 +325,7 @@ test('Enter：訂單新增的日期與客戶代碼依序跳欄，客戶名稱先
   await code.fill('C001');
   await code.press('Enter');
   const name = page.getByLabel('客戶名稱', { exact: true });
-  await expect(name).toHaveValue(customer.full_name);
+  await expect(name).toHaveValue(customer.short_name);
   await expect(name).toBeFocused();
 });
 
@@ -462,3 +473,263 @@ test('Enter：查詢視窗保留選取功能', async ({ page }) => {
     'C001',
   );
 });
+
+const shortNameCustomers = [
+  { code: '111', full_name: '臨時客戶有限公司', short_name: '臨時' },
+  { code: 'VBU', full_name: '新益精密工業有限公司', short_name: '新益' },
+  { code: 'NO-SHORT', full_name: '只有全名有限公司', short_name: '' },
+  {
+    code: 'LONG-NAME',
+    full_name: '名稱很長的客戶有限公司',
+    short_name: '一二三四五六七八九十多',
+  },
+];
+
+async function mockExactCustomers(page: Page) {
+  // These customers are deliberately absent from the initial (limited) list.
+  await page.route('**/api/legacy-crm/partners/customer/*', async (route) => {
+    expect(route.request().method()).toBe('GET');
+    const code = decodeURIComponent(
+      new URL(route.request().url()).pathname.split('/').at(-1)!,
+    );
+    const item = shortNameCustomers.find((entry) => entry.code === code);
+    await route.fulfill({
+      status: item ? 200 : code === 'FAIL' ? 503 : 404,
+      json: item ? { item } : { message: '查無客戶或無法讀取' },
+    });
+  });
+}
+
+for (const state of ['blank', 'new', 'cancelled', 'read-only']) {
+  test(`客戶簡稱 ${state}：111 → 清空 → VBU → 未知代碼，不保留舊名稱`, async ({
+    page,
+  }) => {
+    await mockExactCustomers(page);
+    await openOrders(page, state === 'read-only' ? 'read' : 'write');
+    if (state === 'new' || state === 'cancelled') {
+      await page.getByRole('button', { name: '新增 F5', exact: true }).click();
+      await expect(orderNumber(page)).toHaveValue('NEW001');
+      if (state === 'cancelled') {
+        await page
+          .getByRole('button', { name: '取消 F5', exact: true })
+          .click();
+      }
+    }
+    const code = page.getByLabel('客戶編號', { exact: true });
+    const name = page.getByLabel('客戶名稱', { exact: true });
+    await code.fill('111');
+    await expect(name).toHaveValue('臨時');
+    await code.fill('');
+    await expect(name).toHaveValue('');
+    await code.pressSequentially('VBU');
+    await expect(name).toHaveValue('新益');
+    await code.fill('111');
+    await expect(name).toHaveValue('臨時');
+    await code.fill('VBU');
+    await expect(name).toHaveValue('新益');
+    for (const value of ['MISSING', 'FAIL', 'NO-SHORT', '']) {
+      await code.fill(value);
+      await code.press('Tab');
+      await expect(name).toHaveValue('');
+    }
+    await expect(orderNumber(page)).toHaveValue(
+      state === 'new' ? 'NEW001' : '',
+    );
+  });
+}
+
+for (const next of ['VBU', '', 'cancel']) {
+  test(`客戶簡稱：較慢的 111 回應不覆蓋 ${next || '清空'} 後的畫面`, async ({
+    page,
+  }) => {
+    await mockExactCustomers(page);
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(
+      '**/api/legacy-crm/partners/customer/111',
+      async (route) => {
+        await pending;
+        await route.fulfill({ json: { item: shortNameCustomers[0] } });
+      },
+    );
+    await openOrders(page);
+    const code = page.getByLabel('客戶編號', { exact: true });
+    const name = page.getByLabel('客戶名稱', { exact: true });
+    if (next === 'cancel') {
+      await page.getByRole('button', { name: '新增 F5', exact: true }).click();
+      await expect(orderNumber(page)).toHaveValue('NEW001');
+    }
+    const request = page.waitForRequest('**/partners/customer/111');
+    await code.fill('111');
+    await request;
+    if (next === 'cancel') {
+      await page.getByRole('button', { name: '取消 F5', exact: true }).click();
+    } else {
+      await code.fill(next);
+    }
+    await expect(name).toHaveValue(next === 'VBU' ? '新益' : '');
+    const response = page.waitForResponse('**/partners/customer/111');
+    release();
+    await response;
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+    await expect(name).toHaveValue(next === 'VBU' ? '新益' : '');
+  });
+}
+
+test('舊訂單保留已存名稱，未修改即可列印公司全名與英文代碼', async ({
+  page,
+}) => {
+  await mockExactCustomers(page);
+  await page.route('**/api/legacy-crm/orders/OLD001', (route) =>
+    route.fulfill({
+      json: {
+        item: { ...order, customer_code: 'VBU', customer_name: '舊的全名' },
+      },
+    }),
+  );
+  await page.route('**/api/legacy-crm/print-log', (route) =>
+    route.fulfill({ status: 204 }),
+  );
+  await openOrders(page);
+  await orderNumber(page).fill('OLD001');
+  await orderNumber(page).press('Enter');
+  const name = page.getByLabel('客戶名稱', { exact: true });
+  await expect(name).toHaveValue('舊的全名');
+  await page.getByRole('button', { name: '列印 P', exact: true }).click();
+  const preview = page.getByRole('dialog', { name: '訂貨單預覽', exact: true });
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText('新益精密工業有限公司');
+  await expect(preview).toContainText('[VBU]');
+  await preview.getByRole('button', { name: '關閉 C', exact: true }).click();
+  await expect(preview).toBeHidden();
+  const code = page.getByLabel('客戶編號', { exact: true });
+  await code.fill('111');
+  await expect(name).toHaveValue('臨時');
+  await code.fill('');
+  await expect(name).toHaveValue('');
+  await code.fill('VBU');
+  await expect(name).toHaveValue('新益');
+});
+
+test('唯讀已載入訂單：客戶代碼只供查詢，不改已存名稱，還原後仍可列印', async ({
+  page,
+}) => {
+  await page.route('**/api/legacy-crm/print-log', (route) =>
+    route.fulfill({ status: 204 }),
+  );
+  await openOrders(page, 'read');
+  await orderNumber(page).fill('OLD001');
+  await orderNumber(page).press('Enter');
+  const code = page.getByLabel('客戶編號', { exact: true });
+  const name = page.getByLabel('客戶名稱', { exact: true });
+  await expect(code).toHaveValue(customer.code);
+  await expect(name).toHaveValue(customer.full_name);
+  await code.fill('VBU');
+  await code.press('Tab');
+  await expect(name).toHaveValue(customer.full_name);
+  await code.fill(customer.code);
+  await expect(name).toHaveValue(customer.full_name);
+  await page.getByRole('button', { name: '列印 P', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: '訂貨單預覽', exact: true }),
+  ).toBeVisible();
+});
+
+test('客戶簡稱：連續輸入只查完整代碼，Enter 與換欄立即送出且不重複', async ({
+  page,
+}) => {
+  await mockExactCustomers(page);
+  const lookedUp: string[] = [];
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    const marker = '/partners/customer/';
+    const at = path.lastIndexOf(marker);
+    if (at >= 0)
+      lookedUp.push(decodeURIComponent(path.slice(at + marker.length)));
+  });
+  await openOrders(page);
+  const code = page.getByLabel('客戶編號', { exact: true });
+  const name = page.getByLabel('客戶名稱', { exact: true });
+
+  await code.pressSequentially('VBU', { delay: 40 });
+  await page.waitForTimeout(120);
+  expect(lookedUp).toEqual([]);
+  await expect(name).toHaveValue('新益');
+  expect(lookedUp).toEqual(['VBU']);
+
+  await code.press('Enter');
+  await page.waitForTimeout(400);
+  expect(lookedUp).toEqual(['VBU']);
+
+  lookedUp.length = 0;
+  await code.fill('');
+  await expect(name).toHaveValue('');
+  expect(lookedUp).toEqual([]);
+  await code.pressSequentially('111', { delay: 20 });
+  const started = Date.now();
+  const pending = page.waitForRequest('**/partners/customer/111');
+  await code.press('Enter');
+  await pending;
+  expect(Date.now() - started).toBeLessThan(250);
+  await expect(name).toHaveValue('臨時');
+  expect(lookedUp).toEqual(['111']);
+
+  lookedUp.length = 0;
+  await code.fill('');
+  await code.pressSequentially('VBU', { delay: 20 });
+  const blurred = page.waitForRequest('**/partners/customer/VBU');
+  await code.press('Tab');
+  await blurred;
+  await expect(name).toHaveValue('新益');
+  expect(lookedUp).toEqual(['VBU']);
+
+  lookedUp.length = 0;
+  await code.fill('');
+  await code.pressSequentially('111', { delay: 20 });
+  await code.press('F5');
+  await expect(orderNumber(page)).toHaveValue('NEW001');
+  await page.waitForTimeout(400);
+  expect(lookedUp).toEqual([]);
+  await expect(name).toHaveValue('');
+});
+
+test('客戶簡稱超過十個字時，訂單名稱只取前十字', async ({ page }) => {
+  await mockExactCustomers(page);
+  await openOrders(page);
+  await page.getByLabel('客戶編號', { exact: true }).fill('LONG-NAME');
+  await expect(page.getByLabel('客戶名稱', { exact: true })).toHaveValue(
+    '一二三四五六七八九十',
+  );
+});
+
+for (const view of ['quotes', 'work']) {
+  test(`${view}：既有客戶代碼與 F1 名稱帶入維持原有行為`, async ({ page }) => {
+    await page.goto(`/tests/fixtures/legacy-orders.html?view=${view}`);
+    const number = page.locator('.legacy-form-field').first().locator('input');
+    await number.fill('LONG');
+    await number.press('Enter');
+    await expect(
+      page.getByRole('button', { name: '列印 P', exact: true }),
+    ).toBeEnabled();
+    const code = page.getByLabel('客戶編號', { exact: true });
+    const name = page.getByLabel('客戶名稱', { exact: true });
+    await code.fill('C001');
+    await code.press('Tab');
+    await expect(name).toHaveValue(customer.full_name);
+    await code.fill('C');
+    await code.press('F1');
+    await page
+      .getByRole('dialog', { name: '客戶資料查詢' })
+      .getByRole('cell', { name: 'C001', exact: true })
+      .dblclick();
+    await expect(code).toHaveValue('C001');
+    await expect(name).toHaveValue(customer.full_name);
+  });
+}
