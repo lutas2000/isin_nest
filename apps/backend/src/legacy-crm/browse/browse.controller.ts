@@ -27,7 +27,11 @@ export class LegacyBrowseController {
     throw new LegacyNotFoundError('找不到 API');
   }
 
-  @ApiOperation({ summary: 'F1 輔助輸入' })
+  @ApiOperation({
+    summary: 'F1 輔助輸入',
+    description:
+      'part／part-model 的 customer 為完整客戶代碼精確篩選；回傳 last_order_date 為該客戶、該圖號的最近訂單民國日期，無日期為空字串。有客戶時依日期新到舊（order=asc 保留圖號排序）。',
+  })
   @LegacyRead()
   @Get('assist/:kind')
   async assist(

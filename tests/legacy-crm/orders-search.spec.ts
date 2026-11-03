@@ -15,6 +15,44 @@ const part = {
   thickness: '2',
   unit: '片',
 };
+// 相同首碼與型號分屬不同客戶，包含容易誤當成 FVA 首碼匹配的 FVA2。
+const oldDrawings = [
+  {
+    ...part,
+    drawing_no: 'FVA7101',
+    customer_model: '東海新圖',
+    customer_code: 'FVA',
+    last_order_date: '115.10.30',
+  },
+  {
+    ...part,
+    drawing_no: 'FVA7102',
+    customer_model: '東海舊圖',
+    customer_code: 'FVA',
+    last_order_date: '114.03.12',
+  },
+  {
+    ...part,
+    drawing_no: 'FVA7103',
+    customer_model: '東海其他客戶',
+    customer_code: 'ABC',
+    last_order_date: '115.11.01',
+  },
+  {
+    ...part,
+    drawing_no: 'FVA7104',
+    customer_model: '東海相近代碼',
+    customer_code: 'FVA2',
+    last_order_date: '115.10.31',
+  },
+  {
+    ...part,
+    drawing_no: 'FVA7105',
+    customer_model: '東海無訂單',
+    customer_code: 'FVA',
+    last_order_date: '',
+  },
+];
 const order = {
   order_no: 'OLD001',
   customer_code: customer.code,
@@ -62,23 +100,21 @@ test.beforeEach(async ({ page }, testInfo) => {
         result = { items: [part] };
         break;
       case '/assist/part':
+      case '/assist/part-model': {
+        const field = url.pathname.endsWith('part-model')
+          ? 'customer_model'
+          : 'drawing_no';
+        const prefix = url.searchParams.get('prefix') || '';
+        const customerCode = url.searchParams.get('customer') || '';
         result = {
-          items: part.drawing_no.startsWith(
-            url.searchParams.get('prefix') || '',
-          )
-            ? [part]
-            : [],
+          items: [part, ...oldDrawings].filter(
+            (row) =>
+              row[field].startsWith(prefix) &&
+              (!customerCode || row.customer_code === customerCode),
+          ),
         };
         break;
-      case '/assist/part-model':
-        result = {
-          items: part.customer_model.startsWith(
-            url.searchParams.get('prefix') || '',
-          )
-            ? [part]
-            : [],
-        };
-        break;
+      }
       case '/drawings/shapes':
         result = {
           shapes: { D001: { width: 10, height: 10, path: 'M0 0H10V10Z' } },
@@ -183,6 +219,72 @@ test('未新增：圖號首碼 F1 可預覽並帶入圖面，不產生訂單編�
     page.getByRole('button', { name: '新增 F5', exact: true }),
   ).toBeVisible();
 });
+
+for (const byModel of [true, false]) {
+  test(`未新增：FVA + ${byModel ? '客戶型號東海' : '電腦圖號FVA71'} F1 精確限定客戶並顯示最近訂單日期`, async ({
+    page,
+  }) => {
+    await openOrders(page);
+    await page.getByLabel('客戶編號', { exact: true }).fill('FVA');
+    const input = byModel ? model(page) : drawing(page);
+    await input.fill(byModel ? '東海' : 'FVA71');
+    const lookup = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return (
+        url.pathname.endsWith(`/assist/${byModel ? 'part-model' : 'part'}`) &&
+        url.searchParams.get('prefix') === (byModel ? '東海' : 'FVA71') &&
+        url.searchParams.get('customer') === 'FVA'
+      );
+    });
+    await input.press('F1');
+    await lookup;
+    const dialog = page.getByRole('dialog', { name: '工件資料查詢' });
+    await expect(
+      dialog.getByRole('columnheader', { name: '最近訂單日期', exact: true }),
+    ).toBeVisible();
+    await expect(dialog.locator('tbody tr')).toHaveCount(3);
+    await expect(
+      dialog.getByRole('cell', { name: 'FVA', exact: true }),
+    ).toHaveCount(3);
+    await expect(
+      dialog.getByRole('cell', { name: 'FVA2', exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      dialog.getByRole('cell', { name: 'ABC', exact: true }),
+    ).toHaveCount(0);
+    await expect(dialog.locator('tbody tr').nth(0)).toContainText('115.10.30');
+    await expect(dialog.locator('tbody tr').nth(1)).toContainText('114.03.12');
+    await expect(
+      dialog.locator('tbody tr').nth(2).locator('td').last(),
+    ).toHaveText('');
+    await expect(orderNumber(page)).toHaveValue('');
+  });
+
+  test(`未填客戶：${byModel ? '客戶型號' : '電腦圖號'} F1 保留跨客戶查詢`, async ({
+    page,
+  }) => {
+    await openOrders(page);
+    const input = byModel ? model(page) : drawing(page);
+    await input.fill(byModel ? '東海' : 'FVA71');
+    const lookup = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return (
+        url.pathname.endsWith(`/assist/${byModel ? 'part-model' : 'part'}`) &&
+        !url.searchParams.has('customer')
+      );
+    });
+    await input.press('F1');
+    await lookup;
+    const dialog = page.getByRole('dialog', { name: '工件資料查詢' });
+    await expect(dialog.locator('tbody tr')).toHaveCount(5);
+    await expect(
+      dialog.getByRole('cell', { name: 'FVA2', exact: true }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole('cell', { name: 'ABC', exact: true }),
+    ).toBeVisible();
+  });
+}
 
 for (const state of ['blank', 'new', 'existing']) {
   test(`${state}：客戶型號首碼 F1 依型號查詢並帶入圖號、型號與圖面`, async ({
