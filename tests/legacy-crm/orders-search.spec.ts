@@ -94,6 +94,8 @@ test.beforeEach(async ({ page }, testInfo) => {
         break;
       case '/parts/D/orders':
       case '/parts/D001/orders':
+      // 圖號欄離開焦點會查「上次製作」；FVA71 不是既有工件，回空清單。
+      case '/parts/FVA71/orders':
         result = { items: [] };
         break;
       case '/parts':
