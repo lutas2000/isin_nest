@@ -335,6 +335,42 @@ async function partnerRows(db: LegacyDb, kind: string, prefix?: string) {
   });
 }
 
+// 兩種工件 F1 共用精確客戶條件；最近訂單只取該工件所屬客戶，避免混入別人的製作日期。
+async function partRows(
+  db: LegacyDb,
+  { prefix, customer, order }: Record<string, string | undefined>,
+  byModel = false,
+) {
+  if (byModel ? !filled(prefix) : !filled(prefix) && !filled(customer))
+    return [];
+  const filter = where([
+    ['p.customer_code = ?', customer],
+    [
+      `p.${byModel ? 'customer_model' : 'drawing_no'} ILIKE ? ESCAPE '\\'`,
+      prefix && like(prefix.trim()),
+    ],
+  ]);
+  // 無客戶時維持原有圖號排序；工件建檔明確指定 asc 時亦保留。
+  const sort =
+    filled(customer) && order !== 'asc'
+      ? 'latest.order_date DESC NULLS LAST, p.drawing_no DESC'
+      : `p.drawing_no ${!byModel && order === 'asc' ? 'ASC' : 'DESC'}`;
+  const rows = await db.all(
+    `SELECT p.drawing_no, p.customer_model, p.material, p.thickness, p.unit, p.customer_code,
+            latest.order_date::text AS last_order_date, latest.order_date_raw AS last_order_date_raw
+     FROM legacy_crm.parts p
+     LEFT JOIN LATERAL (
+       SELECT d.order_date, d.order_date_raw
+       FROM legacy_crm.order_items i JOIN legacy_crm.order_documents d ON d.order_no = i.order_no
+       WHERE i.drawing_no = p.drawing_no AND d.customer_code = p.customer_code
+       ORDER BY d.order_date DESC NULLS LAST, d.order_no DESC LIMIT 1
+     ) latest ON true
+     ${filter.clause} ORDER BY ${sort} LIMIT ${LIMIT}`,
+    filter.params,
+  );
+  return rows.map((row) => showDate(row, 'last_order_date'));
+}
+
 const ASSISTS: Record<string, Assist> = {
   customer: (db, { prefix }) => partnerRows(db, 'customer', prefix),
   supplier: (db, { prefix }) => partnerRows(db, 'supplier', prefix),
@@ -356,29 +392,9 @@ const ASSISTS: Record<string, Assist> = {
     );
   },
 
-  // 單據表單列出該客戶的工件，圖號新到舊；工件建檔從輸入的開頭依圖號順序。沒有客戶也沒有開頭時不列。
-  async part(db, { prefix, customer, order }) {
-    if (!filled(prefix) && !filled(customer)) return [];
-    const filter = where([
-      ['customer_code = ?', customer],
-      ["drawing_no ILIKE ? ESCAPE '\\'", prefix && like(prefix.trim())],
-    ]);
-    return db.all(
-      `SELECT drawing_no, customer_model, material, thickness, unit, customer_code
-       FROM legacy_crm.parts ${filter.clause} ORDER BY drawing_no ${order === 'asc' ? 'ASC' : 'DESC'} LIMIT ${LIMIT}`,
-      filter.params,
-    );
-  },
-
-  // 客戶型號至少要輸入第一個字。
-  async 'part-model'(db, { prefix }) {
-    if (!filled(prefix)) return [];
-    return db.all(
-      `SELECT drawing_no, customer_model, material, thickness, unit, customer_code
-       FROM legacy_crm.parts WHERE customer_model ILIKE $1 ESCAPE '\\' ORDER BY drawing_no DESC LIMIT ${LIMIT}`,
-      [like(String(prefix).trim())],
-    );
-  },
+  // 沒有客戶也沒有圖號開頭時不列；客戶型號至少要輸入第一個字。
+  part: (db, options) => partRows(db, options),
+  'part-model': (db, options) => partRows(db, options, true),
 
   material(db) {
     return db.all(

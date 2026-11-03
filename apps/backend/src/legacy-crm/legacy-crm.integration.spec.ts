@@ -249,6 +249,93 @@ const enabled =
       );
     });
 
+    it('scopes both drawing assists to the exact customer and returns their latest order dates', async () => {
+      for (const code of ['FVA', 'FVA2', 'ABC']) {
+        await partners.create(
+          { kind: 'customer', code, full_name: code },
+          context,
+        );
+      }
+      for (const [drawing_no, customer_code] of [
+        ['FVA7101', 'FVA'],
+        ['FVA7102', 'FVA'],
+        ['FVA7103', 'FVA2'],
+        ['FVA7104', 'ABC'],
+        ['FVA7105', 'FVA'],
+      ]) {
+        await masters.createPart(
+          { drawing_no, customer_code, customer_model: '東海' },
+          context,
+        );
+      }
+      for (const [order_no, customer_code, drawing_no, order_date] of [
+        ['O1', 'FVA', 'FVA7101', '114.01.02'],
+        ['O2', 'FVA', 'FVA7101', '115.10.30'],
+        ['O3', 'FVA', 'FVA7102', '114.03.12'],
+        ['O4', 'FVA2', 'FVA7103', '115.11.01'],
+        // 同圖號的其他客戶訂單不能覆蓋 FVA 的最近訂單日期。
+        ['O5', 'ABC', 'FVA7101', '115.11.02'],
+      ]) {
+        await orders.create(
+          {
+            order_no,
+            customer_code,
+            order_date,
+            items: [{ drawing_no, quantity: '1' }],
+          },
+          context,
+        );
+      }
+      for (const kind of ['part', 'part-model']) {
+        const prefix = kind === 'part' ? 'FVA71' : '東海';
+        expect(
+          (await browse.assist(kind, { prefix, customer: ' FVA ' })).items,
+        ).toEqual([
+          expect.objectContaining({
+            drawing_no: 'FVA7101',
+            customer_code: 'FVA',
+            last_order_date: '115.10.30',
+          }),
+          expect.objectContaining({
+            drawing_no: 'FVA7102',
+            customer_code: 'FVA',
+            last_order_date: '114.03.12',
+          }),
+          expect.objectContaining({
+            drawing_no: 'FVA7105',
+            customer_code: 'FVA',
+            last_order_date: '',
+          }),
+        ]);
+        const all = (await browse.assist(kind, { prefix })).items as {
+          drawing_no: string;
+        }[];
+        expect(all.map((row) => row.drawing_no)).toEqual([
+          'FVA7105',
+          'FVA7104',
+          'FVA7103',
+          'FVA7102',
+          'FVA7101',
+        ]);
+      }
+      const ascending = (
+        await browse.assist('part', {
+          prefix: 'FVA71',
+          customer: 'FVA',
+          order: 'asc',
+        })
+      ).items as { drawing_no: string }[];
+      expect(ascending.map((row) => row.drawing_no)).toEqual([
+        'FVA7101',
+        'FVA7102',
+        'FVA7105',
+      ]);
+      expect((await browse.assist('part')).items).toEqual([]);
+      expect(
+        (await browse.assist('part-model', { customer: 'FVA' })).items,
+      ).toEqual([]);
+    });
+
     it('returns dates as ROC text and rejects impossible dates on entry', async () => {
       await orders.create(
         {

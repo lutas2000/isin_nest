@@ -34,6 +34,7 @@ const partColumns: AssistColumn[] = [
   { key: 'material', label: '材質' },
   { key: 'thickness', label: '厚度' },
   { key: 'customer_code', label: '' },
+  { key: 'last_order_date', label: '最近訂單日期' },
 ];
 const partnerColumns = (noun: string): AssistColumn[] => [
   { key: 'code', label: `${noun}編號` },
